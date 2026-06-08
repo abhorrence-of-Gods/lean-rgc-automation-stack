@@ -105,6 +105,7 @@ from .bivariate_contextual_quotient import (
     schedule_bivariate_candidates,
     build_repair_face_ledger,
 )
+from .face_taxonomy import build_dual_face_taxonomy
 from .source_budget_scheduler import source_budget_schedule_from_files, SourceBudgetConfig, _read_json_or_file as _read_source_budget_json_or_file
 from .defect_ontology import reconcile_defect_ontology
 from .arithmetic_teacher import generate_arithmetic_teacher_graph, audit_arithmetic_teacher_transitions
@@ -597,6 +598,25 @@ def cmd_repair_face_ledger(args):
         validation_rows_path=getattr(args, "validation", None),
         out=args.out,
         report_out=getattr(args, "report", None),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_face_taxonomy(args):
+    summary = build_dual_face_taxonomy(
+        fingerprints_path=args.fingerprints,
+        classes_path=getattr(args, "classes", None),
+        validation_rows_path=getattr(args, "validation", None),
+        repair_faces_path=getattr(args, "repair_faces", None),
+        out_dir=args.out,
+        min_support=getattr(args, "min_support", 1),
+        min_retrieval_support=getattr(args, "min_retrieval_support", 2),
+        positive_threshold=getattr(args, "positive_threshold", 1e-9),
+        negative_threshold=getattr(args, "negative_threshold", -1e-9),
+        carrier_threshold=getattr(args, "carrier_threshold", 1e-12),
+        max_concepts=getattr(args, "max_concepts", 256),
+        max_pair_properties=getattr(args, "max_pair_properties", 80),
+        allow_singleton_retrieval=getattr(args, "allow_singleton_retrieval", False),
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
 
@@ -2057,6 +2077,8 @@ def cmd_pipeline(args):
     separator_contexts_path = None
     premise_contextual_scheduled_path = None
     repair_face_ledger_path = None
+    face_taxonomy_dir = None
+    face_taxonomy_path = None
     premise_contextual_requested = any(getattr(args, k, False) for k in [
         'premise_contextual_quotient',
         'premise_contextual_generate',
@@ -2066,6 +2088,7 @@ def cmd_pipeline(args):
         'premise_contextual_validate',
         'premise_quotient_retrieve',
         'repair_face_ledger',
+        'face_taxonomy',
     ])
     if premise_contextual_requested:
         premise_contextual_dir = out / 'premise_contextual'
@@ -2133,7 +2156,7 @@ def cmd_pipeline(args):
                     include_identity=True,
                     include_baselines=True,
                 )
-            if getattr(args, 'audit_premise_contextual_candidates', False) or getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_mine', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'premise_quotient_retrieve', False):
+            if getattr(args, 'audit_premise_contextual_candidates', False) or getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_mine', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'premise_quotient_retrieve', False) or getattr(args, 'face_taxonomy', False):
                 premise_contextual_audit_dir = out / 'premise_contextual_audit'
                 audit_actions_path = premise_contextual_scheduled_path if premise_contextual_scheduled_path is not None else premise_contextual_candidates_path
                 audit_budget = getattr(args, 'bivariate_audit_budget', None) or getattr(args, 'premise_contextual_audit_max_actions', 32)
@@ -2179,7 +2202,7 @@ def cmd_pipeline(args):
                     min_contexts=1,
                     baseline_required=getattr(args, 'premise_contextual_baseline_required', False),
                 )
-                if getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_mine', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'premise_quotient_retrieve', False):
+                if getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_mine', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'premise_quotient_retrieve', False) or getattr(args, 'face_taxonomy', False):
                     mine_premise_contextual_quotient(
                         fingerprints_path=premise_contextual_fingerprints_path,
                         out_dir=premise_contextual_dir,
@@ -2188,7 +2211,7 @@ def cmd_pipeline(args):
                         domain_jaccard_threshold=getattr(args, 'premise_contextual_domain_jaccard_threshold', 0.0),
                     )
                     premise_contextual_classes_path = premise_contextual_dir / 'premise_quotient_classes.jsonl'
-                if getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_validate', False):
+                if getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'face_taxonomy', False):
                     if premise_contextual_classes_path and premise_contextual_classes_path.exists() and (not getattr(args, 'skip_vacuous_premise_quotient', False) or read_jsonl(premise_contextual_classes_path)):
                         validate_premise_contextual_quotient(
                             fingerprints_path=premise_contextual_fingerprints_path,
@@ -2208,6 +2231,23 @@ def cmd_pipeline(args):
                             validation_rows_path=premise_contextual_dir/'premise_quotient_validation_rows.jsonl',
                             out=repair_face_ledger_path,
                             report_out=premise_contextual_dir/'repair_face_ledger_report.json',
+                        )
+                if getattr(args, 'face_taxonomy', False):
+                    if premise_contextual_fingerprints_path and premise_contextual_fingerprints_path.exists() and read_jsonl(premise_contextual_fingerprints_path):
+                        face_taxonomy_dir = premise_contextual_dir / 'face_taxonomy'
+                        validation_path = premise_contextual_dir / 'premise_quotient_validation_rows.jsonl'
+                        face_taxonomy_path = face_taxonomy_dir / 'dual_face_taxonomy.jsonl'
+                        build_dual_face_taxonomy(
+                            fingerprints_path=premise_contextual_fingerprints_path,
+                            classes_path=premise_contextual_classes_path if premise_contextual_classes_path and premise_contextual_classes_path.exists() else None,
+                            validation_rows_path=validation_path if validation_path.exists() else None,
+                            repair_faces_path=repair_face_ledger_path if repair_face_ledger_path and Path(repair_face_ledger_path).exists() else None,
+                            out_dir=face_taxonomy_dir,
+                            min_support=getattr(args, 'face_taxonomy_min_support', 1),
+                            min_retrieval_support=getattr(args, 'face_taxonomy_min_retrieval_support', 2),
+                            max_concepts=getattr(args, 'face_taxonomy_max_concepts', 256),
+                            max_pair_properties=getattr(args, 'face_taxonomy_max_pair_properties', 80),
+                            allow_singleton_retrieval=getattr(args, 'face_taxonomy_allow_singleton_retrieval', False),
                         )
                 if getattr(args, 'premise_quotient_retrieve', False):
                     if premise_contextual_classes_path and premise_contextual_classes_path.exists() and (not getattr(args, 'skip_vacuous_premise_quotient', False) or read_jsonl(premise_contextual_classes_path)):
@@ -2490,6 +2530,11 @@ def cmd_pipeline(args):
         'premise_contextual_classes': str(premise_contextual_classes_path) if locals().get('premise_contextual_classes_path') else None,
         'premise_contextual_validation': str(premise_contextual_dir/'premise_quotient_validation_rows.jsonl') if locals().get('premise_contextual_dir') else None,
         'premise_contextual_repair_faces': str(repair_face_ledger_path) if locals().get('repair_face_ledger_path') else None,
+        'premise_contextual_face_taxonomy_dir': str(face_taxonomy_dir) if locals().get('face_taxonomy_dir') else None,
+        'premise_contextual_dual_face_taxonomy': str(face_taxonomy_path) if locals().get('face_taxonomy_path') else None,
+        'premise_contextual_face_concept_lattice': str(face_taxonomy_dir/'face_concept_lattice.jsonl') if locals().get('face_taxonomy_dir') else None,
+        'premise_contextual_row_face_memberships': str(face_taxonomy_dir/'row_face_memberships.jsonl') if locals().get('face_taxonomy_dir') else None,
+        'premise_contextual_retrieval_allowed_faces': str(face_taxonomy_dir/'retrieval_allowed_faces.jsonl') if locals().get('face_taxonomy_dir') else None,
         'premise_quotient_retrieved': str(premise_quotient_retrieved_path) if locals().get('premise_quotient_retrieved_path') else None,
         'premise_quotient_actions': str(premise_quotient_actions_path) if locals().get('premise_quotient_actions_path') else None,
         'carrier_generated':str(out/'carrier_generated_contexts.jsonl'),'carrier_actions':str(carrier_actions_path),'carrier_coker':str(out/'carrier_coker.jsonl'),
@@ -3817,6 +3862,12 @@ def add_premise_contextual_pipeline_args(parser: argparse.ArgumentParser) -> Non
     parser.add_argument('--bivariate-require-baseline-pairs', action='store_true')
     parser.add_argument('--skip-vacuous-premise-quotient', action='store_true')
     parser.add_argument('--repair-face-ledger', action='store_true')
+    parser.add_argument('--face-taxonomy', action='store_true', help='Build finite dual-exposed face taxonomy/concept lattice from bivariate fingerprints.')
+    parser.add_argument('--face-taxonomy-min-support', type=int, default=1)
+    parser.add_argument('--face-taxonomy-min-retrieval-support', type=int, default=2)
+    parser.add_argument('--face-taxonomy-max-concepts', type=int, default=256)
+    parser.add_argument('--face-taxonomy-max-pair-properties', type=int, default=80)
+    parser.add_argument('--face-taxonomy-allow-singleton-retrieval', action='store_true')
     parser.add_argument('--premise-contextual-mine', action='store_true')
     parser.add_argument('--premise-contextual-validate', action='store_true')
     parser.add_argument('--premise-contextual-epsilon', type=float, default=0.25)
@@ -4093,6 +4144,7 @@ def build_parser() -> argparse.ArgumentParser:
     bcg=sub.add_parser('bivariate-contextual-generate'); bcg.add_argument('--premise-rows', required=True); bcg.add_argument('--contexts', required=True); bcg.add_argument('--out', required=True); bcg.add_argument('--summary-out'); bcg.add_argument('--max-rows', type=int); bcg.add_argument('--max-pre', type=int, default=8); bcg.add_argument('--max-post', type=int, default=8); bcg.add_argument('--max-candidates', type=int); bcg.add_argument('--no-baselines', action='store_true'); bcg.set_defaults(func=cmd_bivariate_contextual_generate)
     bcs=sub.add_parser('bivariate-contextual-schedule'); bcs.add_argument('--candidates', required=True); bcs.add_argument('--out', required=True); bcs.add_argument('--budget', type=int, default=512); bcs.add_argument('--report-out'); bcs.add_argument('--require-baseline-pairs', action='store_true'); bcs.set_defaults(func=cmd_bivariate_contextual_schedule)
     rfl=sub.add_parser('repair-face-ledger'); rfl.add_argument('--fingerprints', required=True); rfl.add_argument('--classes', required=True); rfl.add_argument('--validation'); rfl.add_argument('--out', required=True); rfl.add_argument('--report'); rfl.set_defaults(func=cmd_repair_face_ledger)
+    ftx=sub.add_parser('face-taxonomy'); ftx.add_argument('--fingerprints', required=True); ftx.add_argument('--classes'); ftx.add_argument('--validation'); ftx.add_argument('--repair-faces'); ftx.add_argument('--out', required=True); ftx.add_argument('--min-support', type=int, default=1); ftx.add_argument('--min-retrieval-support', type=int, default=2); ftx.add_argument('--positive-threshold', type=float, default=1e-9); ftx.add_argument('--negative-threshold', type=float, default=-1e-9); ftx.add_argument('--carrier-threshold', type=float, default=1e-12); ftx.add_argument('--max-concepts', type=int, default=256); ftx.add_argument('--max-pair-properties', type=int, default=80); ftx.add_argument('--allow-singleton-retrieval', action='store_true'); ftx.set_defaults(func=cmd_face_taxonomy)
     cact=sub.add_parser('carrier-actions'); cact.add_argument('--proposals', required=True); cact.add_argument('--out', required=True); cact.add_argument('--prefix', default='carrier'); cact.add_argument('--max-actions-per-context', type=int, default=8); cact.set_defaults(func=cmd_carrier_actions)
     acact=sub.add_parser('accepted-carrier-actions'); acact.add_argument('--accepted', required=True); acact.add_argument('--out', required=True); acact.add_argument('--min-margin', type=float, default=0.0); acact.add_argument('--include-rejected', action='store_true'); acact.set_defaults(func=cmd_accepted_carrier_actions)
     ma=sub.add_parser('merge-actions'); ma.add_argument('--inputs', nargs='+', required=True); ma.add_argument('--out', required=True); ma.set_defaults(func=cmd_merge_actions)
