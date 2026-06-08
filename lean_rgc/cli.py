@@ -115,6 +115,7 @@ from .gamma_transition_learner import learn_gamma_transition_model, merge_gamma_
 from .goal_state_dynamics import goal_state_transitions_from_audits, kernel_state_graphs_from_jsonl
 from .kernel_state import KernelGoalStateServer, KernelGoalStateServerConfig, normalize_kernel_state_v1
 from .kernel_context_cache import audit_contextual_candidates_with_kernel_cache
+from .minif2f_adapter import DEFAULT_MINIF2F_LEAN4_URL, build_minif2f_tasks, fetch_minif2f
 
 
 def _load_tasks(path: str | Path) -> list[LeanTask]:
@@ -617,6 +618,34 @@ def cmd_face_taxonomy(args):
         max_concepts=getattr(args, "max_concepts", 256),
         max_pair_properties=getattr(args, "max_pair_properties", 80),
         allow_singleton_retrieval=getattr(args, "allow_singleton_retrieval", False),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_minif2f_fetch(args):
+    summary = fetch_minif2f(
+        args.out,
+        url=getattr(args, "url", DEFAULT_MINIF2F_LEAN4_URL),
+        ref=getattr(args, "ref", None),
+        depth=getattr(args, "depth", 1),
+        force=getattr(args, "force", False),
+        summary_out=getattr(args, "summary_out", None),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_minif2f_tasks(args):
+    imports = getattr(args, "import_name", None)
+    summary = build_minif2f_tasks(
+        args.repo,
+        args.out,
+        split=getattr(args, "split", "valid"),
+        limit=getattr(args, "limit", None),
+        offset=getattr(args, "offset", 0),
+        imports=imports,
+        max_heartbeats=getattr(args, "max_heartbeats", 400000),
+        summary_out=getattr(args, "summary_out", None),
+        name_regex=getattr(args, "name_regex", None),
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
 
@@ -4128,6 +4157,8 @@ def build_parser() -> argparse.ArgumentParser:
     cand=sub.add_parser('candidates'); cand.add_argument('--tasks', required=True); cand.add_argument('--out', required=True); cand.add_argument('--max-candidates', type=int, default=64); cand.add_argument('--candidate-mode', choices=['basic','state'], default='state'); cand.add_argument('--import-mode', choices=['preserve','auto','core','mathlib'], default='preserve'); cand.set_defaults(func=cmd_candidates)
     rc=sub.add_parser('registry-candidates'); rc.add_argument('--tasks', required=True); rc.add_argument('--registry', required=True); rc.add_argument('--out', required=True); rc.add_argument('--max-candidates', type=int, default=96); rc.add_argument('--registry-only', action='store_true'); rc.add_argument('--import-mode', choices=['preserve','auto','core','mathlib'], default='preserve'); rc.set_defaults(func=cmd_registry_candidates)
     bpi=sub.add_parser('build-premise-index'); bpi.add_argument('--tasks'); bpi.add_argument('--actions'); bpi.add_argument('--out', required=True); bpi.set_defaults(func=cmd_build_premise_index)
+    mf=sub.add_parser('minif2f-fetch'); mf.add_argument('--out', required=True); mf.add_argument('--url', default=DEFAULT_MINIF2F_LEAN4_URL); mf.add_argument('--ref'); mf.add_argument('--depth', type=int, default=1); mf.add_argument('--force', action='store_true'); mf.add_argument('--summary-out'); mf.set_defaults(func=cmd_minif2f_fetch)
+    mt=sub.add_parser('minif2f-tasks'); mt.add_argument('--repo', required=True); mt.add_argument('--out', required=True); mt.add_argument('--split', choices=['valid','test','all'], default='valid'); mt.add_argument('--limit', type=int); mt.add_argument('--offset', type=int, default=0); mt.add_argument('--import-name', action='append'); mt.add_argument('--max-heartbeats', type=int, default=400000); mt.add_argument('--summary-out'); mt.add_argument('--name-regex'); mt.set_defaults(func=cmd_minif2f_tasks)
     pretr=sub.add_parser('premise-retrieve'); pretr.add_argument('--index', required=True); pretr.add_argument('--out', required=True); pretr.add_argument('--query'); pretr.add_argument('--tasks'); pretr.add_argument('--states'); pretr.add_argument('--k', type=int, default=10); pretr.add_argument('--kind'); pretr.add_argument('--import-mode', choices=['preserve','auto','core','mathlib'], default='preserve'); pretr.set_defaults(func=cmd_premise_retrieve)
     pact=sub.add_parser('premise-actions'); pact.add_argument('--hits', required=True); pact.add_argument('--out', required=True); pact.add_argument('--task-id'); pact.add_argument('--max-actions-per-query', type=int, default=8); pact.set_defaults(func=cmd_premise_actions)
     pc=sub.add_parser('premise-candidates'); pc.add_argument('--tasks', required=True); pc.add_argument('--index', required=True); pc.add_argument('--out', required=True); pc.add_argument('--top-k', type=int, default=8); pc.add_argument('--max-actions', type=int, default=48); pc.set_defaults(func=cmd_premise_candidates)
