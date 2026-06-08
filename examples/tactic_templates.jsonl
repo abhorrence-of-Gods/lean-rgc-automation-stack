@@ -1,0 +1,6 @@
+{"action_id":"rfl","tactic":"rfl","class":"exact","carrier_tags":["easy"]}
+{"action_id":"simp","tactic":"simp","class":"simp","carrier_tags":["simp"]}
+{"action_id":"simp_all","tactic":"simp_all","class":"simp","carrier_tags":["simp","premise"]}
+{"action_id":"omega","tactic":"omega","class":"arithmetic","carrier_tags":["arithmetic","nat"]}
+{"action_id":"rw_nat_add_comm","tactic":"rw [Nat.add_comm]","class":"rewrite","carrier_tags":["rewrite","nat"]}
+{"action_id":"induction_n","tactic":"induction n with\n  | zero => simp\n  | succ n ih => simp [ih]","class":"induction","carrier_tags":["induction","nat"]}

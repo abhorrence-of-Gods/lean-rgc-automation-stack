@@ -1,0 +1,30 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Lean / Lake generated artifacts
+lean_project_template/.lake/
+lean_project_template/.lean_rgc/
+lean_project_template/.lean_rgc_native_checks/
+.lean_rgc/
+.lean_rgc_native_checks/
+
+# Run outputs and local experiment artifacts
+runs/
+*.zip
+*.tar
+*.tar.gz
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,4 @@
+{"task_id":"true_intro","imports":[],"statement":"True","domain_tags":["core","easy"]}
+{"task_id":"nat_self_eq","imports":[],"statement":"∀ n : Nat, n = n","domain_tags":["core","nat","easy"]}
+{"task_id":"and_comm_core","imports":[],"statement":"∀ p q : Prop, p ∧ q → q ∧ p","domain_tags":["core","logic"]}
+{"task_id":"nat_add_zero_core","imports":[],"statement":"∀ n : Nat, n + 0 = n","domain_tags":["core","nat","simp"]}

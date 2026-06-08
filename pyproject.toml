@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lean-rgc"
+version = "0.13.0"
+description = "Lean-RGC automation stack: micro-audit, auto defect mining, response learner, carrier/gamma/quotient modules for Lean tactic experiments."
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.23",
+]
+
+[project.scripts]
+lean-rgc = "lean_rgc.cli:main"
+lean-rgc-worker = "lean_rgc.persistent_lean_worker:main"
+lean-rgc-native-worker = "lean_rgc.native_worker:main"
+lean-rgc-lean-native-worker = "lean_rgc.native_worker:main"
+
+[tool.setuptools.packages.find]
+include = ["lean_rgc*"]
+exclude = ["tests*", "notebooks*", "templates*", "lean_project_template*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+lean_rgc = ["native_lean/*.lean", "lean_worker/*.lean"]

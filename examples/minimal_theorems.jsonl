@@ -1,0 +1,4 @@
+{"task_id":"nat_add_zero","imports":["Mathlib"],"statement":"∀ n : Nat, n + 0 = n","domain_tags":["nat","arithmetic"]}
+{"task_id":"nat_zero_add","imports":["Mathlib"],"statement":"∀ n : Nat, 0 + n = n","domain_tags":["nat","arithmetic"]}
+{"task_id":"nat_add_comm_sample","imports":["Mathlib"],"statement":"∀ a b : Nat, a + b = b + a","domain_tags":["nat","arithmetic","rewrite"]}
+{"task_id":"list_length_append","imports":["Mathlib"],"statement":"∀ (xs ys : List Nat), (xs ++ ys).length = xs.length + ys.length","domain_tags":["list","nat","induction"]}

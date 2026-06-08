@@ -1,0 +1,5 @@
+{"action_id":"trivial","tactic":"trivial","class":"exact","carrier_tags":["easy"]}
+{"action_id":"rfl","tactic":"rfl","class":"exact","carrier_tags":["easy"]}
+{"action_id":"simp","tactic":"simp","class":"simp","carrier_tags":["simp"]}
+{"action_id":"constructor","tactic":"constructor <;> assumption","class":"constructor","carrier_tags":["constructor","premise"]}
+{"action_id":"intro_simp","tactic":"intro n; simp","class":"intro_simp","carrier_tags":["simp","nat"]}
