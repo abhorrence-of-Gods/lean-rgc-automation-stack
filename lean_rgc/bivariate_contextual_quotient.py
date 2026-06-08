@@ -72,6 +72,22 @@ def _premise_action_from_row(row: dict[str, Any]) -> dict[str, Any]:
     return action
 
 
+def _action_chart(row: dict[str, Any]) -> dict[str, Any]:
+    meta = dict(_metadata(row))
+    out = {
+        "action_id": str(row.get("action_id") or row.get("id") or stable_hash(row, 10)),
+        "tactic": str(row.get("tactic") or ""),
+        "tactic_class": str(row.get("tactic_class") or row.get("class") or row.get("context_kind") or "unknown"),
+        "carrier_tags": list(row.get("carrier_tags") or []),
+        "cost_estimate": float(row.get("cost_estimate") or 0.0),
+        "metadata": meta,
+    }
+    for key in ["context_id", "context_kind", "position_allowed", "coverage_tags", "premise_id", "use_mode"]:
+        if key in row:
+            out[key] = row.get(key)
+    return out
+
+
 def build_premise_use_rows(
     actions_path: str | Path,
     out: str | Path,
@@ -321,6 +337,9 @@ def generate_bivariate_contextual_candidates(
                 meta.update({
                     "source": "bivariate_contextual_baseline_v51",
                     "bivariate_contextual": True,
+                    "pre_context_action": _action_chart(pre),
+                    "post_context_action": _action_chart(post),
+                    "premise_core_action": None,
                     "pre_context_kind": pre.get("context_kind"),
                     "post_context_kind": post.get("context_kind"),
                     "pre_position_allowed": pre.get("position_allowed"),
@@ -346,6 +365,8 @@ def generate_bivariate_contextual_candidates(
                     "bivariate_contextual": True,
                     "premise_use_row_id": meta.get("premise_use_id"),
                     "baseline_action_id": baseline_by_pair.get(pair),
+                    "pre_context_action": _action_chart(pre),
+                    "post_context_action": _action_chart(post),
                     "pre_context_kind": pre.get("context_kind"),
                     "post_context_kind": post.get("context_kind"),
                     "pre_position_allowed": pre.get("position_allowed"),

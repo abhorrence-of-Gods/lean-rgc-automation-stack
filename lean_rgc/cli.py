@@ -113,6 +113,7 @@ from .arithmetic_teacher_cocycle import arithmetic_teacher_cocycle_from_files, b
 from .gamma_transition_learner import learn_gamma_transition_model, merge_gamma_transition_patches_into_action_geometry
 from .goal_state_dynamics import goal_state_transitions_from_audits, kernel_state_graphs_from_jsonl
 from .kernel_state import KernelGoalStateServer, KernelGoalStateServerConfig, normalize_kernel_state_v1
+from .kernel_context_cache import audit_contextual_candidates_with_kernel_cache
 
 
 def _load_tasks(path: str | Path) -> list[LeanTask]:
@@ -2136,7 +2137,38 @@ def cmd_pipeline(args):
                 premise_contextual_audit_dir = out / 'premise_contextual_audit'
                 audit_actions_path = premise_contextual_scheduled_path if premise_contextual_scheduled_path is not None else premise_contextual_candidates_path
                 audit_budget = getattr(args, 'bivariate_audit_budget', None) or getattr(args, 'premise_contextual_audit_max_actions', 32)
-                _pipeline_audit(tasks_for_pipeline, str(audit_actions_path), premise_contextual_audit_dir, audit_budget, state_candidates=False, candidate_mode='state')
+                use_kernel_context_cache = bool(
+                    getattr(args, 'premise_contextual_bivariate', False)
+                    and getattr(args, 'audit_mode', 'batch') == 'server'
+                    and getattr(args, 'native_exec_mode', 'source_check') == 'kernel_rpc'
+                    and getattr(args, 'server_backend', 'auto') in {'native', 'jsonl'}
+                    and not getattr(args, 'dry_run', False)
+                )
+                if use_kernel_context_cache:
+                    kc_cfg = LeanServerConfig(
+                        lean_cmd=args.lean_cmd,
+                        workdir=args.workdir,
+                        timeout_s=args.timeout_s,
+                        dry_run=args.dry_run,
+                        keep_files=args.keep_files,
+                        cache_dir=args.cache_dir or str(out/'cache'),
+                        trace_state=args.trace_state,
+                        server_cmd=getattr(args, 'server_cmd', None),
+                        backend=getattr(args, 'server_backend', 'auto'),
+                        fallback_to_file=not getattr(args, 'server_no_fallback', False),
+                        native_exec_mode=getattr(args, 'native_exec_mode', 'source_check'),
+                    )
+                    audit_contextual_candidates_with_kernel_cache(
+                        _normalize_tasks_imports(_load_tasks(tasks_for_pipeline), args.import_mode, args.workdir, args.lean_cmd),
+                        _load_actions(audit_actions_path),
+                        out_dir=premise_contextual_audit_dir,
+                        server_config=kc_cfg,
+                        max_actions=audit_budget,
+                        resume=args.resume,
+                        flush_every=args.flush_every,
+                    )
+                else:
+                    _pipeline_audit(tasks_for_pipeline, str(audit_actions_path), premise_contextual_audit_dir, audit_budget, state_candidates=False, candidate_mode='state')
                 cmd_action_report(argparse.Namespace(responses=str(premise_contextual_audit_dir/'responses.jsonl'), out=str(out/'premise_contextual_action_report.json'), csv_out=str(out/'premise_contextual_action_report.csv'), group_keys=None))
                 premise_contextual_fingerprints_path = premise_contextual_dir / 'premise_contextual_fingerprints.jsonl'
                 build_premise_contextual_fingerprints(
@@ -2451,6 +2483,9 @@ def cmd_pipeline(args):
         'premise_contextual_candidates': str(premise_contextual_candidates_path) if locals().get('premise_contextual_candidates_path') else None,
         'premise_contextual_scheduled_actions': str(premise_contextual_scheduled_path) if locals().get('premise_contextual_scheduled_path') else None,
         'premise_contextual_audit_dir': str(premise_contextual_audit_dir) if locals().get('premise_contextual_audit_dir') else None,
+        'premise_contextual_kernel_context_cache': str(premise_contextual_audit_dir/'kernel_context_state_cache.jsonl') if locals().get('premise_contextual_audit_dir') and (premise_contextual_audit_dir/'kernel_context_state_cache.jsonl').exists() else None,
+        'premise_contextual_plan_transitions': str(premise_contextual_audit_dir/'contextual_plan_transitions.jsonl') if locals().get('premise_contextual_audit_dir') and (premise_contextual_audit_dir/'contextual_plan_transitions.jsonl').exists() else None,
+        'premise_contextual_plan_audit_report': str(premise_contextual_audit_dir/'contextual_plan_audit_report.json') if locals().get('premise_contextual_audit_dir') and (premise_contextual_audit_dir/'contextual_plan_audit_report.json').exists() else None,
         'premise_contextual_fingerprints': str(premise_contextual_fingerprints_path) if locals().get('premise_contextual_fingerprints_path') else None,
         'premise_contextual_classes': str(premise_contextual_classes_path) if locals().get('premise_contextual_classes_path') else None,
         'premise_contextual_validation': str(premise_contextual_dir/'premise_quotient_validation_rows.jsonl') if locals().get('premise_contextual_dir') else None,
