@@ -64,6 +64,13 @@ def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
     return row is not None
 
 
+def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    try:
+        return column in {str(r[1]) for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    except Exception:
+        return False
+
+
 def _upsert(
     conn: sqlite3.Connection,
     *,
@@ -108,15 +115,30 @@ def refresh_action_quarantine(
         ensure_quarantine_schema(conn)
         if not _table_exists(conn, "audit_jobs"):
             return quarantine_report_from_conn(conn, db_path=db_path)
-        rows = conn.execute(
-            """
-            SELECT action_id,
-                   COUNT(*) AS n_attempts,
-                   SUM(CASE WHEN status='timeout' THEN 1 ELSE 0 END) AS n_timeouts
-            FROM audit_jobs
-            GROUP BY action_id
-            """
-        ).fetchall()
+        scoped_timeouts = _table_exists(conn, "timeout_events") and _column_exists(conn, "timeout_events", "timeout_scope")
+        if scoped_timeouts:
+            rows = conn.execute(
+                """
+                SELECT j.action_id,
+                       COUNT(*) AS n_attempts,
+                       SUM(CASE WHEN te.job_id IS NOT NULL THEN 1 ELSE 0 END) AS n_timeouts
+                FROM audit_jobs j
+                LEFT JOIN (
+                    SELECT DISTINCT job_id FROM timeout_events WHERE timeout_scope='tactic_timeout'
+                ) te ON te.job_id=j.job_id
+                GROUP BY j.action_id
+                """
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT action_id,
+                       COUNT(*) AS n_attempts,
+                       SUM(CASE WHEN status='timeout' THEN 1 ELSE 0 END) AS n_timeouts
+                FROM audit_jobs
+                GROUP BY action_id
+                """
+            ).fetchall()
         for r in rows:
             n_attempts = int(r["n_attempts"] or 0)
             n_timeouts = int(r["n_timeouts"] or 0)
@@ -132,15 +154,29 @@ def refresh_action_quarantine(
                     n_timeouts=n_timeouts,
                     timeout_rate=rate,
                 )
-        hash_rows = conn.execute(
-            """
-            SELECT tactic_hash,
-                   COUNT(*) AS n_attempts,
-                   SUM(CASE WHEN status='timeout' THEN 1 ELSE 0 END) AS n_timeouts
-            FROM audit_jobs
-            GROUP BY tactic_hash
-            """
-        ).fetchall()
+        if scoped_timeouts:
+            hash_rows = conn.execute(
+                """
+                SELECT j.tactic_hash,
+                       COUNT(*) AS n_attempts,
+                       SUM(CASE WHEN te.job_id IS NOT NULL THEN 1 ELSE 0 END) AS n_timeouts
+                FROM audit_jobs j
+                LEFT JOIN (
+                    SELECT DISTINCT job_id FROM timeout_events WHERE timeout_scope='tactic_timeout'
+                ) te ON te.job_id=j.job_id
+                GROUP BY j.tactic_hash
+                """
+            ).fetchall()
+        else:
+            hash_rows = conn.execute(
+                """
+                SELECT tactic_hash,
+                       COUNT(*) AS n_attempts,
+                       SUM(CASE WHEN status='timeout' THEN 1 ELSE 0 END) AS n_timeouts
+                FROM audit_jobs
+                GROUP BY tactic_hash
+                """
+            ).fetchall()
         for r in hash_rows:
             n_attempts = int(r["n_attempts"] or 0)
             n_timeouts = int(r["n_timeouts"] or 0)
@@ -202,11 +238,18 @@ def quarantine_report_from_conn(conn: sqlite3.Connection, *, db_path: str | Path
     by_status: dict[str, int] = {}
     for r in rows:
         by_status[r["status"]] = by_status.get(r["status"], 0) + 1
+    by_timeout_scope: dict[str, int] = {}
+    if _table_exists(conn, "timeout_events") and _column_exists(conn, "timeout_events", "timeout_scope"):
+        by_timeout_scope = {
+            str(r["timeout_scope"] or "unknown_timeout"): int(r["n"])
+            for r in conn.execute("SELECT timeout_scope, COUNT(*) AS n FROM timeout_events GROUP BY timeout_scope ORDER BY timeout_scope")
+        }
     return {
         "schema_version": SCHEMA_ACTION_QUARANTINE,
         "db_path": str(db_path) if db_path else None,
         "n_rows": len(rows),
         "by_status": by_status,
+        "by_timeout_scope": by_timeout_scope,
         "rows": rows,
     }
 

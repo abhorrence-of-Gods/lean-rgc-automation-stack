@@ -22,6 +22,7 @@ from .audit_job_queue import (
     project_fingerprint,
 )
 from .batch import _pair_key
+from .bulk_executor import BulkAuditConfig, LeanBulkAuditor
 from .dataset import summarize_response_rows
 from .defects import ProofDefectExtractor
 from .executor import LeanExecutor, LeanExecutorConfig
@@ -30,6 +31,16 @@ from .timeout_ledger import ensure_timeout_schema, record_timeout_event, record_
 
 
 SCHEMA_LEAN_WORKER_SUPERVISOR = "lean-rgc-lean-worker-supervisor-v63.0"
+
+
+def _timeout_scope_for_run(*, import_wall_s: float | None, timeout_s: float, killed: bool = False, bulk: bool = False) -> str:
+    if import_wall_s is not None and import_wall_s >= float(timeout_s) * 0.5:
+        return "import_timeout"
+    if bulk:
+        return "batch_timeout"
+    if killed:
+        return "tactic_timeout"
+    return "worker_timeout"
 
 
 def _tail(text: str | None, n: int = 4000) -> str:
@@ -142,6 +153,49 @@ def _synthetic_result(job: AuditJob, *, status: str, elapsed_ms: float, message:
         defect_after=after,
         audit_status=status,
         carrier_delta={},
+    ).to_dict()
+    rr["task_id"] = task.task_id
+    rr["target"] = task.statement
+    rr["action"] = action.to_dict()
+    return {"ok": True, "audit": ad, "response": rr}
+
+
+def _result_from_audit_record(
+    *,
+    task: LeanTask,
+    action: TacticAction,
+    state: ProofState,
+    rec: AuditRecord,
+    audit_flags: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    extractor = ProofDefectExtractor()
+    before = extractor.extract(state)
+    after_state = rec.after_state or state
+    after = extractor.extract(after_state, rec)
+    resp, resp_flat, resp_keys = extractor.response(before, after)
+    rec.defect_before = before.to_dict()
+    rec.defect_after = after.to_dict()
+    rec.response = resp
+    rec.carrier_delta = {
+        k: before.carrier.get(k, 0.0) - after.carrier.get(k, 0.0)
+        for k in sorted(set(before.carrier) | set(after.carrier))
+    }
+    rec.audit_flags = dict(rec.audit_flags or {})
+    rec.audit_flags.update(audit_flags or {})
+    ad = rec.to_dict()
+    ad["action"] = action.to_dict()
+    ad["task_id"] = task.task_id
+    ad["target"] = task.statement
+    rr = ResponseRecord(
+        state_id=state.state_id,
+        action_id=action.action_id,
+        response=resp,
+        response_flat=resp_flat,
+        response_keys=resp_keys,
+        defect_before=before,
+        defect_after=after,
+        audit_status=str(rec.status),
+        carrier_delta=rec.carrier_delta or {},
     ).to_dict()
     rr["task_id"] = task.task_id
     rr["target"] = task.statement
@@ -265,6 +319,7 @@ def materialize_queue_results(db_path: str | Path, out_dir: str | Path, *, run_i
         write_jsonl(out / "defects.jsonl", defects)
         summary = summarize_response_rows(dedup_responses).to_dict()
         queue_summary = audit_queue_status(conn, run_id=run_id)
+        timeout_report = timeout_ledger_report(db_path)
         summary.update(
             {
                 "schema_version": SCHEMA_LEAN_WORKER_SUPERVISOR,
@@ -276,6 +331,9 @@ def materialize_queue_results(db_path: str | Path, out_dir: str | Path, *, run_i
                 "n_failed": queue_summary.get("n_failed", 0),
                 "n_timeout": queue_summary.get("n_timeout", 0),
                 "n_quarantined": queue_summary.get("n_quarantined", 0),
+                "n_tactic_timeout": timeout_report.get("n_tactic_timeout", 0),
+                "n_infra_timeout": timeout_report.get("n_infra_timeout", 0),
+                "n_quarantine_suppressed_by_import_cost": timeout_report.get("n_quarantine_suppressed_by_import_cost", 0),
                 "queue_status": queue_summary,
             }
         )
@@ -298,6 +356,7 @@ def run_supervised_audit_queue(
     continue_on_timeout: bool = True,
     lanes: list[str] | None = None,
     heavy_lane_allows_quarantine: bool = True,
+    import_wall_s: float | None = None,
 ) -> dict[str, Any]:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -374,6 +433,11 @@ def run_supervised_audit_queue(
                     )
                 if queue_status == "timeout":
                     audit = result.get("audit") if isinstance(result.get("audit"), dict) else {}
+                    timeout_scope = _timeout_scope_for_run(import_wall_s=import_wall_s, timeout_s=timeout_s, killed=killed)
+                    if isinstance(audit, dict):
+                        audit_flags = audit.get("audit_flags") if isinstance(audit.get("audit_flags"), dict) else {}
+                        audit_flags["timeout_scope"] = timeout_scope
+                        audit["audit_flags"] = audit_flags
                     record_timeout_event(
                         conn,
                         job_id=job.job_id,
@@ -387,7 +451,8 @@ def run_supervised_audit_queue(
                         stdout_tail=_tail(audit.get("stdout")),
                         stderr_tail=_tail(audit.get("stderr")),
                         worker_id=worker_id,
-                        detail={"killed": killed},
+                        timeout_scope=timeout_scope,
+                        detail={"killed": killed, "import_wall_s": import_wall_s},
                     )
                 mark_job_result(conn, job.job_id, status=queue_status, result=result, error=result.get("error"))
                 record_worker_event(conn, worker_id=worker_id, event_type="finish", job_id=job.job_id, backend=job.backend, lane=job.lane, detail={"status": queue_status})
@@ -433,6 +498,209 @@ def run_supervised_audit_queue(
         conn.close()
 
 
+def _bulk_group_key(job: AuditJob, *, executor_config: LeanExecutorConfig, import_mode: str) -> tuple[Any, ...]:
+    task = LeanTask.from_dict(job.payload["task"])
+    return (
+        tuple(task.imports or []),
+        executor_config.workdir or "",
+        executor_config.lean_cmd or "",
+        import_mode or job.import_mode,
+        bool(executor_config.trace_state),
+    )
+
+
+def _run_bulk_chunk(
+    jobs: list[AuditJob],
+    *,
+    executor_config: LeanExecutorConfig,
+    timeout_s: float,
+    batch_size: int,
+    import_wall_s: float | None,
+    worker_id: str,
+) -> list[tuple[AuditJob, str, dict[str, Any], float, str | None]]:
+    tasks: list[LeanTask] = [LeanTask.from_dict(job.payload["task"]) for job in jobs]
+    states: list[ProofState] = [ProofState.from_dict(job.payload["state"]) for job in jobs]
+    actions: list[TacticAction] = [TacticAction.from_dict(job.payload["action"]) for job in jobs]
+    pairs = list(zip(tasks, actions))
+    try:
+        auditor = LeanBulkAuditor(
+            BulkAuditConfig(
+                lean_cmd=executor_config.lean_cmd,
+                workdir=executor_config.workdir,
+                timeout_s=float(timeout_s),
+                batch_size=max(1, int(batch_size or len(jobs) or 1)),
+                keep_files=executor_config.keep_files,
+                trace_state=executor_config.trace_state,
+            )
+        )
+        records, report = auditor.run_pairs(pairs)
+    except BaseException as exc:
+        elapsed_ms = 0.0
+        out: list[tuple[AuditJob, str, dict[str, Any], float, str | None]] = []
+        for job in jobs:
+            result = _synthetic_result(job, status="fail", elapsed_ms=elapsed_ms, message=repr(exc), worker_id=worker_id)
+            result["worker_error"] = {"error": repr(exc), "error_type": type(exc).__name__, "bulk_worker": True}
+            out.append((job, "failed", result, 0.0, None))
+        return out
+    elapsed_s = float(report.elapsed_ms or 0.0) / 1000.0
+    out = []
+    for job, task, state, action, rec in zip(jobs, tasks, states, actions, records):
+        timeout_scope: str | None = None
+        if str(rec.status) == "timeout":
+            timeout_scope = _timeout_scope_for_run(import_wall_s=import_wall_s, timeout_s=timeout_s, bulk=True)
+        result = _result_from_audit_record(
+            task=task,
+            action=action,
+            state=state,
+            rec=rec,
+            audit_flags={
+                "audit_queue": True,
+                "audit_queue_backend": "bulk",
+                "worker_id": worker_id,
+                "bulk_batch_size": len(jobs),
+                "bulk_timeout_s": float(timeout_s),
+                **({"timeout_scope": timeout_scope} if timeout_scope else {}),
+            },
+        )
+        queue_status = "timeout" if str(rec.status) == "timeout" else "succeeded"
+        out.append((job, queue_status, result, elapsed_s, timeout_scope))
+    return out
+
+
+def run_bulk_audit_queue(
+    *,
+    db_path: str | Path,
+    out_dir: str | Path,
+    executor_config: LeanExecutorConfig,
+    run_id: str | None = None,
+    workers: int = 1,
+    job_timeout_s: float | None = None,
+    max_jobs: int | None = None,
+    lanes: list[str] | None = None,
+    batch_size: int = 32,
+    import_mode: str = "preserve",
+    import_wall_s: float | None = None,
+    heavy_lane_allows_quarantine: bool = True,
+) -> dict[str, Any]:
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    timeout_s = float(job_timeout_s or executor_config.timeout_s or 60.0)
+    lane_set = lanes or ["source_check", "kernel_rpc", "heavy"]
+    conn = connect_queue(db_path)
+    executed = 0
+    try:
+        ensure_timeout_schema(conn)
+        ensure_quarantine_schema(conn)
+        refresh_action_quarantine(db_path)
+        now = time.time()
+        clauses = [
+            "(status='queued' OR (status IN ('leased','running') AND COALESCE(leased_until,0) < ?) OR (status='failed' AND attempt_count < max_attempts))"
+        ]
+        params: list[Any] = [now]
+        if run_id:
+            clauses.append("run_id=?")
+            params.append(run_id)
+        lane_list = [str(x) for x in lane_set if str(x)]
+        if lane_list:
+            clauses.append("lane IN (%s)" % ",".join("?" for _ in lane_list))
+            params.extend(lane_list)
+        sql = "SELECT * FROM audit_jobs WHERE " + " AND ".join(clauses) + " ORDER BY priority DESC, created_at ASC"
+        if max_jobs is not None:
+            sql += f" LIMIT {max(0, int(max_jobs))}"
+        jobs = [AuditJob.from_row(r) for r in conn.execute(sql, params).fetchall()]
+        runnable: list[AuditJob] = []
+        for job in jobs:
+            allow_heavy = job.lane == "heavy" and heavy_lane_allows_quarantine
+            quarantined, reason = is_action_quarantined(conn, action_id=job.action_id, tactic_hash=job.tactic_hash)
+            if quarantined and not allow_heavy:
+                worker_id = f"lean-bulk-{os.getpid()}-quarantine"
+                result = _synthetic_result(
+                    job,
+                    status="quarantined",
+                    elapsed_ms=0.0,
+                    message=reason or "action quarantined by timeout ledger",
+                    worker_id=worker_id,
+                )
+                mark_job_result(conn, job.job_id, status="quarantined", result=result, error=reason)
+                executed += 1
+            else:
+                runnable.append(job)
+        groups: dict[tuple[Any, ...], list[AuditJob]] = {}
+        for job in runnable:
+            groups.setdefault(_bulk_group_key(job, executor_config=executor_config, import_mode=import_mode), []).append(job)
+        chunks: list[list[AuditJob]] = []
+        bs = max(1, int(batch_size or 32))
+        for group_jobs in groups.values():
+            for i in range(0, len(group_jobs), bs):
+                chunks.append(group_jobs[i : i + bs])
+        for idx, chunk in enumerate(chunks):
+            worker_id = f"lean-bulk-{os.getpid()}-{idx}"
+            for job in chunk:
+                mark_job_running(conn, job.job_id, worker_id=worker_id)
+                record_worker_event(conn, worker_id=worker_id, event_type="start", job_id=job.job_id, backend=job.backend, lane=job.lane, detail={"bulk": True, "batch_size": len(chunk)})
+        def run_one(index_and_chunk: tuple[int, list[AuditJob]]) -> list[tuple[AuditJob, str, dict[str, Any], float, str | None]]:
+            idx, chunk = index_and_chunk
+            worker_id = f"lean-bulk-{os.getpid()}-{idx}"
+            return _run_bulk_chunk(
+                chunk,
+                executor_config=executor_config,
+                timeout_s=timeout_s,
+                batch_size=len(chunk),
+                import_wall_s=import_wall_s,
+                worker_id=worker_id,
+            )
+        max_workers = max(1, int(workers or 1))
+        if max_workers == 1:
+            all_results = [run_one((i, c)) for i, c in enumerate(chunks)]
+        else:
+            with ThreadPoolExecutor(max_workers=max_workers) as pool:
+                all_results = [f.result() for f in as_completed([pool.submit(run_one, (i, c)) for i, c in enumerate(chunks)])]
+        for batch_results in all_results:
+            for job, queue_status, result, elapsed_s, timeout_scope in batch_results:
+                if queue_status == "timeout":
+                    audit = result.get("audit") if isinstance(result.get("audit"), dict) else {}
+                    record_timeout_event(
+                        conn,
+                        job_id=job.job_id,
+                        task_id=job.task_id,
+                        action_id=job.action_id,
+                        tactic_hash=job.tactic_hash,
+                        backend=job.backend,
+                        lane=job.lane,
+                        timeout_s=timeout_s,
+                        elapsed_s=elapsed_s,
+                        stdout_tail=_tail(audit.get("stdout")),
+                        stderr_tail=_tail(audit.get("stderr")),
+                        worker_id=str((audit.get("audit_flags") or {}).get("worker_id") if isinstance(audit.get("audit_flags"), dict) else ""),
+                        timeout_scope=timeout_scope or "batch_timeout",
+                        detail={"bulk": True, "import_wall_s": import_wall_s},
+                    )
+                mark_job_result(conn, job.job_id, status=queue_status, result=result, error=result.get("error"))
+                audit = result.get("audit") if isinstance(result.get("audit"), dict) else {}
+                flags = audit.get("audit_flags") if isinstance(audit.get("audit_flags"), dict) else {}
+                record_worker_event(conn, worker_id=str(flags.get("worker_id") or "lean-bulk"), event_type="finish", job_id=job.job_id, backend=job.backend, lane=job.lane, detail={"status": queue_status, "bulk": True})
+                executed += 1
+        refresh_action_quarantine(db_path)
+        summary = materialize_queue_results(db_path, out, run_id=run_id)
+        timeout_report = timeout_ledger_report(db_path)
+        quarantine_report = refresh_action_quarantine(db_path)
+        summary.update(
+            {
+                "audit_queue_backend": "bulk",
+                "bulk_batch_size": bs,
+                "n_executed_this_run": executed,
+                "worker_restarts": int(timeout_report.get("worker_restarts", 0)),
+                "timeout_report": timeout_report,
+                "quarantine_report": quarantine_report,
+            }
+        )
+        (out / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+        (out / "server_summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+        return summary
+    finally:
+        conn.close()
+
+
 def enqueue_and_run_supervised_audit(
     *,
     db_path: str | Path,
@@ -449,6 +717,9 @@ def enqueue_and_run_supervised_audit(
     job_timeout_s: float | None = None,
     continue_on_timeout: bool = True,
     lane: str = "source_check",
+    queue_backend: str = "file",
+    bulk_batch_size: int = 32,
+    import_wall_s: float | None = None,
 ) -> dict[str, Any]:
     enqueue = enqueue_audit_jobs(
         db_path,
@@ -467,17 +738,38 @@ def enqueue_and_run_supervised_audit(
         max_attempts=max_attempts,
         lane=lane,
     )
-    summary = run_supervised_audit_queue(
-        db_path=db_path,
-        out_dir=out_dir,
-        executor_config=executor_config,
-        run_id=run_id,
-        workers=workers,
-        job_timeout_s=job_timeout_s,
-        continue_on_timeout=continue_on_timeout,
-        lanes=[lane] if lane else None,
-    )
+    actual_queue_backend = "bulk" if queue_backend == "bulk" and not executor_config.keep_files and not executor_config.dry_run else "file"
+    if actual_queue_backend == "bulk":
+        summary = run_bulk_audit_queue(
+            db_path=db_path,
+            out_dir=out_dir,
+            executor_config=executor_config,
+            run_id=run_id,
+            workers=workers,
+            job_timeout_s=job_timeout_s,
+            lanes=[lane] if lane else None,
+            batch_size=bulk_batch_size,
+            import_mode=import_mode,
+            import_wall_s=import_wall_s,
+        )
+    else:
+        summary = run_supervised_audit_queue(
+            db_path=db_path,
+            out_dir=out_dir,
+            executor_config=executor_config,
+            run_id=run_id,
+            workers=workers,
+            job_timeout_s=job_timeout_s,
+            continue_on_timeout=continue_on_timeout,
+            lanes=[lane] if lane else None,
+            import_wall_s=import_wall_s,
+        )
+    summary["audit_queue_backend"] = actual_queue_backend
     summary["enqueue"] = enqueue
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+    (out / "server_summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     return summary
 
 
@@ -485,5 +777,6 @@ __all__ = [
     "SCHEMA_LEAN_WORKER_SUPERVISOR",
     "enqueue_and_run_supervised_audit",
     "materialize_queue_results",
+    "run_bulk_audit_queue",
     "run_supervised_audit_queue",
 ]

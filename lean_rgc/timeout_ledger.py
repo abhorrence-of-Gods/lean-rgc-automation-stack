@@ -8,6 +8,13 @@ import time
 
 
 SCHEMA_TIMEOUT_LEDGER = "lean-rgc-timeout-ledger-v63.0"
+TIMEOUT_SCOPES = {
+    "import_timeout",
+    "batch_timeout",
+    "tactic_timeout",
+    "worker_timeout",
+    "unknown_timeout",
+}
 
 
 def _now() -> float:
@@ -52,6 +59,7 @@ def ensure_timeout_schema(conn: sqlite3.Connection) -> None:
             stdout_tail TEXT,
             stderr_tail TEXT,
             worker_id TEXT,
+            timeout_scope TEXT NOT NULL DEFAULT 'unknown_timeout',
             detail_json TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_timeout_events_action ON timeout_events(action_id, tactic_hash);
@@ -59,6 +67,9 @@ def ensure_timeout_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_worker_events_worker ON worker_events(worker_id, event_type, ts);
         """
     )
+    cols = {str(r[1]) for r in cur.execute("PRAGMA table_info(timeout_events)").fetchall()}
+    if "timeout_scope" not in cols:
+        cur.execute("ALTER TABLE timeout_events ADD COLUMN timeout_scope TEXT NOT NULL DEFAULT 'unknown_timeout'")
     cur.execute("INSERT OR REPLACE INTO meta(key,value) VALUES (?,?)", ("timeout_ledger_schema_version", SCHEMA_TIMEOUT_LEDGER))
     conn.commit()
 
@@ -104,15 +115,17 @@ def record_timeout_event(
     stdout_tail: str = "",
     stderr_tail: str = "",
     worker_id: str = "",
+    timeout_scope: str = "tactic_timeout",
     detail: dict[str, Any] | None = None,
 ) -> None:
     ensure_timeout_schema(conn)
+    scope = timeout_scope if timeout_scope in TIMEOUT_SCOPES else "unknown_timeout"
     conn.execute(
         """
         INSERT INTO timeout_events(
             ts, job_id, task_id, action_id, tactic_hash, backend, lane,
-            timeout_s, elapsed_s, stdout_tail, stderr_tail, worker_id, detail_json
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+            timeout_s, elapsed_s, stdout_tail, stderr_tail, worker_id, timeout_scope, detail_json
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         (
             _now(),
@@ -127,6 +140,7 @@ def record_timeout_event(
             (stdout_tail or "")[-4000:],
             (stderr_tail or "")[-4000:],
             worker_id,
+            scope,
             _json(detail or {}),
         ),
     )
@@ -152,16 +166,26 @@ def timeout_ledger_report(db_path: str | Path, *, out_json: str | Path | None = 
             str(r["backend"]): int(r["n"])
             for r in conn.execute("SELECT backend, COUNT(*) AS n FROM timeout_events GROUP BY backend ORDER BY backend")
         }
+        by_scope = {
+            str(r["timeout_scope"] or "unknown_timeout"): int(r["n"])
+            for r in conn.execute("SELECT timeout_scope, COUNT(*) AS n FROM timeout_events GROUP BY timeout_scope ORDER BY timeout_scope")
+        }
         worker_restarts = int(
             conn.execute("SELECT COUNT(*) FROM worker_events WHERE event_type IN ('restart','killed_timeout')").fetchone()[0]
         )
         n_timeout = int(conn.execute("SELECT COUNT(*) FROM timeout_events").fetchone()[0])
+        n_tactic_timeout = int(by_scope.get("tactic_timeout", 0))
+        n_infra_timeout = int(n_timeout - n_tactic_timeout)
         rep = {
             "schema_version": SCHEMA_TIMEOUT_LEDGER,
             "db_path": str(db_path),
             "n_timeout": n_timeout,
+            "n_tactic_timeout": n_tactic_timeout,
+            "n_infra_timeout": n_infra_timeout,
+            "n_quarantine_suppressed_by_import_cost": n_infra_timeout,
             "worker_restarts": worker_restarts,
             "by_backend": by_backend,
+            "by_scope": by_scope,
             "top_actions": by_action,
             "top_tactic_hashes": by_hash,
         }
@@ -176,6 +200,7 @@ def timeout_ledger_report(db_path: str | Path, *, out_json: str | Path | None = 
 
 __all__ = [
     "SCHEMA_TIMEOUT_LEDGER",
+    "TIMEOUT_SCOPES",
     "connect_timeout_db",
     "ensure_timeout_schema",
     "record_timeout_event",
