@@ -117,6 +117,18 @@ from .dost_automation import (
     build_dost_audit_reports,
     run_dost_automation_stack,
 )
+from .response_completion import build_response_completion
+from .relaxed_species import write_relaxed_species_registry
+from .crg_registry import build_repair_species_registry
+from .crg_problem import build_crg_problems
+from .nonlinear_generator import generate_nonlinear_repair_candidates
+from .crg_hardening import harden_crg_candidates
+from .crg_audit import audit_crg_candidates
+from .hardening_gap_report import build_hardening_gap_report
+from .repair_gradient_flow import repair_gradient_flow_steps
+from .concept_geometry import build_concept_geometry
+from .concept_search import search_concepts
+from .concept_hardening import decode_concepts_to_repair_atoms
 from .source_budget_scheduler import source_budget_schedule_from_files, SourceBudgetConfig, _read_json_or_file as _read_source_budget_json_or_file
 from .defect_ontology import reconcile_defect_ontology
 from .arithmetic_teacher import generate_arithmetic_teacher_graph, audit_arithmetic_teacher_transitions
@@ -759,6 +771,164 @@ def cmd_dost_stack(args):
         max_features=getattr(args, "max_features", 512),
         max_selected_per_dual=getattr(args, "max_selected_per_dual", 8),
         kernel_state_mode=getattr(args, "kernel_state_mode", "features"),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_response_completion(args):
+    weights = None
+    if getattr(args, "weights", None):
+        weights = args.weights
+    summary = build_response_completion(
+        out=args.out,
+        responses_path=getattr(args, "responses", None),
+        fingerprints_path=getattr(args, "fingerprints", None),
+        action_geometry_path=getattr(args, "action_geometry", None),
+        premise_registry_path=getattr(args, "premise_registry", None),
+        weights=weights,
+        topology=getattr(args, "topology", "weighted_projective"),
+        paid_cone_keys=list(getattr(args, "paid_cone_key", []) or []),
+        probe_family_id=getattr(args, "probe_family_id", None),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_relaxed_species_registry(args):
+    summary = write_relaxed_species_registry(
+        out=args.out,
+        summary_out=getattr(args, "summary_out", None),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_repair_species_registry(args):
+    summary = build_repair_species_registry(
+        out=args.out,
+        summary_out=getattr(args, "summary_out", None),
+        actions_path=getattr(args, "actions", None),
+        action_geometry_path=getattr(args, "action_geometry", None),
+        premise_registry_path=getattr(args, "premise_registry", None),
+        quotient_coordinates_path=getattr(args, "quotient_coordinates", None),
+        carrier_quotient_path=getattr(args, "carrier_quotient", None),
+        tower_retrieval_path=getattr(args, "tower_retrieval", None),
+        repair_faces_path=getattr(args, "repair_faces", None),
+        include_species_rows=not getattr(args, "atoms_only", False),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_crg_build_problems(args):
+    budget = {}
+    for key in ["cost_max", "audit_risk_max", "source_risk_max", "ghost_risk_max", "hardening_cost_max"]:
+        value = getattr(args, key, None)
+        if value is not None:
+            budget[key] = value
+    summary = build_crg_problems(
+        out=args.out,
+        repair_faces_path=getattr(args, "repair_faces", None),
+        tower_dual_components_path=getattr(args, "tower_dual_components", None),
+        response_completion_path=getattr(args, "response_completion", None),
+        summary_out=getattr(args, "summary_out", None),
+        budget=budget or None,
+        repair_space_scope=getattr(args, "repair_space_scope", "relaxed"),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_crg_optimize(args):
+    summary = generate_nonlinear_repair_candidates(
+        problems_path=args.problems,
+        registry_path=args.registry,
+        response_completion_path=getattr(args, "response_completion", None),
+        out=args.out,
+        summary_out=getattr(args, "summary_out", None),
+        optimizer=getattr(args, "optimizer", "convex_mixture"),
+        temperature=getattr(args, "temperature", 1.0),
+        top_k=getattr(args, "top_k", 16),
+        cost_weight=getattr(args, "cost_weight", 0.0),
+        audit_weight=getattr(args, "audit_weight", 0.0),
+        source_weight=getattr(args, "source_weight", 0.0),
+        ghost_weight=getattr(args, "ghost_weight", 0.0),
+        hardening_weight=getattr(args, "hardening_weight", 0.0),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_crg_harden(args):
+    summary = harden_crg_candidates(
+        candidates_path=args.candidates,
+        out_attempts=args.out_attempts,
+        out_actions=getattr(args, "out_actions", None),
+        summary_out=getattr(args, "summary_out", None),
+        method=getattr(args, "method", "mixture_to_beam"),
+        top_k=getattr(args, "top_k", 3),
+        include_sequence=not getattr(args, "no_sequence", False),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_crg_audit(args):
+    summary = audit_crg_candidates(
+        candidates_path=args.candidates,
+        hardening_attempts_path=args.hardening_attempts,
+        audited_responses_path=getattr(args, "audited_responses", None),
+        out_rows=args.out,
+        poms_out=getattr(args, "poms_out", None),
+        summary_out=getattr(args, "summary_out", None),
+        max_hardening_gap=getattr(args, "max_hardening_gap", 0.25),
+        max_ghost_risk=getattr(args, "max_ghost_risk", 0.25),
+    )
+    if getattr(args, "gap_report_out", None):
+        build_hardening_gap_report(crg_audit_rows_path=args.out, out=args.gap_report_out)
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_repair_gradient_flow(args):
+    summary = repair_gradient_flow_steps(
+        problems_path=args.problems,
+        registry_path=args.registry,
+        response_completion_path=getattr(args, "response_completion", None),
+        previous_candidates_path=getattr(args, "previous_candidates", None),
+        out=args.out,
+        summary_out=getattr(args, "summary_out", None),
+        tau=getattr(args, "tau", 1.0),
+        steps=getattr(args, "steps", 1),
+        top_k=getattr(args, "top_k", 16),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_concept_geometry(args):
+    summary = build_concept_geometry(
+        out_dir=args.out,
+        taxonomy_path=getattr(args, "taxonomy", None),
+        selected_features_path=getattr(args, "selected_features", None),
+        summary_out=getattr(args, "summary_out", None),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_concept_search(args):
+    summary = search_concepts(
+        concept_points_path=args.concept_points,
+        concept_edges_path=getattr(args, "concept_edges", None),
+        out=args.out,
+        summary_out=getattr(args, "summary_out", None),
+        response_normal=getattr(args, "response_normal", None),
+        problems_path=getattr(args, "problems", None),
+        top_k=getattr(args, "top_k", 32),
+        mode=getattr(args, "mode", "response-nearest-neighbor"),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_concept_decode(args):
+    summary = decode_concepts_to_repair_atoms(
+        concept_search_path=args.concept_search,
+        concept_points_path=args.concept_points,
+        out=args.out,
+        summary_out=getattr(args, "summary_out", None),
+        top_k=getattr(args, "top_k", None),
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
 
@@ -2550,6 +2720,205 @@ def cmd_pipeline(args):
                             premise_quotient_audit_dir = out / 'premise_quotient_audit'
                             _pipeline_audit(tasks_for_pipeline, str(premise_quotient_actions_path), premise_quotient_audit_dir, getattr(args, 'premise_quotient_audit_max_actions', 16), state_candidates=False, candidate_mode='state')
                             cmd_action_report(argparse.Namespace(responses=str(premise_quotient_audit_dir/'responses.jsonl'), out=str(out/'premise_quotient_action_report.json'), csv_out=str(out/'premise_quotient_action_report.csv'), group_keys=None))
+    # v58-v62: DOST -> URS -> CRG -> CGT soft-search extension.  Generator
+    # outputs stay witness-only; POMS promotion remains the canonical gate.
+    crg_dir = None
+    crg_response_completion_path = None
+    crg_registry_path = None
+    crg_problems_path = None
+    crg_relaxed_candidates_path = None
+    crg_hardening_attempts_path = None
+    crg_hard_candidates_path = None
+    crg_candidate_audit_dir = None
+    crg_audit_rows_path = None
+    crg_gap_report_path = None
+    crg_poms_evidence_path = None
+    crg_robust_acceptance_rows_path = None
+    crg_robust_acceptance_report_path = None
+    crg_robust_accepted_actions_path = None
+    repair_flow_steps_path = None
+    concept_geometry_dir = None
+    concept_points_path = None
+    concept_edges_path = None
+    concept_search_rows_path = None
+    concept_decoded_atoms_path = None
+    crg_requested = any(
+        getattr(args, name, False)
+        for name in (
+            'crg',
+            'crg_build_problems',
+            'crg_optimize',
+            'crg_hardening',
+            'audit_crg_candidates',
+            'crg_robust_accept',
+            'crg_audit',
+            'crg_poms_bridge',
+            'repair_gradient_flow',
+            'concept_geometry',
+            'concept_search',
+            'concept_decode',
+        )
+    )
+    if crg_requested:
+        crg_dir = out / 'crg'
+        crg_dir.mkdir(parents=True, exist_ok=True)
+
+        def _existing_path(path_obj):
+            if not path_obj:
+                return None
+            p = Path(path_obj)
+            return p if p.exists() else None
+
+        response_input_path = _existing_path(audit_dir / 'responses.jsonl')
+        premise_response_registry_path = _existing_path(out / 'premise_response' / 'premise_response_registry.jsonl')
+        quotient_coordinates_path = _existing_path(out / 'quotient_coordinates' / 'quotient_coordinates.jsonl')
+        carrier_quotient_path = _existing_path(out / 'carrier_quotient' / 'carrier_quotient_coordinates.jsonl')
+        tower_dual_components_path = _existing_path(Path(obstruction_tower_dir) / 'tower_dual_components.jsonl') if locals().get('obstruction_tower_dir') else None
+        tower_retrieval_path = _existing_path(Path(obstruction_tower_dir) / 'tower_retrieval_candidates.jsonl') if locals().get('obstruction_tower_dir') else None
+
+        crg_response_completion_path = crg_dir / 'response_completion.json'
+        build_response_completion(
+            out=crg_response_completion_path,
+            responses_path=response_input_path,
+            fingerprints_path=_existing_path(locals().get('premise_contextual_fingerprints_path')),
+            action_geometry_path=_existing_path(locals().get('action_geometry_registry_path')),
+            premise_registry_path=premise_response_registry_path,
+            topology='weighted_projective',
+        )
+
+        crg_registry_path = crg_dir / 'repair_species_registry.jsonl'
+        build_repair_species_registry(
+            out=crg_registry_path,
+            summary_out=crg_dir / 'repair_species_registry_summary.json',
+            actions_path=_existing_path(args.actions),
+            action_geometry_path=_existing_path(locals().get('action_geometry_registry_path')),
+            premise_registry_path=premise_response_registry_path,
+            quotient_coordinates_path=quotient_coordinates_path,
+            carrier_quotient_path=carrier_quotient_path,
+            tower_retrieval_path=tower_retrieval_path,
+            repair_faces_path=_existing_path(locals().get('repair_face_ledger_path')),
+        )
+
+        crg_problems_path = crg_dir / 'crg_problems.jsonl'
+        build_crg_problems(
+            out=crg_problems_path,
+            repair_faces_path=_existing_path(locals().get('repair_face_ledger_path')),
+            tower_dual_components_path=tower_dual_components_path,
+            response_completion_path=crg_response_completion_path,
+            summary_out=crg_dir / 'crg_problems_summary.json',
+            repair_space_scope='relaxed',
+        )
+
+        if getattr(args, 'concept_geometry', False) or getattr(args, 'concept_search', False) or getattr(args, 'concept_decode', False):
+            concept_geometry_dir = out / 'concept_geometry'
+            concept_geometry_dir.mkdir(parents=True, exist_ok=True)
+            build_concept_geometry(
+                out_dir=concept_geometry_dir,
+                taxonomy_path=_existing_path(locals().get('face_taxonomy_path')),
+                selected_features_path=_existing_path(locals().get('dost_selected_features_path')),
+                summary_out=concept_geometry_dir / 'concept_geometry_summary.json',
+            )
+            concept_points_path = concept_geometry_dir / 'concept_points.jsonl'
+            concept_edges_path = concept_geometry_dir / 'concept_edges.jsonl'
+            if getattr(args, 'concept_search', False) or getattr(args, 'concept_decode', False):
+                concept_search_rows_path = concept_geometry_dir / 'concept_search_rows.jsonl'
+                search_concepts(
+                    concept_points_path=concept_points_path,
+                    concept_edges_path=concept_edges_path,
+                    out=concept_search_rows_path,
+                    summary_out=concept_geometry_dir / 'concept_search_summary.json',
+                    problems_path=crg_problems_path,
+                    top_k=getattr(args, 'concept_search_top_k', 32),
+                    mode=getattr(args, 'concept_search_mode', 'response-nearest-neighbor'),
+                )
+            if getattr(args, 'concept_decode', False) and concept_search_rows_path and concept_search_rows_path.exists():
+                concept_decoded_atoms_path = concept_geometry_dir / 'concept_decoded_repair_atoms.jsonl'
+                decode_concepts_to_repair_atoms(
+                    concept_search_path=concept_search_rows_path,
+                    concept_points_path=concept_points_path,
+                    out=concept_decoded_atoms_path,
+                    summary_out=concept_geometry_dir / 'concept_decode_summary.json',
+                    top_k=getattr(args, 'concept_search_top_k', 32),
+                )
+                decoded_atoms = read_jsonl(concept_decoded_atoms_path)
+                if decoded_atoms:
+                    write_jsonl(crg_registry_path, read_jsonl(crg_registry_path) + decoded_atoms)
+
+        if getattr(args, 'crg', False) or getattr(args, 'crg_optimize', False):
+            crg_relaxed_candidates_path = crg_dir / 'relaxed_candidates.jsonl'
+            generate_nonlinear_repair_candidates(
+                problems_path=crg_problems_path,
+                registry_path=crg_registry_path,
+                out=crg_relaxed_candidates_path,
+                response_completion_path=crg_response_completion_path,
+                summary_out=crg_dir / 'relaxed_candidates_summary.json',
+                optimizer=getattr(args, 'crg_optimizer', 'convex_mixture'),
+                temperature=getattr(args, 'crg_temperature', 1.0),
+                top_k=getattr(args, 'crg_top_k', 16),
+                cost_weight=getattr(args, 'crg_cost_weight', 0.0),
+                audit_weight=getattr(args, 'crg_audit_weight', 0.0),
+                source_weight=getattr(args, 'crg_source_weight', 0.0),
+                ghost_weight=getattr(args, 'crg_ghost_weight', 0.0),
+                hardening_weight=getattr(args, 'crg_hardening_weight', 0.0),
+            )
+        if (getattr(args, 'crg', False) or getattr(args, 'crg_hardening', False)) and crg_relaxed_candidates_path and crg_relaxed_candidates_path.exists():
+            crg_hardening_attempts_path = crg_dir / 'hardening_attempts.jsonl'
+            crg_hard_candidates_path = crg_dir / 'hard_candidates.jsonl'
+            harden_crg_candidates(
+                candidates_path=crg_relaxed_candidates_path,
+                out_attempts=crg_hardening_attempts_path,
+                out_actions=crg_hard_candidates_path,
+                summary_out=crg_dir / 'hardening_summary.json',
+                method='mixture_to_beam',
+                top_k=getattr(args, 'crg_hardening_top_k', 3),
+            )
+        if getattr(args, 'audit_crg_candidates', False) and crg_hard_candidates_path and crg_hard_candidates_path.exists():
+            crg_candidate_audit_dir = crg_dir / 'candidate_audit'
+            _pipeline_audit(tasks_for_pipeline, str(crg_hard_candidates_path), crg_candidate_audit_dir, getattr(args, 'crg_audit_max_actions', 16), state_candidates=False, candidate_mode='state')
+            cmd_action_report(argparse.Namespace(responses=str(crg_candidate_audit_dir/'responses.jsonl'), out=str(crg_dir/'candidate_audit_action_report.json'), csv_out=str(crg_dir/'candidate_audit_action_report.csv'), group_keys=None))
+        if getattr(args, 'crg_robust_accept', False) and crg_candidate_audit_dir and (crg_candidate_audit_dir / 'responses.jsonl').exists():
+            crg_robust_acceptance_rows_path = crg_dir / 'crg_robust_acceptance_rows.jsonl'
+            crg_robust_acceptance_report_path = crg_dir / 'crg_robust_acceptance_report.json'
+            crg_robust_accepted_actions_path = crg_dir / 'crg_robust_accepted_actions.jsonl'
+            run_robust_acceptance(
+                audit_dir / 'responses.jsonl',
+                crg_candidate_audit_dir / 'responses.jsonl',
+                crg_robust_acceptance_rows_path,
+                summary_out=crg_robust_acceptance_report_path,
+                accepted_actions_out=crg_robust_accepted_actions_path,
+                margin_threshold=0.0,
+                cost_weight=0.05,
+                carrier_bonus=0.7,
+                max_per_task=16,
+            )
+        if (getattr(args, 'crg', False) or getattr(args, 'crg_audit', False)) and crg_relaxed_candidates_path and crg_hardening_attempts_path:
+            crg_audit_rows_path = crg_dir / 'crg_audit_rows.jsonl'
+            crg_gap_report_path = crg_dir / 'hardening_gap_report.json'
+            crg_poms_evidence_path = crg_dir / 'crg_poms_evidence.jsonl' if (getattr(args, 'crg', False) or getattr(args, 'crg_poms_bridge', False)) else None
+            audited_responses_path = crg_candidate_audit_dir / 'responses.jsonl' if crg_candidate_audit_dir and (crg_candidate_audit_dir / 'responses.jsonl').exists() else None
+            audit_crg_candidates(
+                candidates_path=crg_relaxed_candidates_path,
+                hardening_attempts_path=crg_hardening_attempts_path,
+                audited_responses_path=audited_responses_path,
+                out_rows=crg_audit_rows_path,
+                poms_out=crg_poms_evidence_path,
+                summary_out=crg_dir / 'crg_audit_summary.json',
+            )
+            build_hardening_gap_report(
+                crg_audit_rows_path=crg_audit_rows_path,
+                out=crg_gap_report_path,
+            )
+        if getattr(args, 'repair_gradient_flow', False):
+            repair_flow_steps_path = crg_dir / 'repair_flow_steps.jsonl'
+            repair_gradient_flow_steps(
+                problems_path=crg_problems_path,
+                registry_path=crg_registry_path,
+                out=repair_flow_steps_path,
+                response_completion_path=crg_response_completion_path,
+                previous_candidates_path=crg_relaxed_candidates_path if crg_relaxed_candidates_path and crg_relaxed_candidates_path.exists() else None,
+                summary_out=crg_dir / 'repair_flow_summary.json',
+                top_k=getattr(args, 'crg_top_k', 16),
+            )
     # v37: source-budget scheduler across candidate families.  This is a
     # finite audit-budget allocation chart, not a canonical selector.
     source_budget_dir = None
@@ -2577,6 +2946,7 @@ def cmd_pipeline(args):
         _add_source_spec('premise_response', locals().get('retrieved_actions'))
         _add_source_spec('premise_contextual', locals().get('premise_contextual_candidates_path'))
         _add_source_spec('premise_quotient', locals().get('premise_quotient_actions_path'))
+        _add_source_spec('crg_hardening', locals().get('crg_hard_candidates_path'))
         if source_specs:
             source_budget_actions_path = source_budget_dir / 'source_budget_actions.jsonl'
             source_budget_report_path = source_budget_dir / 'source_budget_report.json'
@@ -2756,6 +3126,27 @@ def cmd_pipeline(args):
         'source_budget_report': str(source_budget_report_path) if locals().get('source_budget_report_path') else None,
         'source_budget_audit_dir': str(source_budget_audit_dir) if locals().get('source_budget_audit_dir') else None,
         'source_budget_action_report': str(out/'source_budget_action_report.json') if locals().get('source_budget_audit_dir') else None,
+        'crg_dir': str(crg_dir) if locals().get('crg_dir') else None,
+        'crg_response_completion': str(crg_response_completion_path) if locals().get('crg_response_completion_path') else None,
+        'crg_repair_species_registry': str(crg_registry_path) if locals().get('crg_registry_path') else None,
+        'crg_problems': str(crg_problems_path) if locals().get('crg_problems_path') else None,
+        'crg_relaxed_candidates': str(crg_relaxed_candidates_path) if locals().get('crg_relaxed_candidates_path') else None,
+        'crg_hardening_attempts': str(crg_hardening_attempts_path) if locals().get('crg_hardening_attempts_path') else None,
+        'crg_hard_candidates': str(crg_hard_candidates_path) if locals().get('crg_hard_candidates_path') else None,
+        'crg_candidate_audit_dir': str(crg_candidate_audit_dir) if locals().get('crg_candidate_audit_dir') else None,
+        'crg_candidate_audit_responses': str(crg_candidate_audit_dir / 'responses.jsonl') if locals().get('crg_candidate_audit_dir') else None,
+        'crg_audit_rows': str(crg_audit_rows_path) if locals().get('crg_audit_rows_path') else None,
+        'crg_hardening_gap_report': str(crg_gap_report_path) if locals().get('crg_gap_report_path') else None,
+        'crg_poms_evidence': str(crg_poms_evidence_path) if locals().get('crg_poms_evidence_path') else None,
+        'crg_robust_acceptance_rows': str(crg_robust_acceptance_rows_path) if locals().get('crg_robust_acceptance_rows_path') else None,
+        'crg_robust_acceptance_report': str(crg_robust_acceptance_report_path) if locals().get('crg_robust_acceptance_report_path') else None,
+        'crg_robust_accepted_actions': str(crg_robust_accepted_actions_path) if locals().get('crg_robust_accepted_actions_path') else None,
+        'repair_flow_steps': str(repair_flow_steps_path) if locals().get('repair_flow_steps_path') else None,
+        'concept_geometry_dir': str(concept_geometry_dir) if locals().get('concept_geometry_dir') else None,
+        'concept_points': str(concept_points_path) if locals().get('concept_points_path') else None,
+        'concept_edges': str(concept_edges_path) if locals().get('concept_edges_path') else None,
+        'concept_search_rows': str(concept_search_rows_path) if locals().get('concept_search_rows_path') else None,
+        'concept_decoded_atoms': str(concept_decoded_atoms_path) if locals().get('concept_decoded_atoms_path') else None,
         'response_quotient_dir': str(response_quotient_dir) if response_quotient_dir else None,
         'response_quotient_registry': str(response_quotient_registry_path) if response_quotient_registry_path else None,
         'response_quotient_representatives': str(response_quotient_representatives_path) if response_quotient_representatives_path else None,
@@ -4195,6 +4586,32 @@ def add_premise_contextual_pipeline_args(parser: argparse.ArgumentParser) -> Non
     parser.add_argument('--premise-quotient-audit-max-actions', type=int, default=16)
 
 
+def add_crg_pipeline_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument('--crg', action='store_true')
+    parser.add_argument('--crg-build-problems', action='store_true')
+    parser.add_argument('--crg-optimize', action='store_true')
+    parser.add_argument('--crg-hardening', action='store_true')
+    parser.add_argument('--audit-crg-candidates', action='store_true')
+    parser.add_argument('--crg-robust-accept', action='store_true')
+    parser.add_argument('--crg-audit', action='store_true')
+    parser.add_argument('--crg-poms-bridge', action='store_true')
+    parser.add_argument('--crg-optimizer', choices=['linear','linear_support','convex','convex_mixture','LinearSupportOptimizer','ConvexMixtureOptimizer'], default='convex_mixture')
+    parser.add_argument('--crg-top-k', type=int, default=16)
+    parser.add_argument('--crg-temperature', type=float, default=1.0)
+    parser.add_argument('--crg-cost-weight', type=float, default=0.0)
+    parser.add_argument('--crg-audit-weight', type=float, default=0.0)
+    parser.add_argument('--crg-source-weight', type=float, default=0.0)
+    parser.add_argument('--crg-ghost-weight', type=float, default=0.0)
+    parser.add_argument('--crg-hardening-weight', type=float, default=0.0)
+    parser.add_argument('--crg-hardening-top-k', type=int, default=3)
+    parser.add_argument('--crg-audit-max-actions', type=int, default=24)
+    parser.add_argument('--concept-geometry', action='store_true')
+    parser.add_argument('--concept-search', action='store_true')
+    parser.add_argument('--concept-decode', action='store_true')
+    parser.add_argument('--concept-search-top-k', type=int, default=32)
+    parser.add_argument('--concept-search-mode', choices=['response-nearest-neighbor','operation-graph','operation-graph expansion','operation_graph','all'], default='response-nearest-neighbor')
+
+
 
 def cmd_source_budget_schedule(args):
     response_normal = _read_source_budget_json_or_file(getattr(args, "response_normal", None) or getattr(args, "response_normal_json", None))
@@ -4470,6 +4887,17 @@ def build_parser() -> argparse.ArgumentParser:
     dce=sub.add_parser('dost-compile-experiment'); dce.add_argument('--auto-plan', required=True); dce.add_argument('--out', required=True); dce.add_argument('--notebook-out'); dce.add_argument('--base-command', default='lean-rgc pipeline'); dce.set_defaults(func=cmd_dost_compile_experiment)
     dar=sub.add_parser('dost-audit-reports'); dar.add_argument('--out', required=True); dar.add_argument('--run-dir'); dar.add_argument('--server-summary'); dar.add_argument('--fingerprint-report'); dar.add_argument('--fingerprints'); dar.add_argument('--premise-use-rows'); dar.add_argument('--classes'); dar.add_argument('--validation'); dar.add_argument('--validation-report'); dar.add_argument('--taxonomy'); dar.add_argument('--taxonomy-report'); dar.add_argument('--retrieval-faces'); dar.add_argument('--tower-summary'); dar.add_argument('--tower-next-actions'); dar.add_argument('--dost-report'); dar.add_argument('--feature-selection-report'); dar.add_argument('--selected-features'); dar.add_argument('--responses'); dar.add_argument('--actions'); dar.set_defaults(func=cmd_dost_audit_reports)
     dst=sub.add_parser('dost-stack'); dst.add_argument('--input', required=True); dst.add_argument('--out', required=True); dst.add_argument('--taxonomy'); dst.add_argument('--tower-next-actions'); dst.add_argument('--tower-summary'); dst.add_argument('--max-features', type=int, default=512); dst.add_argument('--max-selected-per-dual', type=int, default=8); dst.add_argument('--kernel-state-mode', choices=['none','summary','features','full'], default='features'); dst.set_defaults(func=cmd_dost_stack)
+    rcpl=sub.add_parser('response-completion'); rcpl.add_argument('--out', required=True); rcpl.add_argument('--responses'); rcpl.add_argument('--fingerprints'); rcpl.add_argument('--action-geometry'); rcpl.add_argument('--premise-registry'); rcpl.add_argument('--weights'); rcpl.add_argument('--topology', default='weighted_projective'); rcpl.add_argument('--paid-cone-key', action='append', default=[]); rcpl.add_argument('--probe-family-id'); rcpl.set_defaults(func=cmd_response_completion)
+    rsp=sub.add_parser('relaxed-species-registry'); rsp.add_argument('--out', required=True); rsp.add_argument('--summary-out'); rsp.set_defaults(func=cmd_relaxed_species_registry)
+    rsr=sub.add_parser('repair-species-registry'); rsr.add_argument('--out', required=True); rsr.add_argument('--summary-out'); rsr.add_argument('--actions'); rsr.add_argument('--action-geometry'); rsr.add_argument('--premise-registry'); rsr.add_argument('--quotient-coordinates'); rsr.add_argument('--carrier-quotient'); rsr.add_argument('--tower-retrieval'); rsr.add_argument('--repair-faces'); rsr.add_argument('--atoms-only', action='store_true'); rsr.set_defaults(func=cmd_repair_species_registry)
+    cbp=sub.add_parser('crg-build-problems'); cbp.add_argument('--out', required=True); cbp.add_argument('--repair-faces'); cbp.add_argument('--tower-dual-components'); cbp.add_argument('--response-completion'); cbp.add_argument('--summary-out'); cbp.add_argument('--repair-space-scope', choices=['active','known','relaxed','concept'], default='relaxed'); cbp.add_argument('--cost-max', type=float); cbp.add_argument('--audit-risk-max', type=float); cbp.add_argument('--source-risk-max', type=float); cbp.add_argument('--ghost-risk-max', type=float); cbp.add_argument('--hardening-cost-max', type=float); cbp.set_defaults(func=cmd_crg_build_problems)
+    copt=sub.add_parser('crg-optimize'); copt.add_argument('--problems', required=True); copt.add_argument('--registry', required=True); copt.add_argument('--out', required=True); copt.add_argument('--response-completion'); copt.add_argument('--summary-out'); copt.add_argument('--optimizer', choices=['linear','linear_support','convex','convex_mixture','LinearSupportOptimizer','ConvexMixtureOptimizer'], default='convex_mixture'); copt.add_argument('--temperature', type=float, default=1.0); copt.add_argument('--top-k', type=int, default=16); copt.add_argument('--cost-weight', type=float, default=0.0); copt.add_argument('--audit-weight', type=float, default=0.0); copt.add_argument('--source-weight', type=float, default=0.0); copt.add_argument('--ghost-weight', type=float, default=0.0); copt.add_argument('--hardening-weight', type=float, default=0.0); copt.set_defaults(func=cmd_crg_optimize)
+    ch=sub.add_parser('crg-harden'); ch.add_argument('--candidates', required=True); ch.add_argument('--out-attempts', required=True); ch.add_argument('--out-actions'); ch.add_argument('--summary-out'); ch.add_argument('--method', choices=['mixture_to_beam','mixture_to_sequence'], default='mixture_to_beam'); ch.add_argument('--top-k', type=int, default=3); ch.add_argument('--no-sequence', action='store_true'); ch.set_defaults(func=cmd_crg_harden)
+    caud=sub.add_parser('crg-audit'); caud.add_argument('--candidates', required=True); caud.add_argument('--hardening-attempts', required=True); caud.add_argument('--audited-responses'); caud.add_argument('--out', required=True); caud.add_argument('--poms-out'); caud.add_argument('--summary-out'); caud.add_argument('--gap-report-out'); caud.add_argument('--max-hardening-gap', type=float, default=0.25); caud.add_argument('--max-ghost-risk', type=float, default=0.25); caud.set_defaults(func=cmd_crg_audit)
+    rgf=sub.add_parser('repair-gradient-flow'); rgf.add_argument('--problems', required=True); rgf.add_argument('--registry', required=True); rgf.add_argument('--out', required=True); rgf.add_argument('--response-completion'); rgf.add_argument('--previous-candidates'); rgf.add_argument('--summary-out'); rgf.add_argument('--tau', type=float, default=1.0); rgf.add_argument('--steps', type=int, default=1); rgf.add_argument('--top-k', type=int, default=16); rgf.set_defaults(func=cmd_repair_gradient_flow)
+    cgeo=sub.add_parser('concept-geometry'); cgeo.add_argument('--out', required=True); cgeo.add_argument('--taxonomy'); cgeo.add_argument('--selected-features'); cgeo.add_argument('--summary-out'); cgeo.set_defaults(func=cmd_concept_geometry)
+    csrch=sub.add_parser('concept-search'); csrch.add_argument('--concept-points', required=True); csrch.add_argument('--concept-edges'); csrch.add_argument('--out', required=True); csrch.add_argument('--summary-out'); csrch.add_argument('--response-normal'); csrch.add_argument('--problems'); csrch.add_argument('--top-k', type=int, default=32); csrch.add_argument('--mode', choices=['response-nearest-neighbor','operation-graph','operation-graph expansion','operation_graph','all'], default='response-nearest-neighbor'); csrch.set_defaults(func=cmd_concept_search)
+    cdec=sub.add_parser('concept-decode'); cdec.add_argument('--concept-search', required=True); cdec.add_argument('--concept-points', required=True); cdec.add_argument('--out', required=True); cdec.add_argument('--summary-out'); cdec.add_argument('--top-k', type=int); cdec.set_defaults(func=cmd_concept_decode)
     cact=sub.add_parser('carrier-actions'); cact.add_argument('--proposals', required=True); cact.add_argument('--out', required=True); cact.add_argument('--prefix', default='carrier'); cact.add_argument('--max-actions-per-context', type=int, default=8); cact.set_defaults(func=cmd_carrier_actions)
     acact=sub.add_parser('accepted-carrier-actions'); acact.add_argument('--accepted', required=True); acact.add_argument('--out', required=True); acact.add_argument('--min-margin', type=float, default=0.0); acact.add_argument('--include-rejected', action='store_true'); acact.set_defaults(func=cmd_accepted_carrier_actions)
     ma=sub.add_parser('merge-actions'); ma.add_argument('--inputs', nargs='+', required=True); ma.add_argument('--out', required=True); ma.set_defaults(func=cmd_merge_actions)
@@ -4512,7 +4940,7 @@ def build_parser() -> argparse.ArgumentParser:
     cr=sub.add_parser('compare-runs'); cr.add_argument('--runs', nargs='+', required=True); cr.add_argument('--out-json'); cr.add_argument('--out-csv'); cr.set_defaults(func=cmd_compare_runs)
     sr=sub.add_parser('stage-report'); sr.add_argument('--run-dir'); sr.add_argument('--stage', action='append', help='NAME=responses.jsonl or responses.jsonl; may be repeated'); sr.add_argument('--out', required=True); sr.add_argument('--csv-out'); sr.set_defaults(func=cmd_stage_report)
     rp=sub.add_parser('report'); rp.add_argument('--run-dir', required=True); rp.add_argument('--out'); rp.set_defaults(func=cmd_report)
-    pipe=sub.add_parser('pipeline', conflict_handler='resolve'); pipe.add_argument('--tasks', required=True); pipe.add_argument('--actions'); pipe.add_argument('--out', required=True); pipe.add_argument('--expose-frontier', action='store_true'); pipe.add_argument('--expose-max-exposures', type=int, default=8); pipe.add_argument('--expose-no-identity', action='store_true'); pipe.add_argument('--dry-run', action='store_true'); pipe.add_argument('--jobs', type=int, default=1); pipe.add_argument('--audit-mode', choices=['batch','bulk','server'], default='batch'); pipe.add_argument('--bulk-batch-size', type=int, default=64); pipe.add_argument('--max-actions', type=int, default=32); pipe.add_argument('--frontier-normalize', action='store_true'); pipe.add_argument('--frontier-max-prefixes', type=int, default=8); pipe.add_argument('--frontier-include-identity', action='store_true'); pipe.add_argument('--candidate-mode', choices=['basic','state'], default='state'); pipe.add_argument('--state-candidates', action='store_true'); pipe.add_argument('--quotient-tolerance', type=float, default=0.25); pipe.add_argument('--carrier-threshold', type=float, default=0.1); pipe.add_argument('--lean-cmd', default='lake env lean'); pipe.add_argument('--workdir'); pipe.add_argument('--timeout-s', type=float, default=20.0); pipe.add_argument('--keep-files', action='store_true'); pipe.add_argument('--cache-dir'); pipe.add_argument('--trace-state', action='store_true'); pipe.add_argument('--server-cmd'); pipe.add_argument('--server-backend', choices=['auto','dry_run','file','file_fallback','jsonl','persistent','native'], default='auto'); pipe.add_argument('--server-no-fallback', action='store_true'); pipe.add_argument('--native-exec-mode', choices=['source_check','heuristic','kernel_rpc'], default='source_check'); pipe.add_argument('--audit-exposures', action='store_true'); pipe.add_argument('--exposure-audit-max-actions', type=int, default=8); pipe.add_argument('--import-mode', choices=['preserve','auto','core','mathlib'], default='auto'); pipe.add_argument('--resume', action='store_true'); pipe.add_argument('--flush-every', type=int, default=50); pipe.add_argument('--fit-gamma', action='store_true'); pipe.add_argument('--gamma-horizon', type=int, default=4); pipe.add_argument('--gamma-transition-learner', action='store_true'); pipe.add_argument('--gamma-transition-min-count', type=int, default=2); pipe.add_argument('--gamma-transition-shrink', type=float, default=4.0); pipe.add_argument('--gamma-transition-ridge', type=float, default=1e-3); pipe.add_argument('--gamma-transition-holdout-fraction', type=float, default=0.25); pipe.add_argument('--gamma-transition-teacher-weight', type=float, default=0.25); pipe.add_argument('--gamma-transition-include-matrices', action='store_true'); pipe.add_argument('--gamma-transition-patch-action-geometry', action='store_true'); pipe.add_argument('--arithmetic-teacher-graph', action='store_true'); pipe.add_argument('--arithmetic-teacher-identities'); pipe.add_argument('--arithmetic-teacher-structured-states'); pipe.add_argument('--arithmetic-teacher-max-transforms-per-state', type=int, default=32); pipe.add_argument('--arithmetic-teacher-no-actions', action='store_true'); pipe.add_argument('--audit-arithmetic-teacher-candidates', action='store_true'); pipe.add_argument('--arithmetic-teacher-audit-max-actions', type=int, default=16); pipe.add_argument('--arithmetic-teacher-kernel-audit', action='store_true'); pipe.add_argument('--arithmetic-teacher-kernel-audit-max-transitions', type=int, default=32); pipe.add_argument('--arithmetic-teacher-cocycle-audit', action='store_true'); pipe.add_argument('--arithmetic-teacher-cocycle-compositions'); pipe.add_argument('--arithmetic-teacher-cocycle-min-count', type=int, default=1); pipe.add_argument('--arithmetic-teacher-cocycle-accept-threshold', type=float, default=1.0); pipe.add_argument('--arithmetic-teacher-cocycle-min-verified-rate', type=float, default=0.0); pipe.add_argument('--arithmetic-teacher-cocycle-max-tail-radius', type=float); pipe.add_argument('--arithmetic-teacher-cocycle-max-auto-pairs', type=int, default=0); pipe.add_argument('--qgen', action='store_true'); pipe.add_argument('--qgen-ridge', type=float, default=1e-4); pipe.add_argument('--qgen-max-mass', type=float, default=1.0); pipe.add_argument('--carrier-quotient', action='store_true'); pipe.add_argument('--carrier-quotient-ridge', type=float, default=1e-4); pipe.add_argument('--carrier-quotient-max-mass', type=float, default=1.0); pipe.add_argument('--carrier-quotient-cosine-threshold', type=float, default=0.85); pipe.add_argument('--carrier-quotient-min-states', type=int, default=1); pipe.add_argument('--carrier-quotient-top-action-scores', type=int, default=128); pipe.add_argument('--carrier-quotient-margin-threshold', type=float, default=0.0); pipe.add_argument('--carrier-quotient-validate', action='store_true'); pipe.add_argument('--carrier-quotient-no-infer-defect-from-violations', action='store_true'); pipe.add_argument('--qgen-top-defects', type=int, default=16); pipe.add_argument('--qgen-top-contexts', type=int, default=32); pipe.add_argument('--qgen-top-carriers', type=int, default=64); pipe.add_argument('--qgen-top-failures', type=int, default=32); pipe.add_argument('--qgen-margin-threshold', type=float, default=0.0); pipe.add_argument('--qgen-cost-weight', type=float, default=0.05); pipe.add_argument('--qgen-carrier-weight', type=float, default=0.25); pipe.add_argument('--qgen-audit-penalty', type=float, default=1.0); pipe.add_argument('--audit-qgen-candidates', action='store_true'); pipe.add_argument('--qgen-audit-max-actions', type=int, default=24); pipe.add_argument('--qgen-accept-coker', action='store_true'); pipe.add_argument('--qgen-accept-margin', type=float, default=0.0); pipe.add_argument('--qgen-accept-max-per-task', type=int, default=16); pipe.add_argument('--qgen-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--qgen-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--qgen-robust-accept', action='store_true'); pipe.add_argument('--qgen-registry-robust-accept', action='store_true'); pipe.add_argument('--qgen-robust-coker-accept', action='store_true'); pipe.add_argument('--qgen-registry-robust-coker-accept', action='store_true'); pipe.add_argument('--qgen-robust-coker-holdout-fraction', type=float, default=0.35); pipe.add_argument('--qgen-robust-coker-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--qgen-robust-coker-carrier-gain-weight', type=float, default=0.25); pipe.add_argument('--qgen-robust-coker-audit-penalty', type=float, default=1.0); pipe.add_argument('--qgen-robust-coker-require-success', action='store_true'); pipe.add_argument('--qgen-robust-z', type=float, default=1.0); pipe.add_argument('--qgen-robust-min-repeats', type=int, default=1); pipe.add_argument('--qgen-robust-min-success-rate', type=float, default=1.0); pipe.add_argument('--qgen-registry-candidates', action='store_true'); pipe.add_argument('--qgen-registry-max-candidates', type=int, default=64); pipe.add_argument('--audit-qgen-registry-candidates', action='store_true'); pipe.add_argument('--qgen-registry-audit-max-actions', type=int, default=16); pipe.add_argument('--qgen-registry-accept-coker', action='store_true'); pipe.add_argument('--qgen-registry-accept-margin', type=float, default=0.0); pipe.add_argument('--qgen-registry-accept-max-per-task', type=int, default=16); pipe.add_argument('--qgen-registry-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--qgen-registry-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--action-geometry', action='store_true'); pipe.add_argument('--action-geometry-retrieve', action='store_true'); pipe.add_argument('--action-geometry-use-qgen-normals', action='store_true'); pipe.add_argument('--action-geometry-top-k', type=int, default=32); pipe.add_argument('--action-geometry-min-count', type=int, default=1); pipe.add_argument('--action-geometry-tail-weight', type=float, default=0.25); pipe.add_argument('--action-geometry-cost-weight', type=float, default=0.05); pipe.add_argument('--action-geometry-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--action-geometry-audit-weight', type=float, default=0.20); pipe.add_argument('--action-geometry-require-carrier-safe', action='store_true'); pipe.add_argument('--action-geometry-carrier-budget', type=float, default=0.0); pipe.add_argument('--action-geometry-use-gamma-transition', action='store_true'); pipe.add_argument('--action-geometry-gamma-aware', action='store_true'); pipe.add_argument('--action-geometry-gamma-value-mode', choices=['local','finite_horizon','stationary','resolvent','tail','tail_bonus'], default='local'); pipe.add_argument('--action-geometry-gamma-horizon', type=int, default=4); pipe.add_argument('--action-geometry-gamma-discount', type=float, default=1.0); pipe.add_argument('--action-geometry-gamma-tail-value-weight', type=float, default=1.0); pipe.add_argument('--action-geometry-gamma-stability-margin', type=float, default=0.05); pipe.add_argument('--action-geometry-gamma-tail-risk-mode', choices=['spectral','normal_amplification','none'], default='spectral'); pipe.add_argument('--audit-action-geometry-candidates', action='store_true'); pipe.add_argument('--action-geometry-audit-max-actions', type=int, default=24); pipe.add_argument('--action-geometry-accept-coker', action='store_true'); pipe.add_argument('--action-geometry-accept-margin', type=float, default=0.0); pipe.add_argument('--action-geometry-accept-max-per-task', type=int, default=16); pipe.add_argument('--action-geometry-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--action-geometry-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--action-geometry-robust-coker-accept', action='store_true'); pipe.add_argument('--action-geometry-robust-coker-holdout-fraction', type=float, default=0.35); pipe.add_argument('--action-geometry-robust-coker-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--action-geometry-robust-coker-carrier-gain-weight', type=float, default=0.25); pipe.add_argument('--action-geometry-robust-coker-audit-penalty', type=float, default=1.0); pipe.add_argument('--action-geometry-robust-coker-require-success', action='store_true'); pipe.add_argument('--quotient-coordinates', action='store_true'); pipe.add_argument('--quotient-coordinate-ridge', type=float, default=1e-4); pipe.add_argument('--quotient-coordinate-max-mass', type=float, default=1.0); pipe.add_argument('--quotient-coordinate-cosine-threshold', type=float, default=0.85); pipe.add_argument('--quotient-coordinate-min-states', type=int, default=1); pipe.add_argument('--quotient-coordinate-top-action-scores', type=int, default=128); pipe.add_argument('--quotient-coordinate-margin-threshold', type=float, default=0.0); pipe.add_argument('--quotient-coordinate-validate', action='store_true'); pipe.add_argument('--quotient-coordinate-registry-candidates', action='store_true'); pipe.add_argument('--quotient-coordinate-registry-max-candidates', type=int, default=64); pipe.add_argument('--audit-quotient-coordinate-candidates', action='store_true'); pipe.add_argument('--quotient-coordinate-audit-max-actions', type=int, default=16); pipe.add_argument('--quotient-coordinate-accept-coker', action='store_true'); pipe.add_argument('--quotient-coordinate-robust-coker-accept', action='store_true'); pipe.add_argument('--quotient-coordinate-accept-margin', type=float, default=0.0); pipe.add_argument('--quotient-coordinate-accept-max-per-task', type=int, default=16); pipe.add_argument('--quotient-coordinate-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--quotient-coordinate-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--quotient-coordinate-robust-coker-holdout-fraction', type=float, default=0.35); pipe.add_argument('--quotient-coordinate-robust-coker-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--quotient-coordinate-robust-coker-carrier-gain-weight', type=float, default=0.25); pipe.add_argument('--quotient-coordinate-robust-coker-audit-penalty', type=float, default=1.0); pipe.add_argument('--quotient-coordinate-robust-coker-require-success', action='store_true'); pipe.add_argument('--action-geometry-use-quotient-normals', action='store_true'); pipe.add_argument('--carrier-quotient', action='store_true'); pipe.add_argument('--carrier-quotient-ridge', type=float, default=1e-4); pipe.add_argument('--carrier-quotient-max-mass', type=float, default=1.0); pipe.add_argument('--carrier-quotient-cosine-threshold', type=float, default=0.85); pipe.add_argument('--carrier-quotient-min-states', type=int, default=1); pipe.add_argument('--carrier-quotient-top-action-scores', type=int, default=128); pipe.add_argument('--carrier-quotient-margin-threshold', type=float, default=0.0); pipe.add_argument('--audit-carrier-quotient-candidates', action='store_true'); pipe.add_argument('--carrier-quotient-audit-max-actions', type=int, default=16); pipe.add_argument('--carrier-quotient-accept-coker', action='store_true'); pipe.add_argument('--carrier-quotient-robust-coker-accept', action='store_true'); pipe.add_argument('--carrier-quotient-accept-margin', type=float, default=0.0); pipe.add_argument('--carrier-quotient-accept-max-per-task', type=int, default=16); pipe.add_argument('--carrier-quotient-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--carrier-quotient-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--carrier-quotient-robust-coker-holdout-fraction', type=float, default=0.35); pipe.add_argument('--carrier-quotient-robust-coker-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--carrier-quotient-robust-coker-carrier-gain-weight', type=float, default=0.25); pipe.add_argument('--carrier-quotient-robust-coker-audit-penalty', type=float, default=1.0); pipe.add_argument('--carrier-quotient-robust-coker-require-success', action='store_true'); pipe.add_argument('--carrier-quotient-merge-actions', action='store_true'); pipe.add_argument('--carrier-quotient-merge-policy', choices=['all','robust-only','accepted-only'], default='robust-only'); pipe.add_argument('--contextual-congruence', action='store_true'); pipe.add_argument('--contextual-congruence-context-mode', choices=['state','task','global'], default='state'); pipe.add_argument('--contextual-congruence-no-carrier', action='store_true'); pipe.add_argument('--contextual-congruence-min-count', type=int, default=1); pipe.add_argument('--contextual-congruence-cosine-threshold', type=float, default=0.95); pipe.add_argument('--contextual-congruence-distance-threshold', type=float, default=0.25); pipe.add_argument('--contextual-congruence-min-context-jaccard', type=float, default=0.0); pipe.add_argument('--audit-db', action='store_true'); pipe.add_argument('--audit-db-path'); pipe.add_argument('--audit-db-append', action='store_true'); pipe.add_argument('--audit-scheduler', action='store_true'); pipe.add_argument('--active-audit-scheduler', dest='audit_scheduler', action='store_true'); pipe.add_argument('--audit-scheduler-db'); pipe.add_argument('--audit-scheduler-responses'); pipe.add_argument('--audit-scheduler-lineage', action='append'); pipe.add_argument('--audit-scheduler-budget', type=int); pipe.add_argument('--audit-scheduler-top-k', dest='audit_scheduler_budget', type=int); pipe.add_argument('--audit-scheduler-per-task-cap', type=int); pipe.add_argument('--audit-scheduler-per-source-cap', type=int); pipe.add_argument('--audit-scheduler-coker-weight', type=float, default=1.0); pipe.add_argument('--audit-scheduler-carrier-weight', type=float, default=0.5); pipe.add_argument('--audit-scheduler-uncertainty-weight', type=float, default=0.25); pipe.add_argument('--audit-scheduler-novelty-weight', type=float, default=0.15); pipe.add_argument('--audit-scheduler-success-weight', type=float, default=0.25); pipe.add_argument('--audit-scheduler-cost-weight', type=float, default=0.10); pipe.add_argument('--audit-scheduler-timeout-weight', type=float, default=0.50); pipe.add_argument('--eval-response-model', action='store_true'); pipe.add_argument('--response-eval-mode', choices=['mean','lcb'], default='mean'); pipe.add_argument('--mine-defects', action='store_true'); pipe.add_argument('--mine-min-support', type=int, default=1); pipe.add_argument('--mine-min-response-contrast', type=float, default=-1e9); pipe.add_argument('--mine-min-stability', type=float, default=0.0); pipe.add_argument('--mine-min-intervention-success', type=float, default=0.0); pipe.add_argument('--mine-min-coker-reduction', type=float, default=0.0); pipe.add_argument('--registry-candidates', action='store_true'); pipe.add_argument('--registry-max-candidates', type=int, default=96); pipe.add_argument('--audit-registry-candidates', action='store_true'); pipe.add_argument('--registry-audit-max-actions', type=int, default=32); pipe.add_argument('--registry-accept-coker', action='store_true'); pipe.add_argument('--registry-accept-margin', type=float, default=0.0); pipe.add_argument('--registry-accept-max-per-task', type=int, default=16); pipe.add_argument('--registry-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--registry-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--promote-registry', action='store_true'); pipe.add_argument('--promote-min-support', type=int, default=1); pipe.add_argument('--promote-min-intervention-success', type=float, default=0.1); pipe.add_argument('--promote-min-coker-reduction', type=float, default=-1e9); pipe.add_argument('--promote-min-promotion-score', type=float, default=-1e9); pipe.add_argument('--promote-drop-rejected', action='store_true'); pipe.add_argument('--premise-index', action='store_true'); pipe.add_argument('--premise-top-k', type=int, default=8); pipe.add_argument('--premise-max-actions', type=int, default=8); pipe.add_argument('--audit-premise-candidates', action='store_true'); pipe.add_argument('--premise-audit-max-actions', type=int, default=24); pipe.add_argument('--premise-response-registry', action='store_true'); pipe.add_argument('--premise-response-retrieve', action='store_true'); pipe.add_argument('--premise-response-top-k', type=int, default=32); pipe.add_argument('--premise-quotient-mine', action='store_true'); pipe.add_argument('--audit-premise-response-candidates', action='store_true'); pipe.add_argument('--premise-response-audit-max-actions', type=int, default=16); pipe.add_argument('--carrier-accept', action='store_true'); pipe.add_argument('--carrier-accept-max-actions', type=int, default=8); pipe.add_argument('--carrier-accept-margin', type=float, default=0.0); pipe.add_argument('--carrier-accept-cost-weight', type=float, default=0.1); pipe.add_argument('--promote-carrier-actions', action='store_true'); pipe.add_argument('--promote-carrier-min-margin', type=float, default=0.0); pipe.add_argument('--ir-candidates', action='store_true'); pipe.add_argument('--ir-max-candidates', type=int, default=64); pipe.add_argument('--audit-ir-candidates', action='store_true'); pipe.add_argument('--ir-audit-max-actions', type=int, default=24); pipe.add_argument('--ir-accept-coker', action='store_true'); pipe.add_argument('--ir-accept-margin', type=float, default=0.0); pipe.add_argument('--ir-accept-max-per-task', type=int, default=16); pipe.add_argument('--ir-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--ir-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--carrier-matrix', action='store_true'); pipe.add_argument('--carrier-matrix-shrink', type=float, default=2.0); pipe.add_argument('--carrier-matrix-min-count', type=int, default=1); pipe.add_argument('--carrier-matrix-budget', type=float, default=0.0); pipe.add_argument('--carrier-matrix-keep-unsafe', action='store_true'); pipe.add_argument('--carrier-matrix-merge-qgen', action='store_true'); pipe.add_argument('--carrier-matrix-qgen-patch-weight', type=float, default=1.0); pipe.add_argument('--carrier-matrix-qgen-require-safe', action='store_true'); pipe.add_argument('--carrier-matrix-qgen-audit-patches', action='store_true'); pipe.add_argument('--carrier-matrix-qgen-patch-min-count', type=int, default=1); pipe.add_argument('--carrier-matrix-qgen-patch-min-mean-delta', type=float, default=0.0); pipe.add_argument('--carrier-matrix-qgen-patch-holdout-fraction', type=float, default=0.0); pipe.add_argument('--carrier-matrix-qgen-patch-require-heldout', action='store_true'); pipe.add_argument('--failure-signatures', action='store_true'); pipe.add_argument('--failure-signature-min-support', type=int, default=1); pipe.add_argument('--audit-failure-signature-candidates', action='store_true'); pipe.add_argument('--failure-signature-audit-max-actions', type=int, default=16); pipe.add_argument('--failure-signature-accept-coker', action='store_true'); pipe.add_argument('--failure-signature-accept-margin', type=float, default=0.0); pipe.add_argument('--failure-signature-accept-max-per-task', type=int, default=16); pipe.add_argument('--failure-signature-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--failure-signature-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--stage-coker', action='store_true'); pipe.add_argument('--stage-coker-margin', type=float, default=0.0); pipe.add_argument('--stage-coker-cost-weight', type=float, default=0.05); pipe.add_argument('--stage-coker-carrier-weight', type=float, default=0.25); pipe.add_argument('--stage-coker-max-actions', type=int); add_contextual_probe_args(pipe); add_response_quotient_args(pipe); add_premise_contextual_pipeline_args(pipe);
+    pipe=sub.add_parser('pipeline', conflict_handler='resolve'); pipe.add_argument('--tasks', required=True); pipe.add_argument('--actions'); pipe.add_argument('--out', required=True); pipe.add_argument('--expose-frontier', action='store_true'); pipe.add_argument('--expose-max-exposures', type=int, default=8); pipe.add_argument('--expose-no-identity', action='store_true'); pipe.add_argument('--dry-run', action='store_true'); pipe.add_argument('--jobs', type=int, default=1); pipe.add_argument('--audit-mode', choices=['batch','bulk','server'], default='batch'); pipe.add_argument('--bulk-batch-size', type=int, default=64); pipe.add_argument('--max-actions', type=int, default=32); pipe.add_argument('--frontier-normalize', action='store_true'); pipe.add_argument('--frontier-max-prefixes', type=int, default=8); pipe.add_argument('--frontier-include-identity', action='store_true'); pipe.add_argument('--candidate-mode', choices=['basic','state'], default='state'); pipe.add_argument('--state-candidates', action='store_true'); pipe.add_argument('--quotient-tolerance', type=float, default=0.25); pipe.add_argument('--carrier-threshold', type=float, default=0.1); pipe.add_argument('--lean-cmd', default='lake env lean'); pipe.add_argument('--workdir'); pipe.add_argument('--timeout-s', type=float, default=20.0); pipe.add_argument('--keep-files', action='store_true'); pipe.add_argument('--cache-dir'); pipe.add_argument('--trace-state', action='store_true'); pipe.add_argument('--server-cmd'); pipe.add_argument('--server-backend', choices=['auto','dry_run','file','file_fallback','jsonl','persistent','native'], default='auto'); pipe.add_argument('--server-no-fallback', action='store_true'); pipe.add_argument('--native-exec-mode', choices=['source_check','heuristic','kernel_rpc'], default='source_check'); pipe.add_argument('--audit-exposures', action='store_true'); pipe.add_argument('--exposure-audit-max-actions', type=int, default=8); pipe.add_argument('--import-mode', choices=['preserve','auto','core','mathlib'], default='auto'); pipe.add_argument('--resume', action='store_true'); pipe.add_argument('--flush-every', type=int, default=50); pipe.add_argument('--fit-gamma', action='store_true'); pipe.add_argument('--gamma-horizon', type=int, default=4); pipe.add_argument('--gamma-transition-learner', action='store_true'); pipe.add_argument('--gamma-transition-min-count', type=int, default=2); pipe.add_argument('--gamma-transition-shrink', type=float, default=4.0); pipe.add_argument('--gamma-transition-ridge', type=float, default=1e-3); pipe.add_argument('--gamma-transition-holdout-fraction', type=float, default=0.25); pipe.add_argument('--gamma-transition-teacher-weight', type=float, default=0.25); pipe.add_argument('--gamma-transition-include-matrices', action='store_true'); pipe.add_argument('--gamma-transition-patch-action-geometry', action='store_true'); pipe.add_argument('--arithmetic-teacher-graph', action='store_true'); pipe.add_argument('--arithmetic-teacher-identities'); pipe.add_argument('--arithmetic-teacher-structured-states'); pipe.add_argument('--arithmetic-teacher-max-transforms-per-state', type=int, default=32); pipe.add_argument('--arithmetic-teacher-no-actions', action='store_true'); pipe.add_argument('--audit-arithmetic-teacher-candidates', action='store_true'); pipe.add_argument('--arithmetic-teacher-audit-max-actions', type=int, default=16); pipe.add_argument('--arithmetic-teacher-kernel-audit', action='store_true'); pipe.add_argument('--arithmetic-teacher-kernel-audit-max-transitions', type=int, default=32); pipe.add_argument('--arithmetic-teacher-cocycle-audit', action='store_true'); pipe.add_argument('--arithmetic-teacher-cocycle-compositions'); pipe.add_argument('--arithmetic-teacher-cocycle-min-count', type=int, default=1); pipe.add_argument('--arithmetic-teacher-cocycle-accept-threshold', type=float, default=1.0); pipe.add_argument('--arithmetic-teacher-cocycle-min-verified-rate', type=float, default=0.0); pipe.add_argument('--arithmetic-teacher-cocycle-max-tail-radius', type=float); pipe.add_argument('--arithmetic-teacher-cocycle-max-auto-pairs', type=int, default=0); pipe.add_argument('--qgen', action='store_true'); pipe.add_argument('--qgen-ridge', type=float, default=1e-4); pipe.add_argument('--qgen-max-mass', type=float, default=1.0); pipe.add_argument('--carrier-quotient', action='store_true'); pipe.add_argument('--carrier-quotient-ridge', type=float, default=1e-4); pipe.add_argument('--carrier-quotient-max-mass', type=float, default=1.0); pipe.add_argument('--carrier-quotient-cosine-threshold', type=float, default=0.85); pipe.add_argument('--carrier-quotient-min-states', type=int, default=1); pipe.add_argument('--carrier-quotient-top-action-scores', type=int, default=128); pipe.add_argument('--carrier-quotient-margin-threshold', type=float, default=0.0); pipe.add_argument('--carrier-quotient-validate', action='store_true'); pipe.add_argument('--carrier-quotient-no-infer-defect-from-violations', action='store_true'); pipe.add_argument('--qgen-top-defects', type=int, default=16); pipe.add_argument('--qgen-top-contexts', type=int, default=32); pipe.add_argument('--qgen-top-carriers', type=int, default=64); pipe.add_argument('--qgen-top-failures', type=int, default=32); pipe.add_argument('--qgen-margin-threshold', type=float, default=0.0); pipe.add_argument('--qgen-cost-weight', type=float, default=0.05); pipe.add_argument('--qgen-carrier-weight', type=float, default=0.25); pipe.add_argument('--qgen-audit-penalty', type=float, default=1.0); pipe.add_argument('--audit-qgen-candidates', action='store_true'); pipe.add_argument('--qgen-audit-max-actions', type=int, default=24); pipe.add_argument('--qgen-accept-coker', action='store_true'); pipe.add_argument('--qgen-accept-margin', type=float, default=0.0); pipe.add_argument('--qgen-accept-max-per-task', type=int, default=16); pipe.add_argument('--qgen-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--qgen-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--qgen-robust-accept', action='store_true'); pipe.add_argument('--qgen-registry-robust-accept', action='store_true'); pipe.add_argument('--qgen-robust-coker-accept', action='store_true'); pipe.add_argument('--qgen-registry-robust-coker-accept', action='store_true'); pipe.add_argument('--qgen-robust-coker-holdout-fraction', type=float, default=0.35); pipe.add_argument('--qgen-robust-coker-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--qgen-robust-coker-carrier-gain-weight', type=float, default=0.25); pipe.add_argument('--qgen-robust-coker-audit-penalty', type=float, default=1.0); pipe.add_argument('--qgen-robust-coker-require-success', action='store_true'); pipe.add_argument('--qgen-robust-z', type=float, default=1.0); pipe.add_argument('--qgen-robust-min-repeats', type=int, default=1); pipe.add_argument('--qgen-robust-min-success-rate', type=float, default=1.0); pipe.add_argument('--qgen-registry-candidates', action='store_true'); pipe.add_argument('--qgen-registry-max-candidates', type=int, default=64); pipe.add_argument('--audit-qgen-registry-candidates', action='store_true'); pipe.add_argument('--qgen-registry-audit-max-actions', type=int, default=16); pipe.add_argument('--qgen-registry-accept-coker', action='store_true'); pipe.add_argument('--qgen-registry-accept-margin', type=float, default=0.0); pipe.add_argument('--qgen-registry-accept-max-per-task', type=int, default=16); pipe.add_argument('--qgen-registry-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--qgen-registry-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--action-geometry', action='store_true'); pipe.add_argument('--action-geometry-retrieve', action='store_true'); pipe.add_argument('--action-geometry-use-qgen-normals', action='store_true'); pipe.add_argument('--action-geometry-top-k', type=int, default=32); pipe.add_argument('--action-geometry-min-count', type=int, default=1); pipe.add_argument('--action-geometry-tail-weight', type=float, default=0.25); pipe.add_argument('--action-geometry-cost-weight', type=float, default=0.05); pipe.add_argument('--action-geometry-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--action-geometry-audit-weight', type=float, default=0.20); pipe.add_argument('--action-geometry-require-carrier-safe', action='store_true'); pipe.add_argument('--action-geometry-carrier-budget', type=float, default=0.0); pipe.add_argument('--action-geometry-use-gamma-transition', action='store_true'); pipe.add_argument('--action-geometry-gamma-aware', action='store_true'); pipe.add_argument('--action-geometry-gamma-value-mode', choices=['local','finite_horizon','stationary','resolvent','tail','tail_bonus'], default='local'); pipe.add_argument('--action-geometry-gamma-horizon', type=int, default=4); pipe.add_argument('--action-geometry-gamma-discount', type=float, default=1.0); pipe.add_argument('--action-geometry-gamma-tail-value-weight', type=float, default=1.0); pipe.add_argument('--action-geometry-gamma-stability-margin', type=float, default=0.05); pipe.add_argument('--action-geometry-gamma-tail-risk-mode', choices=['spectral','normal_amplification','none'], default='spectral'); pipe.add_argument('--audit-action-geometry-candidates', action='store_true'); pipe.add_argument('--action-geometry-audit-max-actions', type=int, default=24); pipe.add_argument('--action-geometry-accept-coker', action='store_true'); pipe.add_argument('--action-geometry-accept-margin', type=float, default=0.0); pipe.add_argument('--action-geometry-accept-max-per-task', type=int, default=16); pipe.add_argument('--action-geometry-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--action-geometry-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--action-geometry-robust-coker-accept', action='store_true'); pipe.add_argument('--action-geometry-robust-coker-holdout-fraction', type=float, default=0.35); pipe.add_argument('--action-geometry-robust-coker-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--action-geometry-robust-coker-carrier-gain-weight', type=float, default=0.25); pipe.add_argument('--action-geometry-robust-coker-audit-penalty', type=float, default=1.0); pipe.add_argument('--action-geometry-robust-coker-require-success', action='store_true'); pipe.add_argument('--quotient-coordinates', action='store_true'); pipe.add_argument('--quotient-coordinate-ridge', type=float, default=1e-4); pipe.add_argument('--quotient-coordinate-max-mass', type=float, default=1.0); pipe.add_argument('--quotient-coordinate-cosine-threshold', type=float, default=0.85); pipe.add_argument('--quotient-coordinate-min-states', type=int, default=1); pipe.add_argument('--quotient-coordinate-top-action-scores', type=int, default=128); pipe.add_argument('--quotient-coordinate-margin-threshold', type=float, default=0.0); pipe.add_argument('--quotient-coordinate-validate', action='store_true'); pipe.add_argument('--quotient-coordinate-registry-candidates', action='store_true'); pipe.add_argument('--quotient-coordinate-registry-max-candidates', type=int, default=64); pipe.add_argument('--audit-quotient-coordinate-candidates', action='store_true'); pipe.add_argument('--quotient-coordinate-audit-max-actions', type=int, default=16); pipe.add_argument('--quotient-coordinate-accept-coker', action='store_true'); pipe.add_argument('--quotient-coordinate-robust-coker-accept', action='store_true'); pipe.add_argument('--quotient-coordinate-accept-margin', type=float, default=0.0); pipe.add_argument('--quotient-coordinate-accept-max-per-task', type=int, default=16); pipe.add_argument('--quotient-coordinate-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--quotient-coordinate-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--quotient-coordinate-robust-coker-holdout-fraction', type=float, default=0.35); pipe.add_argument('--quotient-coordinate-robust-coker-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--quotient-coordinate-robust-coker-carrier-gain-weight', type=float, default=0.25); pipe.add_argument('--quotient-coordinate-robust-coker-audit-penalty', type=float, default=1.0); pipe.add_argument('--quotient-coordinate-robust-coker-require-success', action='store_true'); pipe.add_argument('--action-geometry-use-quotient-normals', action='store_true'); pipe.add_argument('--carrier-quotient', action='store_true'); pipe.add_argument('--carrier-quotient-ridge', type=float, default=1e-4); pipe.add_argument('--carrier-quotient-max-mass', type=float, default=1.0); pipe.add_argument('--carrier-quotient-cosine-threshold', type=float, default=0.85); pipe.add_argument('--carrier-quotient-min-states', type=int, default=1); pipe.add_argument('--carrier-quotient-top-action-scores', type=int, default=128); pipe.add_argument('--carrier-quotient-margin-threshold', type=float, default=0.0); pipe.add_argument('--audit-carrier-quotient-candidates', action='store_true'); pipe.add_argument('--carrier-quotient-audit-max-actions', type=int, default=16); pipe.add_argument('--carrier-quotient-accept-coker', action='store_true'); pipe.add_argument('--carrier-quotient-robust-coker-accept', action='store_true'); pipe.add_argument('--carrier-quotient-accept-margin', type=float, default=0.0); pipe.add_argument('--carrier-quotient-accept-max-per-task', type=int, default=16); pipe.add_argument('--carrier-quotient-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--carrier-quotient-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--carrier-quotient-robust-coker-holdout-fraction', type=float, default=0.35); pipe.add_argument('--carrier-quotient-robust-coker-uncertainty-weight', type=float, default=0.10); pipe.add_argument('--carrier-quotient-robust-coker-carrier-gain-weight', type=float, default=0.25); pipe.add_argument('--carrier-quotient-robust-coker-audit-penalty', type=float, default=1.0); pipe.add_argument('--carrier-quotient-robust-coker-require-success', action='store_true'); pipe.add_argument('--carrier-quotient-merge-actions', action='store_true'); pipe.add_argument('--carrier-quotient-merge-policy', choices=['all','robust-only','accepted-only'], default='robust-only'); pipe.add_argument('--contextual-congruence', action='store_true'); pipe.add_argument('--contextual-congruence-context-mode', choices=['state','task','global'], default='state'); pipe.add_argument('--contextual-congruence-no-carrier', action='store_true'); pipe.add_argument('--contextual-congruence-min-count', type=int, default=1); pipe.add_argument('--contextual-congruence-cosine-threshold', type=float, default=0.95); pipe.add_argument('--contextual-congruence-distance-threshold', type=float, default=0.25); pipe.add_argument('--contextual-congruence-min-context-jaccard', type=float, default=0.0); pipe.add_argument('--audit-db', action='store_true'); pipe.add_argument('--audit-db-path'); pipe.add_argument('--audit-db-append', action='store_true'); pipe.add_argument('--audit-scheduler', action='store_true'); pipe.add_argument('--active-audit-scheduler', dest='audit_scheduler', action='store_true'); pipe.add_argument('--audit-scheduler-db'); pipe.add_argument('--audit-scheduler-responses'); pipe.add_argument('--audit-scheduler-lineage', action='append'); pipe.add_argument('--audit-scheduler-budget', type=int); pipe.add_argument('--audit-scheduler-top-k', dest='audit_scheduler_budget', type=int); pipe.add_argument('--audit-scheduler-per-task-cap', type=int); pipe.add_argument('--audit-scheduler-per-source-cap', type=int); pipe.add_argument('--audit-scheduler-coker-weight', type=float, default=1.0); pipe.add_argument('--audit-scheduler-carrier-weight', type=float, default=0.5); pipe.add_argument('--audit-scheduler-uncertainty-weight', type=float, default=0.25); pipe.add_argument('--audit-scheduler-novelty-weight', type=float, default=0.15); pipe.add_argument('--audit-scheduler-success-weight', type=float, default=0.25); pipe.add_argument('--audit-scheduler-cost-weight', type=float, default=0.10); pipe.add_argument('--audit-scheduler-timeout-weight', type=float, default=0.50); pipe.add_argument('--eval-response-model', action='store_true'); pipe.add_argument('--response-eval-mode', choices=['mean','lcb'], default='mean'); pipe.add_argument('--mine-defects', action='store_true'); pipe.add_argument('--mine-min-support', type=int, default=1); pipe.add_argument('--mine-min-response-contrast', type=float, default=-1e9); pipe.add_argument('--mine-min-stability', type=float, default=0.0); pipe.add_argument('--mine-min-intervention-success', type=float, default=0.0); pipe.add_argument('--mine-min-coker-reduction', type=float, default=0.0); pipe.add_argument('--registry-candidates', action='store_true'); pipe.add_argument('--registry-max-candidates', type=int, default=96); pipe.add_argument('--audit-registry-candidates', action='store_true'); pipe.add_argument('--registry-audit-max-actions', type=int, default=32); pipe.add_argument('--registry-accept-coker', action='store_true'); pipe.add_argument('--registry-accept-margin', type=float, default=0.0); pipe.add_argument('--registry-accept-max-per-task', type=int, default=16); pipe.add_argument('--registry-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--registry-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--promote-registry', action='store_true'); pipe.add_argument('--promote-min-support', type=int, default=1); pipe.add_argument('--promote-min-intervention-success', type=float, default=0.1); pipe.add_argument('--promote-min-coker-reduction', type=float, default=-1e9); pipe.add_argument('--promote-min-promotion-score', type=float, default=-1e9); pipe.add_argument('--promote-drop-rejected', action='store_true'); pipe.add_argument('--premise-index', action='store_true'); pipe.add_argument('--premise-top-k', type=int, default=8); pipe.add_argument('--premise-max-actions', type=int, default=8); pipe.add_argument('--audit-premise-candidates', action='store_true'); pipe.add_argument('--premise-audit-max-actions', type=int, default=24); pipe.add_argument('--premise-response-registry', action='store_true'); pipe.add_argument('--premise-response-retrieve', action='store_true'); pipe.add_argument('--premise-response-top-k', type=int, default=32); pipe.add_argument('--premise-quotient-mine', action='store_true'); pipe.add_argument('--audit-premise-response-candidates', action='store_true'); pipe.add_argument('--premise-response-audit-max-actions', type=int, default=16); pipe.add_argument('--carrier-accept', action='store_true'); pipe.add_argument('--carrier-accept-max-actions', type=int, default=8); pipe.add_argument('--carrier-accept-margin', type=float, default=0.0); pipe.add_argument('--carrier-accept-cost-weight', type=float, default=0.1); pipe.add_argument('--promote-carrier-actions', action='store_true'); pipe.add_argument('--promote-carrier-min-margin', type=float, default=0.0); pipe.add_argument('--ir-candidates', action='store_true'); pipe.add_argument('--ir-max-candidates', type=int, default=64); pipe.add_argument('--audit-ir-candidates', action='store_true'); pipe.add_argument('--ir-audit-max-actions', type=int, default=24); pipe.add_argument('--ir-accept-coker', action='store_true'); pipe.add_argument('--ir-accept-margin', type=float, default=0.0); pipe.add_argument('--ir-accept-max-per-task', type=int, default=16); pipe.add_argument('--ir-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--ir-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--carrier-matrix', action='store_true'); pipe.add_argument('--carrier-matrix-shrink', type=float, default=2.0); pipe.add_argument('--carrier-matrix-min-count', type=int, default=1); pipe.add_argument('--carrier-matrix-budget', type=float, default=0.0); pipe.add_argument('--carrier-matrix-keep-unsafe', action='store_true'); pipe.add_argument('--carrier-matrix-merge-qgen', action='store_true'); pipe.add_argument('--carrier-matrix-qgen-patch-weight', type=float, default=1.0); pipe.add_argument('--carrier-matrix-qgen-require-safe', action='store_true'); pipe.add_argument('--carrier-matrix-qgen-audit-patches', action='store_true'); pipe.add_argument('--carrier-matrix-qgen-patch-min-count', type=int, default=1); pipe.add_argument('--carrier-matrix-qgen-patch-min-mean-delta', type=float, default=0.0); pipe.add_argument('--carrier-matrix-qgen-patch-holdout-fraction', type=float, default=0.0); pipe.add_argument('--carrier-matrix-qgen-patch-require-heldout', action='store_true'); pipe.add_argument('--failure-signatures', action='store_true'); pipe.add_argument('--failure-signature-min-support', type=int, default=1); pipe.add_argument('--audit-failure-signature-candidates', action='store_true'); pipe.add_argument('--failure-signature-audit-max-actions', type=int, default=16); pipe.add_argument('--failure-signature-accept-coker', action='store_true'); pipe.add_argument('--failure-signature-accept-margin', type=float, default=0.0); pipe.add_argument('--failure-signature-accept-max-per-task', type=int, default=16); pipe.add_argument('--failure-signature-accept-cost-weight', type=float, default=0.05); pipe.add_argument('--failure-signature-accept-carrier-weight', type=float, default=0.7); pipe.add_argument('--stage-coker', action='store_true'); pipe.add_argument('--stage-coker-margin', type=float, default=0.0); pipe.add_argument('--stage-coker-cost-weight', type=float, default=0.05); pipe.add_argument('--stage-coker-carrier-weight', type=float, default=0.25); pipe.add_argument('--stage-coker-max-actions', type=int); add_contextual_probe_args(pipe); add_response_quotient_args(pipe); add_premise_contextual_pipeline_args(pipe); add_crg_pipeline_args(pipe);
     # v37 source-budget scheduler: allocate audit budget across candidate sources.
     for _parser in (pipe,):
         _parser.add_argument('--source-budget', action='store_true')
