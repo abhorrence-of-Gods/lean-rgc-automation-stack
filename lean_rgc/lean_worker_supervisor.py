@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 import json
 import multiprocessing as mp
 import os
 import queue
+import threading
 import time
 
 from .action_quarantine import ensure_quarantine_schema, is_action_quarantined, refresh_action_quarantine
@@ -299,75 +301,119 @@ def run_supervised_audit_queue(
 ) -> dict[str, Any]:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    conn = connect_queue(db_path)
     worker_restarts = 0
     executed = 0
+
+    counter_lock = threading.Lock()
+    remaining_jobs = {"n": int(max_jobs) if max_jobs is not None else None}
+
+    def take_slot() -> bool:
+        if remaining_jobs["n"] is None:
+            return True
+        with counter_lock:
+            if remaining_jobs["n"] <= 0:
+                return False
+            remaining_jobs["n"] -= 1
+            return True
+
+    def give_back_slot() -> None:
+        if remaining_jobs["n"] is not None:
+            with counter_lock:
+                remaining_jobs["n"] += 1
+
+    def worker_loop(worker_index: int) -> dict[str, int]:
+        conn = connect_queue(db_path)
+        local_executed = 0
+        local_restarts = 0
+        try:
+            ensure_timeout_schema(conn)
+            ensure_quarantine_schema(conn)
+            timeout_s = float(job_timeout_s or executor_config.timeout_s or 20.0)
+            lane_set = lanes or ["source_check", "kernel_rpc", "heavy"]
+            worker_id = f"lean-worker-{os.getpid()}-{worker_index}"
+            while True:
+                if not take_slot():
+                    break
+                refresh_action_quarantine(db_path)
+                job = lease_next_job(
+                    conn,
+                    worker_id=worker_id,
+                    lease_seconds=timeout_s + 60.0,
+                    lanes=lane_set,
+                    include_quarantined=("heavy" in lane_set and heavy_lane_allows_quarantine),
+                )
+                if job is None:
+                    give_back_slot()
+                    break
+                allow_heavy = job.lane == "heavy" and heavy_lane_allows_quarantine
+                quarantined, reason = is_action_quarantined(conn, action_id=job.action_id, tactic_hash=job.tactic_hash)
+                if quarantined and not allow_heavy:
+                    result = _synthetic_result(
+                        job,
+                        status="quarantined",
+                        elapsed_ms=0.0,
+                        message=reason or "action quarantined by timeout ledger",
+                        worker_id=worker_id,
+                    )
+                    mark_job_result(conn, job.job_id, status="quarantined", result=result, error=reason)
+                    local_executed += 1
+                    continue
+                mark_job_running(conn, job.job_id, worker_id=worker_id)
+                record_worker_event(conn, worker_id=worker_id, event_type="start", job_id=job.job_id, backend=job.backend, lane=job.lane)
+                queue_status, result, elapsed_s, killed = _run_job_process(job, executor_config=executor_config, timeout_s=timeout_s, worker_id=worker_id)
+                if killed:
+                    local_restarts += 1
+                    record_worker_event(
+                        conn,
+                        worker_id=worker_id,
+                        event_type="killed_timeout",
+                        job_id=job.job_id,
+                        backend=job.backend,
+                        lane=job.lane,
+                        detail={"elapsed_s": elapsed_s, "timeout_s": timeout_s},
+                    )
+                if queue_status == "timeout":
+                    audit = result.get("audit") if isinstance(result.get("audit"), dict) else {}
+                    record_timeout_event(
+                        conn,
+                        job_id=job.job_id,
+                        task_id=job.task_id,
+                        action_id=job.action_id,
+                        tactic_hash=job.tactic_hash,
+                        backend=job.backend,
+                        lane=job.lane,
+                        timeout_s=timeout_s,
+                        elapsed_s=elapsed_s,
+                        stdout_tail=_tail(audit.get("stdout")),
+                        stderr_tail=_tail(audit.get("stderr")),
+                        worker_id=worker_id,
+                        detail={"killed": killed},
+                    )
+                mark_job_result(conn, job.job_id, status=queue_status, result=result, error=result.get("error"))
+                record_worker_event(conn, worker_id=worker_id, event_type="finish", job_id=job.job_id, backend=job.backend, lane=job.lane, detail={"status": queue_status})
+                local_executed += 1
+                if queue_status == "timeout" and not continue_on_timeout:
+                    break
+            return {"executed": local_executed, "worker_restarts": local_restarts}
+        finally:
+            conn.close()
+
+    conn = connect_queue(db_path)
     try:
         ensure_timeout_schema(conn)
         ensure_quarantine_schema(conn)
-        timeout_s = float(job_timeout_s or executor_config.timeout_s or 20.0)
-        lane_set = lanes or ["source_check", "kernel_rpc", "heavy"]
-        while max_jobs is None or executed < max_jobs:
-            refresh_action_quarantine(db_path)
-            worker_id = f"lean-worker-{os.getpid()}-{executed % max(1, int(workers or 1))}"
-            job = lease_next_job(
-                conn,
-                worker_id=worker_id,
-                lease_seconds=timeout_s + 60.0,
-                lanes=lane_set,
-                include_quarantined=("heavy" in lane_set and heavy_lane_allows_quarantine),
-            )
-            if job is None:
-                break
-            allow_heavy = job.lane == "heavy" and heavy_lane_allows_quarantine
-            quarantined, reason = is_action_quarantined(conn, action_id=job.action_id, tactic_hash=job.tactic_hash)
-            if quarantined and not allow_heavy:
-                result = _synthetic_result(
-                    job,
-                    status="quarantined",
-                    elapsed_ms=0.0,
-                    message=reason or "action quarantined by timeout ledger",
-                    worker_id=worker_id,
-                )
-                mark_job_result(conn, job.job_id, status="quarantined", result=result, error=reason)
-                executed += 1
-                continue
-            mark_job_running(conn, job.job_id, worker_id=worker_id)
-            record_worker_event(conn, worker_id=worker_id, event_type="start", job_id=job.job_id, backend=job.backend, lane=job.lane)
-            queue_status, result, elapsed_s, killed = _run_job_process(job, executor_config=executor_config, timeout_s=timeout_s, worker_id=worker_id)
-            if killed:
-                worker_restarts += 1
-                record_worker_event(
-                    conn,
-                    worker_id=worker_id,
-                    event_type="killed_timeout",
-                    job_id=job.job_id,
-                    backend=job.backend,
-                    lane=job.lane,
-                    detail={"elapsed_s": elapsed_s, "timeout_s": timeout_s},
-                )
-            if queue_status == "timeout":
-                audit = result.get("audit") if isinstance(result.get("audit"), dict) else {}
-                record_timeout_event(
-                    conn,
-                    job_id=job.job_id,
-                    task_id=job.task_id,
-                    action_id=job.action_id,
-                    tactic_hash=job.tactic_hash,
-                    backend=job.backend,
-                    lane=job.lane,
-                    timeout_s=timeout_s,
-                    elapsed_s=elapsed_s,
-                    stdout_tail=_tail(audit.get("stdout")),
-                    stderr_tail=_tail(audit.get("stderr")),
-                    worker_id=worker_id,
-                    detail={"killed": killed},
-                )
-            mark_job_result(conn, job.job_id, status=queue_status, result=result, error=result.get("error"))
-            record_worker_event(conn, worker_id=worker_id, event_type="finish", job_id=job.job_id, backend=job.backend, lane=job.lane, detail={"status": queue_status})
-            executed += 1
-            if queue_status == "timeout" and not continue_on_timeout:
-                break
+        n_workers = max(1, int(workers or 1))
+        if n_workers == 1:
+            res = worker_loop(0)
+            executed += int(res.get("executed", 0))
+            worker_restarts += int(res.get("worker_restarts", 0))
+        else:
+            with ThreadPoolExecutor(max_workers=n_workers) as pool:
+                futures = [pool.submit(worker_loop, i) for i in range(n_workers)]
+                for fut in as_completed(futures):
+                    res = fut.result()
+                    executed += int(res.get("executed", 0))
+                    worker_restarts += int(res.get("worker_restarts", 0))
         refresh_action_quarantine(db_path)
         summary = materialize_queue_results(db_path, out, run_id=run_id)
         timeout_report = timeout_ledger_report(db_path)

@@ -45,7 +45,7 @@ def _loads(text: str | None) -> dict[str, Any]:
 def connect_queue(db_path: str | Path) -> sqlite3.Connection:
     db = Path(db_path)
     db.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(db, timeout=60.0)
     conn.row_factory = sqlite3.Row
     return conn
 
