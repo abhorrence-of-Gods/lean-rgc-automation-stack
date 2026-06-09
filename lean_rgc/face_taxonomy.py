@@ -175,6 +175,24 @@ def _load_repair_faces(path: str | Path | None) -> dict[str, dict[str, Any]]:
     return out
 
 
+def _load_generated_feature_values(path: str | Path | None) -> dict[str, dict[str, float]]:
+    if not path or not Path(path).exists():
+        return {}
+    out: dict[str, dict[str, float]] = {}
+    for row in read_jsonl(path):
+        if not isinstance(row, dict):
+            continue
+        oid = str(row.get("object_id") or row.get("source_row_id") or row.get("premise_use_id") or "")
+        if oid.startswith("obj_row_"):
+            oid = oid[len("obj_row_") :]
+        features = row.get("generated_features") if isinstance(row.get("generated_features"), dict) else {}
+        if oid and features:
+            dst = out.setdefault(oid, {})
+            for fid, value in features.items():
+                dst[str(fid)] = max(dst.get(str(fid), 0.0), abs(_safe_float(value)))
+    return out
+
+
 def _closure(
     seed_extent: frozenset[str],
     row_props: dict[str, set[str]],
@@ -372,6 +390,7 @@ def build_dual_face_taxonomy(
     classes_path: str | Path | None = None,
     validation_rows_path: str | Path | None = None,
     repair_faces_path: str | Path | None = None,
+    generated_features_path: str | Path | None = None,
     min_support: int = 1,
     min_retrieval_support: int = 2,
     positive_threshold: float = 1e-9,
@@ -395,6 +414,7 @@ def build_dual_face_taxonomy(
     classes, row_to_class = _load_classes(classes_path)
     validations = _load_validation(validation_rows_path)
     repair_faces = _load_repair_faces(repair_faces_path)
+    generated_features = _load_generated_feature_values(generated_features_path)
 
     row_props: dict[str, set[str]] = {}
     incidence_rows: list[dict[str, Any]] = []
@@ -412,6 +432,9 @@ def build_dual_face_taxonomy(
             status = (validations.get(cid) or {}).get("validation_status")
             if status:
                 props.add("validation::" + _sanitize_token(status))
+        for fid, value in sorted((generated_features.get(uid) or {}).items()):
+            if abs(_safe_float(value)) > positive_threshold:
+                props.add("generated_feature::" + _sanitize_token(fid, max_len=96))
         row_props[uid] = props
         incidence_rows.append(
             {
@@ -489,6 +512,7 @@ def build_dual_face_taxonomy(
                 "gamma_basis": sorted(p for p in props if p.startswith("gamma_") or p.startswith("summary::gamma")),
                 "domain_basis": sorted(p for p in props if p.startswith("domain::") or p.startswith("ctx::")),
                 "audit_basis": sorted(p for p in props if p.startswith("audit_") or p.startswith("summary::audit") or p.startswith("status::")),
+                "generated_feature_basis": sorted(p for p in props if p.startswith("generated_feature::")),
             },
             "minimal_support": {
                 "rows": sorted(extent),
@@ -572,6 +596,7 @@ def build_dual_face_taxonomy(
         "classes": str(classes_path) if classes_path else None,
         "validation_rows": str(validation_rows_path) if validation_rows_path else None,
         "repair_faces": str(repair_faces_path) if repair_faces_path else None,
+        "generated_features": str(generated_features_path) if generated_features_path else None,
         "out_dir": str(out_path),
         "n_rows": len(fingerprints),
         "n_properties": len({p for props in row_props.values() for p in props}),

@@ -309,6 +309,7 @@ def _dual_component(face: dict[str, Any]) -> dict[str, Any]:
             "gamma_weights": {str(x): 1.0 for x in _as_list(pos.get("gamma_basis"))},
             "domain_weights": {str(x): 1.0 for x in _as_list(pos.get("domain_basis"))},
             "cost_weights": {str(x): -1.0 for x in _as_list(pos.get("cost_basis"))},
+            "generated_feature_weights": {str(x): 1.0 for x in _as_list(pos.get("generated_feature_basis"))},
         },
         "minimal_repair_order": {
             "construction_depth": k,

@@ -44,6 +44,9 @@ __all__ = [
     "defect_from_ir_row", "ir_defects_file", "summarize_action_groups", "write_action_group_report", "exposure_actions_for_tasks", "summarize_exposure_audit",
     "FrontierAuditor", "expose_frontier_files",
     "KernelGoalStateServer", "KernelGoalStateServerConfig", "normalize_kernel_state_v1", "structural_kernel_response",
+    "write_primitive_observables", "build_bounded_transcripts", "build_feature_closure",
+    "select_features_for_dual_obstructions", "build_dost_auto_plan", "compile_experiment_from_auto_plan",
+    "build_dost_audit_reports", "run_dost_automation_stack",
 ]
 
 
@@ -64,3 +67,13 @@ from .proof_replay import ProofScript, scripts_from_trajectories, replay_proof_s
 
 from .structured_state import StructuredProofState, GoalASTNode, LocalContextGraph, MetaVarGraph, TypeclassObligationGraph, extract_structured_state
 from .kernel_state import KernelGoalStateServer, KernelGoalStateServerConfig, normalize_kernel_state_v1, structural_kernel_response
+from .dost_automation import (
+    write_primitive_observables,
+    build_bounded_transcripts,
+    build_feature_closure,
+    select_features_for_dual_obstructions,
+    build_dost_auto_plan,
+    compile_experiment_from_auto_plan,
+    build_dost_audit_reports,
+    run_dost_automation_stack,
+)

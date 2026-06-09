@@ -107,6 +107,16 @@ from .bivariate_contextual_quotient import (
 )
 from .face_taxonomy import build_dual_face_taxonomy
 from .obstruction_tower import build_canonical_obstruction_tower
+from .dost_automation import (
+    write_primitive_observables,
+    build_bounded_transcripts,
+    build_feature_closure,
+    select_features_for_dual_obstructions,
+    build_dost_auto_plan,
+    compile_experiment_from_auto_plan,
+    build_dost_audit_reports,
+    run_dost_automation_stack,
+)
 from .source_budget_scheduler import source_budget_schedule_from_files, SourceBudgetConfig, _read_json_or_file as _read_source_budget_json_or_file
 from .defect_ontology import reconcile_defect_ontology
 from .arithmetic_teacher import generate_arithmetic_teacher_graph, audit_arithmetic_teacher_transitions
@@ -610,6 +620,7 @@ def cmd_face_taxonomy(args):
         classes_path=getattr(args, "classes", None),
         validation_rows_path=getattr(args, "validation", None),
         repair_faces_path=getattr(args, "repair_faces", None),
+        generated_features_path=getattr(args, "generated_features", None),
         out_dir=args.out,
         min_support=getattr(args, "min_support", 1),
         min_retrieval_support=getattr(args, "min_retrieval_support", 2),
@@ -635,6 +646,119 @@ def cmd_obstruction_tower(args):
         repair_faces_path=getattr(args, "repair_faces", None),
         validation_rows_path=getattr(args, "validation", None),
         min_retrieval_support=getattr(args, "min_retrieval_support", 2),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_dost_primitive_observables(args):
+    summary = write_primitive_observables(
+        out=args.out,
+        report_out=getattr(args, "report_out", None),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_dost_bounded_transcripts(args):
+    summary = build_bounded_transcripts(
+        input_path=args.input,
+        out=args.out,
+        primitive_observables_out=getattr(args, "primitive_observables_out", None),
+        summary_out=getattr(args, "summary_out", None),
+        kernel_state_mode=getattr(args, "kernel_state_mode", "features"),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_dost_feature_closure(args):
+    summary = build_feature_closure(
+        transcripts_path=args.transcripts,
+        out=args.out,
+        values_out=getattr(args, "values_out", None),
+        report_out=getattr(args, "report_out", None),
+        max_features=getattr(args, "max_features", 512),
+        max_category_values=getattr(args, "max_category_values", 16),
+        max_interaction_features=getattr(args, "max_interaction_features", 24),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_dost_feature_select(args):
+    summary = select_features_for_dual_obstructions(
+        feature_closure_path=args.features,
+        feature_values_path=args.feature_values,
+        out=args.out,
+        report_out=getattr(args, "report_out", None),
+        taxonomy_path=getattr(args, "taxonomy", None),
+        max_selected_per_dual=getattr(args, "max_selected_per_dual", 8),
+        cost_weight=getattr(args, "cost_weight", 0.05),
+        mem_weight=getattr(args, "mem_weight", 0.10),
+        unsafe_weight=getattr(args, "unsafe_weight", 0.25),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_dost_autoplan(args):
+    summary = build_dost_auto_plan(
+        out=args.out,
+        selected_features_path=getattr(args, "selected_features", None),
+        taxonomy_path=getattr(args, "taxonomy", None),
+        tower_next_actions_path=getattr(args, "tower_next_actions", None),
+        tower_summary_path=getattr(args, "tower_summary", None),
+        invariant_ledger_path=getattr(args, "invariant_ledger", None),
+        cost_model_path=getattr(args, "cost_model", None),
+        compiled_experiment_out=getattr(args, "compiled_experiment_out", None),
+        notebook_out=getattr(args, "notebook_out", None),
+        max_actions=getattr(args, "max_actions", 12),
+        kernel_state_mode=getattr(args, "kernel_state_mode", "features"),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_dost_compile_experiment(args):
+    summary = compile_experiment_from_auto_plan(
+        auto_plan_path=args.auto_plan,
+        out=args.out,
+        notebook_out=getattr(args, "notebook_out", None),
+        base_command=getattr(args, "base_command", "lean-rgc pipeline"),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_dost_audit_reports(args):
+    summary = build_dost_audit_reports(
+        out_dir=args.out,
+        run_dir=getattr(args, "run_dir", None),
+        server_summary_path=getattr(args, "server_summary", None),
+        fingerprint_report_path=getattr(args, "fingerprint_report", None),
+        fingerprints_path=getattr(args, "fingerprints", None),
+        premise_use_rows_path=getattr(args, "premise_use_rows", None),
+        classes_path=getattr(args, "classes", None),
+        validation_rows_path=getattr(args, "validation", None),
+        validation_report_path=getattr(args, "validation_report", None),
+        taxonomy_path=getattr(args, "taxonomy", None),
+        taxonomy_report_path=getattr(args, "taxonomy_report", None),
+        retrieval_faces_path=getattr(args, "retrieval_faces", None),
+        tower_summary_path=getattr(args, "tower_summary", None),
+        tower_next_actions_path=getattr(args, "tower_next_actions", None),
+        dost_report_path=getattr(args, "dost_report", None),
+        feature_selection_report_path=getattr(args, "feature_selection_report", None),
+        selected_features_path=getattr(args, "selected_features", None),
+        responses_path=getattr(args, "responses", None),
+        actions_path=getattr(args, "actions", None),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
+
+
+def cmd_dost_stack(args):
+    summary = run_dost_automation_stack(
+        input_path=args.input,
+        out_dir=args.out,
+        taxonomy_path=getattr(args, "taxonomy", None),
+        tower_next_actions_path=getattr(args, "tower_next_actions", None),
+        tower_summary_path=getattr(args, "tower_summary", None),
+        max_features=getattr(args, "max_features", 512),
+        max_selected_per_dual=getattr(args, "max_selected_per_dual", 8),
+        kernel_state_mode=getattr(args, "kernel_state_mode", "features"),
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
 
@@ -2126,6 +2250,12 @@ def cmd_pipeline(args):
     face_taxonomy_dir = None
     face_taxonomy_path = None
     obstruction_tower_dir = None
+    dost_dir = None
+    dost_feature_closure_path = None
+    dost_feature_values_path = None
+    dost_selected_features_path = None
+    dost_auto_plan_path = None
+    dost_audit_dir = None
     premise_contextual_requested = any(getattr(args, k, False) for k in [
         'premise_contextual_quotient',
         'premise_contextual_generate',
@@ -2137,6 +2267,7 @@ def cmd_pipeline(args):
         'repair_face_ledger',
         'face_taxonomy',
         'obstruction_tower',
+        'dost_automation',
     ])
     if premise_contextual_requested:
         premise_contextual_dir = out / 'premise_contextual'
@@ -2204,7 +2335,7 @@ def cmd_pipeline(args):
                     include_identity=True,
                     include_baselines=True,
                 )
-            if getattr(args, 'audit_premise_contextual_candidates', False) or getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_mine', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'premise_quotient_retrieve', False) or getattr(args, 'face_taxonomy', False) or getattr(args, 'obstruction_tower', False):
+            if getattr(args, 'audit_premise_contextual_candidates', False) or getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_mine', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'premise_quotient_retrieve', False) or getattr(args, 'face_taxonomy', False) or getattr(args, 'obstruction_tower', False) or getattr(args, 'dost_automation', False):
                 premise_contextual_audit_dir = out / 'premise_contextual_audit'
                 audit_actions_path = premise_contextual_scheduled_path if premise_contextual_scheduled_path is not None else premise_contextual_candidates_path
                 audit_budget = getattr(args, 'bivariate_audit_budget', None) or getattr(args, 'premise_contextual_audit_max_actions', 32)
@@ -2250,7 +2381,7 @@ def cmd_pipeline(args):
                     min_contexts=1,
                     baseline_required=getattr(args, 'premise_contextual_baseline_required', False),
                 )
-                if getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_mine', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'premise_quotient_retrieve', False) or getattr(args, 'face_taxonomy', False) or getattr(args, 'obstruction_tower', False):
+                if getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_mine', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'premise_quotient_retrieve', False) or getattr(args, 'face_taxonomy', False) or getattr(args, 'obstruction_tower', False) or getattr(args, 'dost_automation', False):
                     mine_premise_contextual_quotient(
                         fingerprints_path=premise_contextual_fingerprints_path,
                         out_dir=premise_contextual_dir,
@@ -2259,7 +2390,7 @@ def cmd_pipeline(args):
                         domain_jaccard_threshold=getattr(args, 'premise_contextual_domain_jaccard_threshold', 0.0),
                     )
                     premise_contextual_classes_path = premise_contextual_dir / 'premise_quotient_classes.jsonl'
-                if getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'face_taxonomy', False) or getattr(args, 'obstruction_tower', False):
+                if getattr(args, 'premise_contextual_quotient', False) or getattr(args, 'premise_contextual_validate', False) or getattr(args, 'face_taxonomy', False) or getattr(args, 'obstruction_tower', False) or getattr(args, 'dost_automation', False):
                     if premise_contextual_classes_path and premise_contextual_classes_path.exists() and (not getattr(args, 'skip_vacuous_premise_quotient', False) or read_jsonl(premise_contextual_classes_path)):
                         validate_premise_contextual_quotient(
                             fingerprints_path=premise_contextual_fingerprints_path,
@@ -2270,7 +2401,7 @@ def cmd_pipeline(args):
                             separation_delta=getattr(args, 'premise_contextual_separation_delta', 0.10),
                             domain_jaccard_min=getattr(args, 'premise_contextual_domain_jaccard_threshold', 0.0),
                         )
-                if getattr(args, 'repair_face_ledger', False) or getattr(args, 'obstruction_tower', False):
+                if getattr(args, 'repair_face_ledger', False) or getattr(args, 'face_taxonomy', False) or getattr(args, 'obstruction_tower', False) or getattr(args, 'dost_automation', False):
                     if premise_contextual_classes_path and premise_contextual_classes_path.exists() and read_jsonl(premise_contextual_classes_path):
                         repair_face_ledger_path = premise_contextual_dir / 'repair_faces.jsonl'
                         build_repair_face_ledger(
@@ -2280,7 +2411,30 @@ def cmd_pipeline(args):
                             out=repair_face_ledger_path,
                             report_out=premise_contextual_dir/'repair_face_ledger_report.json',
                         )
-                if getattr(args, 'face_taxonomy', False) or getattr(args, 'obstruction_tower', False):
+                if getattr(args, 'dost_automation', False):
+                    if premise_contextual_fingerprints_path and premise_contextual_fingerprints_path.exists() and read_jsonl(premise_contextual_fingerprints_path):
+                        dost_dir = premise_contextual_dir / 'dost'
+                        dost_dir.mkdir(parents=True, exist_ok=True)
+                        write_primitive_observables(
+                            dost_dir / 'primitive_observables.jsonl',
+                            report_out=dost_dir / 'primitive_observables_report.json',
+                        )
+                        build_bounded_transcripts(
+                            premise_contextual_fingerprints_path,
+                            dost_dir / 'bounded_transcripts.jsonl',
+                            summary_out=dost_dir / 'bounded_transcripts_report.json',
+                            kernel_state_mode=getattr(args, 'kernel_state_mode', 'features'),
+                        )
+                        dost_feature_closure_path = dost_dir / 'feature_closure.jsonl'
+                        dost_feature_values_path = dost_dir / 'bounded_feature_transcripts.jsonl'
+                        build_feature_closure(
+                            dost_dir / 'bounded_transcripts.jsonl',
+                            dost_feature_closure_path,
+                            values_out=dost_feature_values_path,
+                            report_out=dost_dir / 'feature_closure_report.json',
+                            max_features=getattr(args, 'dost_max_features', 512),
+                        )
+                if getattr(args, 'face_taxonomy', False) or getattr(args, 'obstruction_tower', False) or getattr(args, 'dost_automation', False):
                     if premise_contextual_fingerprints_path and premise_contextual_fingerprints_path.exists() and read_jsonl(premise_contextual_fingerprints_path):
                         face_taxonomy_dir = premise_contextual_dir / 'face_taxonomy'
                         validation_path = premise_contextual_dir / 'premise_quotient_validation_rows.jsonl'
@@ -2290,6 +2444,7 @@ def cmd_pipeline(args):
                             classes_path=premise_contextual_classes_path if premise_contextual_classes_path and premise_contextual_classes_path.exists() else None,
                             validation_rows_path=validation_path if validation_path.exists() else None,
                             repair_faces_path=repair_face_ledger_path if repair_face_ledger_path and Path(repair_face_ledger_path).exists() else None,
+                            generated_features_path=dost_feature_values_path if dost_feature_values_path and Path(dost_feature_values_path).exists() else None,
                             out_dir=face_taxonomy_dir,
                             min_support=getattr(args, 'face_taxonomy_min_support', 1),
                             min_retrieval_support=getattr(args, 'face_taxonomy_min_retrieval_support', 2),
@@ -2297,7 +2452,7 @@ def cmd_pipeline(args):
                             max_pair_properties=getattr(args, 'face_taxonomy_max_pair_properties', 80),
                             allow_singleton_retrieval=getattr(args, 'face_taxonomy_allow_singleton_retrieval', False),
                         )
-                if getattr(args, 'obstruction_tower', False):
+                if getattr(args, 'obstruction_tower', False) or getattr(args, 'dost_automation', False):
                     if face_taxonomy_dir and face_taxonomy_path and Path(face_taxonomy_path).exists() and read_jsonl(face_taxonomy_path):
                         obstruction_tower_dir = premise_contextual_dir / 'obstruction_tower'
                         build_canonical_obstruction_tower(
@@ -2311,6 +2466,70 @@ def cmd_pipeline(args):
                             repair_faces_path=repair_face_ledger_path if repair_face_ledger_path and Path(repair_face_ledger_path).exists() else None,
                             validation_rows_path=premise_contextual_dir/'premise_quotient_validation_rows.jsonl',
                             min_retrieval_support=getattr(args, 'face_taxonomy_min_retrieval_support', 2),
+                        )
+                if getattr(args, 'dost_automation', False):
+                    if dost_feature_closure_path and dost_feature_values_path and Path(dost_feature_closure_path).exists() and Path(dost_feature_values_path).exists():
+                        if dost_dir is None:
+                            dost_dir = premise_contextual_dir / 'dost'
+                            dost_dir.mkdir(parents=True, exist_ok=True)
+                        dost_selected_features_path = dost_dir / 'selected_features.jsonl'
+                        select_features_for_dual_obstructions(
+                            dost_feature_closure_path,
+                            dost_feature_values_path,
+                            dost_selected_features_path,
+                            report_out=dost_dir / 'feature_selection_report.json',
+                            taxonomy_path=face_taxonomy_path if face_taxonomy_path and Path(face_taxonomy_path).exists() else None,
+                            max_selected_per_dual=getattr(args, 'dost_max_selected_per_dual', 8),
+                        )
+                        dost_auto_plan_path = dost_dir / 'auto_plan.json'
+                        build_dost_auto_plan(
+                            dost_auto_plan_path,
+                            selected_features_path=dost_selected_features_path,
+                            taxonomy_path=face_taxonomy_path if face_taxonomy_path and Path(face_taxonomy_path).exists() else None,
+                            tower_next_actions_path=obstruction_tower_dir / 'tower_next_actions.jsonl' if obstruction_tower_dir and (obstruction_tower_dir / 'tower_next_actions.jsonl').exists() else None,
+                            tower_summary_path=obstruction_tower_dir / 'tower_summary.json' if obstruction_tower_dir and (obstruction_tower_dir / 'tower_summary.json').exists() else None,
+                            compiled_experiment_out=dost_dir / 'compiled_experiment.sh',
+                            notebook_out=dost_dir / 'compiled_notebook_cells.ipynb',
+                            kernel_state_mode=getattr(args, 'kernel_state_mode', 'features'),
+                        )
+                        dost_report = {
+                            'schema_version': 'lean-rgc-dost-automation-stack-v57.0',
+                            'out_dir': str(dost_dir),
+                            'artifacts': {
+                                'primitive_observables': str(dost_dir / 'primitive_observables.jsonl'),
+                                'bounded_transcripts': str(dost_dir / 'bounded_transcripts.jsonl'),
+                                'feature_closure': str(dost_feature_closure_path),
+                                'feature_values': str(dost_feature_values_path),
+                                'selected_features': str(dost_selected_features_path),
+                                'feature_selection_report': str(dost_dir / 'feature_selection_report.json'),
+                                'auto_plan': str(dost_auto_plan_path),
+                                'compiled_experiment': str(dost_dir / 'compiled_experiment.sh'),
+                                'compiled_notebook_cells': str(dost_dir / 'compiled_notebook_cells.ipynb'),
+                            },
+                            'canonical_status': 'dost_automation_stack_is_finite_chart_not_canonical',
+                        }
+                        (dost_dir / 'dost_obstruction_report.json').write_text(json.dumps(dost_report, indent=2, ensure_ascii=False), encoding='utf-8')
+                        dost_audit_dir = dost_dir / 'audit'
+                        build_dost_audit_reports(
+                            dost_audit_dir,
+                            run_dir=out,
+                            server_summary_path=premise_contextual_audit_dir / 'summary.json' if premise_contextual_audit_dir and (premise_contextual_audit_dir / 'summary.json').exists() else None,
+                            fingerprints_path=premise_contextual_fingerprints_path,
+                            fingerprint_report_path=premise_contextual_dir / 'premise_contextual_fingerprint_report.json' if premise_contextual_dir and (premise_contextual_dir / 'premise_contextual_fingerprint_report.json').exists() else None,
+                            premise_use_rows_path=premise_use_rows_path if premise_use_rows_path and Path(premise_use_rows_path).exists() else None,
+                            classes_path=premise_contextual_classes_path if premise_contextual_classes_path and Path(premise_contextual_classes_path).exists() else None,
+                            validation_rows_path=premise_contextual_dir / 'premise_quotient_validation_rows.jsonl' if premise_contextual_dir and (premise_contextual_dir / 'premise_quotient_validation_rows.jsonl').exists() else None,
+                            validation_report_path=premise_contextual_dir / 'premise_quotient_validation_report.json' if premise_contextual_dir and (premise_contextual_dir / 'premise_quotient_validation_report.json').exists() else None,
+                            taxonomy_path=face_taxonomy_path if face_taxonomy_path and Path(face_taxonomy_path).exists() else None,
+                            taxonomy_report_path=face_taxonomy_dir / 'dual_face_taxonomy_report.json' if face_taxonomy_dir and (face_taxonomy_dir / 'dual_face_taxonomy_report.json').exists() else None,
+                            retrieval_faces_path=face_taxonomy_dir / 'retrieval_allowed_faces.jsonl' if face_taxonomy_dir and (face_taxonomy_dir / 'retrieval_allowed_faces.jsonl').exists() else None,
+                            tower_summary_path=obstruction_tower_dir / 'tower_summary.json' if obstruction_tower_dir and (obstruction_tower_dir / 'tower_summary.json').exists() else None,
+                            tower_next_actions_path=obstruction_tower_dir / 'tower_next_actions.jsonl' if obstruction_tower_dir and (obstruction_tower_dir / 'tower_next_actions.jsonl').exists() else None,
+                            dost_report_path=dost_dir / 'dost_obstruction_report.json',
+                            feature_selection_report_path=dost_dir / 'feature_selection_report.json',
+                            selected_features_path=dost_selected_features_path,
+                            responses_path=premise_contextual_audit_dir / 'responses.jsonl' if premise_contextual_audit_dir and (premise_contextual_audit_dir / 'responses.jsonl').exists() else None,
+                            actions_path=args.actions,
                         )
                 if getattr(args, 'premise_quotient_retrieve', False):
                     if premise_contextual_classes_path and premise_contextual_classes_path.exists() and (not getattr(args, 'skip_vacuous_premise_quotient', False) or read_jsonl(premise_contextual_classes_path)):
@@ -2607,6 +2826,23 @@ def cmd_pipeline(args):
         'premise_contextual_tower_promotions': str(obstruction_tower_dir/'tower_promotions.jsonl') if locals().get('obstruction_tower_dir') else None,
         'premise_contextual_tower_next_actions': str(obstruction_tower_dir/'tower_next_actions.jsonl') if locals().get('obstruction_tower_dir') else None,
         'premise_contextual_tower_retrieval_candidates': str(obstruction_tower_dir/'tower_retrieval_candidates.jsonl') if locals().get('obstruction_tower_dir') else None,
+        'dost_audit_dir': str(dost_audit_dir) if locals().get('dost_audit_dir') else None,
+        'dost_invariant_ledger': str(dost_audit_dir/'invariant_ledger.json') if locals().get('dost_audit_dir') else None,
+        'dost_proof_blocker_report': str(dost_audit_dir/'proof_blocker_report.json') if locals().get('dost_audit_dir') else None,
+        'dost_action_poverty_report': str(dost_audit_dir/'action_poverty_report.json') if locals().get('dost_audit_dir') else None,
+        'dost_big_theorem_readiness': str(dost_audit_dir/'big_theorem_readiness.json') if locals().get('dost_audit_dir') else None,
+        'dost_audit_dashboard': str(dost_audit_dir/'audit_dashboard.json') if locals().get('dost_audit_dir') else None,
+        'dost_retrieval_safety_report': str(dost_audit_dir/'retrieval_safety_report.json') if locals().get('dost_audit_dir') else None,
+        'dost_dir': str(dost_dir) if locals().get('dost_dir') else None,
+        'primitive_observables': str(dost_dir/'primitive_observables.jsonl') if locals().get('dost_dir') else None,
+        'bounded_transcripts': str(dost_dir/'bounded_transcripts.jsonl') if locals().get('dost_dir') else None,
+        'feature_closure': str(dost_feature_closure_path) if locals().get('dost_feature_closure_path') else None,
+        'bounded_feature_transcripts': str(dost_feature_values_path) if locals().get('dost_feature_values_path') else None,
+        'selected_features': str(dost_selected_features_path) if locals().get('dost_selected_features_path') else None,
+        'feature_selection_report': str(dost_dir/'feature_selection_report.json') if locals().get('dost_dir') else None,
+        'auto_plan': str(dost_auto_plan_path) if locals().get('dost_auto_plan_path') else None,
+        'compiled_experiment': str(dost_dir/'compiled_experiment.sh') if locals().get('dost_dir') else None,
+        'compiled_notebook_cells': str(dost_dir/'compiled_notebook_cells.ipynb') if locals().get('dost_dir') else None,
         'premise_quotient_retrieved': str(premise_quotient_retrieved_path) if locals().get('premise_quotient_retrieved_path') else None,
         'premise_quotient_actions': str(premise_quotient_actions_path) if locals().get('premise_quotient_actions_path') else None,
         'carrier_generated':str(out/'carrier_generated_contexts.jsonl'),'carrier_actions':str(carrier_actions_path),'carrier_coker':str(out/'carrier_coker.jsonl'),
@@ -3412,6 +3648,7 @@ def cmd_kernel_state_probe(args):
         keep_files=bool(getattr(args, "keep_files", False)),
         cache_dir=getattr(args, "cache_dir", None),
         trace_state=bool(getattr(args, "trace_state", False)),
+        kernel_state_mode=getattr(args, "kernel_state_mode", "features"),
     )
     server = KernelGoalStateServer(cfg)
     init = server.register_task(task)
@@ -3941,6 +4178,10 @@ def add_premise_contextual_pipeline_args(parser: argparse.ArgumentParser) -> Non
     parser.add_argument('--face-taxonomy-max-pair-properties', type=int, default=80)
     parser.add_argument('--face-taxonomy-allow-singleton-retrieval', action='store_true')
     parser.add_argument('--obstruction-tower', action='store_true', help='Build finite Canonical Obstruction Tower artifacts from the face taxonomy chart.')
+    parser.add_argument('--dost-automation', action='store_true', help='Generate primitive observables, feature closure, feature selection, and a DOST auto-plan.')
+    parser.add_argument('--kernel-state-mode', choices=['none','summary','features','full'], default='features')
+    parser.add_argument('--dost-max-features', type=int, default=512)
+    parser.add_argument('--dost-max-selected-per-dual', type=int, default=8)
     parser.add_argument('--premise-contextual-mine', action='store_true')
     parser.add_argument('--premise-contextual-validate', action='store_true')
     parser.add_argument('--premise-contextual-epsilon', type=float, default=0.25)
@@ -4219,8 +4460,16 @@ def build_parser() -> argparse.ArgumentParser:
     bcg=sub.add_parser('bivariate-contextual-generate'); bcg.add_argument('--premise-rows', required=True); bcg.add_argument('--contexts', required=True); bcg.add_argument('--out', required=True); bcg.add_argument('--summary-out'); bcg.add_argument('--max-rows', type=int); bcg.add_argument('--max-pre', type=int, default=8); bcg.add_argument('--max-post', type=int, default=8); bcg.add_argument('--max-candidates', type=int); bcg.add_argument('--no-baselines', action='store_true'); bcg.set_defaults(func=cmd_bivariate_contextual_generate)
     bcs=sub.add_parser('bivariate-contextual-schedule'); bcs.add_argument('--candidates', required=True); bcs.add_argument('--out', required=True); bcs.add_argument('--budget', type=int, default=512); bcs.add_argument('--report-out'); bcs.add_argument('--require-baseline-pairs', action='store_true'); bcs.set_defaults(func=cmd_bivariate_contextual_schedule)
     rfl=sub.add_parser('repair-face-ledger'); rfl.add_argument('--fingerprints', required=True); rfl.add_argument('--classes', required=True); rfl.add_argument('--validation'); rfl.add_argument('--out', required=True); rfl.add_argument('--report'); rfl.set_defaults(func=cmd_repair_face_ledger)
-    ftx=sub.add_parser('face-taxonomy'); ftx.add_argument('--fingerprints', required=True); ftx.add_argument('--classes'); ftx.add_argument('--validation'); ftx.add_argument('--repair-faces'); ftx.add_argument('--out', required=True); ftx.add_argument('--min-support', type=int, default=1); ftx.add_argument('--min-retrieval-support', type=int, default=2); ftx.add_argument('--positive-threshold', type=float, default=1e-9); ftx.add_argument('--negative-threshold', type=float, default=-1e-9); ftx.add_argument('--carrier-threshold', type=float, default=1e-12); ftx.add_argument('--max-concepts', type=int, default=256); ftx.add_argument('--max-pair-properties', type=int, default=80); ftx.add_argument('--allow-singleton-retrieval', action='store_true'); ftx.set_defaults(func=cmd_face_taxonomy)
+    ftx=sub.add_parser('face-taxonomy'); ftx.add_argument('--fingerprints', required=True); ftx.add_argument('--classes'); ftx.add_argument('--validation'); ftx.add_argument('--repair-faces'); ftx.add_argument('--generated-features'); ftx.add_argument('--out', required=True); ftx.add_argument('--min-support', type=int, default=1); ftx.add_argument('--min-retrieval-support', type=int, default=2); ftx.add_argument('--positive-threshold', type=float, default=1e-9); ftx.add_argument('--negative-threshold', type=float, default=-1e-9); ftx.add_argument('--carrier-threshold', type=float, default=1e-12); ftx.add_argument('--max-concepts', type=int, default=256); ftx.add_argument('--max-pair-properties', type=int, default=80); ftx.add_argument('--allow-singleton-retrieval', action='store_true'); ftx.set_defaults(func=cmd_face_taxonomy)
     otw=sub.add_parser('obstruction-tower'); otw.add_argument('--out', required=True); otw.add_argument('--fingerprints'); otw.add_argument('--taxonomy-dir'); otw.add_argument('--taxonomy'); otw.add_argument('--concept-lattice'); otw.add_argument('--row-memberships'); otw.add_argument('--retrieval-faces'); otw.add_argument('--repair-faces'); otw.add_argument('--validation'); otw.add_argument('--min-retrieval-support', type=int, default=2); otw.set_defaults(func=cmd_obstruction_tower)
+    dpo=sub.add_parser('dost-primitive-observables'); dpo.add_argument('--out', required=True); dpo.add_argument('--report-out'); dpo.set_defaults(func=cmd_dost_primitive_observables)
+    dbt=sub.add_parser('dost-bounded-transcripts'); dbt.add_argument('--input', required=True); dbt.add_argument('--out', required=True); dbt.add_argument('--primitive-observables-out'); dbt.add_argument('--summary-out'); dbt.add_argument('--kernel-state-mode', choices=['none','summary','features','full'], default='features'); dbt.set_defaults(func=cmd_dost_bounded_transcripts)
+    dfc=sub.add_parser('dost-feature-closure'); dfc.add_argument('--transcripts', required=True); dfc.add_argument('--out', required=True); dfc.add_argument('--values-out'); dfc.add_argument('--report-out'); dfc.add_argument('--max-features', type=int, default=512); dfc.add_argument('--max-category-values', type=int, default=16); dfc.add_argument('--max-interaction-features', type=int, default=24); dfc.set_defaults(func=cmd_dost_feature_closure)
+    dfs=sub.add_parser('dost-feature-select'); dfs.add_argument('--features', required=True); dfs.add_argument('--feature-values', required=True); dfs.add_argument('--out', required=True); dfs.add_argument('--report-out'); dfs.add_argument('--taxonomy'); dfs.add_argument('--max-selected-per-dual', type=int, default=8); dfs.add_argument('--cost-weight', type=float, default=0.05); dfs.add_argument('--mem-weight', type=float, default=0.10); dfs.add_argument('--unsafe-weight', type=float, default=0.25); dfs.set_defaults(func=cmd_dost_feature_select)
+    dap=sub.add_parser('dost-autoplan'); dap.add_argument('--out', required=True); dap.add_argument('--selected-features'); dap.add_argument('--taxonomy'); dap.add_argument('--tower-next-actions'); dap.add_argument('--tower-summary'); dap.add_argument('--invariant-ledger'); dap.add_argument('--cost-model'); dap.add_argument('--compiled-experiment-out'); dap.add_argument('--notebook-out'); dap.add_argument('--max-actions', type=int, default=12); dap.add_argument('--kernel-state-mode', choices=['none','summary','features','full'], default='features'); dap.set_defaults(func=cmd_dost_autoplan)
+    dce=sub.add_parser('dost-compile-experiment'); dce.add_argument('--auto-plan', required=True); dce.add_argument('--out', required=True); dce.add_argument('--notebook-out'); dce.add_argument('--base-command', default='lean-rgc pipeline'); dce.set_defaults(func=cmd_dost_compile_experiment)
+    dar=sub.add_parser('dost-audit-reports'); dar.add_argument('--out', required=True); dar.add_argument('--run-dir'); dar.add_argument('--server-summary'); dar.add_argument('--fingerprint-report'); dar.add_argument('--fingerprints'); dar.add_argument('--premise-use-rows'); dar.add_argument('--classes'); dar.add_argument('--validation'); dar.add_argument('--validation-report'); dar.add_argument('--taxonomy'); dar.add_argument('--taxonomy-report'); dar.add_argument('--retrieval-faces'); dar.add_argument('--tower-summary'); dar.add_argument('--tower-next-actions'); dar.add_argument('--dost-report'); dar.add_argument('--feature-selection-report'); dar.add_argument('--selected-features'); dar.add_argument('--responses'); dar.add_argument('--actions'); dar.set_defaults(func=cmd_dost_audit_reports)
+    dst=sub.add_parser('dost-stack'); dst.add_argument('--input', required=True); dst.add_argument('--out', required=True); dst.add_argument('--taxonomy'); dst.add_argument('--tower-next-actions'); dst.add_argument('--tower-summary'); dst.add_argument('--max-features', type=int, default=512); dst.add_argument('--max-selected-per-dual', type=int, default=8); dst.add_argument('--kernel-state-mode', choices=['none','summary','features','full'], default='features'); dst.set_defaults(func=cmd_dost_stack)
     cact=sub.add_parser('carrier-actions'); cact.add_argument('--proposals', required=True); cact.add_argument('--out', required=True); cact.add_argument('--prefix', default='carrier'); cact.add_argument('--max-actions-per-context', type=int, default=8); cact.set_defaults(func=cmd_carrier_actions)
     acact=sub.add_parser('accepted-carrier-actions'); acact.add_argument('--accepted', required=True); acact.add_argument('--out', required=True); acact.add_argument('--min-margin', type=float, default=0.0); acact.add_argument('--include-rejected', action='store_true'); acact.set_defaults(func=cmd_accepted_carrier_actions)
     ma=sub.add_parser('merge-actions'); ma.add_argument('--inputs', nargs='+', required=True); ma.add_argument('--out', required=True); ma.set_defaults(func=cmd_merge_actions)
@@ -4430,7 +4679,7 @@ def build_parser() -> argparse.ArgumentParser:
     gst=sub.add_parser('goal-state-transitions'); gst.add_argument('--audits', required=True); gst.add_argument('--out', required=True); gst.add_argument('--summary-out'); gst.set_defaults(func=cmd_goal_state_transitions)
     ksg=sub.add_parser('kernel-state-graphs'); ksg.add_argument('--kernel-jsonl', required=True); ksg.add_argument('--out', required=True); ksg.add_argument('--summary-out'); ksg.set_defaults(func=cmd_kernel_state_graphs)
     ksn=sub.add_parser('kernel-state-normalize'); ksn.add_argument('--kernel-jsonl', required=True); ksn.add_argument('--out', required=True); ksn.add_argument('--summary-out'); ksn.set_defaults(func=cmd_kernel_state_normalize)
-    ksp=sub.add_parser('kernel-state-probe'); ksp.add_argument('--task-json', required=True); ksp.add_argument('--action-json', required=True); ksp.add_argument('--out'); ksp.add_argument('--backend', choices=['dry_run','file'], default='dry_run'); ksp.add_argument('--lean-cmd', default='lake env lean'); ksp.add_argument('--workdir'); ksp.add_argument('--timeout-s', type=float, default=20.0); ksp.add_argument('--keep-files', action='store_true'); ksp.add_argument('--cache-dir'); ksp.add_argument('--trace-state', action='store_true'); ksp.set_defaults(func=cmd_kernel_state_probe)
+    ksp=sub.add_parser('kernel-state-probe'); ksp.add_argument('--task-json', required=True); ksp.add_argument('--action-json', required=True); ksp.add_argument('--out'); ksp.add_argument('--backend', choices=['dry_run','file'], default='dry_run'); ksp.add_argument('--lean-cmd', default='lake env lean'); ksp.add_argument('--workdir'); ksp.add_argument('--timeout-s', type=float, default=20.0); ksp.add_argument('--keep-files', action='store_true'); ksp.add_argument('--cache-dir'); ksp.add_argument('--trace-state', action='store_true'); ksp.add_argument('--kernel-state-mode', choices=['none','summary','features','full'], default='features'); ksp.set_defaults(func=cmd_kernel_state_probe)
 
     aas=sub.add_parser('active-audit-schedule')
     aas.add_argument('--candidates', action='append', required=True, help='Candidate action JSONL. May be passed multiple times.')

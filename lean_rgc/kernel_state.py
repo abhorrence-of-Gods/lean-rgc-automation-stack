@@ -27,6 +27,7 @@ LOCAL_CONTEXT_GRAPH_SCHEMA_VERSION = "lean-rgc-local-context-graph-v1"
 MVAR_GRAPH_SCHEMA_VERSION = "lean-rgc-metavariable-graph-v1"
 TYPECLASS_GRAPH_SCHEMA_VERSION = "lean-rgc-typeclass-graph-v1"
 TRANSITION_SCHEMA_VERSION = "lean-rgc-kernel-transition-v1"
+KERNEL_OBSERVATION_SCHEMA_VERSION = "lean-rgc-kernel-observation-v55.0"
 
 _TOKEN_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_'.]*|[0-9]+|\?m\.[A-Za-z0-9_.']+|[=<>+\-*/(),:{}\[\]]")
 _MVAR_RE = re.compile(r"\?[A-Za-z_][A-Za-z0-9_.']*|\?m\.[0-9A-Za-z_.']+")
@@ -678,6 +679,112 @@ def normalize_kernel_state_v1(
     return top
 
 
+def _state_json_bytes(obj: dict[str, Any]) -> int:
+    try:
+        return len(json.dumps(obj, ensure_ascii=False, default=str).encode("utf-8"))
+    except Exception:
+        return 0
+
+
+def kernel_state_observation(kernel_state: dict[str, Any], *, mode: str = "features") -> dict[str, Any]:
+    """Project a kernel state to a bounded observation payload.
+
+    ``full`` is kept for debug/backward compatibility.  The operational DOST
+    path should use ``features`` so Python receives counts, hashes, heads, and
+    trusted carrier/domain atoms rather than full expression graphs.
+    """
+
+    mode = str(mode or "features")
+    if mode not in {"none", "summary", "features", "full"}:
+        raise ValueError(f"unknown kernel state observation mode: {mode}")
+    state = normalize_kernel_state_v1(kernel_state)
+    if mode == "full":
+        out = dict(state)
+        out["kernel_state_mode"] = "full"
+        out["json_bytes"] = _state_json_bytes(state)
+        return out
+    if mode == "none":
+        return {
+            "schema_version": KERNEL_OBSERVATION_SCHEMA_VERSION,
+            "mode": "none",
+            "state_id": state.get("state_id"),
+            "task_id": state.get("task_id"),
+            "status": state.get("status"),
+            "state_hash_norm": state.get("state_hash_norm"),
+            "goal_count": len(state.get("goals") or []),
+            "json_bytes": _state_json_bytes({"state_id": state.get("state_id"), "status": state.get("status")}),
+            "canonical_status": "kernel_bounded_observation_not_canonical",
+        }
+
+    goals = [g for g in state.get("goals") or [] if isinstance(g, dict)]
+    local_contexts = [c for c in state.get("local_contexts") or [] if isinstance(c, dict)]
+    local_nodes = [n for c in local_contexts for n in (c.get("nodes") or []) if isinstance(n, dict)]
+    metavars = [m for m in state.get("metavars") or [] if isinstance(m, dict)]
+    typeclasses = [tc for tc in state.get("typeclasses") or [] if isinstance(tc, dict)]
+    first_goal = goals[0] if goals else {}
+    target_head = str(first_goal.get("target_head") or "closed")
+    target_hash = str(first_goal.get("norm_hash") or state.get("state_hash_norm") or "")
+    target_relation = first_goal.get("relation")
+    domain_tags = sorted({str(t) for g in goals for t in _as_list(g.get("domain_tags"))})
+    carrier_atoms = sorted({str(t) for g in goals for t in _as_list(g.get("carrier_atoms_readout"))})
+    goal_summaries = [
+        {
+            "goal_id": g.get("goal_id"),
+            "target_head": g.get("target_head"),
+            "target_hash": g.get("norm_hash"),
+            "relation": g.get("relation"),
+            "domain_tags": _as_list(g.get("domain_tags")),
+            "carrier_atoms": _as_list(g.get("carrier_atoms_readout")),
+        }
+        for g in goals[:16]
+    ]
+    out = {
+        "schema_version": KERNEL_OBSERVATION_SCHEMA_VERSION,
+        "mode": mode,
+        "state_id": state.get("state_id"),
+        "task_id": state.get("task_id"),
+        "status": state.get("status"),
+        "state_hash_norm": state.get("state_hash_norm"),
+        "state_hash_raw": state.get("state_hash_raw") if mode == "summary" else None,
+        "goal_count": len(goals),
+        "goals": goal_summaries,
+        "local_context_count": len(local_nodes),
+        "local_instance_count": sum(1 for n in local_nodes if n.get("is_instance")),
+        "metavariable_count": len(metavars),
+        "open_mvar_count": sum(1 for m in metavars if not m.get("assigned")),
+        "typeclass_obligation_count": len(typeclasses),
+        "open_typeclass_obligation_count": sum(1 for tc in typeclasses if str(tc.get("status") or "pending") not in {"closed", "synthesized", "solved"}),
+        "json_bytes": _state_json_bytes(state) if mode == "summary" else _state_json_bytes({"goals": goal_summaries, "state_hash_norm": state.get("state_hash_norm")}),
+        "canonical_status": "kernel_bounded_observation_not_canonical",
+    }
+    if mode == "features":
+        out.update(
+            {
+                "target_head": target_head,
+                "target_hash": target_hash,
+                "target_relation": target_relation,
+                "domain_tags": domain_tags,
+                "carrier_atoms": carrier_atoms,
+            }
+        )
+        out.pop("state_hash_raw", None)
+    return out
+
+
+def enrich_kernel_transition_delta(delta: dict[str, Any]) -> dict[str, Any]:
+    out = dict(delta or {})
+    before = int(out.get("goal_count_before") or 0)
+    after = int(out.get("goal_count_after") or 0)
+    tc_before = int(out.get("typeclass_open_before") or 0)
+    tc_after = int(out.get("typeclass_open_after") or 0)
+    out.setdefault("goal_count_delta", after - before)
+    out.setdefault("closed_goal_delta", max(0, before - after))
+    out.setdefault("new_goal_count", max(0, after - before))
+    out.setdefault("new_mvar_count", len(_as_list(out.get("new_mvars"))))
+    out.setdefault("typeclass_obligation_delta", tc_after - tc_before)
+    return out
+
+
 def structural_kernel_response(before: dict[str, Any], after: dict[str, Any], *, action: dict[str, Any] | None = None) -> dict[str, Any]:
     """Compute a finite structural response from two kernel states."""
     b = normalize_kernel_state_v1(before)
@@ -763,6 +870,7 @@ class KernelGoalStateServerConfig:
     cache_dir: str | None = None
     trace_state: bool = False
     session_id: str | None = None
+    kernel_state_mode: str = "features"
 
 
 class KernelGoalStateServer:
@@ -961,7 +1069,10 @@ class KernelGoalStateServer:
         )
         self.states[after_id] = after_rec
         after_kernel = self.kernel_state(after_id)
-        state_delta = compute_goal_state_transition_delta(before_kernel, after_kernel, action=action.to_dict())
+        state_delta = enrich_kernel_transition_delta(compute_goal_state_transition_delta(before_kernel, after_kernel, action=action.to_dict()))
+        mode = str(self.config.kernel_state_mode or "features")
+        before_observation = kernel_state_observation(before_kernel, mode=mode)
+        after_observation = kernel_state_observation(after_kernel, mode=mode)
         replay_certificate = {
             "proof_prefix_before": before_rec.prefix,
             "action": action.tactic,
@@ -976,13 +1087,23 @@ class KernelGoalStateServer:
             "before_state_id": before_rec.state_id,
             "after_state_id": after_rec.state_id,
             "state_delta": state_delta,
-            "goals_before": before_kernel.get("goals") or [],
-            "goals_after": after_kernel.get("goals") or [],
+            "goals_before": before_observation.get("goals") or [],
+            "goals_after": after_observation.get("goals") or [],
             "messages": list(rec.messages or []),
             "heartbeats": rec.heartbeats,
             "elapsed_ms": rec.elapsed_ms,
-            "kernel_state_before": before_kernel,
-            "kernel_state_after": after_kernel,
+            "kernel_state_mode": mode,
+            "before_observation": before_observation,
+            "after_observation": after_observation,
+            "kernel_state_before": before_kernel if mode == "full" else before_observation,
+            "kernel_state_after": after_kernel if mode == "full" else after_observation,
+            "transition_features": {
+                "domain_ok": before_kernel.get("task_id") == after_kernel.get("task_id"),
+                "carrier_safe": len(_as_list(state_delta.get("new_mvars"))) <= 16,
+                "error_signature": None if rec.status in {"success", "partial", "dry_run"} else stable_hash(list(rec.messages or []) + [rec.stderr or ""], n=16),
+                "elapsed_ms": rec.elapsed_ms,
+                "json_bytes": _state_json_bytes(before_observation) + _state_json_bytes(after_observation),
+            },
             "replay": replay_certificate,
             "safety": self._safety(rec, before_kernel, after_kernel),
             "response": structural_kernel_response(before_kernel, after_kernel, action=action.to_dict()),
@@ -1003,6 +1124,8 @@ __all__ = [
     "build_goals_v1",
     "build_metavars_v1",
     "build_typeclasses_v1",
+    "kernel_state_observation",
+    "enrich_kernel_transition_delta",
     "structural_kernel_response",
     "extractor_response",
 ]
