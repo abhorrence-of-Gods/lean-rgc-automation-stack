@@ -16,6 +16,7 @@ Useful targets:
 python -m pytest -m "unit or integration or golden" -q
 python -m pytest -m e2e -q
 python -m pytest -m "legacy or slow" -q
+lean-rgc benchmark smoke --out runs/benchmark_smoke --dry-run --run-db
 ```
 
 Tier meanings:

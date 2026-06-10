@@ -270,6 +270,10 @@
     "integration",
     "golden"
   ],
+  "test_v76_benchmark_runtime_boundary.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

@@ -30,6 +30,16 @@ lean-rgc data query --db runs/dry_audit/runs.db --sql "SELECT COUNT(*) AS n FROM
 lean-rgc data lineage --db runs/dry_audit/runs.db
 ```
 
+## Benchmark Commands
+
+```bash
+lean-rgc benchmark smoke --out runs/benchmark_smoke --dry-run --run-db
+```
+
+The smoke benchmark command runs the stable benchmark corpus through the
+standard pipeline. When `--run-db` is set, it also checks run DB invariants and
+returns nonzero on failure.
+
 ## Migration Policy
 
 Deprecated root commands such as `run-db-build`, `run-db-query`,
@@ -40,4 +50,3 @@ groups.
 
 The top-level `lean_rgc.cli_*.py` modules are compatibility shims. Do not add new
 handler logic to those files.
-

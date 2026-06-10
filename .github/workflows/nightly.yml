@@ -1,0 +1,23 @@
+name: Nightly
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 18 * * *"
+
+jobs:
+  visibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: python -m pip install -e .
+      - name: Legacy and slow collection
+        run: python -m pytest -m "legacy or slow" --collect-only -q
+      - name: Smoke benchmark
+        run: lean-rgc benchmark smoke --out runs/benchmark_smoke --dry-run --run-db
+      - name: Smoke run DB check
+        run: lean-rgc data check --db runs/benchmark_smoke/runs.db --json

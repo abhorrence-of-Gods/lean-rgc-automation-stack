@@ -5,6 +5,7 @@ import sys
 import types
 
 from .audit import register_audit_commands
+from .benchmark import register_benchmark_commands
 from .crg import register_crg_commands
 from .data import register_data_commands
 from .dost import register_dost_commands
@@ -19,6 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="lean-rgc", description="Lean-RGC automation stack")
     sub = parser.add_subparsers(dest="cmd", required=True)
     register_audit_commands(sub)
+    register_benchmark_commands(sub)
     register_lean_commands(sub)
     register_experiment_commands(sub)
     register_dost_commands(sub)

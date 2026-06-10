@@ -303,6 +303,7 @@
       "imported_by": [
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
+        "lean_rgc.lean.__init__",
         "lean_rgc.lean_worker_supervisor",
         "lean_rgc.pipeline"
       ],
@@ -530,6 +531,18 @@
     {
       "classification": "core",
       "imported_by": [
+        "lean_rgc.cli.main"
+      ],
+      "imports": [
+        "lean_rgc.data.store",
+        "lean_rgc.pipeline"
+      ],
+      "module": "lean_rgc.cli.benchmark",
+      "path": "lean_rgc/cli/benchmark.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
         "lean_rgc.cli.__init__",
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
@@ -735,6 +748,7 @@
       ],
       "imports": [
         "lean_rgc.cli.audit",
+        "lean_rgc.cli.benchmark",
         "lean_rgc.cli.common",
         "lean_rgc.cli.crg",
         "lean_rgc.cli.data",
@@ -1173,6 +1187,7 @@
     {
       "classification": "core",
       "imported_by": [
+        "lean_rgc.cli.benchmark",
         "lean_rgc.cli.data",
         "lean_rgc.cli.experiment",
         "lean_rgc.data.__init__",
@@ -1477,6 +1492,7 @@
         "lean_rgc.focused",
         "lean_rgc.frontier",
         "lean_rgc.kernel_state",
+        "lean_rgc.lean.__init__",
         "lean_rgc.lean_server",
         "lean_rgc.lean_worker_supervisor",
         "lean_rgc.persistent_lean_worker",
@@ -1821,10 +1837,13 @@
       "classification": "core",
       "imported_by": [],
       "imports": [
+        "lean_rgc.bulk_executor",
+        "lean_rgc.executor",
         "lean_rgc.frontier",
         "lean_rgc.goal_state_dynamics",
         "lean_rgc.kernel_state",
         "lean_rgc.lean_server",
+        "lean_rgc.lean_worker_supervisor",
         "lean_rgc.native_worker",
         "lean_rgc.persistent_worker",
         "lean_rgc.structured_state"
@@ -1870,6 +1889,7 @@
       "imported_by": [
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
+        "lean_rgc.lean.__init__",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -2005,6 +2025,7 @@
     {
       "classification": "core",
       "imported_by": [
+        "lean_rgc.cli.benchmark",
         "lean_rgc.cli.pipeline"
       ],
       "imports": [
@@ -2856,7 +2877,7 @@
   ],
   "schema_version": "lean-rgc.inventory.v1",
   "summary": {
-    "core": 79,
+    "core": 80,
     "dead_candidate": 8,
     "experimental": 82,
     "legacy": 6

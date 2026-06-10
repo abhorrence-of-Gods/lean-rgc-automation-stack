@@ -60,6 +60,12 @@ lean-rgc pipeline \
   --run-db
 ```
 
+Run the stable smoke benchmark:
+
+```bash
+lean-rgc benchmark smoke --out runs/benchmark_smoke --dry-run --run-db
+```
+
 ## Production Spine
 
 The current package layout separates runtime contracts from command wiring:
@@ -81,6 +87,7 @@ CLI work should live under `lean_rgc/cli/`.
 
 ```text
 lean-rgc audit ...          dry-run or Lean-backed micro audit
+lean-rgc benchmark smoke    stable smoke benchmark plus optional run DB check
 lean-rgc pipeline ...       audit -> DOST/CRG/POMS style pipeline entrypoint
 lean-rgc data build ...     build the SQLite run DB from run artifacts
 lean-rgc data check ...     validate run DB production invariants

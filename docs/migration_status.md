@@ -35,3 +35,9 @@
   tests are in place.
 - Add a small curated smoke benchmark corpus as a stable artifact.
 
+## v76 Boundary Notes
+
+- The smoke benchmark corpus lives under `benchmarks/smoke/`.
+- The human-reviewed inventory ledger lives at `docs/inventory/classification.md`.
+- Lean runtime move candidates are documented in `docs/lean_runtime_boundary.md`;
+  v76 keeps top-level imports working.

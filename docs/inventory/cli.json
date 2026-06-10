@@ -226,6 +226,14 @@
     },
     {
       "classification": "core",
+      "command": "benchmark smoke",
+      "deprecated": false,
+      "handler": "cmd_benchmark_smoke",
+      "module": "lean_rgc.cli.benchmark",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
       "command": "bivariate-contextual-generate",
       "deprecated": false,
       "handler": "cmd_bivariate_contextual_generate",
@@ -1497,6 +1505,13 @@
     {
       "classification": "core",
       "commands": [
+        "benchmark smoke"
+      ],
+      "module": "lean_rgc.cli.benchmark"
+    },
+    {
+      "classification": "core",
+      "commands": [
         "concept-decode",
         "concept-geometry",
         "concept-search",
@@ -1710,7 +1725,7 @@
   ],
   "schema_version": "lean-rgc.inventory.v1",
   "summary": {
-    "core": 178,
+    "core": 179,
     "legacy": 6
   }
 }
