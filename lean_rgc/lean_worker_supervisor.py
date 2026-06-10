@@ -21,6 +21,12 @@ from .audit_job_queue import (
     mark_job_running,
     project_fingerprint,
 )
+from .audit_result_cache import (
+    apply_cache_to_queue,
+    detect_lean_version,
+    store_queue_results_in_cache,
+    workdir_fingerprint,
+)
 from .batch import _pair_key
 from .bulk_executor import BulkAuditConfig, LeanBulkAuditor
 from .dataset import summarize_response_rows
@@ -265,7 +271,7 @@ def materialize_queue_results(db_path: str | Path, out_dir: str | Path, *, run_i
     out.mkdir(parents=True, exist_ok=True)
     conn = connect_queue(db_path)
     try:
-        clauses = ["result_json IS NOT NULL", "status IN ('succeeded','failed','timeout','quarantined')"]
+        clauses = ["result_json IS NOT NULL", "status IN ('succeeded','succeeded_from_cache','failed','timeout','quarantined')"]
         params: list[Any] = []
         if run_id:
             clauses.append("run_id=?")
@@ -328,6 +334,7 @@ def materialize_queue_results(db_path: str | Path, out_dir: str | Path, *, run_i
                 "run_id": run_id,
                 "n_jobs": queue_summary.get("n_jobs", 0),
                 "n_succeeded": queue_summary.get("n_succeeded", 0),
+                "n_cache_hit": queue_summary.get("n_cache_hit", 0),
                 "n_failed": queue_summary.get("n_failed", 0),
                 "n_timeout": queue_summary.get("n_timeout", 0),
                 "n_quarantined": queue_summary.get("n_quarantined", 0),
@@ -786,7 +793,16 @@ def enqueue_and_run_supervised_audit(
     queue_backend: str = "file",
     bulk_batch_size: int = 32,
     import_wall_s: float | None = None,
+    audit_cache_db: str | Path | None = None,
+    audit_cache_readonly: bool = False,
+    audit_cache_lean_version: str | None = None,
 ) -> dict[str, Any]:
+    project_fp = project_fingerprint(
+        lean_cmd=executor_config.lean_cmd,
+        workdir=executor_config.workdir,
+        backend=backend,
+        import_mode=import_mode,
+    )
     enqueue = enqueue_audit_jobs(
         db_path,
         tasks,
@@ -794,16 +810,28 @@ def enqueue_and_run_supervised_audit(
         run_id=run_id,
         backend=backend,
         import_mode=import_mode,
-        project_fingerprint_value=project_fingerprint(
-            lean_cmd=executor_config.lean_cmd,
-            workdir=executor_config.workdir,
-            backend=backend,
-            import_mode=import_mode,
-        ),
+        project_fingerprint_value=project_fp,
         max_actions=max_actions,
         max_attempts=max_attempts,
         lane=lane,
     )
+    cache_apply: dict[str, Any] | None = None
+    cache_store: dict[str, Any] | None = None
+    lean_version = audit_cache_lean_version
+    workdir_fp = workdir_fingerprint(executor_config.workdir)
+    if audit_cache_db:
+        if not lean_version:
+            lean_version = detect_lean_version(executor_config.lean_cmd, workdir=executor_config.workdir)
+        cache_apply = apply_cache_to_queue(
+            cache_db=audit_cache_db,
+            queue_db=db_path,
+            run_id=run_id,
+            lean_version=lean_version,
+            workdir_fingerprint_value=workdir_fp,
+            import_mode=import_mode,
+            trace_state=executor_config.trace_state,
+            readonly=audit_cache_readonly,
+        )
     actual_queue_backend = "bulk" if queue_backend == "bulk" and not executor_config.keep_files and not executor_config.dry_run else "file"
     if actual_queue_backend == "bulk":
         summary = run_bulk_audit_queue(
@@ -830,8 +858,45 @@ def enqueue_and_run_supervised_audit(
             lanes=[lane] if lane else None,
             import_wall_s=import_wall_s,
         )
+    if audit_cache_db:
+        cache_store = store_queue_results_in_cache(
+            cache_db=audit_cache_db,
+            queue_db=db_path,
+            run_id=run_id,
+            lean_version=lean_version or "unknown",
+            workdir_fingerprint_value=workdir_fp,
+            import_mode=import_mode,
+            trace_state=executor_config.trace_state,
+            readonly=audit_cache_readonly,
+        )
+        run_summary = dict(summary)
+        summary = materialize_queue_results(db_path, out_dir, run_id=run_id)
+        for key in (
+            "n_executed_this_run",
+            "worker_restarts",
+            "timeout_report",
+            "quarantine_report",
+            "bulk_batch_size",
+            "bulk_attempts",
+            "bulk_initial_batches",
+            "bulk_retry_batches",
+            "bulk_retry_singletons",
+        ):
+            if key in run_summary:
+                summary[key] = run_summary[key]
     summary["audit_queue_backend"] = actual_queue_backend
     summary["enqueue"] = enqueue
+    if cache_apply or cache_store:
+        summary["audit_cache"] = {
+            "enabled": True,
+            "cache_db": str(audit_cache_db),
+            "readonly": bool(audit_cache_readonly),
+            "lean_version": lean_version,
+            "workdir_fingerprint": workdir_fp,
+            "apply": cache_apply,
+            "store": cache_store,
+        }
+        summary["n_cache_hit"] = int((cache_apply or {}).get("n_cache_hit", summary.get("n_cache_hit", 0)) or 0)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     (out / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
