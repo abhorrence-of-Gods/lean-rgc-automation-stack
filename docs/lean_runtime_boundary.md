@@ -59,13 +59,23 @@ Bulk executor private helper imports used by historical tests remain supported
 through `lean_rgc.bulk_executor`, including `_render_bulk_file`,
 `_errors_by_line`, and `_block_messages`.
 
+## v80 Physical Move III
+
+`lean_rgc.lean.structured_state`, `lean_rgc.lean.kernel_state`, and
+`lean_rgc.lean.goal_state_dynamics` now own their implementations. The top-level
+modules `lean_rgc.structured_state`, `lean_rgc.kernel_state`, and
+`lean_rgc.goal_state_dynamics` are compatibility shims that re-export canonical
+objects.
+
+Runtime callers use canonical imports for state extraction. Historical tests and
+external callers can continue using the top-level compatibility paths.
+
 ## Future Physical Move Order
 
 When the canonical package has stayed stable for another phase, move
 implementation files behind the package boundary in this order:
 
-1. state extraction: `structured_state`, `kernel_state`, `goal_state_dynamics`
-2. orchestration: `server`, `persistent_worker`, `worker_supervisor`, `frontier`
+1. orchestration: `server`, `persistent_worker`, `worker_supervisor`, `frontier`
 
-Each move should leave a top-level compatibility shim and keep the v77-v79
+Each move should leave a top-level compatibility shim and keep the v77-v80
 identity tests passing.

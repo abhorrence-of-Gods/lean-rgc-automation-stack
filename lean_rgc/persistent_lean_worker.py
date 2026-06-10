@@ -30,9 +30,9 @@ import time
 from .schemas import AuditRecord, LeanTask, ProofState, TacticAction, stable_hash
 from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .lean_server import project_fingerprint
-from .structured_state import extract_structured_state, extract_structured_state_from_kernel_json
-from .goal_state_dynamics import compute_goal_state_transition_delta
-from .kernel_state import normalize_kernel_state_v1
+from .lean.structured_state import extract_structured_state, extract_structured_state_from_kernel_json
+from .lean.goal_state_dynamics import compute_goal_state_transition_delta
+from .lean.kernel_state import normalize_kernel_state_v1
 
 
 @dataclass

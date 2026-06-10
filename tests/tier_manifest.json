@@ -286,6 +286,10 @@
     "integration",
     "golden"
   ],
+  "test_v80_lean_state_extraction_physical_move.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

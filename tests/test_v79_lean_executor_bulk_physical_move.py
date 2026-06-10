@@ -84,7 +84,7 @@ def test_runtime_imports_use_canonical_executor_and_bulk_paths():
         "audit_env_profile.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",
         "batch.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",
         "frontier.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",
-        "kernel_state.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",
+        "lean/kernel_state.py": "from .executor import LeanExecutor, LeanExecutorConfig",
         "lean_server.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",
         "lean_worker_supervisor.py": "from .lean.bulk_executor import BulkAuditConfig, LeanBulkAuditor",
         "persistent_lean_worker.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",

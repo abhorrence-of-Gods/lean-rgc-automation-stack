@@ -8,7 +8,7 @@ import math
 from .schemas import LeanTask, ProofState, TacticAction, read_jsonl, write_jsonl, stable_hash
 from .defects import ProofDefectExtractor
 from .lean_server import LeanServerAdapter, LeanServerConfig
-from .structured_state import extract_structured_state
+from .lean.structured_state import extract_structured_state
 from .arithmetic_teacher import default_arithmetic_identities
 
 SCHEMA_VERSION = "lean-rgc-arithmetic-teacher-kernel-audit-v42.0"

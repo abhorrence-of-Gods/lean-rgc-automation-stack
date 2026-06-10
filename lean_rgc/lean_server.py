@@ -20,7 +20,7 @@ from .batch import SCHEMA_AUDIT_ROW, SCHEMA_DEFECT_ROW, SCHEMA_RESPONSE_ROW
 from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
 from .dataset import summarize_response_rows
-from .structured_state import extract_structured_state, extract_structured_state_from_kernel_json
+from .lean.structured_state import extract_structured_state, extract_structured_state_from_kernel_json
 from .lean.native_worker import native_worker_command, native_worker_manifest
 
 
@@ -980,7 +980,7 @@ def audit_with_lean_server(
                 except Exception as e:
                     structured_states.append({"state_id": after_state.state_id, "task_id": task.task_id, "source": "structured_state_parse_error", "error": str(e)})
                 try:
-                    from .goal_state_dynamics import goal_state_transition_from_audit
+                    from .lean.goal_state_dynamics import goal_state_transition_from_audit
                     tr = goal_state_transition_from_audit(ad)
                     if tr is not None:
                         goal_state_transitions.append(tr)

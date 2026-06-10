@@ -11,7 +11,7 @@ from .dataset import summarize_response_rows
 from .defects import ProofDefectExtractor
 from .lean_server import LeanServerAdapter, LeanServerConfig
 from .schemas import AuditRecord, LeanTask, ProofState, TacticAction, read_jsonl, stable_hash, write_jsonl
-from .structured_state import extract_structured_state_from_kernel_json
+from .lean.structured_state import extract_structured_state_from_kernel_json
 
 
 SCHEMA_KERNEL_CONTEXT_CACHE = "lean-rgc-kernel-context-state-cache-v52.0"
@@ -426,7 +426,7 @@ def audit_contextual_candidates_with_kernel_cache(
                 except Exception as e:
                     structured_states.append({"state_id": after_state.state_id, "task_id": task.task_id, "source": "structured_state_parse_error", "error": str(e)})
                 try:
-                    from .goal_state_dynamics import goal_state_transition_from_audit
+                    from .lean.goal_state_dynamics import goal_state_transition_from_audit
                     tr = goal_state_transition_from_audit(ad)
                     if tr is not None:
                         goal_state_transitions.append(tr)

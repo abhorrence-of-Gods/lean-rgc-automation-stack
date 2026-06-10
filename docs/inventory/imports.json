@@ -24,8 +24,9 @@
         "lean_rgc.gamma",
         "lean_rgc.goal_shape",
         "lean_rgc.ir_defects",
-        "lean_rgc.kernel_state",
         "lean_rgc.lean.executor",
+        "lean_rgc.lean.kernel_state",
+        "lean_rgc.lean.structured_state",
         "lean_rgc.premise_index",
         "lean_rgc.project_harvest",
         "lean_rgc.proof_ir",
@@ -37,7 +38,6 @@
         "lean_rgc.schemas",
         "lean_rgc.selector",
         "lean_rgc.sharding",
-        "lean_rgc.structured_state",
         "lean_rgc.trajectory"
       ],
       "module": "lean_rgc.__init__",
@@ -168,9 +168,9 @@
       "imports": [
         "lean_rgc.arithmetic_teacher",
         "lean_rgc.defects",
+        "lean_rgc.lean.structured_state",
         "lean_rgc.lean_server",
-        "lean_rgc.schemas",
-        "lean_rgc.structured_state"
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.arithmetic_teacher_kernel_audit",
       "path": "lean_rgc/arithmetic_teacher_kernel_audit.py"
@@ -1660,16 +1660,10 @@
       "path": "lean_rgc/goal_shape.py"
     },
     {
-      "classification": "experimental",
-      "imported_by": [
-        "lean_rgc.kernel_context_cache",
-        "lean_rgc.kernel_state",
-        "lean_rgc.lean.goal_state_dynamics",
-        "lean_rgc.lean_server",
-        "lean_rgc.persistent_lean_worker"
-      ],
+      "classification": "core",
+      "imported_by": [],
       "imports": [
-        "lean_rgc.schemas"
+        "lean_rgc.lean.goal_state_dynamics"
       ],
       "module": "lean_rgc.goal_state_dynamics",
       "path": "lean_rgc/goal_state_dynamics.py"
@@ -1765,25 +1759,19 @@
         "lean_rgc.contextual_congruence",
         "lean_rgc.dataset",
         "lean_rgc.defects",
-        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.lean.goal_state_dynamics",
+        "lean_rgc.lean.structured_state",
         "lean_rgc.lean_server",
-        "lean_rgc.schemas",
-        "lean_rgc.structured_state"
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.kernel_context_cache",
       "path": "lean_rgc/kernel_context_cache.py"
     },
     {
-      "classification": "experimental",
-      "imported_by": [
-        "lean_rgc.__init__",
-        "lean_rgc.lean.kernel_state",
-        "lean_rgc.persistent_lean_worker"
-      ],
+      "classification": "core",
+      "imported_by": [],
       "imports": [
-        "lean_rgc.goal_state_dynamics",
-        "lean_rgc.lean.executor",
-        "lean_rgc.schemas"
+        "lean_rgc.lean.kernel_state"
       ],
       "module": "lean_rgc.kernel_state",
       "path": "lean_rgc/kernel_state.py"
@@ -1837,8 +1825,8 @@
         "lean_rgc.exposure_frontier",
         "lean_rgc.focused",
         "lean_rgc.frontier",
-        "lean_rgc.kernel_state",
         "lean_rgc.lean.bulk_executor",
+        "lean_rgc.lean.kernel_state",
         "lean_rgc.lean_server",
         "lean_rgc.lean_worker_supervisor",
         "lean_rgc.persistent_lean_worker",
@@ -1870,18 +1858,30 @@
     },
     {
       "classification": "core",
-      "imported_by": [],
+      "imported_by": [
+        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.lean.kernel_state",
+        "lean_rgc.lean_server",
+        "lean_rgc.persistent_lean_worker"
+      ],
       "imports": [
-        "lean_rgc.goal_state_dynamics"
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.lean.goal_state_dynamics",
       "path": "lean_rgc/lean/goal_state_dynamics.py"
     },
     {
       "classification": "core",
-      "imported_by": [],
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.kernel_state",
+        "lean_rgc.persistent_lean_worker"
+      ],
       "imports": [
-        "lean_rgc.kernel_state"
+        "lean_rgc.lean.executor",
+        "lean_rgc.lean.goal_state_dynamics",
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.lean.kernel_state",
       "path": "lean_rgc/lean/kernel_state.py"
@@ -1937,10 +1937,17 @@
     {
       "classification": "core",
       "imported_by": [
-        "lean_rgc.pipeline"
+        "lean_rgc.__init__",
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.lean_server",
+        "lean_rgc.persistent_lean_worker",
+        "lean_rgc.pipeline",
+        "lean_rgc.structured_state"
       ],
       "imports": [
-        "lean_rgc.structured_state"
+        "lean_rgc.proof_ir",
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.lean.structured_state",
       "path": "lean_rgc/lean/structured_state.py"
@@ -1978,11 +1985,11 @@
         "lean_rgc.batch",
         "lean_rgc.dataset",
         "lean_rgc.defects",
-        "lean_rgc.goal_state_dynamics",
         "lean_rgc.lean.executor",
+        "lean_rgc.lean.goal_state_dynamics",
         "lean_rgc.lean.native_worker",
-        "lean_rgc.schemas",
-        "lean_rgc.structured_state"
+        "lean_rgc.lean.structured_state",
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.lean_server",
       "path": "lean_rgc/lean_server.py"
@@ -2096,12 +2103,12 @@
         "lean_rgc.persistent_worker"
       ],
       "imports": [
-        "lean_rgc.goal_state_dynamics",
-        "lean_rgc.kernel_state",
         "lean_rgc.lean.executor",
+        "lean_rgc.lean.goal_state_dynamics",
+        "lean_rgc.lean.kernel_state",
+        "lean_rgc.lean.structured_state",
         "lean_rgc.lean_server",
-        "lean_rgc.schemas",
-        "lean_rgc.structured_state"
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.persistent_lean_worker",
       "path": "lean_rgc/persistent_lean_worker.py"
@@ -2353,8 +2360,8 @@
         "lean_rgc.__init__",
         "lean_rgc.cli.experiment",
         "lean_rgc.defects",
-        "lean_rgc.pipeline",
-        "lean_rgc.structured_state"
+        "lean_rgc.lean.structured_state",
+        "lean_rgc.pipeline"
       ],
       "imports": [
         "lean_rgc.cli.common",
@@ -2747,7 +2754,6 @@
         "lean_rgc.frontier",
         "lean_rgc.gamma_transition_learner",
         "lean_rgc.goal_shape",
-        "lean_rgc.goal_state_dynamics",
         "lean_rgc.hardening_gap_report",
         "lean_rgc.ir_candidates",
         "lean_rgc.ir_defects",
@@ -2755,11 +2761,13 @@
         "lean_rgc.iteration_report",
         "lean_rgc.iterative",
         "lean_rgc.kernel_context_cache",
-        "lean_rgc.kernel_state",
         "lean_rgc.lean.bulk_executor",
         "lean_rgc.lean.executor",
+        "lean_rgc.lean.goal_state_dynamics",
+        "lean_rgc.lean.kernel_state",
         "lean_rgc.lean.native_worker",
         "lean_rgc.lean.state_parser",
+        "lean_rgc.lean.structured_state",
         "lean_rgc.lean_server",
         "lean_rgc.lean_worker_supervisor",
         "lean_rgc.learner",
@@ -2805,7 +2813,6 @@
         "lean_rgc.stage_coker",
         "lean_rgc.stage_report",
         "lean_rgc.state_ir",
-        "lean_rgc.structured_state",
         "lean_rgc.trajectory",
         "lean_rgc.trajectory_runner"
       ],
@@ -2905,18 +2912,10 @@
       "path": "lean_rgc/state_parser.py"
     },
     {
-      "classification": "experimental",
-      "imported_by": [
-        "lean_rgc.__init__",
-        "lean_rgc.arithmetic_teacher_kernel_audit",
-        "lean_rgc.kernel_context_cache",
-        "lean_rgc.lean.structured_state",
-        "lean_rgc.lean_server",
-        "lean_rgc.persistent_lean_worker"
-      ],
+      "classification": "core",
+      "imported_by": [],
       "imports": [
-        "lean_rgc.proof_ir",
-        "lean_rgc.schemas"
+        "lean_rgc.lean.structured_state"
       ],
       "module": "lean_rgc.structured_state",
       "path": "lean_rgc/structured_state.py"
@@ -2970,9 +2969,9 @@
   ],
   "schema_version": "lean-rgc.inventory.v1",
   "summary": {
-    "core": 93,
+    "core": 96,
     "dead_candidate": 8,
-    "experimental": 80,
+    "experimental": 77,
     "legacy": 6
   }
 }

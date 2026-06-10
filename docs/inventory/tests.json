@@ -1122,6 +1122,19 @@
       ]
     },
     {
+      "classification": "core",
+      "file": "tests/test_v80_lean_state_extraction_physical_move.py",
+      "imports": [
+        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.kernel_state",
+        "lean_rgc.structured_state"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
       "classification": "legacy",
       "file": "tests/test_v8_harvest_shard.py",
       "imports": [
@@ -1208,13 +1221,13 @@
   "inventory_type": "tests",
   "schema_version": "lean-rgc.inventory.v1",
   "summary": {
-    "core": 27,
+    "core": 28,
     "legacy": 71
   },
   "tier_summary": {
     "e2e": 1,
-    "golden": 16,
-    "integration": 22,
+    "golden": 17,
+    "integration": 23,
     "legacy": 71,
     "unit": 2
   }

@@ -65,8 +65,8 @@ from .exposure_audit import exposure_actions_for_tasks, summarize_exposure_audit
 from .failure_signatures import FailureSignatureMiner, mine_failure_signatures
 from .proof_replay import ProofScript, scripts_from_trajectories, replay_proof_scripts, export_proof_file
 
-from .structured_state import StructuredProofState, GoalASTNode, LocalContextGraph, MetaVarGraph, TypeclassObligationGraph, extract_structured_state
-from .kernel_state import KernelGoalStateServer, KernelGoalStateServerConfig, normalize_kernel_state_v1, structural_kernel_response
+from .lean.structured_state import StructuredProofState, GoalASTNode, LocalContextGraph, MetaVarGraph, TypeclassObligationGraph, extract_structured_state
+from .lean.kernel_state import KernelGoalStateServer, KernelGoalStateServerConfig, normalize_kernel_state_v1, structural_kernel_response
 from .dost import (
     write_primitive_observables,
     build_bounded_transcripts,
