@@ -9,7 +9,6 @@ from typing import Any
 import numpy as np
 
 from .schemas import LeanTask, ProofState, TacticAction, DefectVector, ResponseRecord, read_jsonl, stable_hash, write_jsonl, write_records
-from .executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
 from .candidates import TacticCandidateGenerator, CandidateGeneratorConfig
 from .carrier_exposure import StateDependentCandidateGenerator
@@ -38,11 +37,9 @@ from .robust_acceptance import run_robust_acceptance
 from .premise_index import build_premise_index, PremiseIndex, premise_actions_from_hits
 from .premise_retrieval import build_premise_index_from_tasks, premise_candidates_for_tasks
 from .ir_defects import ir_defects_file
-from .bulk_executor import BulkAuditConfig, bulk_audit_to_files
 from .audit_env_profile import profile_audit_environment
 from .ir_candidates import ir_candidates_file
 from .multicarrier import build_carrier_matrix_from_responses, annotate_actions_with_carrier_matrix, multi_carrier_report, merge_carrier_incidence_patches, carrier_patch_report
-from .frontier import expose_frontier_files
 from .exposure_frontier import write_exposure_frontiers
 from .action_analysis import write_action_group_report
 from .response_eval import evaluate_response_model
@@ -62,13 +59,16 @@ from .poms_promotion import collect_poms_promotion
 from .promotion_evidence import generate_promotion_evidence
 from .action_geometry import build_action_geometry_registry, score_action_geometry_registry, audit_action_cocycles, teacher_constraints_from_arithmetic_actions
 from .action_geometry_loop import run_action_geometry_from_qgen
-from .structured_state import structured_state_extract_cli, summarize_structured_states
 from .audit_db import build_audit_db
 from .audit_pruning import prune_actions_file
 from .data.store import build_run_db
 from .cli.common import _actions_for_tasks, _executor_from_args, _load_actions, _load_actions_grouped, _load_tasks, _normalize_tasks_imports, _server_config_from_args
-from .lean_server import LeanServerConfig, audit_with_lean_server
-from .lean_worker_supervisor import enqueue_and_run_supervised_audit, run_bulk_audit_queue, run_supervised_audit_queue
+from .lean.bulk_executor import BulkAuditConfig, bulk_audit_to_files
+from .lean.executor import LeanExecutor, LeanExecutorConfig
+from .lean.frontier import expose_frontier_files
+from .lean.server import LeanServerConfig, audit_with_lean_server
+from .lean.structured_state import structured_state_extract_cli, summarize_structured_states
+from .lean.worker_supervisor import enqueue_and_run_supervised_audit, run_bulk_audit_queue, run_supervised_audit_queue
 from .active_audit_scheduler import active_audit_schedule_from_files, SchedulerConfig, _read_json_or_file
 from .quotient_coordinates import quotient_coordinates_from_files
 from .carrier_quotient import carrier_quotient_from_files, validate_carrier_quotient_coordinates

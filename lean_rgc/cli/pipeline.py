@@ -7,9 +7,9 @@ from pathlib import Path
 from .common import _load_tasks, _normalize_tasks_imports
 from ..dataset import write_run_report
 from ..exposure_frontier import write_exposure_frontiers
-from ..frontier import expose_frontier_files
 from ..iteration import compare_pipeline_dirs, merge_action_files
 from ..iteration_report import collect_iteration_report
+from ..lean.frontier import expose_frontier_files
 from ..pipeline import run_pipeline
 from ..schemas import write_jsonl
 from ..stage_report import default_pipeline_stages, write_stage_report

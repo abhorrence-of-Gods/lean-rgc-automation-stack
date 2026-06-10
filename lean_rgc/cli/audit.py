@@ -11,7 +11,6 @@ from ..active_audit_scheduler import SchedulerConfig, _read_json_or_file, active
 from ..audit_env_profile import profile_audit_environment
 from ..audit_job_queue import audit_queue_status, enqueue_audit_jobs, init_audit_queue_db, project_fingerprint
 from ..batch import SCHEMA_AUDIT_ROW, SCHEMA_DEFECT_ROW, SCHEMA_RESPONSE_ROW, run_micro_audit_batch
-from ..bulk_executor import BulkAuditConfig, bulk_audit_to_files
 from .common import (
     _actions_for_tasks,
     _executor_from_args,
@@ -22,9 +21,10 @@ from .common import (
     add_exec_args,
 )
 from ..defects import ProofDefectExtractor
-from ..executor import LeanExecutorConfig
-from ..lean_server import audit_with_lean_server
-from ..lean_worker_supervisor import run_bulk_audit_queue, run_supervised_audit_queue
+from ..lean.bulk_executor import BulkAuditConfig, bulk_audit_to_files
+from ..lean.executor import LeanExecutorConfig
+from ..lean.server import audit_with_lean_server
+from ..lean.worker_supervisor import run_bulk_audit_queue, run_supervised_audit_queue
 from ..schemas import ProofState, ResponseRecord, read_jsonl, stable_hash, write_records
 from ..timeout_ledger import timeout_ledger_report
 

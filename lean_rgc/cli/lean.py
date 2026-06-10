@@ -204,7 +204,7 @@ def cmd_lean_worker(args: argparse.Namespace) -> int:
 
 
 def cmd_lean_native_worker(args: argparse.Namespace) -> int:
-    from ..native_worker import main as native_main
+    from ..lean.native_worker import main as native_main
 
     argv = ["--lean-cmd", args.lean_cmd, "--exec-mode", getattr(args, "exec_mode", "source_check")]
     if args.workdir:

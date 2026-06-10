@@ -274,6 +274,10 @@
     "integration",
     "golden"
   ],
+  "test_v77_lean_package_boundary.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

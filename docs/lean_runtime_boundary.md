@@ -1,13 +1,12 @@
 # Lean Runtime Boundary
 
-`lean_rgc.lean` is the stable facade for Lean runtime APIs. In v76, top-level
-modules stay in place and remain import-compatible. Future physical moves should
-preserve the facade first, then update internal imports once tests cover the new
-paths.
+`lean_rgc.lean` is the stable package for Lean runtime APIs. Top-level modules
+stay in place and remain import-compatible, but new runtime-facing code should
+import from `lean_rgc.lean.*`.
 
-## Current Facade Map
+## Canonical Package Map
 
-| Future package path | Current module |
+| Canonical package path | Compatibility module |
 | --- | --- |
 | `lean_rgc.lean.server` | `lean_rgc.lean_server` |
 | `lean_rgc.lean.executor` | `lean_rgc.executor` |
@@ -18,8 +17,28 @@ paths.
 | `lean_rgc.lean.structured_state` | `lean_rgc.structured_state` |
 | `lean_rgc.lean.goal_state_dynamics` | `lean_rgc.goal_state_dynamics` |
 | `lean_rgc.lean.frontier` | `lean_rgc.frontier` |
+| `lean_rgc.lean.worker_supervisor` | `lean_rgc.lean_worker_supervisor` |
+| `lean_rgc.lean.bulk_executor` | `lean_rgc.bulk_executor` |
 
-## v76 Rule
+## v77 Rule
 
-Do not move these modules yet. Add facade coverage and command smoke tests first.
+`lean_rgc.lean.*` is now the canonical import boundary. The modules are thin
+re-export layers over the top-level compatibility modules, so object identity is
+preserved for existing callers. CLI modules and the pipeline entrypoint should
+use canonical imports for Lean runtime dependencies.
 
+Do not delete or rename the top-level modules in v77. They remain supported
+compatibility imports while downstream callers migrate.
+
+## Future Physical Move Order
+
+When the canonical package has stayed stable for another phase, move
+implementation files behind the package boundary in this order:
+
+1. low-dependency helpers: `state_parser`, `native_worker`
+2. executor surfaces: `executor`, `bulk_executor`
+3. state extraction: `structured_state`, `kernel_state`, `goal_state_dynamics`
+4. orchestration: `server`, `persistent_worker`, `worker_supervisor`, `frontier`
+
+Each move should leave a top-level compatibility shim and keep the v77 identity
+tests passing.

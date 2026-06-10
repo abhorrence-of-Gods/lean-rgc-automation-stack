@@ -9,7 +9,6 @@ from typing import Any
 import numpy as np
 
 from ..schemas import LeanTask, ProofState, TacticAction, DefectVector, ResponseRecord, read_jsonl, stable_hash, write_jsonl, write_records
-from ..executor import LeanExecutor, LeanExecutorConfig
 from ..defects import ProofDefectExtractor
 from ..candidates import TacticCandidateGenerator, CandidateGeneratorConfig
 from ..carrier_exposure import StateDependentCandidateGenerator
@@ -43,13 +42,10 @@ from ..premise_retrieval import build_premise_index_from_tasks, premise_candidat
 from ..ir_defects import ir_defects_file
 from ..project_harvest import harvest_lean_project
 from ..sharding import shard_jsonl, merge_jsonl
-from ..bulk_executor import BulkAuditConfig, bulk_audit_to_files
 from ..audit_env_profile import profile_audit_environment
 from ..ir_candidates import ir_candidates_file
 from ..multicarrier import build_carrier_matrix_from_responses, annotate_actions_with_carrier_matrix, multi_carrier_report, merge_carrier_incidence_patches, carrier_patch_report
-from ..frontier import expose_frontier_files
 from ..exposure_frontier import write_exposure_frontiers
-from ..frontier import build_frontiers
 from ..focused import run_focused_micro_audit
 from ..action_analysis import write_action_group_report
 from ..response_eval import evaluate_response_model
@@ -72,11 +68,15 @@ from ..poms_promotion import collect_poms_promotion
 from ..promotion_evidence import generate_promotion_evidence
 from ..action_geometry import build_action_geometry_registry, score_action_geometry_registry, audit_action_cocycles, teacher_constraints_from_arithmetic_actions
 from ..action_geometry_loop import run_action_geometry_from_qgen
-from ..lean_server import LeanServerConfig
 from ..audit_db import build_audit_db
 from ..audit_job_queue import audit_queue_status, enqueue_audit_jobs, init_audit_queue_db, project_fingerprint
 from ..audit_pruning import prune_actions_file
 from ..data.store import build_run_db
+from ..lean.bulk_executor import BulkAuditConfig, bulk_audit_to_files
+from ..lean.executor import LeanExecutor, LeanExecutorConfig
+from ..lean.frontier import build_frontiers, expose_frontier_files
+from ..lean.server import LeanServerConfig
+from ..lean.worker_supervisor import enqueue_and_run_supervised_audit, run_bulk_audit_queue, run_supervised_audit_queue
 from .common import (
     _actions_for_tasks,
     _executor_from_args,
@@ -86,7 +86,6 @@ from .common import (
     _normalize_tasks_imports,
     add_exec_args,
 )
-from ..lean_worker_supervisor import enqueue_and_run_supervised_audit, run_bulk_audit_queue, run_supervised_audit_queue
 from ..timeout_ledger import timeout_ledger_report
 from ..action_quarantine import action_quarantine_report, export_quarantined_actions
 from ..repair_db import failure_attribution_report

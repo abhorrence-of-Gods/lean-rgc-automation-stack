@@ -8,8 +8,8 @@ from typing import Any
 
 from ..candidates import CandidateGeneratorConfig, TacticCandidateGenerator
 from ..carrier_exposure import StateDependentCandidateGenerator
-from ..executor import LeanExecutor, LeanExecutorConfig
-from ..lean_server import LeanServerConfig
+from ..lean.executor import LeanExecutor, LeanExecutorConfig
+from ..lean.server import LeanServerConfig
 from ..schemas import LeanTask, ProofState, TacticAction, read_jsonl
 
 
