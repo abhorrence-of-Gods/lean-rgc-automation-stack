@@ -1,0 +1,290 @@
+{
+  "test_core.py": [
+    "unit"
+  ],
+  "test_qgen.py": [
+    "unit"
+  ],
+  "test_v10_cli_integrity.py": [
+    "legacy"
+  ],
+  "test_v10_response_eval.py": [
+    "legacy"
+  ],
+  "test_v11_failure_signatures.py": [
+    "legacy"
+  ],
+  "test_v11_proof_replay.py": [
+    "legacy"
+  ],
+  "test_v12_coker_synthesis.py": [
+    "legacy"
+  ],
+  "test_v13_qgen_iterate.py": [
+    "legacy"
+  ],
+  "test_v14_qgen_closure.py": [
+    "legacy"
+  ],
+  "test_v15_qgen_lineage.py": [
+    "legacy"
+  ],
+  "test_v15_robust_acceptance.py": [
+    "legacy"
+  ],
+  "test_v15_robust_coker.py": [
+    "legacy"
+  ],
+  "test_v15_robust_qgen.py": [
+    "legacy"
+  ],
+  "test_v16_qgen_acceptance_lineage.py": [
+    "legacy"
+  ],
+  "test_v16_qgen_robust_loop.py": [
+    "legacy"
+  ],
+  "test_v17_realized_and_patch_audit.py": [
+    "legacy"
+  ],
+  "test_v18_poms_and_holdout.py": [
+    "legacy"
+  ],
+  "test_v19_poms_promotion.py": [
+    "legacy"
+  ],
+  "test_v20_action_geometry.py": [
+    "legacy"
+  ],
+  "test_v21_lean_server.py": [
+    "legacy"
+  ],
+  "test_v21_lean_server_adapter.py": [
+    "legacy"
+  ],
+  "test_v22_structured_state.py": [
+    "legacy"
+  ],
+  "test_v23_action_geometry_loop.py": [
+    "legacy"
+  ],
+  "test_v24_audit_db.py": [
+    "integration",
+    "golden"
+  ],
+  "test_v25_quotient_coordinates.py": [
+    "legacy"
+  ],
+  "test_v26_quotient_coordinate_loop.py": [
+    "legacy"
+  ],
+  "test_v27_persistent_worker.py": [
+    "legacy"
+  ],
+  "test_v28_kernel_structured_state.py": [
+    "legacy"
+  ],
+  "test_v29_native_lean_worker.py": [
+    "legacy"
+  ],
+  "test_v30_native_source_check.py": [
+    "legacy"
+  ],
+  "test_v31_contextual_congruence.py": [
+    "legacy"
+  ],
+  "test_v31_contextual_response_congruence.py": [
+    "legacy"
+  ],
+  "test_v32_contextual_probe_loop.py": [
+    "legacy"
+  ],
+  "test_v33_response_quotient.py": [
+    "legacy"
+  ],
+  "test_v34_carrier_quotient.py": [
+    "legacy"
+  ],
+  "test_v35_premise_response.py": [
+    "legacy"
+  ],
+  "test_v36_active_audit_scheduler.py": [
+    "legacy"
+  ],
+  "test_v36_active_scheduler.py": [
+    "legacy"
+  ],
+  "test_v37_source_budget.py": [
+    "legacy"
+  ],
+  "test_v37_source_budget_scheduler.py": [
+    "legacy"
+  ],
+  "test_v38_promotion_evidence.py": [
+    "legacy"
+  ],
+  "test_v39_defect_ontology.py": [
+    "legacy"
+  ],
+  "test_v40_defect_ontology_lifecycle.py": [
+    "legacy"
+  ],
+  "test_v41_arithmetic_teacher_graph.py": [
+    "legacy"
+  ],
+  "test_v42_arithmetic_teacher_kernel_audit.py": [
+    "legacy"
+  ],
+  "test_v43_arithmetic_teacher_cocycle.py": [
+    "legacy"
+  ],
+  "test_v44_gamma_transition_learner.py": [
+    "legacy"
+  ],
+  "test_v45_gamma_aware_action_geometry.py": [
+    "legacy"
+  ],
+  "test_v45_gamma_aware_retrieval.py": [
+    "legacy"
+  ],
+  "test_v46_gamma_aware_source_budget.py": [
+    "legacy"
+  ],
+  "test_v46_gamma_source_budget.py": [
+    "legacy"
+  ],
+  "test_v47_goal_state_dynamics.py": [
+    "legacy"
+  ],
+  "test_v48_kernel_state_server.py": [
+    "legacy"
+  ],
+  "test_v49_kernel_rpc_worker.py": [
+    "legacy"
+  ],
+  "test_v5_exposure_defects.py": [
+    "legacy"
+  ],
+  "test_v50_premise_contextual_quotient.py": [
+    "legacy"
+  ],
+  "test_v51_bivariate_contextual_quotient.py": [
+    "legacy"
+  ],
+  "test_v52_face_taxonomy.py": [
+    "legacy"
+  ],
+  "test_v52_kernel_context_cache.py": [
+    "legacy"
+  ],
+  "test_v53_minif2f_adapter.py": [
+    "legacy"
+  ],
+  "test_v54_obstruction_tower.py": [
+    "legacy"
+  ],
+  "test_v55_v57_dost_automation.py": [
+    "legacy"
+  ],
+  "test_v58_crg_problem.py": [
+    "golden"
+  ],
+  "test_v58_repair_species_registry.py": [
+    "golden"
+  ],
+  "test_v58_response_completion.py": [
+    "golden"
+  ],
+  "test_v58_v62_cli_smoke.py": [
+    "integration"
+  ],
+  "test_v59_v60_crg_flow.py": [
+    "integration",
+    "golden"
+  ],
+  "test_v6_ir_pipeline.py": [
+    "legacy"
+  ],
+  "test_v62_concept_geometry.py": [
+    "integration",
+    "golden"
+  ],
+  "test_v63_audit_execution.py": [
+    "integration"
+  ],
+  "test_v63_repair_db_and_poms_service.py": [
+    "integration",
+    "golden"
+  ],
+  "test_v64_audit_import_cost.py": [
+    "integration"
+  ],
+  "test_v65_audit_cache_pruning.py": [
+    "integration"
+  ],
+  "test_v66_run_db.py": [
+    "integration",
+    "golden"
+  ],
+  "test_v67_cli_domain_split.py": [
+    "integration"
+  ],
+  "test_v68_pipeline_runtime_extraction.py": [
+    "integration"
+  ],
+  "test_v69_dost_runtime_split.py": [
+    "integration",
+    "golden"
+  ],
+  "test_v7_carrier_promotion.py": [
+    "legacy"
+  ],
+  "test_v7_premise_promotion.py": [
+    "legacy"
+  ],
+  "test_v7_registry_acceptance.py": [
+    "legacy"
+  ],
+  "test_v7_registry_premise.py": [
+    "legacy"
+  ],
+  "test_v70_dost_quotient_cli_split.py": [
+    "integration",
+    "golden"
+  ],
+  "test_v71_lean_runtime_cli_split.py": [
+    "integration",
+    "e2e"
+  ],
+  "test_v72_experiment_cli_split.py": [
+    "integration"
+  ],
+  "test_v73_cli_package_migration.py": [
+    "integration"
+  ],
+  "test_v74_test_tier_manifest.py": [
+    "integration",
+    "golden"
+  ],
+  "test_v8_harvest_shard.py": [
+    "legacy"
+  ],
+  "test_v8_iterate_corebench.py": [
+    "legacy"
+  ],
+  "test_v9_bulk_executor.py": [
+    "legacy"
+  ],
+  "test_v9_exposure_frontier.py": [
+    "legacy"
+  ],
+  "test_v9_focused_audit.py": [
+    "legacy"
+  ],
+  "test_v9_frontier.py": [
+    "legacy"
+  ],
+  "test_v9_ir_multicarrier.py": [
+    "legacy"
+  ]
+}
