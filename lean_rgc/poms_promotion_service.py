@@ -7,7 +7,7 @@ import sqlite3
 import time
 
 from .poms_promotion import _action, _load_evidence, _merge_evidence, _promote_status
-from .schemas import read_jsonl, stable_hash, write_jsonl
+from .schemas import read_jsonl, stable_hash, write_records
 
 
 SCHEMA_POMS_PROMOTION_SERVICE = "lean-rgc-poms-promotion-service-v63.0"
@@ -179,6 +179,8 @@ def run_poms_promotion_service(
     global_dual_certificate: bool = False,
     global_least_repair: bool = False,
     declare_canonical: bool = False,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     rows = _read_status_rows(run_dir, poms_rows=poms_rows, db_path=db_path)
     evs = _load_evidence(evidence)
@@ -211,7 +213,7 @@ def run_poms_promotion_service(
         "rows": decisions,
     }
     if out_jsonl:
-        write_jsonl(out_jsonl, decisions)
+        write_records(out_jsonl, decisions, schema_version=SCHEMA_POMS_PROMOTION_SERVICE, run_id=run_id, parent_ids=parent_ids)
     if out_json:
         p = Path(out_json)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -225,6 +227,8 @@ def poms_promotion_decisions(
     out_json: str | Path | None = None,
     out_jsonl: str | Path | None = None,
     max_rows: int = 1000,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     conn = connect_poms_service_db(db_path)
     try:
@@ -256,7 +260,7 @@ def poms_promotion_decisions(
             "rows": rows,
         }
         if out_jsonl:
-            write_jsonl(out_jsonl, rows)
+            write_records(out_jsonl, rows, schema_version=SCHEMA_POMS_PROMOTION_SERVICE, run_id=run_id, parent_ids=parent_ids)
         if out_json:
             p = Path(out_json)
             p.parent.mkdir(parents=True, exist_ok=True)

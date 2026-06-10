@@ -27,12 +27,12 @@ from .audit_result_cache import (
     store_queue_results_in_cache,
     workdir_fingerprint,
 )
-from .batch import _pair_key
+from .batch import SCHEMA_AUDIT_ROW, SCHEMA_DEFECT_ROW, SCHEMA_RESPONSE_ROW, _pair_key
 from .bulk_executor import BulkAuditConfig, LeanBulkAuditor
 from .dataset import summarize_response_rows
 from .defects import ProofDefectExtractor
 from .executor import LeanExecutor, LeanExecutorConfig
-from .schemas import AuditRecord, LeanTask, ProofState, ResponseRecord, TacticAction, write_jsonl
+from .schemas import AuditRecord, LeanTask, ProofState, ResponseRecord, TacticAction, write_records
 from .timeout_ledger import ensure_timeout_schema, record_timeout_event, record_worker_event, timeout_ledger_report
 
 
@@ -320,9 +320,9 @@ def materialize_queue_results(db_path: str | Path, out_dir: str | Path, *, run_i
                 row["state_id"] = sid
                 row["task_id"] = r.get("task_id") or db.get("task_id")
                 defects.append(row)
-        write_jsonl(out / "micro_audit.jsonl", dedup_audits)
-        write_jsonl(out / "responses.jsonl", dedup_responses)
-        write_jsonl(out / "defects.jsonl", defects)
+        write_records(out / "micro_audit.jsonl", dedup_audits, schema_version=SCHEMA_AUDIT_ROW, run_id=run_id)
+        write_records(out / "responses.jsonl", dedup_responses, schema_version=SCHEMA_RESPONSE_ROW, run_id=run_id)
+        write_records(out / "defects.jsonl", defects, schema_version=SCHEMA_DEFECT_ROW, run_id=run_id)
         summary = summarize_response_rows(dedup_responses).to_dict()
         queue_summary = audit_queue_status(conn, run_id=run_id)
         timeout_report = timeout_ledger_report(db_path)

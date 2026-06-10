@@ -21,6 +21,8 @@ def generate_nonlinear_repair_candidates(
     source_weight: float = 0.0,
     ghost_weight: float = 0.0,
     hardening_weight: float = 0.0,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Generate relaxed optimizer witnesses.
 
@@ -42,6 +44,8 @@ def generate_nonlinear_repair_candidates(
         source_weight=source_weight,
         ghost_weight=ghost_weight,
         hardening_weight=hardening_weight,
+        run_id=run_id,
+        parent_ids=parent_ids,
     )
 
 

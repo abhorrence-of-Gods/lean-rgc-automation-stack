@@ -5,7 +5,7 @@ from typing import Any
 import json
 
 from .response_completion import load_completion
-from .schemas import read_jsonl, stable_hash, write_jsonl
+from .schemas import read_jsonl, stable_hash, write_records
 
 
 SCHEMA_CRG_PROBLEM = "lean-rgc-crg-problem-v58.0"
@@ -152,6 +152,8 @@ def build_crg_problems(
     summary_out: str | Path | None = None,
     budget: dict[str, Any] | None = None,
     repair_space_scope: str = "relaxed",
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     faces = _read_rows(repair_faces_path)
     duals = _read_rows(tower_dual_components_path)
@@ -192,7 +194,7 @@ def build_crg_problems(
 
     # If neither input has rows, still emit an empty report rather than an
     # invented problem. That keeps canonicality explicit.
-    write_jsonl(out, rows)
+    write_records(out, rows, schema_version=SCHEMA_CRG_PROBLEM, run_id=run_id, parent_ids=parent_ids)
     summary = {
         "schema_version": SCHEMA_CRG_PROBLEM,
         "out": str(out),

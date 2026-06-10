@@ -23,6 +23,15 @@ exclude = ["tests*", "notebooks*", "templates*", "lean_project_template*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+  "unit: fast unit tests",
+  "integration: module integration tests",
+  "golden: stable output tests",
+  "e2e: real Lean execution tests",
+  "legacy: historical tests not in default CI",
+  "slow: slow tests",
+]
+addopts = "-m 'not legacy and not slow'"
 
 [tool.setuptools.package-data]
 lean_rgc = ["native_lean/*.lean", "lean_worker/*.lean"]

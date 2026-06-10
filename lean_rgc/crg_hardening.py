@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 import json
 
-from .schemas import read_jsonl, stable_hash, write_jsonl
+from .schemas import read_jsonl, stable_hash, write_records
 
 
 SCHEMA_CRG_HARDENING = "lean-rgc-hardening-attempt-v59.0"
@@ -61,6 +61,8 @@ def harden_crg_candidates(
     method: str = "mixture_to_beam",
     top_k: int = 3,
     include_sequence: bool = True,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     candidates = _read_rows(candidates_path)
     attempts: list[dict[str, Any]] = []
@@ -119,9 +121,9 @@ def harden_crg_candidates(
                 "canonical_status": "hardening_witness_not_canonical",
             }
         )
-    write_jsonl(out_attempts, attempts)
+    write_records(out_attempts, attempts, schema_version=SCHEMA_CRG_HARDENING, run_id=run_id, parent_ids=parent_ids)
     if out_actions:
-        write_jsonl(out_actions, actions)
+        write_records(out_actions, actions, schema_version=SCHEMA_CRG_HARDENING, run_id=run_id, parent_ids=parent_ids)
     summary = {
         "schema_version": SCHEMA_CRG_HARDENING,
         "candidates": str(candidates_path),

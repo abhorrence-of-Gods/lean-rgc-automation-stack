@@ -9,12 +9,26 @@ import json
 import sqlite3
 import time
 
-from ..audit_db import build_audit_db, discover_artifacts, query_audit_db
-from ..repair_db import import_repair_artifacts, summarize_execution_metrics, summarize_repair_db
+from ..audit_db import build_audit_db, query_audit_db
+from ..repair_db import import_repair_artifacts as import_legacy_repair_artifacts
+from ..repair_db import summarize_execution_metrics, summarize_repair_db
 from ..schemas import stable_hash
+from .importers import (
+    AuditStore,
+    LineageStore,
+    RepairStore,
+    import_audit_artifacts as import_audit_store_artifacts,
+    import_poms_artifacts as import_poms_store_artifacts,
+    import_repair_artifacts as import_repair_store_artifacts,
+    materialize_canonical_run_tables,
+    materialize_lineage as materialize_lineage_store,
+)
+from .invariants import check_run_db_invariants
+from .migrations import record_migration
 
 
-SCHEMA_RUN_DB = "lean-rgc-run-db-v1.0"
+SCHEMA_RUN_DB = "lean-rgc-run-db-v1.1"
+CANONICAL_RECORD_SCHEMA = "lean-rgc.canonical.v1"
 
 
 def _now() -> float:
@@ -23,15 +37,6 @@ def _now() -> float:
 
 def _json(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, sort_keys=True, default=str)
-
-
-def _loads(text: str | None) -> Any:
-    if not text:
-        return None
-    try:
-        return json.loads(text)
-    except Exception:
-        return None
 
 
 def _sha256_file(path: Path) -> str:
@@ -120,12 +125,11 @@ def _float(value: Any, default: float = 0.0) -> float:
         return default
 
 
-def _int_bool(value: Any) -> int:
-    return 1 if bool(value) else 0
-
-
-def _row_hash(*parts: Any) -> str:
-    return stable_hash(parts, 40)
+def _artifact_uri(path: Path) -> str:
+    try:
+        return path.resolve().as_uri()
+    except Exception:
+        return str(path)
 
 
 def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
@@ -206,6 +210,39 @@ def ensure_run_schema(conn: sqlite3.Connection) -> None:
             payload_json TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_run_actions_action ON actions(action_id);
+        CREATE TABLE IF NOT EXISTS responses (
+            response_id TEXT PRIMARY KEY,
+            schema_version TEXT,
+            run_id TEXT,
+            artifact_id INTEGER,
+            row_index INTEGER,
+            task_id TEXT,
+            action_id TEXT,
+            status TEXT,
+            elapsed_ms REAL,
+            state_before_id TEXT,
+            state_after_id TEXT,
+            response_json TEXT,
+            carrier_delta_json TEXT,
+            payload_json TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_run_responses_run_action ON responses(run_id, action_id);
+        CREATE INDEX IF NOT EXISTS idx_run_responses_task ON responses(run_id, task_id);
+        CREATE TABLE IF NOT EXISTS audit_events (
+            event_id TEXT PRIMARY KEY,
+            schema_version TEXT,
+            run_id TEXT,
+            artifact_id INTEGER,
+            row_index INTEGER,
+            task_id TEXT,
+            action_id TEXT,
+            status TEXT,
+            elapsed_ms REAL,
+            heartbeats REAL,
+            response_id TEXT,
+            payload_json TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_run_audit_events_run_action ON audit_events(run_id, action_id);
         CREATE TABLE IF NOT EXISTS audit_rows (
             artifact_id INTEGER,
             row_index INTEGER,
@@ -548,6 +585,7 @@ def ensure_run_schema(conn: sqlite3.Connection) -> None:
         """
     )
     cur.execute("INSERT OR REPLACE INTO meta(key,value) VALUES (?,?)", ("run_db_schema_version", SCHEMA_RUN_DB))
+    record_migration(conn, version=SCHEMA_RUN_DB, name="run_db_v1_1_canonical_tables")
     if _table_exists(conn, "artifacts"):
         _ensure_column(conn, "artifacts", "run_id", "TEXT")
         _ensure_column(conn, "artifacts", "artifact_type", "TEXT")
@@ -590,6 +628,12 @@ def ensure_run_schema(conn: sqlite3.Connection) -> None:
             "CREATE INDEX IF NOT EXISTS idx_run_lineage_edge_type "
             "ON lineage_edges(run_id, edge_type)"
         )
+    if _table_exists(conn, "responses"):
+        _ensure_column(conn, "responses", "schema_version", "TEXT")
+        _ensure_column(conn, "responses", "payload_json", "TEXT")
+    if _table_exists(conn, "audit_events"):
+        _ensure_column(conn, "audit_events", "schema_version", "TEXT")
+        _ensure_column(conn, "audit_events", "payload_json", "TEXT")
     conn.commit()
 
 
@@ -655,472 +699,11 @@ class ArtifactStore:
                 SET run_id=?, artifact_type=?, schema_version=?, uri=?, created_at=COALESCE(created_at, ?), payload_json=?
                 WHERE artifact_id=?
                 """,
-                (self.run_id, artifact_type, schema, str(path), _now(), _json(payload), row["artifact_id"]),
+                (self.run_id, artifact_type, schema, _artifact_uri(path), _now(), _json(payload), row["artifact_id"]),
             )
 
     def artifact_rows(self) -> list[sqlite3.Row]:
         return list(self.conn.execute("SELECT artifact_id, abs_path, rel_path, artifact_type, kind FROM artifacts ORDER BY artifact_id"))
-
-
-class AuditStore:
-    def __init__(self, conn: sqlite3.Connection, run_dir: Path, run_id: str):
-        self.conn = conn
-        self.run_dir = run_dir
-        self.run_id = run_id
-
-    def import_tasks_and_actions(self, artifacts: list[sqlite3.Row]) -> None:
-        for artifact in artifacts:
-            path = Path(str(artifact["abs_path"] or artifact["rel_path"] or ""))
-            if path.suffix != ".jsonl":
-                continue
-            rows = _read_jsonl(path)
-            atype = str(artifact["artifact_type"] or artifact["kind"] or "")
-            if atype == "tasks":
-                for row in rows:
-                    task_id = str(row.get("task_id") or row.get("id") or "")
-                    if not task_id:
-                        continue
-                    rh = _row_hash(self.run_id, artifact["artifact_id"], "task", task_id, row)
-                    self.conn.execute(
-                        """
-                        INSERT OR IGNORE INTO tasks(row_hash, run_id, artifact_id, task_id, source, goal_hash, import_mode, payload_json)
-                        VALUES (?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            rh,
-                            self.run_id,
-                            artifact["artifact_id"],
-                            task_id,
-                            str(row.get("source") or path.name),
-                            stable_hash({"statement": row.get("statement"), "target": row.get("target")}, 32),
-                            str(row.get("import_mode") or ""),
-                            _json(row),
-                        ),
-                    )
-            if atype in {"actions", "hard_candidates"} or any("tactic" in r or "action_id" in r for r in rows):
-                for row in rows:
-                    action_id = str(row.get("action_id") or row.get("id") or "")
-                    tactic = str(row.get("tactic") or "")
-                    if not action_id and not tactic:
-                        continue
-                    rh = _row_hash(self.run_id, artifact["artifact_id"], "action", action_id, tactic, row)
-                    meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
-                    self.conn.execute(
-                        """
-                        INSERT OR IGNORE INTO actions(row_hash, run_id, artifact_id, action_id, tactic_hash, action_kind, source, canonical_status, payload_json)
-                        VALUES (?,?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            rh,
-                            self.run_id,
-                            artifact["artifact_id"],
-                            action_id or stable_hash(tactic, 16),
-                            stable_hash({"tactic": tactic}, 24),
-                            str(row.get("tactic_class") or row.get("class") or ""),
-                            str(row.get("source") or meta.get("source") or ""),
-                            str(row.get("canonical_status") or meta.get("canonical_status") or ""),
-                            _json(row),
-                        ),
-                    )
-
-    def import_queue_ledgers(self) -> None:
-        qdb = self.run_dir / "audit" / "audit_queue.sqlite"
-        if not qdb.exists():
-            return
-        src = sqlite3.connect(qdb)
-        src.row_factory = sqlite3.Row
-        try:
-            if _table_exists(src, "audit_jobs"):
-                for r in src.execute("SELECT * FROM audit_jobs").fetchall():
-                    self.conn.execute(
-                        """
-                        INSERT OR REPLACE INTO audit_jobs(
-                            job_id, run_id, task_id, state_id, action_id, tactic_hash, backend, lane,
-                            import_mode, project_fingerprint, status, priority, attempt_count, max_attempts,
-                            leased_until, worker_id, created_at, updated_at, payload_json, result_json, last_error
-                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                        """,
-                        tuple(r[k] if k in r.keys() else None for k in [
-                            "job_id", "run_id", "task_id", "state_id", "action_id", "tactic_hash", "backend", "lane",
-                            "import_mode", "project_fingerprint", "status", "priority", "attempt_count", "max_attempts",
-                            "leased_until", "worker_id", "created_at", "updated_at", "payload_json", "result_json", "last_error"
-                        ]),
-                    )
-            if _table_exists(src, "timeout_events"):
-                for r in src.execute("SELECT * FROM timeout_events").fetchall():
-                    keys = set(r.keys())
-                    self.conn.execute(
-                        """
-                        INSERT OR IGNORE INTO timeout_events(
-                            ts, run_id, job_id, task_id, action_id, tactic_hash, backend, lane,
-                            timeout_s, elapsed_s, stdout_tail, stderr_tail, worker_id, timeout_scope, detail_json
-                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            r["ts"] if "ts" in keys else None,
-                            self.run_id,
-                            r["job_id"] if "job_id" in keys else None,
-                            r["task_id"] if "task_id" in keys else None,
-                            r["action_id"] if "action_id" in keys else None,
-                            r["tactic_hash"] if "tactic_hash" in keys else None,
-                            r["backend"] if "backend" in keys else None,
-                            r["lane"] if "lane" in keys else None,
-                            r["timeout_s"] if "timeout_s" in keys else None,
-                            r["elapsed_s"] if "elapsed_s" in keys else None,
-                            r["stdout_tail"] if "stdout_tail" in keys else None,
-                            r["stderr_tail"] if "stderr_tail" in keys else None,
-                            r["worker_id"] if "worker_id" in keys else None,
-                            r["timeout_scope"] if "timeout_scope" in keys else "unknown_timeout",
-                            r["detail_json"] if "detail_json" in keys else None,
-                        ),
-                    )
-            if _table_exists(src, "worker_events"):
-                for r in src.execute("SELECT * FROM worker_events").fetchall():
-                    keys = set(r.keys())
-                    self.conn.execute(
-                        """
-                        INSERT OR IGNORE INTO worker_events(
-                            ts, run_id, worker_id, event_type, job_id, backend, lane, detail_json
-                        ) VALUES (?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            r["ts"] if "ts" in keys else None,
-                            self.run_id,
-                            r["worker_id"] if "worker_id" in keys else None,
-                            r["event_type"] if "event_type" in keys else None,
-                            r["job_id"] if "job_id" in keys else None,
-                            r["backend"] if "backend" in keys else None,
-                            r["lane"] if "lane" in keys else None,
-                            r["detail_json"] if "detail_json" in keys else None,
-                        ),
-                    )
-            if _table_exists(src, "action_quarantine"):
-                for r in src.execute("SELECT * FROM action_quarantine").fetchall():
-                    self.conn.execute(
-                        """
-                        INSERT OR REPLACE INTO action_quarantine(
-                            key_type, key_value, run_id, status, reason, n_attempts, n_timeouts,
-                            timeout_rate, first_seen, updated_at, detail_json
-                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            r["key_type"], r["key_value"], self.run_id, r["status"], r["reason"], r["n_attempts"],
-                            r["n_timeouts"], r["timeout_rate"], r["first_seen"], r["updated_at"], r["detail_json"],
-                        ),
-                    )
-        finally:
-            src.close()
-
-    def import_cache_summary(self) -> None:
-        summary = _read_json(self.run_dir / "audit" / "summary.json")
-        if not isinstance(summary, dict):
-            return
-        cache = summary.get("audit_cache") if isinstance(summary.get("audit_cache"), dict) else {}
-        if not cache:
-            return
-        apply = cache.get("apply") if isinstance(cache.get("apply"), dict) else {}
-        store = cache.get("store") if isinstance(cache.get("store"), dict) else {}
-        row = {
-            "cache": cache,
-            "summary_path": str(self.run_dir / "audit" / "summary.json"),
-        }
-        rh = _row_hash(self.run_id, "audit_cache", row)
-        self.conn.execute(
-            """
-            INSERT OR REPLACE INTO audit_result_cache_index(
-                row_hash, run_id, cache_db, n_cache_lookup, n_cache_hit, n_cache_miss, n_stored, readonly, payload_json
-            ) VALUES (?,?,?,?,?,?,?,?,?)
-            """,
-            (
-                rh,
-                self.run_id,
-                str(cache.get("cache_db") or summary.get("audit_cache_db") or ""),
-                int(apply.get("n_cache_lookup") or 0),
-                int(apply.get("n_cache_hit") or summary.get("n_cache_hit") or 0),
-                int(apply.get("n_cache_miss") or 0),
-                int(store.get("n_stored") or store.get("n_store_candidates") or 0),
-                _int_bool(cache.get("readonly") or summary.get("audit_cache_readonly")),
-                _json(row),
-            ),
-        )
-
-
-class RepairStore:
-    def __init__(self, conn: sqlite3.Connection, run_dir: Path, run_id: str):
-        self.conn = conn
-        self.run_dir = run_dir
-        self.run_id = run_id
-
-    def import_supplemental_repair_artifacts(self, artifacts: list[sqlite3.Row]) -> None:
-        for artifact in artifacts:
-            path = Path(str(artifact["abs_path"] or artifact["rel_path"] or ""))
-            if path.suffix != ".jsonl":
-                continue
-            rows = _read_jsonl(path)
-            atype = str(artifact["artifact_type"] or "")
-            if atype == "repair_faces":
-                for row in rows:
-                    face_id = str(row.get("face_id") or row.get("repair_face_id") or row.get("tower_face_id") or "")
-                    rh = _row_hash(self.run_id, artifact["artifact_id"], "repair_face", face_id, row)
-                    self.conn.execute(
-                        """
-                        INSERT OR IGNORE INTO repair_faces(row_hash, run_id, artifact_id, face_id, obstruction_id, parent_face_id, canonical_status, payload_json)
-                        VALUES (?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            rh,
-                            self.run_id,
-                            artifact["artifact_id"],
-                            face_id or rh,
-                            str(row.get("obstruction_id") or row.get("lambda_id") or ""),
-                            str(row.get("parent_face_id") or ""),
-                            str(row.get("canonical_status") or ""),
-                            _json(row),
-                        ),
-                    )
-            if atype == "hard_candidates":
-                for row in rows:
-                    action_id = str(row.get("action_id") or row.get("id") or "")
-                    rh = _row_hash(self.run_id, artifact["artifact_id"], "hard_candidate", action_id, row)
-                    meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
-                    self.conn.execute(
-                        """
-                        INSERT OR IGNORE INTO hard_candidates(row_hash, run_id, artifact_id, action_id, candidate_id, hardening_id, tactic, canonical_status, payload_json)
-                        VALUES (?,?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            rh,
-                            self.run_id,
-                            artifact["artifact_id"],
-                            action_id or rh,
-                            str(row.get("candidate_id") or meta.get("candidate_id") or ""),
-                            str(row.get("hardening_id") or meta.get("hardening_id") or ""),
-                            str(row.get("tactic") or ""),
-                            str(row.get("canonical_status") or meta.get("canonical_status") or ""),
-                            _json(row),
-                        ),
-                    )
-            if atype == "concept_decoded_repair_atoms":
-                for row in rows:
-                    atom_id = str(row.get("repair_atom_id") or row.get("atom_id") or "")
-                    costs = row.get("cost_vector") if isinstance(row.get("cost_vector"), dict) else {}
-                    rh = _row_hash(self.run_id, artifact["artifact_id"], "concept_decoded_repair_atom", atom_id, row)
-                    self.conn.execute(
-                        """
-                        INSERT OR IGNORE INTO repair_atoms(
-                            row_hash, run_dir, artifact_path, repair_atom_id, species_id, source, source_id,
-                            cost, audit_risk, source_risk, ghost_risk, canonical_status, row_json
-                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            rh,
-                            str(self.run_dir),
-                            str(path),
-                            atom_id or rh,
-                            str(row.get("species_id") or row.get("repair_species") or "concept_latent"),
-                            str(row.get("source") or "concept_search"),
-                            str(row.get("source_id") or ""),
-                            _float(costs.get("cost") or costs.get("cost_estimate"), 1.0),
-                            _float(costs.get("audit_risk") or row.get("audit_risk"), 0.0),
-                            _float(costs.get("source_risk") or row.get("source_risk"), 0.0),
-                            _float(costs.get("ghost_risk") or row.get("ghost_risk"), 0.0),
-                            str(row.get("canonical_status") or ""),
-                            _json(row),
-                        ),
-                    )
-
-
-class LineageStore:
-    def __init__(self, conn: sqlite3.Connection, run_id: str):
-        self.conn = conn
-        self.run_id = run_id
-        self._edge_index = 10_000_000
-
-    def add_edge(
-        self,
-        *,
-        src_type: str,
-        src_id: str,
-        dst_type: str,
-        dst_id: str,
-        edge_type: str,
-        artifact_id: int | None = None,
-        payload: dict[str, Any] | None = None,
-    ) -> None:
-        if not src_id or not dst_id:
-            return
-        payload = payload or {}
-        edge_id = "edge_" + stable_hash(
-            {
-                "run_id": self.run_id,
-                "src_type": src_type,
-                "src_id": src_id,
-                "dst_type": dst_type,
-                "dst_id": dst_id,
-                "edge_type": edge_type,
-                "payload": payload,
-            },
-            32,
-        )
-        self._edge_index += 1
-        aid = int(artifact_id or 0)
-        self.conn.execute(
-            """
-            INSERT OR REPLACE INTO lineage_edges(
-                artifact_id, edge_index, src, dst, edge_type, raw_json,
-                edge_id, run_id, src_type, src_id, dst_type, dst_id, payload_json
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-            """,
-            (
-                aid,
-                self._edge_index,
-                f"{src_type}:{src_id}",
-                f"{dst_type}:{dst_id}",
-                edge_type,
-                _json(payload),
-                edge_id,
-                self.run_id,
-                src_type,
-                src_id,
-                dst_type,
-                dst_id,
-                _json(payload),
-            ),
-        )
-
-    def materialize_from_tables(self) -> None:
-        if _table_exists(self.conn, "audit_rows"):
-            for r in self.conn.execute("SELECT artifact_id, row_index, task_id, state_id, action_id FROM audit_rows").fetchall():
-                audit_id = f"audit:{r['artifact_id']}:{r['row_index']}"
-                self.add_edge(src_type="task", src_id=str(r["task_id"] or r["state_id"] or ""), dst_type="action", dst_id=str(r["action_id"] or ""), edge_type="task_audited_by_action", artifact_id=r["artifact_id"])
-                self.add_edge(src_type="action", src_id=str(r["action_id"] or ""), dst_type="audit_response", dst_id=audit_id, edge_type="audit_yields_response", artifact_id=r["artifact_id"])
-        if _table_exists(self.conn, "response_rows"):
-            for r in self.conn.execute("SELECT artifact_id, row_index, state_id, action_id FROM response_rows").fetchall():
-                response_id = f"response:{r['artifact_id']}:{r['row_index']}"
-                self.add_edge(src_type="audit_response", src_id=f"audit:{r['artifact_id']}:{r['row_index']}", dst_type="response", dst_id=response_id, edge_type="audit_yields_response", artifact_id=r["artifact_id"])
-                self.add_edge(src_type="response", src_id=response_id, dst_type="defect", dst_id=f"defect:{r['state_id']}", edge_type="response_yields_defect", artifact_id=r["artifact_id"])
-        if _table_exists(self.conn, "repair_faces") and _table_exists(self.conn, "crg_problems"):
-            for r in self.conn.execute("SELECT row_hash, face_id, obstruction_id FROM repair_faces").fetchall():
-                self.add_edge(src_type="obstruction", src_id=str(r["obstruction_id"] or ""), dst_type="repair_face", dst_id=str(r["face_id"] or r["row_hash"]), edge_type="obstruction_yields_repair_face")
-            for r in self.conn.execute("SELECT problem_id, parent_face_id FROM crg_problems").fetchall():
-                self.add_edge(src_type="repair_face", src_id=str(r["parent_face_id"] or ""), dst_type="crg_problem", dst_id=str(r["problem_id"] or ""), edge_type="repair_face_yields_crg_problem")
-        if _table_exists(self.conn, "relaxed_candidates"):
-            for r in self.conn.execute("SELECT candidate_id, problem_id FROM relaxed_candidates").fetchall():
-                self.add_edge(src_type="crg_problem", src_id=str(r["problem_id"] or ""), dst_type="relaxed_candidate", dst_id=str(r["candidate_id"] or ""), edge_type="crg_problem_yields_relaxed_candidate")
-        if _table_exists(self.conn, "hardening_attempts"):
-            for r in self.conn.execute("SELECT hardening_id, candidate_id FROM hardening_attempts").fetchall():
-                self.add_edge(src_type="relaxed_candidate", src_id=str(r["candidate_id"] or ""), dst_type="hardening_attempt", dst_id=str(r["hardening_id"] or ""), edge_type="relaxed_candidate_yields_hardening_attempt")
-        if _table_exists(self.conn, "hard_candidates"):
-            for r in self.conn.execute("SELECT action_id, candidate_id, hardening_id FROM hard_candidates").fetchall():
-                self.add_edge(src_type="hardening_attempt", src_id=str(r["hardening_id"] or r["candidate_id"] or ""), dst_type="hard_candidate", dst_id=str(r["action_id"] or ""), edge_type="hardening_attempt_yields_hard_candidate")
-        if _table_exists(self.conn, "crg_audit_rows"):
-            for r in self.conn.execute("SELECT candidate_id FROM crg_audit_rows").fetchall():
-                self.add_edge(src_type="hard_candidate", src_id=str(r["candidate_id"] or ""), dst_type="audit_response", dst_id=f"crg_audit:{r['candidate_id']}", edge_type="hard_candidate_yields_audit")
-        if _table_exists(self.conn, "poms_evidence"):
-            for r in self.conn.execute("SELECT evidence_id, action_id FROM poms_evidence").fetchall():
-                self.add_edge(src_type="audit_response", src_id=str(r["action_id"] or ""), dst_type="poms_evidence", dst_id=str(r["evidence_id"] or ""), edge_type="audit_yields_poms_evidence")
-        if _table_exists(self.conn, "poms_promotion_decisions"):
-            for r in self.conn.execute("SELECT decision_id, action_id FROM poms_promotion_decisions").fetchall():
-                self.add_edge(src_type="poms_evidence", src_id=str(r["action_id"] or ""), dst_type="poms_promotion_decision", dst_id=str(r["decision_id"] or ""), edge_type="poms_evidence_yields_promotion_decision")
-        if _table_exists(self.conn, "concept_search_rows"):
-            for r in self.conn.execute("SELECT row_hash, concept_id, row_json FROM concept_search_rows").fetchall():
-                payload = _loads(r["row_json"]) if "row_json" in r.keys() else None
-                if not isinstance(payload, dict):
-                    payload = {}
-                search_id = str(payload.get("search_row_id") or r["row_hash"] or "")
-                concept_id = str(r["concept_id"] or payload.get("concept_id") or "")
-                self.add_edge(
-                    src_type="concept_point",
-                    src_id=concept_id,
-                    dst_type="concept_search_row",
-                    dst_id=search_id,
-                    edge_type="concept_point_yields_search_witness",
-                    payload={"row_hash": r["row_hash"]},
-                )
-        if _table_exists(self.conn, "repair_atoms"):
-            for r in self.conn.execute("SELECT repair_atom_id, species_id, source, source_id, row_json FROM repair_atoms").fetchall():
-                if str(r["species_id"] or "") != "concept_latent":
-                    continue
-                payload = _loads(r["row_json"]) if "row_json" in r.keys() else None
-                if not isinstance(payload, dict):
-                    payload = {}
-                source_row = payload.get("provenance", {}).get("source_row") if isinstance(payload.get("provenance"), dict) else {}
-                meta = source_row.get("metadata") if isinstance(source_row, dict) and isinstance(source_row.get("metadata"), dict) else {}
-                search_id = str(meta.get("concept_search_row_id") or "")
-                concept_id = str(meta.get("concept_id") or r["source_id"] or "")
-                if search_id:
-                    self.add_edge(
-                        src_type="concept_search_row",
-                        src_id=search_id,
-                        dst_type="repair_atom",
-                        dst_id=str(r["repair_atom_id"] or ""),
-                        edge_type="concept_search_yields_repair_atom",
-                    )
-                elif concept_id:
-                    self.add_edge(
-                        src_type="concept_point",
-                        src_id=concept_id,
-                        dst_type="repair_atom",
-                        dst_id=str(r["repair_atom_id"] or ""),
-                        edge_type="concept_decode_yields_repair_atom",
-                    )
-
-
-def _import_poms_rows(conn: sqlite3.Connection, run_dir: Path, run_id: str, artifacts: list[sqlite3.Row]) -> None:
-    for artifact in artifacts:
-        path = Path(str(artifact["abs_path"] or artifact["rel_path"] or ""))
-        if path.suffix != ".jsonl":
-            continue
-        rows = _read_jsonl(path)
-        atype = str(artifact["artifact_type"] or "")
-        for row in rows:
-            if atype == "poms_evidence" or any(k in row for k in ("parent_nonpaid", "dual_certificate", "least_repair")):
-                evidence_id = str(row.get("evidence_id") or row.get("id") or stable_hash(row, 16))
-                rh = _row_hash(run_id, artifact["artifact_id"], "poms_evidence", evidence_id, row)
-                conn.execute(
-                    """
-                    INSERT OR IGNORE INTO poms_evidence(
-                        row_hash, run_id, artifact_id, evidence_id, candidate_id, action_id,
-                        parent_nonpaid, dual_certificate, least_repair, payload_json
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?)
-                    """,
-                    (
-                        rh,
-                        run_id,
-                        artifact["artifact_id"],
-                        evidence_id,
-                        str(row.get("candidate_id") or ""),
-                        str(row.get("action_id") or ""),
-                        _int_bool(row.get("parent_nonpaid")),
-                        _int_bool(row.get("dual_certificate")),
-                        _int_bool(row.get("least_repair")),
-                        _json(row),
-                    ),
-                )
-            if atype == "poms_promotion_decisions" or "promotion_status" in row:
-                decision_id = str(row.get("decision_id") or row.get("id") or "poms_decision_" + stable_hash(row, 16))
-                conn.execute(
-                    """
-                    INSERT OR REPLACE INTO poms_promotion_decisions(
-                        decision_id, ts, run_id, candidate_id, action_id, parent_nonpaid,
-                        dual_certificate, least_repair, promotion_status, canonical_status, reason, row_json
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-                    """,
-                    (
-                        decision_id,
-                        _float(row.get("ts"), _now()),
-                        run_id,
-                        str(row.get("candidate_id") or ""),
-                        str(row.get("action_id") or ""),
-                        _int_bool(row.get("parent_nonpaid")),
-                        _int_bool(row.get("dual_certificate")),
-                        _int_bool(row.get("least_repair")),
-                        str(row.get("promotion_status") or row.get("status") or ""),
-                        str(row.get("canonical_status") or ""),
-                        str(row.get("reason") or ""),
-                        _json(row),
-                    ),
-                )
 
 
 def summarize_run_db(conn: sqlite3.Connection) -> dict[str, Any]:
@@ -1128,8 +711,11 @@ def summarize_run_db(conn: sqlite3.Connection) -> dict[str, Any]:
     tables = [
         "runs",
         "artifacts",
+        "schema_migrations",
         "tasks",
         "action_rows",
+        "responses",
+        "audit_events",
         "audit_rows",
         "response_rows",
         "response_values",
@@ -1180,6 +766,7 @@ def summarize_run_db(conn: sqlite3.Connection) -> dict[str, Any]:
         "dominant_species": dominant,
     }
     summary.update(execution)
+    summary["invariants"] = check_run_db_invariants(conn)
     return summary
 
 
@@ -1207,19 +794,18 @@ def build_run_db(
         rid = run_id or ("run_" + stable_hash({"run_dir": str(root.resolve())}, 20))
         store.upsert_run(conn, run_id=rid, run_dir=root, status="imported", payload={"config": config or {}, "artifact_store_root": str(artifact_store_root or "")})
         if import_artifacts:
-            import_repair_artifacts(conn, root)
+            import_legacy_repair_artifacts(conn, root)
         ensure_run_schema(conn)
         artifacts = ArtifactStore(conn, root, rid)
         artifacts.refresh_artifact_metadata()
         rows = artifacts.artifact_rows()
         audit = AuditStore(conn, root, rid)
-        audit.import_tasks_and_actions(rows)
-        audit.import_queue_ledgers()
-        audit.import_cache_summary()
-        RepairStore(conn, root, rid).import_supplemental_repair_artifacts(rows)
-        _import_poms_rows(conn, root, rid, rows)
+        import_audit_store_artifacts(audit, rows)
+        import_repair_store_artifacts(RepairStore(conn, root, rid), rows)
+        import_poms_store_artifacts(conn, root, rid, rows)
+        materialize_canonical_run_tables(conn, rid)
         if materialize_lineage:
-            LineageStore(conn, rid).materialize_from_tables()
+            materialize_lineage_store(LineageStore(conn, rid))
         conn.commit()
         summary = summarize_run_db(conn)
         summary.update({"db_path": str(db), "run_dir": str(root), "run_id": rid})

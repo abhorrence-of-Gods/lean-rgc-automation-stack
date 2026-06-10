@@ -11,7 +11,8 @@ import tempfile
 import time
 from typing import Any
 
-from .schemas import AuditRecord, DefectVector, LeanTask, ProofState, TacticAction, stable_hash, write_jsonl
+from .schemas import AuditRecord, DefectVector, LeanTask, ProofState, TacticAction, stable_hash, write_records
+from .batch import SCHEMA_AUDIT_ROW, SCHEMA_DEFECT_ROW, SCHEMA_RESPONSE_ROW
 from .dataset import summarize_response_rows
 from .executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
@@ -232,7 +233,15 @@ class LeanBulkAuditor:
             return records
 
 
-def bulk_audit_to_files(tasks: list[LeanTask], actions_by_task: dict[str, list[TacticAction]], out_dir: str | Path, config: BulkAuditConfig) -> dict[str, Any]:
+def bulk_audit_to_files(
+    tasks: list[LeanTask],
+    actions_by_task: dict[str, list[TacticAction]],
+    out_dir: str | Path,
+    config: BulkAuditConfig,
+    *,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
+) -> dict[str, Any]:
     out = Path(out_dir); out.mkdir(parents=True, exist_ok=True)
     pairs: list[tuple[LeanTask, TacticAction]] = []
     for task in tasks:
@@ -268,9 +277,9 @@ def bulk_audit_to_files(tasks: list[LeanTask], actions_by_task: dict[str, list[T
             "audit_status": rec.status,
             "carrier_delta": rec.carrier_delta,
         })
-    write_jsonl(out / "micro_audit.jsonl", [r.to_dict() for r in audits])
-    write_jsonl(out / "responses.jsonl", responses)
-    write_jsonl(out / "defects.jsonl", list(defects_by_state.values()))
+    write_records(out / "micro_audit.jsonl", [r.to_dict() for r in audits], schema_version=SCHEMA_AUDIT_ROW, run_id=run_id, parent_ids=parent_ids)
+    write_records(out / "responses.jsonl", responses, schema_version=SCHEMA_RESPONSE_ROW, run_id=run_id, parent_ids=parent_ids)
+    write_records(out / "defects.jsonl", list(defects_by_state.values()), schema_version=SCHEMA_DEFECT_ROW, run_id=run_id, parent_ids=parent_ids)
     bulk_summary = report.to_dict()
     response_summary = summarize_response_rows(responses).to_dict()
     summary = {**bulk_summary, **response_summary, "backend": "bulk"}

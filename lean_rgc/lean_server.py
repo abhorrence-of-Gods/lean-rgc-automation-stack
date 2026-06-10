@@ -15,7 +15,8 @@ import time
 import uuid
 import sys
 
-from .schemas import AuditRecord, LeanTask, ProofState, TacticAction, stable_hash, write_jsonl, read_jsonl
+from .schemas import AuditRecord, LeanTask, ProofState, TacticAction, stable_hash, write_jsonl, write_records, read_jsonl
+from .batch import SCHEMA_AUDIT_ROW, SCHEMA_DEFECT_ROW, SCHEMA_RESPONSE_ROW
 from .executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
 from .dataset import summarize_response_rows
@@ -835,6 +836,8 @@ def audit_with_lean_server(
     max_actions: int = 64,
     resume: bool = False,
     flush_every: int = 50,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Run micro-audits through the v21 LeanServerAdapter.
 
@@ -863,8 +866,8 @@ def audit_with_lean_server(
     goal_state_transitions: list[dict[str, Any]] = []
 
     def flush():
-        write_jsonl(out / "micro_audit.jsonl", audits)
-        write_jsonl(out / "responses.jsonl", responses)
+        write_records(out / "micro_audit.jsonl", audits, schema_version=SCHEMA_AUDIT_ROW, run_id=run_id, parent_ids=parent_ids)
+        write_records(out / "responses.jsonl", responses, schema_version=SCHEMA_RESPONSE_ROW, run_id=run_id, parent_ids=parent_ids)
         write_jsonl(out / "structured_states.jsonl", structured_states)
         write_jsonl(out / "goal_state_transitions.jsonl", goal_state_transitions)
         seen: set[str] = set(); defects: list[dict[str, Any]] = []
@@ -877,7 +880,7 @@ def audit_with_lean_server(
             if isinstance(db, dict):
                 row = dict(db); row["state_id"] = sid; row["task_id"] = r.get("task_id") or db.get("task_id")
                 defects.append(row)
-        write_jsonl(out / "defects.jsonl", defects)
+        write_records(out / "defects.jsonl", defects, schema_version=SCHEMA_DEFECT_ROW, run_id=run_id, parent_ids=parent_ids)
 
     t0 = time.time(); completed_new = 0
     stateful_kernel_rpc_audit = False

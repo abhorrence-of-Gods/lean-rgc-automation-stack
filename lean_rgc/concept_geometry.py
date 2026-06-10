@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 import json
 
-from .schemas import read_jsonl, stable_hash, write_jsonl
+from .schemas import read_jsonl, stable_hash, write_records
 
 
 SCHEMA_CONCEPT_POINT = "lean-rgc-concept-point-v62.0"
@@ -113,6 +113,8 @@ def build_concept_geometry(
     taxonomy_path: str | Path | None = None,
     selected_features_path: str | Path | None = None,
     summary_out: str | Path | None = None,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -145,8 +147,8 @@ def build_concept_geometry(
                     "canonical_status": "concept_deformation_witness",
                 }
             )
-    write_jsonl(out_path / "concept_points.jsonl", dedup_points)
-    write_jsonl(out_path / "concept_edges.jsonl", edges)
+    write_records(out_path / "concept_points.jsonl", dedup_points, schema_version=SCHEMA_CONCEPT_POINT, run_id=run_id, parent_ids=parent_ids)
+    write_records(out_path / "concept_edges.jsonl", edges, schema_version=SCHEMA_CONCEPT_EDGE, run_id=run_id, parent_ids=parent_ids)
     summary = {
         "schema_version": SCHEMA_CONCEPT_POINT,
         "out_dir": str(out_path),

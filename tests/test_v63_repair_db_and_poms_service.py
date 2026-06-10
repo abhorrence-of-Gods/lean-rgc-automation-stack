@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from lean_rgc.cli import main
 from lean_rgc.poms_promotion_service import poms_promotion_decisions, run_poms_promotion_service
 from lean_rgc.repair_db import build_repair_db, failure_attribution_report
 from lean_rgc.schemas import write_jsonl
@@ -91,6 +92,21 @@ def test_repair_db_imports_crg_cgt_artifacts_and_reports_values(tmp_path: Path):
     assert summary["V_hard"] == 0.0
     assert report["diagnosis"] == "hardening_or_grammar_defect"
     assert report["recommended_next"] == "improve_hardening_decoder_or_tactic_grammar"
+
+
+def test_cli_repair_db_deprecated_commands_still_work(tmp_path: Path):
+    run = tmp_path / "run"
+    write_jsonl(
+        run / "crg" / "crg_audit_rows.jsonl",
+        [{"candidate_id": "cand_cli", "problem_id": "crg_cli", "relaxed_score": 0.8, "audited_score": 0.1}],
+    )
+    db = tmp_path / "repair_cli.sqlite"
+    out = tmp_path / "repair_query.json"
+
+    assert main(["repair-db-build", "--run-dir", str(run), "--db", str(db)]) == 0
+    assert main(["repair-db-query", "--db", str(db), "--sql", "SELECT COUNT(*) AS n FROM crg_audit_rows", "--out-json", str(out)]) == 0
+    assert db.exists()
+    assert out.exists()
 
 
 def test_poms_promotion_service_keeps_canonical_boundary(tmp_path: Path):

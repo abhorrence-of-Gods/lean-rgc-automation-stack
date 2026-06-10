@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
 from typing import Any, Literal
-import hashlib
-import json
 
-
-def stable_hash(obj: Any, n: int = 16) -> str:
-    data = json.dumps(obj, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")
-    return hashlib.sha256(data).hexdigest()[:n]
+from .core.ids import stable_hash
+from .core.jsonio import default_run_id_for_path, read_jsonl, write_jsonl, write_records
 
 
 @dataclass
@@ -230,21 +225,3 @@ class TrajectoryRecord:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
-
-
-def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                rows.append(json.loads(line))
-    return rows
-
-
-def write_jsonl(path: str | Path, rows: list[dict[str, Any]]) -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        for row in rows:
-            f.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")

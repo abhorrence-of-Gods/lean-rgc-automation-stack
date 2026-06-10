@@ -6,7 +6,7 @@ import json
 
 from .relaxed_species import default_relaxed_species_rows
 from .repair_space import make_repair_atom, normalize_response_embedding, read_rows, safe_float
-from .schemas import stable_hash, write_jsonl
+from .schemas import stable_hash, write_records
 
 
 SCHEMA_REPAIR_SPECIES_REGISTRY = "lean-rgc-repair-species-registry-v58.0"
@@ -142,6 +142,8 @@ def build_repair_species_registry(
     tower_retrieval_path: str | Path | None = None,
     repair_faces_path: str | Path | None = None,
     include_species_rows: bool = True,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     atoms: list[dict[str, Any]] = []
     atoms.extend(_from_actions(actions_path))
@@ -159,7 +161,7 @@ def build_repair_species_registry(
             rows.append({**species, "row_kind": "species"})
     for atom in atoms:
         rows.append({**atom, "row_kind": "repair_atom"})
-    write_jsonl(out, rows)
+    write_records(out, rows, schema_version=SCHEMA_REPAIR_SPECIES_REGISTRY, run_id=run_id, parent_ids=parent_ids)
     species_counts: dict[str, int] = {}
     for atom in atoms:
         sid = str(atom.get("species_id") or "unknown")

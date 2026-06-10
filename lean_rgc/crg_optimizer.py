@@ -9,7 +9,7 @@ import numpy as np
 
 from .crg_registry import load_repair_atoms
 from .response_completion import load_completion
-from .schemas import read_jsonl, stable_hash, write_jsonl
+from .schemas import read_jsonl, stable_hash, write_records
 
 
 SCHEMA_CRG_CANDIDATE = "lean-rgc-crg-candidate-v59.0"
@@ -272,6 +272,8 @@ def optimize_crg_candidates(
     source_weight: float = 0.0,
     ghost_weight: float = 0.0,
     hardening_weight: float = 0.0,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     problems = _read_rows(problems_path)
     atoms = load_repair_atoms(registry_path)
@@ -289,7 +291,7 @@ def optimize_crg_candidates(
         ghost_weight=ghost_weight,
         hardening_weight=hardening_weight,
     )
-    write_jsonl(out, rows)
+    write_records(out, rows, schema_version=SCHEMA_CRG_CANDIDATE, run_id=run_id, parent_ids=parent_ids)
     summary = {
         "schema_version": SCHEMA_CRG_CANDIDATE,
         "out": str(out),

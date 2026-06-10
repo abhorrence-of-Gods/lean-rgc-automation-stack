@@ -4,9 +4,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable
 
-from .schemas import LeanTask, TacticAction, ProofState, ResponseRecord, write_jsonl, read_jsonl
+from .schemas import LeanTask, TacticAction, ProofState, ResponseRecord, write_records, read_jsonl
 from .executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
+
+
+SCHEMA_AUDIT_ROW = "lean-rgc-audit-row-v1"
+SCHEMA_RESPONSE_ROW = "lean-rgc-response-row-v1"
+SCHEMA_DEFECT_ROW = "lean-rgc-defect-row-v1"
 
 
 def _pair_key(state_id: str, action_id: str) -> tuple[str, str]:
@@ -24,6 +29,8 @@ def run_micro_audit_batch(
     candidate_mode: str = "state",
     resume: bool = False,
     flush_every: int = 50,
+    run_id: str | None = None,
+    parent_ids: list[str] | None = None,
 ) -> dict:
     """Run micro-audits with optional resume and periodic flush.
 
@@ -84,8 +91,8 @@ def run_micro_audit_batch(
     responses = list(existing_responses)
 
     def flush():
-        write_jsonl(out / "micro_audit.jsonl", audits)
-        write_jsonl(out / "responses.jsonl", responses)
+        write_records(out / "micro_audit.jsonl", audits, schema_version=SCHEMA_AUDIT_ROW, run_id=run_id, parent_ids=parent_ids)
+        write_records(out / "responses.jsonl", responses, schema_version=SCHEMA_RESPONSE_ROW, run_id=run_id, parent_ids=parent_ids)
         # one defect row per state/task for carrier coker/generator convenience
         seen = set()
         defects = []
@@ -100,7 +107,7 @@ def run_micro_audit_batch(
                 row["state_id"] = sid
                 row["task_id"] = r.get("task_id") or db.get("task_id")
                 defects.append(row)
-        write_jsonl(out / "defects.jsonl", defects)
+        write_records(out / "defects.jsonl", defects, schema_version=SCHEMA_DEFECT_ROW, run_id=run_id, parent_ids=parent_ids)
 
     flush_every = max(1, int(flush_every or 50))
     completed_new = 0

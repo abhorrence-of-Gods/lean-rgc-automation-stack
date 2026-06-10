@@ -1,14 +1,25 @@
 import json
 import sqlite3
+import subprocess
+import sys
 import time
 from pathlib import Path
 
 from lean_rgc.action_quarantine import ensure_quarantine_schema
 from lean_rgc.audit_job_queue import connect_queue, ensure_audit_queue_schema
+from lean_rgc.batch import SCHEMA_AUDIT_ROW, SCHEMA_DEFECT_ROW, SCHEMA_RESPONSE_ROW
 from lean_rgc.cli import main
-from lean_rgc.data.store import RunStore, build_run_db, summarize_run_db
+from lean_rgc.concept_geometry import SCHEMA_CONCEPT_EDGE, SCHEMA_CONCEPT_POINT, build_concept_geometry
+from lean_rgc.crg_hardening import SCHEMA_CRG_HARDENING, harden_crg_candidates
+from lean_rgc.crg_optimizer import SCHEMA_CRG_CANDIDATE, optimize_crg_candidates
+from lean_rgc.crg_problem import SCHEMA_CRG_PROBLEM, build_crg_problems
+from lean_rgc.crg_registry import SCHEMA_REPAIR_SPECIES_REGISTRY, build_repair_species_registry
+from lean_rgc.data.store import RunStore, build_run_db, check_run_db_invariants, summarize_run_db
+from lean_rgc.lean_server import LeanServerConfig, audit_with_lean_server
+from lean_rgc.poms_promotion_service import SCHEMA_POMS_PROMOTION_SERVICE, run_poms_promotion_service
+from lean_rgc.relaxed_species import SCHEMA_RELAXED_SPECIES
 from lean_rgc.repair_db import failure_attribution_report
-from lean_rgc.schemas import write_jsonl
+from lean_rgc.schemas import LeanTask, TacticAction, read_jsonl, write_jsonl, write_records
 from lean_rgc.timeout_ledger import ensure_timeout_schema, record_timeout_event, record_worker_event
 
 
@@ -114,14 +125,18 @@ def test_run_db_schema_initializes_all_required_tables(tmp_path: Path):
             r[0]
             for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
+        invariants = check_run_db_invariants(conn)
     finally:
         conn.close()
 
     required = {
         "runs",
         "artifacts",
+        "schema_migrations",
         "tasks",
         "actions",
+        "responses",
+        "audit_events",
         "audit_rows",
         "response_rows",
         "response_values",
@@ -145,6 +160,146 @@ def test_run_db_schema_initializes_all_required_tables(tmp_path: Path):
         "lineage_edges",
     }
     assert required <= tables
+    assert invariants["ok"] is True
+
+
+def test_write_records_stamps_canonical_metadata(tmp_path: Path):
+    out = tmp_path / "records.jsonl"
+    write_records(out, [{"response_id": "r1", "status": "success"}], schema_version="lean-rgc.response.v1", run_id="run_1", parent_ids=["p0"], artifact_ref="artifact://responses")
+    rows = read_jsonl(out)
+    assert rows == [
+        {
+            "artifact_ref": "artifact://responses",
+            "parent_ids": ["p0"],
+            "response_id": "r1",
+            "run_id": "run_1",
+            "schema_version": "lean-rgc.response.v1",
+            "status": "success",
+        }
+    ]
+
+
+def test_write_records_preserves_existing_metadata_and_handles_empty_files(tmp_path: Path):
+    out = tmp_path / "preserve.jsonl"
+    write_records(
+        out,
+        [{"schema_version": "custom.v0", "run_id": "run_existing", "parent_ids": ["old"], "artifact_ref": "old", "value": 1}],
+        schema_version="new.v1",
+        run_id="run_new",
+        parent_ids=["new"],
+        artifact_ref="new",
+    )
+    assert read_jsonl(out) == [{"schema_version": "custom.v0", "run_id": "run_existing", "parent_ids": ["old"], "artifact_ref": "old", "value": 1}]
+    empty = tmp_path / "empty.jsonl"
+    write_records(empty, [], schema_version="empty.v1", run_id="run_empty")
+    assert empty.exists()
+    assert empty.read_text(encoding="utf-8") == ""
+
+
+def test_data_importers_import_without_cli_process():
+    code = """
+import sys
+import lean_rgc.data.store
+import lean_rgc.data.importers.audit
+import lean_rgc.data.importers.lineage
+import lean_rgc.data.importers.poms
+import lean_rgc.data.importers.repair
+assert 'lean_rgc.cli' not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_high_value_writers_emit_canonical_rows_and_db_artifacts(tmp_path: Path):
+    run_id = "run_writer"
+    parent_ids = ["parent_0"]
+
+    audit_dir = tmp_path / "audit"
+    audit_with_lean_server(
+        [LeanTask(task_id="t_true", statement="True", imports=[])],
+        [TacticAction(action_id="trivial", tactic="trivial")],
+        out_dir=audit_dir,
+        server_config=LeanServerConfig(dry_run=True, backend="dry_run"),
+        max_actions=1,
+        run_id=run_id,
+        parent_ids=parent_ids,
+    )
+
+    actions_path = tmp_path / "inputs" / "actions.jsonl"
+    write_jsonl(actions_path, [{"action_id": "simp", "tactic": "simp", "response_embedding": {"goal.closed": 1.0}, "cost_estimate": 0.1}])
+    registry = tmp_path / "crg" / "repair_species_registry.jsonl"
+    build_repair_species_registry(out=registry, actions_path=actions_path, run_id=run_id, parent_ids=parent_ids)
+
+    faces = tmp_path / "inputs" / "repair_faces.jsonl"
+    write_jsonl(faces, [{"face_id": "face_1", "positive_response_face": {"goal.closed": 1.0}}])
+    problems = tmp_path / "crg" / "crg_problems.jsonl"
+    build_crg_problems(out=problems, repair_faces_path=faces, run_id=run_id, parent_ids=parent_ids)
+
+    candidates = tmp_path / "crg" / "relaxed_candidates.jsonl"
+    optimize_crg_candidates(problems_path=problems, registry_path=registry, out=candidates, run_id=run_id, parent_ids=parent_ids)
+
+    attempts = tmp_path / "crg" / "hardening_attempts.jsonl"
+    hard_actions = tmp_path / "crg" / "hard_candidates.jsonl"
+    harden_crg_candidates(candidates_path=candidates, out_attempts=attempts, out_actions=hard_actions, run_id=run_id, parent_ids=parent_ids)
+
+    taxonomy = tmp_path / "inputs" / "taxonomy.jsonl"
+    features = tmp_path / "inputs" / "features.jsonl"
+    write_jsonl(taxonomy, [{"taxonomy_face_id": "tax_1", "positive_face": {"response_basis": ["summary::resp_pos::goal.closed"]}, "status": {"heldout_validated": True}}])
+    write_jsonl(features, [{"feature_id": "feature_1"}])
+    concept_dir = tmp_path / "concept_geometry"
+    build_concept_geometry(out_dir=concept_dir, taxonomy_path=taxonomy, selected_features_path=features, run_id=run_id, parent_ids=parent_ids)
+
+    poms_rows = tmp_path / "poms_status_rows.jsonl"
+    evidence = tmp_path / "poms_evidence.jsonl"
+    decisions = tmp_path / "poms_promotion_decisions.jsonl"
+    write_jsonl(poms_rows, [{"action_id": "simp", "poms_status": "accepted_witness"}])
+    write_jsonl(evidence, [{"action_id": "simp", "parent_nonpaid": True, "dual_certificate": True, "least_repair": True}])
+    run_poms_promotion_service(tmp_path, poms_rows=poms_rows, evidence=[evidence], out_jsonl=decisions, run_id=run_id, parent_ids=parent_ids)
+
+    expected = {
+        audit_dir / "micro_audit.jsonl": SCHEMA_AUDIT_ROW,
+        audit_dir / "responses.jsonl": SCHEMA_RESPONSE_ROW,
+        audit_dir / "defects.jsonl": SCHEMA_DEFECT_ROW,
+        registry: None,
+        problems: SCHEMA_CRG_PROBLEM,
+        candidates: SCHEMA_CRG_CANDIDATE,
+        attempts: SCHEMA_CRG_HARDENING,
+        hard_actions: SCHEMA_CRG_HARDENING,
+        concept_dir / "concept_points.jsonl": SCHEMA_CONCEPT_POINT,
+        concept_dir / "concept_edges.jsonl": SCHEMA_CONCEPT_EDGE,
+        decisions: SCHEMA_POMS_PROMOTION_SERVICE,
+    }
+    for path, schema in expected.items():
+        rows = read_jsonl(path)
+        assert rows, path
+        if schema is not None:
+            assert all(row["schema_version"] == schema for row in rows)
+        else:
+            assert all(row.get("schema_version") for row in rows)
+        assert all(row["run_id"] == run_id for row in rows)
+        assert all(row["parent_ids"] == parent_ids for row in rows)
+        assert all("payload_json" not in row for row in rows)
+
+    summary = build_run_db(tmp_path, tmp_path / "runs.db", run_id=run_id)
+    assert summary["invariants"]["ok"] is True
+    con = sqlite3.connect(tmp_path / "runs.db")
+    try:
+        schemas = {
+            row[0]
+            for row in con.execute(
+                "SELECT schema_version FROM artifacts WHERE schema_version IS NOT NULL AND schema_version <> 'legacy.unknown'"
+            ).fetchall()
+        }
+    finally:
+        con.close()
+    assert {
+        SCHEMA_RESPONSE_ROW,
+        SCHEMA_RELAXED_SPECIES,
+        SCHEMA_CRG_PROBLEM,
+        SCHEMA_CRG_CANDIDATE,
+        SCHEMA_CRG_HARDENING,
+        SCHEMA_CONCEPT_POINT,
+        SCHEMA_POMS_PROMOTION_SERVICE,
+    } <= schemas
 
 
 def test_run_db_imports_audit_crg_poms_and_lineage(tmp_path: Path):
@@ -272,6 +427,10 @@ def test_run_db_imports_audit_crg_poms_and_lineage(tmp_path: Path):
     report = failure_attribution_report(db_path=run / "runs.db")
 
     assert summary["tables"]["artifacts"] >= 8
+    assert summary["tables"]["responses"] == 2
+    assert summary["tables"]["audit_events"] == 1
+    assert summary["tables"]["schema_migrations"] >= 1
+    assert summary["invariants"]["ok"] is True
     # Existing audit_db compatibility imports both responses.jsonl and
     # micro_audit.jsonl into response_rows when response values are present.
     assert summary["tables"]["response_rows"] == 2
@@ -314,6 +473,12 @@ def test_run_db_imports_audit_crg_poms_and_lineage(tmp_path: Path):
             "SELECT 1 FROM lineage_edges WHERE edge_type='concept_search_yields_repair_atom' LIMIT 1"
         ).fetchone()
         assert concept_edge is not None
+        canonical = con.execute(
+            "SELECT schema_version, run_id, response_id FROM responses WHERE action_id='simp' LIMIT 1"
+        ).fetchone()
+        assert canonical is not None
+        assert canonical[0] == "lean-rgc.canonical.v1"
+        assert canonical[1] == summary["run_id"]
     finally:
         con.close()
 
@@ -323,6 +488,19 @@ def test_cli_and_pipeline_run_db_smoke(tmp_path: Path):
     write_jsonl(run / "audit" / "responses.jsonl", [{"state_id": "s", "action_id": "a", "audit_status": "fail", "response": {"x": -1.0}}])
     assert main(["run-db-build", "--run-dir", str(run), "--db", str(run / "runs.db")]) == 0
     assert main(["run-db-query", "--db", str(run / "runs.db"), "--sql", "SELECT COUNT(*) AS n FROM response_rows"]) == 0
+    assert main(["data", "query", "--db", str(run / "runs.db"), "--sql", "SELECT COUNT(*) AS n FROM responses"]) == 0
+    assert main(["data", "summarize", "--db", str(run / "runs.db")]) == 0
+    assert main(["data", "lineage", "--db", str(run / "runs.db")]) == 0
+    summary = build_run_db(run, run / "runs.db", append=True)
+    assert summary["tables"]["responses"] == 1
+    run2 = tmp_path / "run2"
+    write_jsonl(run2 / "audit" / "responses.jsonl", [{"state_id": "s2", "action_id": "b", "audit_status": "success", "response": {"x": 1.0}}])
+    assert main(["data", "build", "--run-dir", str(run2), "--db", str(run2 / "runs.db")]) == 0
+    con2 = sqlite3.connect(run2 / "runs.db")
+    try:
+        assert con2.execute("SELECT COUNT(*) FROM responses").fetchone()[0] == 1
+    finally:
+        con2.close()
 
     out = tmp_path / "pipe"
     assert main(
