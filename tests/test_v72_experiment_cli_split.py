@@ -181,7 +181,7 @@ import importlib
 import sys
 importlib.import_module('lean_rgc.experiment')
 importlib.import_module('lean_rgc.cli_experiment')
-assert 'lean_rgc.cli' not in sys.modules
+assert 'lean_rgc.cli.main' not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
 
@@ -212,7 +212,7 @@ def test_experiment_commands_live_in_cli_experiment():
     assert MOVED_COMMANDS <= set(choices)
     for command in MOVED_COMMANDS:
         ns = parser.parse_args(_argv_for(command, choices[command]))
-        assert ns.func.__module__ == "lean_rgc.cli_experiment"
+        assert ns.func.__module__ == "lean_rgc.cli.experiment"
 
 
 def test_experiment_split_modules_do_not_import_root_cli_statically():
@@ -264,4 +264,4 @@ def test_arithmetic_teacher_command_registration_smoke():
     from lean_rgc.cli import build_parser
 
     ns = build_parser().parse_args(["arithmetic-teacher-graph", "--structured-states", "states.jsonl", "--out", "graph.jsonl"])
-    assert ns.func.__module__ == "lean_rgc.cli_experiment"
+    assert ns.func.__module__ == "lean_rgc.cli.experiment"

@@ -55,7 +55,7 @@ import importlib
 import sys
 importlib.import_module('lean_rgc.lean')
 importlib.import_module('lean_rgc.cli_lean')
-assert 'lean_rgc.cli' not in sys.modules
+assert 'lean_rgc.cli.main' not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
 
@@ -92,7 +92,7 @@ def test_lean_runtime_commands_live_in_cli_lean():
     assert set(MOVED_COMMANDS) <= set(choices)
     for argv in MOVED_COMMANDS.values():
         ns = parser.parse_args(argv)
-        assert ns.func.__module__ == "lean_rgc.cli_lean"
+        assert ns.func.__module__ == "lean_rgc.cli.lean"
 
 
 def test_lean_runtime_split_modules_do_not_import_root_cli_statically():

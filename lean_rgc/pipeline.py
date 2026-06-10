@@ -66,7 +66,7 @@ from .structured_state import structured_state_extract_cli, summarize_structured
 from .audit_db import build_audit_db
 from .audit_pruning import prune_actions_file
 from .data.store import build_run_db
-from .cli_common import _actions_for_tasks, _executor_from_args, _load_actions, _load_actions_grouped, _load_tasks, _normalize_tasks_imports, _server_config_from_args
+from .cli.common import _actions_for_tasks, _executor_from_args, _load_actions, _load_actions_grouped, _load_tasks, _normalize_tasks_imports, _server_config_from_args
 from .lean_server import LeanServerConfig, audit_with_lean_server
 from .lean_worker_supervisor import enqueue_and_run_supervised_audit, run_bulk_audit_queue, run_supervised_audit_queue
 from .active_audit_scheduler import active_audit_schedule_from_files, SchedulerConfig, _read_json_or_file
@@ -129,7 +129,7 @@ from .kernel_context_cache import audit_contextual_candidates_with_kernel_cache
 
 
 
-from .cli_experiment import (
+from .cli.experiment import (
     cmd_candidates,
     cmd_registry_candidates,
     cmd_build_premise_index,

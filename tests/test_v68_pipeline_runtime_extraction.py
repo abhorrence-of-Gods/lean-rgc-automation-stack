@@ -21,7 +21,7 @@ import importlib
 import sys
 for name in ['lean_rgc.pipeline', 'lean_rgc.cli_pipeline']:
     importlib.import_module(name)
-assert 'lean_rgc.cli' not in sys.modules
+assert 'lean_rgc.cli.main' not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
 
@@ -50,7 +50,7 @@ def test_pipeline_commands_remain_registered_with_pipeline_handlers():
     for name in expected:
         func = choices[name].get_default("func")
         assert func is not None
-        assert func.__module__ == "lean_rgc.cli_pipeline"
+        assert func.__module__ == "lean_rgc.cli.pipeline"
 
 
 def test_run_basic_pipeline_dry_run_smoke(tmp_path: Path):

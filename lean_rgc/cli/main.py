@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import sys
+import types
 
-from .cli_audit import register_audit_commands
-from .cli_crg import register_crg_commands
-from .cli_data import register_data_commands
-from .cli_dost import register_dost_commands
-from .cli_common import _actions_for_tasks, _load_actions_grouped
-from .cli_experiment import _materialize_total_budget_task_actions, register_experiment_commands
-from .cli_lean import register_lean_commands
-from .cli_pipeline import register_pipeline_commands
-from .cli_poms import register_poms_commands
+from .audit import register_audit_commands
+from .crg import register_crg_commands
+from .data import register_data_commands
+from .dost import register_dost_commands
+from .common import _actions_for_tasks, _load_actions_grouped
+from .experiment import _materialize_total_budget_task_actions, register_experiment_commands
+from .lean import register_lean_commands
+from .pipeline import register_pipeline_commands
+from .poms import register_poms_commands
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -35,3 +37,11 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+class _CallableMainModule(types.ModuleType):
+    def __call__(self, argv: list[str] | None = None) -> int:
+        return main(argv)
+
+
+sys.modules[__name__].__class__ = _CallableMainModule

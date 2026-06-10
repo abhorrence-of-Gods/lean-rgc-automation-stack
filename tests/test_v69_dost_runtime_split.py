@@ -64,7 +64,7 @@ for name in [
     'lean_rgc.cli_dost',
 ]:
     importlib.import_module(name)
-assert 'lean_rgc.cli' not in sys.modules
+assert 'lean_rgc.cli.main' not in sys.modules
 """
     subprocess.run([sys.executable, "-c", code], check=True)
 
@@ -141,7 +141,7 @@ def test_dost_commands_remain_registered_and_live_in_cli_dost():
     }
     for argv in cases.values():
         ns = parser.parse_args(argv)
-        assert ns.func.__module__ == "lean_rgc.cli_dost"
+        assert ns.func.__module__ == "lean_rgc.cli.dost"
 
 
 def test_dost_runtime_stack_writes_key_artifacts(tmp_path: Path):
