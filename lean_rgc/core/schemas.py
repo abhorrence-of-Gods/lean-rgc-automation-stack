@@ -4,6 +4,22 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 
+SCHEMA_CONTRACT_VERSION = "lean-rgc.production-metadata-contract.v1"
+PRODUCTION_METADATA_FIELDS = ("schema_version", "run_id", "parent_ids", "payload_json")
+PRODUCTION_RECORD_TYPES = (
+    "run",
+    "artifact",
+    "task",
+    "action",
+    "response",
+    "repair_face",
+    "crg_problem",
+    "relaxed_candidate",
+    "hardening_attempt",
+    "lineage_edge",
+)
+
+
 @dataclass
 class _Record:
     schema_version: str
@@ -110,9 +126,12 @@ __all__ = [
     "CRGProblemRecord",
     "HardeningAttemptRecord",
     "LineageEdgeRecord",
+    "PRODUCTION_METADATA_FIELDS",
+    "PRODUCTION_RECORD_TYPES",
     "RelaxedCandidateRecord",
     "RepairFaceRecord",
     "ResponseRecord",
     "RunRecord",
+    "SCHEMA_CONTRACT_VERSION",
     "TaskRecord",
 ]

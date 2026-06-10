@@ -1,0 +1,1716 @@
+{
+  "commands": [
+    {
+      "classification": "core",
+      "command": "accept-candidates",
+      "deprecated": false,
+      "handler": "cmd_accept_candidates",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "accepted-carrier-actions",
+      "deprecated": false,
+      "handler": "cmd_accepted_carrier_actions",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "action-cocycle-audit",
+      "deprecated": false,
+      "handler": "cmd_action_cocycle_audit",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "action-geometry-registry",
+      "deprecated": false,
+      "handler": "cmd_action_geometry_registry",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "action-geometry-retrieve",
+      "deprecated": false,
+      "handler": "cmd_action_geometry_retrieve",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "action-quarantine-export",
+      "deprecated": false,
+      "handler": "cmd_action_quarantine_export",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "action-quarantine-report",
+      "deprecated": false,
+      "handler": "cmd_action_quarantine_report",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "action-report",
+      "deprecated": false,
+      "handler": "cmd_action_report",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "active-audit-schedule",
+      "deprecated": false,
+      "handler": "cmd_active_audit_schedule",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "arithmetic-teacher-audit",
+      "deprecated": false,
+      "handler": "cmd_arithmetic_teacher_audit",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "arithmetic-teacher-cocycle",
+      "deprecated": false,
+      "handler": "cmd_arithmetic_teacher_cocycle",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "arithmetic-teacher-cocycle-audit",
+      "deprecated": false,
+      "handler": "cmd_arithmetic_teacher_cocycle_audit",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "arithmetic-teacher-constraints",
+      "deprecated": false,
+      "handler": "cmd_arithmetic_teacher_constraints",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "arithmetic-teacher-graph",
+      "deprecated": false,
+      "handler": "cmd_arithmetic_teacher_graph",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "arithmetic-teacher-kernel-audit",
+      "deprecated": false,
+      "handler": "cmd_arithmetic_teacher_kernel_audit",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "arithmetic-teacher-transition-geometry",
+      "deprecated": false,
+      "handler": "cmd_arithmetic_teacher_transition_geometry",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "audit",
+      "deprecated": false,
+      "handler": "cmd_audit",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "legacy",
+      "command": "audit-db-build",
+      "deprecated": true,
+      "handler": "cmd_audit_db_build",
+      "module": "lean_rgc.cli.data",
+      "replacement": "data build"
+    },
+    {
+      "classification": "legacy",
+      "command": "audit-db-query",
+      "deprecated": true,
+      "handler": "cmd_audit_db_query",
+      "module": "lean_rgc.cli.data",
+      "replacement": "data query"
+    },
+    {
+      "classification": "core",
+      "command": "audit-defect-atoms",
+      "deprecated": false,
+      "handler": "cmd_audit_defect_atoms",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "audit-env-profile",
+      "deprecated": false,
+      "handler": "cmd_audit_env_profile",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "audit-queue-enqueue",
+      "deprecated": false,
+      "handler": "cmd_audit_queue_enqueue",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "audit-queue-init",
+      "deprecated": false,
+      "handler": "cmd_audit_queue_init",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "audit-queue-run",
+      "deprecated": false,
+      "handler": "cmd_audit_queue_run",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "audit-queue-status",
+      "deprecated": false,
+      "handler": "cmd_audit_queue_status",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "audit-schedule",
+      "deprecated": false,
+      "handler": "cmd_audit_schedule",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "auto-defects",
+      "deprecated": false,
+      "handler": "cmd_auto_defects",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "batch-audit",
+      "deprecated": false,
+      "handler": "cmd_batch_audit",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "bivariate-contextual-generate",
+      "deprecated": false,
+      "handler": "cmd_bivariate_contextual_generate",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "bivariate-contextual-schedule",
+      "deprecated": false,
+      "handler": "cmd_bivariate_contextual_schedule",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "build-premise-index",
+      "deprecated": false,
+      "handler": "cmd_build_premise_index",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "bulk-audit",
+      "deprecated": false,
+      "handler": "cmd_bulk_audit",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "candidates",
+      "deprecated": false,
+      "handler": "cmd_candidates",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-accept",
+      "deprecated": false,
+      "handler": "cmd_carrier_accept",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-accept-summary",
+      "deprecated": false,
+      "handler": "cmd_carrier_accept_summary",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-actions",
+      "deprecated": false,
+      "handler": "cmd_carrier_actions",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-coker",
+      "deprecated": false,
+      "handler": "cmd_carrier_coker",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-generate",
+      "deprecated": false,
+      "handler": "cmd_carrier_generate",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-matrix",
+      "deprecated": false,
+      "handler": "cmd_carrier_matrix",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-matrix-merge-patches",
+      "deprecated": false,
+      "handler": "cmd_carrier_matrix_merge_patches",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-patch-audit",
+      "deprecated": false,
+      "handler": "cmd_carrier_patch_audit",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-quotient",
+      "deprecated": false,
+      "handler": "cmd_carrier_quotient",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-quotient-mine",
+      "deprecated": false,
+      "handler": "cmd_carrier_quotient",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-quotient-validate",
+      "deprecated": false,
+      "handler": "cmd_carrier_quotient_validate",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "carrier-safe-actions",
+      "deprecated": false,
+      "handler": "cmd_carrier_safe_actions",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "coker-synthesize",
+      "deprecated": false,
+      "handler": "cmd_coker_synthesize",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "compare-runs",
+      "deprecated": false,
+      "handler": "cmd_compare_runs",
+      "module": "lean_rgc.cli.pipeline",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "concept-decode",
+      "deprecated": false,
+      "handler": "cmd_concept_decode",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "concept-geometry",
+      "deprecated": false,
+      "handler": "cmd_concept_geometry",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "concept-search",
+      "deprecated": false,
+      "handler": "cmd_concept_search",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "contextual-candidates",
+      "deprecated": false,
+      "handler": "cmd_contextual_candidates",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "contextual-congruence",
+      "deprecated": false,
+      "handler": "cmd_contextual_congruence",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "contextual-response-congruence",
+      "deprecated": false,
+      "handler": "cmd_contextual_response_congruence",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "crg-audit",
+      "deprecated": false,
+      "handler": "cmd_crg_audit",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "crg-build-problems",
+      "deprecated": false,
+      "handler": "cmd_crg_build_problems",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "crg-harden",
+      "deprecated": false,
+      "handler": "cmd_crg_harden",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "crg-optimize",
+      "deprecated": false,
+      "handler": "cmd_crg_optimize",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "data build",
+      "deprecated": false,
+      "handler": "cmd_run_db_build",
+      "module": "lean_rgc.cli.data",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "data check",
+      "deprecated": false,
+      "handler": "cmd_run_db_check",
+      "module": "lean_rgc.cli.data",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "data lineage",
+      "deprecated": false,
+      "handler": "cmd_run_db_lineage",
+      "module": "lean_rgc.cli.data",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "data query",
+      "deprecated": false,
+      "handler": "cmd_run_db_query",
+      "module": "lean_rgc.cli.data",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "data summarize",
+      "deprecated": false,
+      "handler": "cmd_run_db_summarize",
+      "module": "lean_rgc.cli.data",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "dataset-summary",
+      "deprecated": false,
+      "handler": "cmd_dataset_summary",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "defect-ontology-lifecycle",
+      "deprecated": false,
+      "handler": "cmd_defect_ontology_lifecycle",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "defect-ontology-reconcile",
+      "deprecated": false,
+      "handler": "cmd_defect_ontology_reconcile",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "dost-audit-reports",
+      "deprecated": false,
+      "handler": "cmd_dost_audit_reports",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "dost-autoplan",
+      "deprecated": false,
+      "handler": "cmd_dost_autoplan",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "dost-bounded-transcripts",
+      "deprecated": false,
+      "handler": "cmd_dost_bounded_transcripts",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "dost-compile-experiment",
+      "deprecated": false,
+      "handler": "cmd_dost_compile_experiment",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "dost-feature-closure",
+      "deprecated": false,
+      "handler": "cmd_dost_feature_closure",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "dost-feature-select",
+      "deprecated": false,
+      "handler": "cmd_dost_feature_select",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "dost-primitive-observables",
+      "deprecated": false,
+      "handler": "cmd_dost_primitive_observables",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "dost-stack",
+      "deprecated": false,
+      "handler": "cmd_dost_stack",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "eval-response",
+      "deprecated": false,
+      "handler": "cmd_eval_response",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "export-proofs",
+      "deprecated": false,
+      "handler": "cmd_export_proofs",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "expose-frontier",
+      "deprecated": false,
+      "handler": "cmd_expose_frontier",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "expose-frontiers",
+      "deprecated": false,
+      "handler": "cmd_expose_frontiers",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "exposure-candidates",
+      "deprecated": false,
+      "handler": "cmd_exposure_candidates",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "exposure-report",
+      "deprecated": false,
+      "handler": "cmd_exposure_report",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "extract-proofs",
+      "deprecated": false,
+      "handler": "cmd_extract_proofs",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "face-taxonomy",
+      "deprecated": false,
+      "handler": "cmd_face_taxonomy",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "failure-attribution-report",
+      "deprecated": false,
+      "handler": "cmd_failure_attribution_report",
+      "module": "lean_rgc.cli.poms",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "failure-signatures",
+      "deprecated": false,
+      "handler": "cmd_failure_signatures",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "focused-audit",
+      "deprecated": false,
+      "handler": "cmd_focused_audit",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "frontier-audit",
+      "deprecated": false,
+      "handler": "cmd_frontier_audit",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "frontier-pipeline",
+      "deprecated": false,
+      "handler": "cmd_frontier_pipeline",
+      "module": "lean_rgc.cli.pipeline",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "gamma-audit",
+      "deprecated": false,
+      "handler": "cmd_gamma_audit",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "gamma-transition-learner",
+      "deprecated": false,
+      "handler": "cmd_gamma_transition_learner",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "gamma-transition-patch-action-geometry",
+      "deprecated": false,
+      "handler": "cmd_gamma_transition_patch_action_geometry",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "goal-shapes",
+      "deprecated": false,
+      "handler": "cmd_goal_shapes",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "goal-state-transitions",
+      "deprecated": false,
+      "handler": "cmd_goal_state_transitions",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "harvest-project",
+      "deprecated": false,
+      "handler": "cmd_harvest_project",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "init-lake",
+      "deprecated": false,
+      "handler": "cmd_init_lake",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "ir-candidates",
+      "deprecated": false,
+      "handler": "cmd_ir_candidates",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "ir-defects",
+      "deprecated": false,
+      "handler": "cmd_ir_defects",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "iterate",
+      "deprecated": false,
+      "handler": "cmd_iterate",
+      "module": "lean_rgc.cli.pipeline",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "iterate-report",
+      "deprecated": false,
+      "handler": "cmd_iterate_report",
+      "module": "lean_rgc.cli.pipeline",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "kernel-state-graphs",
+      "deprecated": false,
+      "handler": "cmd_kernel_state_graphs",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "kernel-state-normalize",
+      "deprecated": false,
+      "handler": "cmd_kernel_state_normalize",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "kernel-state-probe",
+      "deprecated": false,
+      "handler": "cmd_kernel_state_probe",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "lean-native-worker",
+      "deprecated": false,
+      "handler": "cmd_lean_native_worker",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "lean-persistent-probe",
+      "deprecated": false,
+      "handler": "cmd_lean_persistent_probe",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "lean-persistent-worker",
+      "deprecated": false,
+      "handler": "cmd_lean_persistent_worker",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "lean-server-apply",
+      "deprecated": false,
+      "handler": "cmd_lean_server_apply",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "lean-server-audit",
+      "deprecated": false,
+      "handler": "cmd_lean_server_audit",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "lean-server-health",
+      "deprecated": false,
+      "handler": "cmd_lean_server_health",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "lean-server-probe",
+      "deprecated": false,
+      "handler": "cmd_lean_server_probe",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "lean-worker",
+      "deprecated": false,
+      "handler": "cmd_lean_worker",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "make-corebench",
+      "deprecated": false,
+      "handler": "cmd_make_corebench",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "make-transitions",
+      "deprecated": false,
+      "handler": "cmd_make_transitions",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "merge-action-files",
+      "deprecated": false,
+      "handler": "cmd_merge_action_files",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "merge-actions",
+      "deprecated": false,
+      "handler": "cmd_merge_actions",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "merge-jsonl",
+      "deprecated": false,
+      "handler": "cmd_merge_jsonl",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "mine-defects",
+      "deprecated": false,
+      "handler": "cmd_mine_defects",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "minif2f-fetch",
+      "deprecated": false,
+      "handler": "cmd_minif2f_fetch",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "minif2f-tasks",
+      "deprecated": false,
+      "handler": "cmd_minif2f_tasks",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "multi-carrier-report",
+      "deprecated": false,
+      "handler": "cmd_multi_carrier_report",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "native-lean-worker",
+      "deprecated": false,
+      "handler": "cmd_lean_native_worker",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "obstruction-tower",
+      "deprecated": false,
+      "handler": "cmd_obstruction_tower",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "parse-states",
+      "deprecated": false,
+      "handler": "cmd_parse_states",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "persistent-state-demo",
+      "deprecated": false,
+      "handler": "cmd_persistent_state_demo",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "persistent-worker",
+      "deprecated": false,
+      "handler": "cmd_persistent_worker",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "pipeline",
+      "deprecated": false,
+      "handler": "cmd_pipeline",
+      "module": "lean_rgc.cli.pipeline",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "poms-evidence",
+      "deprecated": false,
+      "handler": "cmd_poms_evidence",
+      "module": "lean_rgc.cli.poms",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "poms-promote",
+      "deprecated": false,
+      "handler": "cmd_poms_promote",
+      "module": "lean_rgc.cli.poms",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "poms-promotion-decisions",
+      "deprecated": false,
+      "handler": "cmd_poms_promotion_decisions",
+      "module": "lean_rgc.cli.poms",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "poms-promotion-service",
+      "deprecated": false,
+      "handler": "cmd_poms_promotion_service",
+      "module": "lean_rgc.cli.poms",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "poms-status",
+      "deprecated": false,
+      "handler": "cmd_poms_status",
+      "module": "lean_rgc.cli.poms",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "predict-response",
+      "deprecated": false,
+      "handler": "cmd_predict_response",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-actions",
+      "deprecated": false,
+      "handler": "cmd_premise_actions",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-candidates",
+      "deprecated": false,
+      "handler": "cmd_premise_candidates",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-contextual-fingerprints",
+      "deprecated": false,
+      "handler": "cmd_premise_contextual_fingerprints",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-contextual-generate",
+      "deprecated": false,
+      "handler": "cmd_premise_contextual_generate",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-contextual-mine",
+      "deprecated": false,
+      "handler": "cmd_premise_contextual_mine",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-contextual-validate",
+      "deprecated": false,
+      "handler": "cmd_premise_contextual_validate",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-quotient-mine",
+      "deprecated": false,
+      "handler": "cmd_premise_quotient_mine",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-quotient-retrieve",
+      "deprecated": false,
+      "handler": "cmd_premise_quotient_retrieve",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-response-registry",
+      "deprecated": false,
+      "handler": "cmd_premise_response_registry",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-response-retrieve",
+      "deprecated": false,
+      "handler": "cmd_premise_response_retrieve",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-retrieve",
+      "deprecated": false,
+      "handler": "cmd_premise_retrieve",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "premise-use-rows",
+      "deprecated": false,
+      "handler": "cmd_premise_use_rows",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "promote-registry",
+      "deprecated": false,
+      "handler": "cmd_promote_registry",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "qgen",
+      "deprecated": false,
+      "handler": "cmd_qgen",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "qgen-acceptance-lineage",
+      "deprecated": false,
+      "handler": "cmd_qgen_acceptance_lineage",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "qgen-lineage",
+      "deprecated": false,
+      "handler": "cmd_qgen_lineage",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "qgen-realized-calibration",
+      "deprecated": false,
+      "handler": "cmd_qgen_realized_calibration",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "quality-gates",
+      "deprecated": false,
+      "handler": "cmd_quality_gates",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "quotient",
+      "deprecated": false,
+      "handler": "cmd_quotient",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "quotient-coordinate-validate",
+      "deprecated": false,
+      "handler": "cmd_quotient_coordinate_validate",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "quotient-coordinates",
+      "deprecated": false,
+      "handler": "cmd_quotient_coordinates",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "registry-accept",
+      "deprecated": false,
+      "handler": "cmd_registry_accept",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "registry-candidates",
+      "deprecated": false,
+      "handler": "cmd_registry_candidates",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "relaxed-species-registry",
+      "deprecated": false,
+      "handler": "cmd_relaxed_species_registry",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "legacy",
+      "command": "repair-db-build",
+      "deprecated": true,
+      "handler": "cmd_repair_db_build",
+      "module": "lean_rgc.cli.data",
+      "replacement": "data build"
+    },
+    {
+      "classification": "legacy",
+      "command": "repair-db-query",
+      "deprecated": true,
+      "handler": "cmd_repair_db_query",
+      "module": "lean_rgc.cli.data",
+      "replacement": "data query"
+    },
+    {
+      "classification": "core",
+      "command": "repair-face-ledger",
+      "deprecated": false,
+      "handler": "cmd_repair_face_ledger",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "repair-gradient-flow",
+      "deprecated": false,
+      "handler": "cmd_repair_gradient_flow",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "repair-species-registry",
+      "deprecated": false,
+      "handler": "cmd_repair_species_registry",
+      "module": "lean_rgc.cli.crg",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "replay-proofs",
+      "deprecated": false,
+      "handler": "cmd_replay_proofs",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "report",
+      "deprecated": false,
+      "handler": "cmd_report",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "response-completion",
+      "deprecated": false,
+      "handler": "cmd_response_completion",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "response-quotient-project-actions",
+      "deprecated": false,
+      "handler": "cmd_response_quotient_project_actions",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "response-quotient-registry",
+      "deprecated": false,
+      "handler": "cmd_response_quotient_registry",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "rgc-loop",
+      "deprecated": false,
+      "handler": "cmd_rgc_loop",
+      "module": "lean_rgc.cli.pipeline",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "robust-accept",
+      "deprecated": false,
+      "handler": "cmd_robust_accept",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "robust-accept-candidates",
+      "deprecated": false,
+      "handler": "cmd_robust_accept_candidates",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "robust-coker-accept",
+      "deprecated": false,
+      "handler": "cmd_robust_coker_accept",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "legacy",
+      "command": "run-db-build",
+      "deprecated": true,
+      "handler": "cmd_run_db_build",
+      "module": "lean_rgc.cli.data",
+      "replacement": "data build"
+    },
+    {
+      "classification": "legacy",
+      "command": "run-db-query",
+      "deprecated": true,
+      "handler": "cmd_run_db_query",
+      "module": "lean_rgc.cli.data",
+      "replacement": "data query"
+    },
+    {
+      "classification": "core",
+      "command": "run-search",
+      "deprecated": false,
+      "handler": "cmd_run_search",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "seed-defect-registry",
+      "deprecated": false,
+      "handler": "cmd_seed_defect_registry",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "select",
+      "deprecated": false,
+      "handler": "cmd_select",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "separator-contexts",
+      "deprecated": false,
+      "handler": "cmd_separator_contexts",
+      "module": "lean_rgc.cli.dost",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "server-audit",
+      "deprecated": false,
+      "handler": "cmd_server_audit",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "shard-jsonl",
+      "deprecated": false,
+      "handler": "cmd_shard_jsonl",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "source-budget-schedule",
+      "deprecated": false,
+      "handler": "cmd_source_budget_schedule",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "split",
+      "deprecated": false,
+      "handler": "cmd_split",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "stage-coker",
+      "deprecated": false,
+      "handler": "cmd_stage_coker",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "stage-report",
+      "deprecated": false,
+      "handler": "cmd_stage_report",
+      "module": "lean_rgc.cli.pipeline",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "state-ir",
+      "deprecated": false,
+      "handler": "cmd_state_ir",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "structured-state-extract",
+      "deprecated": false,
+      "handler": "cmd_structured_state_extract",
+      "module": "lean_rgc.cli.lean",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "synthesize-from-coker",
+      "deprecated": false,
+      "handler": "cmd_synthesize_from_coker",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "timeout-ledger-report",
+      "deprecated": false,
+      "handler": "cmd_timeout_ledger_report",
+      "module": "lean_rgc.cli.audit",
+      "replacement": ""
+    },
+    {
+      "classification": "core",
+      "command": "train-response",
+      "deprecated": false,
+      "handler": "cmd_train_response",
+      "module": "lean_rgc.cli.experiment",
+      "replacement": ""
+    }
+  ],
+  "inventory_type": "cli",
+  "modules": [
+    {
+      "classification": "core",
+      "commands": [
+        "action-quarantine-export",
+        "action-quarantine-report",
+        "audit",
+        "audit-env-profile",
+        "audit-queue-enqueue",
+        "audit-queue-init",
+        "audit-queue-run",
+        "audit-queue-status",
+        "audit-schedule",
+        "batch-audit",
+        "bulk-audit",
+        "server-audit",
+        "timeout-ledger-report"
+      ],
+      "module": "lean_rgc.cli.audit"
+    },
+    {
+      "classification": "core",
+      "commands": [
+        "concept-decode",
+        "concept-geometry",
+        "concept-search",
+        "crg-audit",
+        "crg-build-problems",
+        "crg-harden",
+        "crg-optimize",
+        "relaxed-species-registry",
+        "repair-gradient-flow",
+        "repair-species-registry"
+      ],
+      "module": "lean_rgc.cli.crg"
+    },
+    {
+      "classification": "legacy",
+      "commands": [
+        "audit-db-build",
+        "audit-db-query",
+        "data build",
+        "data check",
+        "data lineage",
+        "data query",
+        "data summarize",
+        "repair-db-build",
+        "repair-db-query",
+        "run-db-build",
+        "run-db-query"
+      ],
+      "module": "lean_rgc.cli.data"
+    },
+    {
+      "classification": "core",
+      "commands": [
+        "bivariate-contextual-generate",
+        "bivariate-contextual-schedule",
+        "contextual-candidates",
+        "contextual-congruence",
+        "contextual-response-congruence",
+        "dost-audit-reports",
+        "dost-autoplan",
+        "dost-bounded-transcripts",
+        "dost-compile-experiment",
+        "dost-feature-closure",
+        "dost-feature-select",
+        "dost-primitive-observables",
+        "dost-stack",
+        "face-taxonomy",
+        "obstruction-tower",
+        "premise-contextual-fingerprints",
+        "premise-contextual-generate",
+        "premise-contextual-mine",
+        "premise-contextual-validate",
+        "premise-quotient-retrieve",
+        "premise-use-rows",
+        "repair-face-ledger",
+        "response-completion",
+        "response-quotient-project-actions",
+        "response-quotient-registry",
+        "separator-contexts"
+      ],
+      "module": "lean_rgc.cli.dost"
+    },
+    {
+      "classification": "core",
+      "commands": [
+        "accept-candidates",
+        "accepted-carrier-actions",
+        "action-cocycle-audit",
+        "action-geometry-registry",
+        "action-geometry-retrieve",
+        "action-report",
+        "active-audit-schedule",
+        "arithmetic-teacher-audit",
+        "arithmetic-teacher-cocycle",
+        "arithmetic-teacher-cocycle-audit",
+        "arithmetic-teacher-constraints",
+        "arithmetic-teacher-graph",
+        "arithmetic-teacher-kernel-audit",
+        "arithmetic-teacher-transition-geometry",
+        "audit-defect-atoms",
+        "auto-defects",
+        "build-premise-index",
+        "candidates",
+        "carrier-accept",
+        "carrier-accept-summary",
+        "carrier-actions",
+        "carrier-coker",
+        "carrier-generate",
+        "carrier-matrix",
+        "carrier-matrix-merge-patches",
+        "carrier-patch-audit",
+        "carrier-quotient",
+        "carrier-quotient-mine",
+        "carrier-quotient-validate",
+        "carrier-safe-actions",
+        "coker-synthesize",
+        "dataset-summary",
+        "defect-ontology-lifecycle",
+        "defect-ontology-reconcile",
+        "eval-response",
+        "export-proofs",
+        "expose-frontier",
+        "expose-frontiers",
+        "exposure-candidates",
+        "exposure-report",
+        "extract-proofs",
+        "failure-signatures",
+        "focused-audit",
+        "gamma-audit",
+        "gamma-transition-learner",
+        "gamma-transition-patch-action-geometry",
+        "goal-shapes",
+        "harvest-project",
+        "init-lake",
+        "ir-candidates",
+        "ir-defects",
+        "make-corebench",
+        "make-transitions",
+        "merge-action-files",
+        "merge-actions",
+        "merge-jsonl",
+        "mine-defects",
+        "minif2f-fetch",
+        "minif2f-tasks",
+        "multi-carrier-report",
+        "parse-states",
+        "predict-response",
+        "premise-actions",
+        "premise-candidates",
+        "premise-quotient-mine",
+        "premise-response-registry",
+        "premise-response-retrieve",
+        "premise-retrieve",
+        "promote-registry",
+        "qgen",
+        "qgen-acceptance-lineage",
+        "qgen-lineage",
+        "qgen-realized-calibration",
+        "quality-gates",
+        "quotient",
+        "quotient-coordinate-validate",
+        "quotient-coordinates",
+        "registry-accept",
+        "registry-candidates",
+        "replay-proofs",
+        "report",
+        "robust-accept",
+        "robust-accept-candidates",
+        "robust-coker-accept",
+        "run-search",
+        "seed-defect-registry",
+        "select",
+        "shard-jsonl",
+        "source-budget-schedule",
+        "split",
+        "stage-coker",
+        "state-ir",
+        "synthesize-from-coker",
+        "train-response"
+      ],
+      "module": "lean_rgc.cli.experiment"
+    },
+    {
+      "classification": "core",
+      "commands": [
+        "frontier-audit",
+        "goal-state-transitions",
+        "kernel-state-graphs",
+        "kernel-state-normalize",
+        "kernel-state-probe",
+        "lean-native-worker",
+        "lean-persistent-probe",
+        "lean-persistent-worker",
+        "lean-server-apply",
+        "lean-server-audit",
+        "lean-server-health",
+        "lean-server-probe",
+        "lean-worker",
+        "native-lean-worker",
+        "persistent-state-demo",
+        "persistent-worker",
+        "structured-state-extract"
+      ],
+      "module": "lean_rgc.cli.lean"
+    },
+    {
+      "classification": "core",
+      "commands": [
+        "compare-runs",
+        "frontier-pipeline",
+        "iterate",
+        "iterate-report",
+        "pipeline",
+        "rgc-loop",
+        "stage-report"
+      ],
+      "module": "lean_rgc.cli.pipeline"
+    },
+    {
+      "classification": "core",
+      "commands": [
+        "failure-attribution-report",
+        "poms-evidence",
+        "poms-promote",
+        "poms-promotion-decisions",
+        "poms-promotion-service",
+        "poms-status"
+      ],
+      "module": "lean_rgc.cli.poms"
+    }
+  ],
+  "schema_version": "lean-rgc.inventory.v1",
+  "summary": {
+    "core": 178,
+    "legacy": 6
+  }
+}

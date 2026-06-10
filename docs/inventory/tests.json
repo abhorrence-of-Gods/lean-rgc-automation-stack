@@ -1,0 +1,1164 @@
+{
+  "files": [
+    {
+      "classification": "core",
+      "file": "tests/test_core.py",
+      "imports": [
+        "lean_rgc.candidates",
+        "lean_rgc.carrier",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.gamma",
+        "lean_rgc.quotient",
+        "lean_rgc.response_model",
+        "lean_rgc.schemas",
+        "lean_rgc.trajectory"
+      ],
+      "tiers": [
+        "unit"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_qgen.py",
+      "imports": [
+        "lean_rgc.qgen",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "unit"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v10_cli_integrity.py",
+      "imports": [
+        "lean_rgc.cli"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v10_response_eval.py",
+      "imports": [
+        "lean_rgc.response_eval",
+        "lean_rgc.response_model",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v11_failure_signatures.py",
+      "imports": [
+        "lean_rgc.failure_signatures",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v11_proof_replay.py",
+      "imports": [
+        "lean_rgc.executor",
+        "lean_rgc.proof_replay",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v12_coker_synthesis.py",
+      "imports": [
+        "lean_rgc.coker_synthesis",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v13_qgen_iterate.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v14_qgen_closure.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.multicarrier",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v15_qgen_lineage.py",
+      "imports": [
+        "lean_rgc.lineage",
+        "lean_rgc.qgen",
+        "lean_rgc.registry_acceptance",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v15_robust_acceptance.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.robust_acceptance",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v15_robust_coker.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.robust_coker",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v15_robust_qgen.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.qgen",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v16_qgen_acceptance_lineage.py",
+      "imports": [
+        "lean_rgc.lineage",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v16_qgen_robust_loop.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v17_realized_and_patch_audit.py",
+      "imports": [
+        "lean_rgc.carrier_patch_audit",
+        "lean_rgc.realized_response",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v18_poms_and_holdout.py",
+      "imports": [
+        "lean_rgc.carrier_patch_audit",
+        "lean_rgc.poms_status",
+        "lean_rgc.quality",
+        "lean_rgc.realized_response",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v19_poms_promotion.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.poms_promotion",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v20_action_geometry.py",
+      "imports": [
+        "lean_rgc.action_geometry"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v21_lean_server.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v21_lean_server_adapter.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v22_structured_state.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas",
+        "lean_rgc.structured_state"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v23_action_geometry_loop.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v24_audit_db.py",
+      "imports": [
+        "lean_rgc.audit_db",
+        "lean_rgc.cli"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v25_quotient_coordinates.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.quotient_coordinates",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v26_quotient_coordinate_loop.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v27_persistent_worker.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v28_kernel_structured_state.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas",
+        "lean_rgc.structured_state"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v29_native_lean_worker.py",
+      "imports": [
+        "lean_rgc.lean_server",
+        "lean_rgc.native_worker"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v30_native_source_check.py",
+      "imports": [
+        "lean_rgc.lean_server",
+        "lean_rgc.native_worker"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v31_contextual_congruence.py",
+      "imports": [
+        "lean_rgc.contextual_congruence",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v31_contextual_response_congruence.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.contextual_congruence",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v32_contextual_probe_loop.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v33_response_quotient.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.response_quotient",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v34_carrier_quotient.py",
+      "imports": [
+        "lean_rgc.carrier_quotient",
+        "lean_rgc.cli"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v35_premise_response.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.premise_response",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v36_active_audit_scheduler.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v36_active_scheduler.py",
+      "imports": [
+        "lean_rgc.active_scheduler",
+        "lean_rgc.cli"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v37_source_budget.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v37_source_budget_scheduler.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas",
+        "lean_rgc.source_budget_scheduler"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v38_promotion_evidence.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.poms_promotion",
+        "lean_rgc.promotion_evidence",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v39_defect_ontology.py",
+      "imports": [
+        "lean_rgc.defect_ontology",
+        "lean_rgc.defect_registry"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v40_defect_ontology_lifecycle.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.defect_ontology_lifecycle",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v41_arithmetic_teacher_graph.py",
+      "imports": [
+        "lean_rgc.arithmetic_teacher",
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v42_arithmetic_teacher_kernel_audit.py",
+      "imports": [
+        "lean_rgc.arithmetic_teacher",
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.cli",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v43_arithmetic_teacher_cocycle.py",
+      "imports": [
+        "lean_rgc.arithmetic_teacher_cocycle",
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v44_gamma_transition_learner.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.gamma_transition_learner",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v45_gamma_aware_action_geometry.py",
+      "imports": [
+        "lean_rgc.action_geometry",
+        "lean_rgc.action_geometry_loop"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v45_gamma_aware_retrieval.py",
+      "imports": [
+        "lean_rgc.action_geometry",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v46_gamma_aware_source_budget.py",
+      "imports": [
+        "lean_rgc.schemas",
+        "lean_rgc.source_budget_scheduler"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v46_gamma_source_budget.py",
+      "imports": [
+        "lean_rgc.source_budget_scheduler"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v47_goal_state_dynamics.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v48_kernel_state_server.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.kernel_state",
+        "lean_rgc.persistent_lean_worker",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v49_kernel_rpc_worker.py",
+      "imports": [
+        "lean_rgc.native_worker"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v50_premise_contextual_quotient.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.premise_contextual_quotient",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v51_bivariate_contextual_quotient.py",
+      "imports": [
+        "lean_rgc.bivariate_contextual_quotient",
+        "lean_rgc.cli",
+        "lean_rgc.premise_contextual_quotient",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v52_face_taxonomy.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.face_taxonomy",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v52_kernel_context_cache.py",
+      "imports": [
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v53_minif2f_adapter.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.minif2f_adapter",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v54_obstruction_tower.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.face_taxonomy",
+        "lean_rgc.obstruction_tower",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v55_v57_dost_automation.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.dost_automation",
+        "lean_rgc.face_taxonomy",
+        "lean_rgc.kernel_state",
+        "lean_rgc.obstruction_tower",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v58_crg_problem.py",
+      "imports": [
+        "lean_rgc.crg_problem",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "golden"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v58_repair_species_registry.py",
+      "imports": [
+        "lean_rgc.crg_registry",
+        "lean_rgc.relaxed_species",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "golden"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v58_response_completion.py",
+      "imports": [
+        "lean_rgc.response_completion",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "golden"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v58_v62_cli_smoke.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v59_v60_crg_flow.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.crg_audit",
+        "lean_rgc.crg_hardening",
+        "lean_rgc.crg_optimizer",
+        "lean_rgc.hardening_gap_report",
+        "lean_rgc.repair_gradient_flow",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v5_exposure_defects.py",
+      "imports": [
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.defect_miner",
+        "lean_rgc.goal_shape",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v62_concept_geometry.py",
+      "imports": [
+        "lean_rgc.concept_geometry",
+        "lean_rgc.concept_hardening",
+        "lean_rgc.concept_search",
+        "lean_rgc.crg_optimizer",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v63_audit_execution.py",
+      "imports": [
+        "lean_rgc.action_quarantine",
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.executor",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v63_repair_db_and_poms_service.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.poms_promotion_service",
+        "lean_rgc.repair_db",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v64_audit_import_cost.py",
+      "imports": [
+        "lean_rgc.action_quarantine",
+        "lean_rgc.audit_env_profile",
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.cli",
+        "lean_rgc.executor",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.schemas",
+        "lean_rgc.timeout_ledger"
+      ],
+      "tiers": [
+        "integration"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v65_audit_cache_pruning.py",
+      "imports": [
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.audit_pruning",
+        "lean_rgc.audit_result_cache",
+        "lean_rgc.executor",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v66_run_db.py",
+      "imports": [
+        "lean_rgc.action_quarantine",
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.batch",
+        "lean_rgc.cli",
+        "lean_rgc.concept_geometry",
+        "lean_rgc.crg_hardening",
+        "lean_rgc.crg_optimizer",
+        "lean_rgc.crg_problem",
+        "lean_rgc.crg_registry",
+        "lean_rgc.data.store",
+        "lean_rgc.lean_server",
+        "lean_rgc.poms_promotion_service",
+        "lean_rgc.relaxed_species",
+        "lean_rgc.repair_db",
+        "lean_rgc.schemas",
+        "lean_rgc.timeout_ledger"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v67_cli_domain_split.py",
+      "imports": [
+        "lean_rgc.cli"
+      ],
+      "tiers": [
+        "integration"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v68_pipeline_runtime_extraction.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.pipeline"
+      ],
+      "tiers": [
+        "integration"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v69_dost_runtime_split.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.dost",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v6_ir_pipeline.py",
+      "imports": [
+        "lean_rgc.carrier",
+        "lean_rgc.carrier_acceptance",
+        "lean_rgc.proof_ir",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v70_dost_quotient_cli_split.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v71_lean_runtime_cli_split.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration",
+        "e2e"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v72_experiment_cli_split.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v73_cli_package_migration.py",
+      "imports": [
+        "lean_rgc.cli"
+      ],
+      "tiers": [
+        "integration"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v74_test_tier_manifest.py",
+      "imports": [],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
+      "classification": "core",
+      "file": "tests/test_v75_production_contract.py",
+      "imports": [
+        "lean_rgc.cli",
+        "lean_rgc.core",
+        "lean_rgc.data.store",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v7_carrier_promotion.py",
+      "imports": [
+        "lean_rgc.carrier_promotion",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v7_premise_promotion.py",
+      "imports": [
+        "lean_rgc.defect_promotion",
+        "lean_rgc.defect_registry",
+        "lean_rgc.premise_index",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v7_registry_acceptance.py",
+      "imports": [
+        "lean_rgc.registry_acceptance"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v7_registry_premise.py",
+      "imports": [
+        "lean_rgc.defect_registry",
+        "lean_rgc.ir_defects",
+        "lean_rgc.premise_index",
+        "lean_rgc.registry_promotion",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v8_harvest_shard.py",
+      "imports": [
+        "lean_rgc.project_harvest",
+        "lean_rgc.schemas",
+        "lean_rgc.sharding"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v8_iterate_corebench.py",
+      "imports": [
+        "lean_rgc.corebench",
+        "lean_rgc.iterative",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v9_bulk_executor.py",
+      "imports": [
+        "lean_rgc.bulk_executor",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v9_exposure_frontier.py",
+      "imports": [
+        "lean_rgc.executor",
+        "lean_rgc.exposure_frontier",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v9_focused_audit.py",
+      "imports": [
+        "lean_rgc.executor",
+        "lean_rgc.focused",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v9_frontier.py",
+      "imports": [
+        "lean_rgc.executor",
+        "lean_rgc.frontier",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    },
+    {
+      "classification": "legacy",
+      "file": "tests/test_v9_ir_multicarrier.py",
+      "imports": [
+        "lean_rgc.ir_candidates",
+        "lean_rgc.multicarrier",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "legacy"
+      ]
+    }
+  ],
+  "inventory_type": "tests",
+  "schema_version": "lean-rgc.inventory.v1",
+  "summary": {
+    "core": 23,
+    "legacy": 71
+  },
+  "tier_summary": {
+    "e2e": 1,
+    "golden": 12,
+    "integration": 18,
+    "legacy": 71,
+    "unit": 2
+  }
+}

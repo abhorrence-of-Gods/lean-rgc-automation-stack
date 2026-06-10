@@ -4,6 +4,38 @@ from typing import Any
 import sqlite3
 
 
+REQUIRED_RUN_DB_TABLES = {
+    "runs",
+    "artifacts",
+    "schema_migrations",
+    "tasks",
+    "actions",
+    "responses",
+    "audit_events",
+    "audit_rows",
+    "response_rows",
+    "response_values",
+    "carrier_values",
+    "audit_jobs",
+    "timeout_events",
+    "worker_events",
+    "action_quarantine",
+    "audit_result_cache_index",
+    "repair_atoms",
+    "repair_faces",
+    "crg_problems",
+    "relaxed_candidates",
+    "hardening_attempts",
+    "hard_candidates",
+    "crg_audit_rows",
+    "concept_points",
+    "concept_search_rows",
+    "poms_evidence",
+    "poms_promotion_decisions",
+    "lineage_edges",
+}
+
+
 def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
     return conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone() is not None
 
@@ -17,6 +49,11 @@ def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
 
 def check_run_db_invariants(conn: sqlite3.Connection) -> dict[str, Any]:
     checks: dict[str, Any] = {}
+    existing_tables = {
+        str(r[0])
+        for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    }
+    checks["missing_required_tables"] = len(REQUIRED_RUN_DB_TABLES - existing_tables)
     if _table_exists(conn, "artifacts"):
         checks["artifacts_missing_identity"] = int(
             conn.execute(
@@ -61,4 +98,4 @@ def check_run_db_invariants(conn: sqlite3.Connection) -> dict[str, Any]:
     return checks
 
 
-__all__ = ["check_run_db_invariants"]
+__all__ = ["REQUIRED_RUN_DB_TABLES", "check_run_db_invariants"]

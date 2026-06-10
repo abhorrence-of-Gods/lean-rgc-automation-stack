@@ -266,6 +266,10 @@
     "integration",
     "golden"
   ],
+  "test_v75_production_contract.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

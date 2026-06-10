@@ -1,0 +1,2864 @@
+{
+  "inventory_type": "imports",
+  "modules": [
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.action_analysis",
+        "lean_rgc.auto_defects",
+        "lean_rgc.cache",
+        "lean_rgc.candidate_acceptance",
+        "lean_rgc.candidates",
+        "lean_rgc.carrier",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.carrier_normalizer",
+        "lean_rgc.coker",
+        "lean_rgc.defect_miner",
+        "lean_rgc.defect_registry",
+        "lean_rgc.defects",
+        "lean_rgc.dost",
+        "lean_rgc.executor",
+        "lean_rgc.exposure_audit",
+        "lean_rgc.failure_signatures",
+        "lean_rgc.frontier",
+        "lean_rgc.gamma",
+        "lean_rgc.goal_shape",
+        "lean_rgc.ir_defects",
+        "lean_rgc.kernel_state",
+        "lean_rgc.premise_index",
+        "lean_rgc.project_harvest",
+        "lean_rgc.proof_ir",
+        "lean_rgc.proof_replay",
+        "lean_rgc.quotient",
+        "lean_rgc.registry_acceptance",
+        "lean_rgc.registry_promotion",
+        "lean_rgc.response_model",
+        "lean_rgc.schemas",
+        "lean_rgc.selector",
+        "lean_rgc.sharding",
+        "lean_rgc.structured_state",
+        "lean_rgc.trajectory"
+      ],
+      "module": "lean_rgc.__init__",
+      "path": "lean_rgc/__init__.py"
+    },
+    {
+      "classification": "dead_candidate",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.acceptance_report",
+      "path": "lean_rgc/acceptance_report.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.action_analysis",
+      "path": "lean_rgc/action_analysis.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.action_geometry_loop",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline",
+        "lean_rgc.source_budget_scheduler"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.action_geometry",
+      "path": "lean_rgc/action_geometry.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.action_geometry",
+        "lean_rgc.gamma_transition_learner",
+        "lean_rgc.quotient_coordinate_loop",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.action_geometry_loop",
+      "path": "lean_rgc/action_geometry_loop.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.lean_worker_supervisor"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.action_quarantine",
+      "path": "lean_rgc/action_quarantine.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline",
+        "lean_rgc.source_budget_scheduler"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.active_audit_scheduler",
+      "path": "lean_rgc/active_audit_scheduler.py"
+    },
+    {
+      "classification": "dead_candidate",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.active_scheduler",
+      "path": "lean_rgc/active_scheduler.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.arithmetic_teacher",
+      "path": "lean_rgc/arithmetic_teacher.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.arithmetic_teacher_cocycle",
+      "path": "lean_rgc/arithmetic_teacher_cocycle.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.arithmetic_teacher",
+        "lean_rgc.defects",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas",
+        "lean_rgc.structured_state"
+      ],
+      "module": "lean_rgc.arithmetic_teacher_kernel_audit",
+      "path": "lean_rgc/arithmetic_teacher_kernel_audit.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.data",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.data.store",
+        "lean_rgc.iterative",
+        "lean_rgc.pipeline",
+        "lean_rgc.repair_db"
+      ],
+      "imports": [],
+      "module": "lean_rgc.audit_db",
+      "path": "lean_rgc/audit_db.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.executor",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.audit_env_profile",
+      "path": "lean_rgc/audit_env_profile.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.audit_result_cache",
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.lean_worker_supervisor"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.audit_job_queue",
+      "path": "lean_rgc/audit_job_queue.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.audit_pruning",
+      "path": "lean_rgc/audit_pruning.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.lean_worker_supervisor"
+      ],
+      "imports": [
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.audit_result_cache",
+      "path": "lean_rgc/audit_result_cache.py"
+    },
+    {
+      "classification": "dead_candidate",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.audit_scheduler",
+      "path": "lean_rgc/audit_scheduler.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.defect_miner",
+        "lean_rgc.defect_registry",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.auto_defects",
+      "path": "lean_rgc/auto_defects.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.bulk_executor",
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.lean_server",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.batch",
+      "path": "lean_rgc/batch.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.contextual_congruence",
+        "lean_rgc.premise_contextual_quotient",
+        "lean_rgc.premise_response",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.bivariate_contextual_quotient",
+      "path": "lean_rgc/bivariate_contextual_quotient.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.batch",
+        "lean_rgc.dataset",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.bulk_executor",
+      "path": "lean_rgc/bulk_executor.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.executor"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.cache",
+      "path": "lean_rgc/cache.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline",
+        "lean_rgc.robust_acceptance",
+        "lean_rgc.stage_coker"
+      ],
+      "imports": [
+        "lean_rgc.defect_registry",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.candidate_acceptance",
+      "path": "lean_rgc/candidate_acceptance.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.cli.common",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.focused",
+        "lean_rgc.frontier",
+        "lean_rgc.pipeline",
+        "lean_rgc.trajectory",
+        "lean_rgc.trajectory_runner"
+      ],
+      "imports": [
+        "lean_rgc.carrier_normalizer",
+        "lean_rgc.goal_shape",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.candidates",
+      "path": "lean_rgc/candidates.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.carrier_acceptance",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.coker",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline",
+        "lean_rgc.qgen",
+        "lean_rgc.registry_candidates",
+        "lean_rgc.selector",
+        "lean_rgc.trajectory",
+        "lean_rgc.trajectory_runner"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.carrier",
+      "path": "lean_rgc/carrier.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline",
+        "lean_rgc.registry_candidates"
+      ],
+      "imports": [
+        "lean_rgc.carrier",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.carrier_acceptance",
+      "path": "lean_rgc/carrier_acceptance.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.common",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.exposure_audit",
+        "lean_rgc.exposure_frontier",
+        "lean_rgc.focused",
+        "lean_rgc.frontier",
+        "lean_rgc.pipeline",
+        "lean_rgc.registry_candidates",
+        "lean_rgc.trajectory"
+      ],
+      "imports": [
+        "lean_rgc.candidates",
+        "lean_rgc.goal_shape",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.carrier_exposure",
+      "path": "lean_rgc/carrier_exposure.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.candidates",
+        "lean_rgc.frontier"
+      ],
+      "imports": [
+        "lean_rgc.goal_shape",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.carrier_normalizer",
+      "path": "lean_rgc/carrier_normalizer.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.carrier_patch_audit",
+      "path": "lean_rgc/carrier_patch_audit.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.carrier_promotion",
+      "path": "lean_rgc/carrier_promotion.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.coker",
+        "lean_rgc.defect_registry",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.carrier_quotient",
+      "path": "lean_rgc/carrier_quotient.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.common",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.main"
+      ],
+      "module": "lean_rgc.cli.__init__",
+      "path": "lean_rgc/cli/__init__.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.main"
+      ],
+      "module": "lean_rgc.cli.__main__",
+      "path": "lean_rgc/cli/__main__.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.lean",
+        "lean_rgc.cli.main",
+        "lean_rgc.cli_audit"
+      ],
+      "imports": [
+        "lean_rgc.action_quarantine",
+        "lean_rgc.active_audit_scheduler",
+        "lean_rgc.audit_env_profile",
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.batch",
+        "lean_rgc.bulk_executor",
+        "lean_rgc.cli.common",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.lean_server",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.schemas",
+        "lean_rgc.timeout_ledger"
+      ],
+      "module": "lean_rgc.cli.audit",
+      "path": "lean_rgc/cli/audit.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.__init__",
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.lean",
+        "lean_rgc.cli.main",
+        "lean_rgc.cli.pipeline",
+        "lean_rgc.cli_common",
+        "lean_rgc.pipeline",
+        "lean_rgc.proof_ir"
+      ],
+      "imports": [
+        "lean_rgc.candidates",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.executor",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.cli.common",
+      "path": "lean_rgc/cli/common.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.main",
+        "lean_rgc.cli_crg"
+      ],
+      "imports": [
+        "lean_rgc.concept_geometry",
+        "lean_rgc.concept_hardening",
+        "lean_rgc.concept_search",
+        "lean_rgc.crg_audit",
+        "lean_rgc.crg_hardening",
+        "lean_rgc.crg_problem",
+        "lean_rgc.crg_registry",
+        "lean_rgc.hardening_gap_report",
+        "lean_rgc.nonlinear_generator",
+        "lean_rgc.relaxed_species",
+        "lean_rgc.repair_gradient_flow"
+      ],
+      "module": "lean_rgc.cli.crg",
+      "path": "lean_rgc/cli/crg.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.main",
+        "lean_rgc.cli_data"
+      ],
+      "imports": [
+        "lean_rgc.audit_db",
+        "lean_rgc.data.store",
+        "lean_rgc.repair_db"
+      ],
+      "module": "lean_rgc.cli.data",
+      "path": "lean_rgc/cli/data.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.main",
+        "lean_rgc.cli_dost"
+      ],
+      "imports": [
+        "lean_rgc.dost"
+      ],
+      "module": "lean_rgc.cli.dost",
+      "path": "lean_rgc/cli/dost.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.__init__",
+        "lean_rgc.cli.main",
+        "lean_rgc.cli_experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.action_analysis",
+        "lean_rgc.action_geometry",
+        "lean_rgc.action_geometry_loop",
+        "lean_rgc.action_quarantine",
+        "lean_rgc.active_audit_scheduler",
+        "lean_rgc.arithmetic_teacher",
+        "lean_rgc.arithmetic_teacher_cocycle",
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.audit_db",
+        "lean_rgc.audit_env_profile",
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.audit_pruning",
+        "lean_rgc.auto_defects",
+        "lean_rgc.batch",
+        "lean_rgc.bulk_executor",
+        "lean_rgc.candidate_acceptance",
+        "lean_rgc.candidates",
+        "lean_rgc.carrier",
+        "lean_rgc.carrier_acceptance",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.carrier_patch_audit",
+        "lean_rgc.carrier_promotion",
+        "lean_rgc.carrier_quotient",
+        "lean_rgc.cli.common",
+        "lean_rgc.coker_synthesis",
+        "lean_rgc.concept_geometry",
+        "lean_rgc.concept_hardening",
+        "lean_rgc.concept_search",
+        "lean_rgc.contextual_congruence",
+        "lean_rgc.corebench",
+        "lean_rgc.crg_audit",
+        "lean_rgc.crg_hardening",
+        "lean_rgc.crg_problem",
+        "lean_rgc.crg_registry",
+        "lean_rgc.data.store",
+        "lean_rgc.dataset",
+        "lean_rgc.defect_miner",
+        "lean_rgc.defect_ontology",
+        "lean_rgc.defect_ontology_lifecycle",
+        "lean_rgc.defect_registry",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.exposure_audit",
+        "lean_rgc.exposure_frontier",
+        "lean_rgc.failure_signatures",
+        "lean_rgc.focused",
+        "lean_rgc.focused_analysis",
+        "lean_rgc.frontier",
+        "lean_rgc.gamma",
+        "lean_rgc.gamma_transition_learner",
+        "lean_rgc.goal_shape",
+        "lean_rgc.hardening_gap_report",
+        "lean_rgc.ir_candidates",
+        "lean_rgc.ir_defects",
+        "lean_rgc.iteration",
+        "lean_rgc.iteration_report",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.lake_template",
+        "lean_rgc.lean_server",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.lineage",
+        "lean_rgc.minif2f_adapter",
+        "lean_rgc.multicarrier",
+        "lean_rgc.nonlinear_generator",
+        "lean_rgc.poms_promotion",
+        "lean_rgc.poms_promotion_service",
+        "lean_rgc.poms_status",
+        "lean_rgc.premise_index",
+        "lean_rgc.premise_response",
+        "lean_rgc.premise_retrieval",
+        "lean_rgc.project_harvest",
+        "lean_rgc.promotion_evidence",
+        "lean_rgc.proof_ir",
+        "lean_rgc.proof_replay",
+        "lean_rgc.qgen",
+        "lean_rgc.quality",
+        "lean_rgc.quotient",
+        "lean_rgc.quotient_coordinate_loop",
+        "lean_rgc.quotient_coordinates",
+        "lean_rgc.realized_response",
+        "lean_rgc.registry_acceptance",
+        "lean_rgc.registry_candidates",
+        "lean_rgc.registry_promotion",
+        "lean_rgc.relaxed_species",
+        "lean_rgc.repair_db",
+        "lean_rgc.repair_gradient_flow",
+        "lean_rgc.response_eval",
+        "lean_rgc.response_model",
+        "lean_rgc.robust_acceptance",
+        "lean_rgc.robust_coker",
+        "lean_rgc.schemas",
+        "lean_rgc.selector",
+        "lean_rgc.sharding",
+        "lean_rgc.source_budget_scheduler",
+        "lean_rgc.stage_coker",
+        "lean_rgc.stage_report",
+        "lean_rgc.timeout_ledger",
+        "lean_rgc.trajectory"
+      ],
+      "module": "lean_rgc.cli.experiment",
+      "path": "lean_rgc/cli/experiment.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.main",
+        "lean_rgc.cli_lean"
+      ],
+      "imports": [
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.common",
+        "lean_rgc.defects",
+        "lean_rgc.lean",
+        "lean_rgc.native_worker",
+        "lean_rgc.persistent_lean_worker",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.cli.lean",
+      "path": "lean_rgc/cli/lean.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.__init__",
+        "lean_rgc.cli.__main__"
+      ],
+      "imports": [
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.common",
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.data",
+        "lean_rgc.cli.dost",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.lean",
+        "lean_rgc.cli.pipeline",
+        "lean_rgc.cli.poms"
+      ],
+      "module": "lean_rgc.cli.main",
+      "path": "lean_rgc/cli/main.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.main",
+        "lean_rgc.cli_pipeline"
+      ],
+      "imports": [
+        "lean_rgc.cli.common",
+        "lean_rgc.dataset",
+        "lean_rgc.exposure_frontier",
+        "lean_rgc.frontier",
+        "lean_rgc.iteration",
+        "lean_rgc.iteration_report",
+        "lean_rgc.iterative",
+        "lean_rgc.pipeline",
+        "lean_rgc.schemas",
+        "lean_rgc.stage_report"
+      ],
+      "module": "lean_rgc.cli.pipeline",
+      "path": "lean_rgc/cli/pipeline.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.main",
+        "lean_rgc.cli_poms"
+      ],
+      "imports": [
+        "lean_rgc.poms_promotion",
+        "lean_rgc.poms_promotion_service",
+        "lean_rgc.poms_status",
+        "lean_rgc.promotion_evidence",
+        "lean_rgc.repair_db"
+      ],
+      "module": "lean_rgc.cli.poms",
+      "path": "lean_rgc/cli/poms.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.audit"
+      ],
+      "module": "lean_rgc.cli_audit",
+      "path": "lean_rgc/cli_audit.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.common"
+      ],
+      "module": "lean_rgc.cli_common",
+      "path": "lean_rgc/cli_common.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.crg"
+      ],
+      "module": "lean_rgc.cli_crg",
+      "path": "lean_rgc/cli_crg.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.data"
+      ],
+      "module": "lean_rgc.cli_data",
+      "path": "lean_rgc/cli_data.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.dost"
+      ],
+      "module": "lean_rgc.cli_dost",
+      "path": "lean_rgc/cli_dost.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.experiment"
+      ],
+      "module": "lean_rgc.cli_experiment",
+      "path": "lean_rgc/cli_experiment.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.lean"
+      ],
+      "module": "lean_rgc.cli_lean",
+      "path": "lean_rgc/cli_lean.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.pipeline"
+      ],
+      "module": "lean_rgc.cli_pipeline",
+      "path": "lean_rgc/cli_pipeline.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.cli.poms"
+      ],
+      "module": "lean_rgc.cli_poms",
+      "path": "lean_rgc/cli_poms.py"
+    },
+    {
+      "classification": "legacy",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.carrier_quotient",
+        "lean_rgc.coker_synthesis",
+        "lean_rgc.qgen",
+        "lean_rgc.quotient_coordinates",
+        "lean_rgc.registry_acceptance",
+        "lean_rgc.robust_coker"
+      ],
+      "imports": [
+        "lean_rgc.carrier",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.coker",
+      "path": "lean_rgc/coker.py"
+    },
+    {
+      "classification": "legacy",
+      "imported_by": [
+        "lean_rgc.cli.experiment"
+      ],
+      "imports": [
+        "lean_rgc.coker",
+        "lean_rgc.defect_registry",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.coker_synthesis",
+      "path": "lean_rgc/coker_synthesis.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.concept_geometry",
+      "path": "lean_rgc/concept_geometry.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.repair_space",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.concept_hardening",
+      "path": "lean_rgc/concept_hardening.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.concept_search",
+      "path": "lean_rgc/concept_search.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.bivariate_contextual_quotient",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.dost.__init__",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.pipeline",
+        "lean_rgc.premise_contextual_quotient"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.contextual_congruence",
+      "path": "lean_rgc/contextual_congruence.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.core.ids",
+        "lean_rgc.core.jsonio",
+        "lean_rgc.core.schemas"
+      ],
+      "module": "lean_rgc.core.__init__",
+      "path": "lean_rgc/core/__init__.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.core.__init__",
+        "lean_rgc.core.jsonio",
+        "lean_rgc.schemas"
+      ],
+      "imports": [],
+      "module": "lean_rgc.core.ids",
+      "path": "lean_rgc/core/ids.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.core.__init__",
+        "lean_rgc.schemas"
+      ],
+      "imports": [
+        "lean_rgc.core.ids"
+      ],
+      "module": "lean_rgc.core.jsonio",
+      "path": "lean_rgc/core/jsonio.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.core.__init__",
+        "lean_rgc.schemas"
+      ],
+      "imports": [],
+      "module": "lean_rgc.core.schemas",
+      "path": "lean_rgc/core/schemas.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.experiment"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.corebench",
+      "path": "lean_rgc/corebench.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.response_completion",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.crg_audit",
+      "path": "lean_rgc/crg_audit.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.crg_hardening",
+      "path": "lean_rgc/crg_hardening.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.nonlinear_generator",
+        "lean_rgc.repair_gradient_flow"
+      ],
+      "imports": [
+        "lean_rgc.crg_registry",
+        "lean_rgc.response_completion",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.crg_optimizer",
+      "path": "lean_rgc/crg_optimizer.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.response_completion",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.crg_problem",
+      "path": "lean_rgc/crg_problem.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.crg_optimizer",
+        "lean_rgc.pipeline",
+        "lean_rgc.repair_gradient_flow"
+      ],
+      "imports": [
+        "lean_rgc.relaxed_species",
+        "lean_rgc.repair_space",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.crg_registry",
+      "path": "lean_rgc/crg_registry.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.data.store"
+      ],
+      "module": "lean_rgc.data.__init__",
+      "path": "lean_rgc/data/__init__.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.data.importers.audit",
+        "lean_rgc.data.importers.concept",
+        "lean_rgc.data.importers.lineage",
+        "lean_rgc.data.importers.poms",
+        "lean_rgc.data.importers.repair"
+      ],
+      "module": "lean_rgc.data.importers.__init__",
+      "path": "lean_rgc/data/importers/__init__.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.data.importers.__init__"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.data.importers.audit",
+      "path": "lean_rgc/data/importers/audit.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.data.importers.__init__"
+      ],
+      "imports": [],
+      "module": "lean_rgc.data.importers.concept",
+      "path": "lean_rgc/data/importers/concept.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.data.importers.__init__"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.data.importers.lineage",
+      "path": "lean_rgc/data/importers/lineage.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.data.importers.__init__"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.data.importers.poms",
+      "path": "lean_rgc/data/importers/poms.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.data.importers.__init__"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.data.importers.repair",
+      "path": "lean_rgc/data/importers/repair.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.data.store"
+      ],
+      "imports": [],
+      "module": "lean_rgc.data.invariants",
+      "path": "lean_rgc/data/invariants.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [],
+      "module": "lean_rgc.data.migrations.__init__",
+      "path": "lean_rgc/data/migrations/__init__.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.data",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.data.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.audit_db",
+        "lean_rgc.data.importers",
+        "lean_rgc.data.invariants",
+        "lean_rgc.data.migrations",
+        "lean_rgc.repair_db",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.data.store",
+      "path": "lean_rgc/data/store.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.bulk_executor",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.pipeline",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.focused",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.lean_server",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.dataset",
+      "path": "lean_rgc/dataset.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.auto_defects",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline",
+        "lean_rgc.registry_promotion"
+      ],
+      "imports": [
+        "lean_rgc.defect_registry",
+        "lean_rgc.goal_shape",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.defect_miner",
+      "path": "lean_rgc/defect_miner.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.defect_ontology_lifecycle",
+        "lean_rgc.experiment.__init__"
+      ],
+      "imports": [
+        "lean_rgc.defect_registry",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.defect_ontology",
+      "path": "lean_rgc/defect_ontology.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__"
+      ],
+      "imports": [
+        "lean_rgc.defect_ontology",
+        "lean_rgc.defect_registry",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.defect_ontology_lifecycle",
+      "path": "lean_rgc/defect_ontology_lifecycle.py"
+    },
+    {
+      "classification": "dead_candidate",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.defect_registry",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.defect_promotion",
+      "path": "lean_rgc/defect_promotion.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.auto_defects",
+        "lean_rgc.candidate_acceptance",
+        "lean_rgc.carrier_quotient",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.coker_synthesis",
+        "lean_rgc.defect_miner",
+        "lean_rgc.defect_ontology",
+        "lean_rgc.defect_ontology_lifecycle",
+        "lean_rgc.defect_promotion",
+        "lean_rgc.pipeline",
+        "lean_rgc.qgen",
+        "lean_rgc.quotient_coordinate_loop",
+        "lean_rgc.registry_candidates",
+        "lean_rgc.registry_promotion"
+      ],
+      "imports": [],
+      "module": "lean_rgc.defect_registry",
+      "path": "lean_rgc/defect_registry.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.batch",
+        "lean_rgc.bulk_executor",
+        "lean_rgc.carrier_acceptance",
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.lean",
+        "lean_rgc.exposure_frontier",
+        "lean_rgc.focused",
+        "lean_rgc.frontier",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.lean_server",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.pipeline",
+        "lean_rgc.trajectory",
+        "lean_rgc.trajectory_runner"
+      ],
+      "imports": [
+        "lean_rgc.goal_shape",
+        "lean_rgc.proof_ir",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.defects",
+      "path": "lean_rgc/defects.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.bivariate_contextual_quotient",
+        "lean_rgc.contextual_congruence",
+        "lean_rgc.dost.autoplan",
+        "lean_rgc.dost.common",
+        "lean_rgc.dost.compile_experiment",
+        "lean_rgc.dost.dual_select",
+        "lean_rgc.dost.features",
+        "lean_rgc.dost.reports",
+        "lean_rgc.dost.runtime",
+        "lean_rgc.dost.transcripts",
+        "lean_rgc.face_taxonomy",
+        "lean_rgc.obstruction_tower",
+        "lean_rgc.premise_contextual_quotient",
+        "lean_rgc.premise_response",
+        "lean_rgc.response_completion",
+        "lean_rgc.response_quotient"
+      ],
+      "module": "lean_rgc.dost.__init__",
+      "path": "lean_rgc/dost/__init__.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.dost.runtime"
+      ],
+      "imports": [
+        "lean_rgc.dost.common",
+        "lean_rgc.dost.compile_experiment",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.dost.autoplan",
+      "path": "lean_rgc/dost/autoplan.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.dost.autoplan",
+        "lean_rgc.dost.compile_experiment",
+        "lean_rgc.dost.dual_select",
+        "lean_rgc.dost.features",
+        "lean_rgc.dost.reports",
+        "lean_rgc.dost.runtime",
+        "lean_rgc.dost.transcripts"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.dost.common",
+      "path": "lean_rgc/dost/common.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.dost.autoplan"
+      ],
+      "imports": [
+        "lean_rgc.dost.common"
+      ],
+      "module": "lean_rgc.dost.compile_experiment",
+      "path": "lean_rgc/dost/compile_experiment.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.dost.runtime"
+      ],
+      "imports": [
+        "lean_rgc.dost.common",
+        "lean_rgc.dost.features",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.dost.dual_select",
+      "path": "lean_rgc/dost/dual_select.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.dost.dual_select",
+        "lean_rgc.dost.runtime"
+      ],
+      "imports": [
+        "lean_rgc.dost.common",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.dost.features",
+      "path": "lean_rgc/dost/features.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.dost.runtime"
+      ],
+      "imports": [
+        "lean_rgc.dost.common",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.dost.reports",
+      "path": "lean_rgc/dost/reports.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__"
+      ],
+      "imports": [
+        "lean_rgc.dost.autoplan",
+        "lean_rgc.dost.common",
+        "lean_rgc.dost.dual_select",
+        "lean_rgc.dost.features",
+        "lean_rgc.dost.reports",
+        "lean_rgc.dost.transcripts"
+      ],
+      "module": "lean_rgc.dost.runtime",
+      "path": "lean_rgc/dost/runtime.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.dost.runtime"
+      ],
+      "imports": [
+        "lean_rgc.dost.common",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.dost.transcripts",
+      "path": "lean_rgc/dost/transcripts.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.dost"
+      ],
+      "module": "lean_rgc.dost_automation",
+      "path": "lean_rgc/dost_automation.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.audit_env_profile",
+        "lean_rgc.batch",
+        "lean_rgc.bulk_executor",
+        "lean_rgc.carrier_acceptance",
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.common",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.exposure_frontier",
+        "lean_rgc.focused",
+        "lean_rgc.frontier",
+        "lean_rgc.kernel_state",
+        "lean_rgc.lean_server",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.persistent_lean_worker",
+        "lean_rgc.pipeline",
+        "lean_rgc.proof_replay",
+        "lean_rgc.trajectory",
+        "lean_rgc.trajectory_runner"
+      ],
+      "imports": [
+        "lean_rgc.cache",
+        "lean_rgc.schemas",
+        "lean_rgc.state_parser"
+      ],
+      "module": "lean_rgc.executor",
+      "path": "lean_rgc/executor.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.action_geometry",
+        "lean_rgc.arithmetic_teacher",
+        "lean_rgc.arithmetic_teacher_cocycle",
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.candidate_acceptance",
+        "lean_rgc.candidates",
+        "lean_rgc.carrier",
+        "lean_rgc.carrier_acceptance",
+        "lean_rgc.carrier_patch_audit",
+        "lean_rgc.carrier_promotion",
+        "lean_rgc.carrier_quotient",
+        "lean_rgc.dataset",
+        "lean_rgc.defect_ontology",
+        "lean_rgc.defect_ontology_lifecycle",
+        "lean_rgc.minif2f_adapter",
+        "lean_rgc.premise_index",
+        "lean_rgc.premise_retrieval",
+        "lean_rgc.qgen",
+        "lean_rgc.quality",
+        "lean_rgc.registry_acceptance",
+        "lean_rgc.registry_candidates",
+        "lean_rgc.robust_acceptance",
+        "lean_rgc.robust_coker",
+        "lean_rgc.source_budget_scheduler"
+      ],
+      "module": "lean_rgc.experiment.__init__",
+      "path": "lean_rgc/experiment/__init__.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.exposure_audit",
+      "path": "lean_rgc/exposure_audit.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.pipeline",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.exposure_frontier",
+      "path": "lean_rgc/exposure_frontier.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.face_taxonomy",
+      "path": "lean_rgc/face_taxonomy.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline",
+        "lean_rgc.qgen"
+      ],
+      "imports": [
+        "lean_rgc.goal_shape",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.failure_signatures",
+      "path": "lean_rgc/failure_signatures.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.frontier"
+      ],
+      "imports": [
+        "lean_rgc.candidates",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.dataset",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.focused",
+      "path": "lean_rgc/focused.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.focused_analysis",
+      "path": "lean_rgc/focused_analysis.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.pipeline",
+        "lean_rgc.lean.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.candidates",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.carrier_normalizer",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.focused",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.frontier",
+      "path": "lean_rgc/frontier.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline",
+        "lean_rgc.trajectory"
+      ],
+      "imports": [],
+      "module": "lean_rgc.gamma",
+      "path": "lean_rgc/gamma.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.action_geometry_loop",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.gamma_transition_learner",
+      "path": "lean_rgc/gamma_transition_learner.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.candidates",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.carrier_normalizer",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.defect_miner",
+        "lean_rgc.defects",
+        "lean_rgc.failure_signatures",
+        "lean_rgc.pipeline",
+        "lean_rgc.premise_retrieval",
+        "lean_rgc.proof_ir",
+        "lean_rgc.state_ir"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.goal_shape",
+      "path": "lean_rgc/goal_shape.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.kernel_state",
+        "lean_rgc.lean.__init__",
+        "lean_rgc.lean_server",
+        "lean_rgc.persistent_lean_worker"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.goal_state_dynamics",
+      "path": "lean_rgc/goal_state_dynamics.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.hardening_gap_report",
+      "path": "lean_rgc/hardening_gap_report.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.ir_candidates",
+      "path": "lean_rgc/ir_candidates.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.ir_defects",
+      "path": "lean_rgc/ir_defects.py"
+    },
+    {
+      "classification": "legacy",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.pipeline",
+        "lean_rgc.pipeline",
+        "lean_rgc.quality"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.iteration",
+      "path": "lean_rgc/iteration.py"
+    },
+    {
+      "classification": "legacy",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.iteration_report",
+      "path": "lean_rgc/iteration_report.py"
+    },
+    {
+      "classification": "legacy",
+      "imported_by": [
+        "lean_rgc.cli.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.audit_db",
+        "lean_rgc.cli",
+        "lean_rgc.poms_promotion",
+        "lean_rgc.poms_status",
+        "lean_rgc.promotion_evidence",
+        "lean_rgc.realized_response",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.iterative",
+      "path": "lean_rgc/iterative.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.contextual_congruence",
+        "lean_rgc.dataset",
+        "lean_rgc.defects",
+        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas",
+        "lean_rgc.structured_state"
+      ],
+      "module": "lean_rgc.kernel_context_cache",
+      "path": "lean_rgc/kernel_context_cache.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.lean.__init__",
+        "lean_rgc.persistent_lean_worker"
+      ],
+      "imports": [
+        "lean_rgc.executor",
+        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.kernel_state",
+      "path": "lean_rgc/kernel_state.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment"
+      ],
+      "imports": [],
+      "module": "lean_rgc.lake_template",
+      "path": "lean_rgc/lake_template.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.frontier",
+        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.kernel_state",
+        "lean_rgc.lean_server",
+        "lean_rgc.native_worker",
+        "lean_rgc.persistent_worker",
+        "lean_rgc.structured_state"
+      ],
+      "module": "lean_rgc.lean.__init__",
+      "path": "lean_rgc/lean/__init__.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [],
+      "imports": [],
+      "module": "lean_rgc.lean_native_worker",
+      "path": "lean_rgc/lean_native_worker.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.common",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.lean.__init__",
+        "lean_rgc.persistent_lean_worker",
+        "lean_rgc.persistent_worker",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.batch",
+        "lean_rgc.dataset",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.native_worker",
+        "lean_rgc.schemas",
+        "lean_rgc.structured_state"
+      ],
+      "module": "lean_rgc.lean_server",
+      "path": "lean_rgc/lean_server.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.action_quarantine",
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.audit_result_cache",
+        "lean_rgc.batch",
+        "lean_rgc.bulk_executor",
+        "lean_rgc.dataset",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.schemas",
+        "lean_rgc.timeout_ledger"
+      ],
+      "module": "lean_rgc.lean_worker_supervisor",
+      "path": "lean_rgc/lean_worker_supervisor.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.response_model",
+        "lean_rgc.trajectory_runner"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.learner",
+      "path": "lean_rgc/learner.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.lineage",
+      "path": "lean_rgc/lineage.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.minif2f_adapter",
+      "path": "lean_rgc/minif2f_adapter.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.multicarrier",
+      "path": "lean_rgc/multicarrier.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.lean",
+        "lean_rgc.lean.__init__",
+        "lean_rgc.lean_server"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.native_worker",
+      "path": "lean_rgc/native_worker.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.crg_optimizer"
+      ],
+      "module": "lean_rgc.nonlinear_generator",
+      "path": "lean_rgc/nonlinear_generator.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.obstruction_tower",
+      "path": "lean_rgc/obstruction_tower.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.lean",
+        "lean_rgc.persistent_worker"
+      ],
+      "imports": [
+        "lean_rgc.executor",
+        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.kernel_state",
+        "lean_rgc.lean_server",
+        "lean_rgc.schemas",
+        "lean_rgc.structured_state"
+      ],
+      "module": "lean_rgc.persistent_lean_worker",
+      "path": "lean_rgc/persistent_lean_worker.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.lean.__init__"
+      ],
+      "imports": [
+        "lean_rgc.lean_server",
+        "lean_rgc.persistent_lean_worker"
+      ],
+      "module": "lean_rgc.persistent_worker",
+      "path": "lean_rgc/persistent_worker.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.action_analysis",
+        "lean_rgc.action_geometry",
+        "lean_rgc.action_geometry_loop",
+        "lean_rgc.active_audit_scheduler",
+        "lean_rgc.arithmetic_teacher",
+        "lean_rgc.arithmetic_teacher_cocycle",
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.audit_db",
+        "lean_rgc.audit_env_profile",
+        "lean_rgc.audit_pruning",
+        "lean_rgc.auto_defects",
+        "lean_rgc.batch",
+        "lean_rgc.bivariate_contextual_quotient",
+        "lean_rgc.bulk_executor",
+        "lean_rgc.candidate_acceptance",
+        "lean_rgc.candidates",
+        "lean_rgc.carrier",
+        "lean_rgc.carrier_acceptance",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.carrier_patch_audit",
+        "lean_rgc.carrier_promotion",
+        "lean_rgc.carrier_quotient",
+        "lean_rgc.cli.common",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.concept_geometry",
+        "lean_rgc.concept_hardening",
+        "lean_rgc.concept_search",
+        "lean_rgc.contextual_congruence",
+        "lean_rgc.crg_audit",
+        "lean_rgc.crg_hardening",
+        "lean_rgc.crg_problem",
+        "lean_rgc.crg_registry",
+        "lean_rgc.data.store",
+        "lean_rgc.dataset",
+        "lean_rgc.defect_miner",
+        "lean_rgc.defect_registry",
+        "lean_rgc.defects",
+        "lean_rgc.dost",
+        "lean_rgc.executor",
+        "lean_rgc.exposure_audit",
+        "lean_rgc.exposure_frontier",
+        "lean_rgc.face_taxonomy",
+        "lean_rgc.failure_signatures",
+        "lean_rgc.focused_analysis",
+        "lean_rgc.frontier",
+        "lean_rgc.gamma",
+        "lean_rgc.gamma_transition_learner",
+        "lean_rgc.goal_shape",
+        "lean_rgc.hardening_gap_report",
+        "lean_rgc.ir_candidates",
+        "lean_rgc.ir_defects",
+        "lean_rgc.iteration",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.lean_server",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.lineage",
+        "lean_rgc.multicarrier",
+        "lean_rgc.nonlinear_generator",
+        "lean_rgc.obstruction_tower",
+        "lean_rgc.poms_promotion",
+        "lean_rgc.poms_status",
+        "lean_rgc.premise_contextual_quotient",
+        "lean_rgc.premise_index",
+        "lean_rgc.premise_response",
+        "lean_rgc.premise_retrieval",
+        "lean_rgc.promotion_evidence",
+        "lean_rgc.proof_ir",
+        "lean_rgc.qgen",
+        "lean_rgc.quality",
+        "lean_rgc.quotient",
+        "lean_rgc.quotient_coordinate_loop",
+        "lean_rgc.quotient_coordinates",
+        "lean_rgc.realized_response",
+        "lean_rgc.registry_acceptance",
+        "lean_rgc.registry_candidates",
+        "lean_rgc.registry_promotion",
+        "lean_rgc.repair_gradient_flow",
+        "lean_rgc.response_completion",
+        "lean_rgc.response_eval",
+        "lean_rgc.response_model",
+        "lean_rgc.response_quotient",
+        "lean_rgc.robust_acceptance",
+        "lean_rgc.robust_coker",
+        "lean_rgc.schemas",
+        "lean_rgc.selector",
+        "lean_rgc.source_budget_scheduler",
+        "lean_rgc.stage_coker",
+        "lean_rgc.stage_report",
+        "lean_rgc.structured_state",
+        "lean_rgc.trajectory"
+      ],
+      "module": "lean_rgc.pipeline",
+      "path": "lean_rgc/pipeline.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.poms",
+        "lean_rgc.iterative",
+        "lean_rgc.pipeline",
+        "lean_rgc.poms_promotion_service"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.poms_promotion",
+      "path": "lean_rgc/poms_promotion.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.poms"
+      ],
+      "imports": [
+        "lean_rgc.poms_promotion",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.poms_promotion_service",
+      "path": "lean_rgc/poms_promotion_service.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.poms",
+        "lean_rgc.iterative",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.poms_status",
+      "path": "lean_rgc/poms_status.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.bivariate_contextual_quotient",
+        "lean_rgc.dost.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.contextual_congruence",
+        "lean_rgc.premise_response",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.premise_contextual_quotient",
+      "path": "lean_rgc/premise_contextual_quotient.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.premise_index",
+      "path": "lean_rgc/premise_index.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.bivariate_contextual_quotient",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.dost.__init__",
+        "lean_rgc.pipeline",
+        "lean_rgc.premise_contextual_quotient"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.premise_response",
+      "path": "lean_rgc/premise_response.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline",
+        "lean_rgc.project_harvest"
+      ],
+      "imports": [
+        "lean_rgc.goal_shape",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.premise_retrieval",
+      "path": "lean_rgc/premise_retrieval.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment"
+      ],
+      "imports": [
+        "lean_rgc.premise_retrieval",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.project_harvest",
+      "path": "lean_rgc/project_harvest.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.poms",
+        "lean_rgc.iterative",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.promotion_evidence",
+      "path": "lean_rgc/promotion_evidence.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.defects",
+        "lean_rgc.pipeline",
+        "lean_rgc.structured_state"
+      ],
+      "imports": [
+        "lean_rgc.cli.common",
+        "lean_rgc.goal_shape",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.proof_ir",
+      "path": "lean_rgc/proof_ir.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment"
+      ],
+      "imports": [
+        "lean_rgc.executor",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.proof_replay",
+      "path": "lean_rgc/proof_replay.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.carrier",
+        "lean_rgc.coker",
+        "lean_rgc.defect_registry",
+        "lean_rgc.failure_signatures",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.qgen",
+      "path": "lean_rgc/qgen.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.iteration",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.quality",
+      "path": "lean_rgc/quality.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [],
+      "module": "lean_rgc.quotient",
+      "path": "lean_rgc/quotient.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.action_geometry_loop",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.defect_registry",
+        "lean_rgc.quotient_coordinates",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.quotient_coordinate_loop",
+      "path": "lean_rgc/quotient_coordinate_loop.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline",
+        "lean_rgc.quotient_coordinate_loop"
+      ],
+      "imports": [
+        "lean_rgc.coker",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.quotient_coordinates",
+      "path": "lean_rgc/quotient_coordinates.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.iterative",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.realized_response",
+      "path": "lean_rgc/realized_response.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.coker",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.registry_acceptance",
+      "path": "lean_rgc/registry_acceptance.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.carrier",
+        "lean_rgc.carrier_acceptance",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.defect_registry",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.registry_candidates",
+      "path": "lean_rgc/registry_candidates.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.defect_miner",
+        "lean_rgc.defect_registry",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.registry_promotion",
+      "path": "lean_rgc/registry_promotion.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.crg_registry"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.relaxed_species",
+      "path": "lean_rgc/relaxed_species.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.cli.data",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.poms",
+        "lean_rgc.data.store"
+      ],
+      "imports": [
+        "lean_rgc.audit_db",
+        "lean_rgc.repair_space",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.repair_db",
+      "path": "lean_rgc/repair_db.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.crg",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.crg_optimizer",
+        "lean_rgc.crg_registry",
+        "lean_rgc.response_completion",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.repair_gradient_flow",
+      "path": "lean_rgc/repair_gradient_flow.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.concept_hardening",
+        "lean_rgc.crg_registry",
+        "lean_rgc.repair_db"
+      ],
+      "imports": [
+        "lean_rgc.response_completion",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.repair_space",
+      "path": "lean_rgc/repair_space.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.crg_audit",
+        "lean_rgc.crg_optimizer",
+        "lean_rgc.crg_problem",
+        "lean_rgc.dost.__init__",
+        "lean_rgc.pipeline",
+        "lean_rgc.repair_gradient_flow",
+        "lean_rgc.repair_space"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.response_completion",
+      "path": "lean_rgc/response_completion.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.response_model",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.response_eval",
+      "path": "lean_rgc/response_eval.py"
+    },
+    {
+      "classification": "dead_candidate",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.response_learner",
+      "path": "lean_rgc/response_learner.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline",
+        "lean_rgc.response_eval",
+        "lean_rgc.trajectory"
+      ],
+      "imports": [
+        "lean_rgc.learner",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.response_model",
+      "path": "lean_rgc/response_model.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.dost.__init__",
+        "lean_rgc.pipeline",
+        "lean_rgc.response_quotient_registry"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.response_quotient",
+      "path": "lean_rgc/response_quotient.py"
+    },
+    {
+      "classification": "dead_candidate",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.response_quotient"
+      ],
+      "module": "lean_rgc.response_quotient_registry",
+      "path": "lean_rgc/response_quotient_registry.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.candidate_acceptance",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.robust_acceptance",
+      "path": "lean_rgc/robust_acceptance.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.coker",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.robust_coker",
+      "path": "lean_rgc/robust_coker.py"
+    },
+    {
+      "classification": "core",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.acceptance_report",
+        "lean_rgc.action_analysis",
+        "lean_rgc.action_geometry",
+        "lean_rgc.action_geometry_loop",
+        "lean_rgc.action_quarantine",
+        "lean_rgc.active_audit_scheduler",
+        "lean_rgc.active_scheduler",
+        "lean_rgc.arithmetic_teacher",
+        "lean_rgc.arithmetic_teacher_cocycle",
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.audit_env_profile",
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.audit_pruning",
+        "lean_rgc.audit_result_cache",
+        "lean_rgc.audit_scheduler",
+        "lean_rgc.auto_defects",
+        "lean_rgc.batch",
+        "lean_rgc.bivariate_contextual_quotient",
+        "lean_rgc.bulk_executor",
+        "lean_rgc.cache",
+        "lean_rgc.candidate_acceptance",
+        "lean_rgc.candidates",
+        "lean_rgc.carrier",
+        "lean_rgc.carrier_acceptance",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.carrier_normalizer",
+        "lean_rgc.carrier_patch_audit",
+        "lean_rgc.carrier_promotion",
+        "lean_rgc.carrier_quotient",
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.common",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.lean",
+        "lean_rgc.cli.pipeline",
+        "lean_rgc.coker",
+        "lean_rgc.coker_synthesis",
+        "lean_rgc.concept_geometry",
+        "lean_rgc.concept_hardening",
+        "lean_rgc.concept_search",
+        "lean_rgc.contextual_congruence",
+        "lean_rgc.corebench",
+        "lean_rgc.crg_audit",
+        "lean_rgc.crg_hardening",
+        "lean_rgc.crg_optimizer",
+        "lean_rgc.crg_problem",
+        "lean_rgc.crg_registry",
+        "lean_rgc.data.importers.audit",
+        "lean_rgc.data.importers.lineage",
+        "lean_rgc.data.importers.poms",
+        "lean_rgc.data.importers.repair",
+        "lean_rgc.data.store",
+        "lean_rgc.dataset",
+        "lean_rgc.defect_miner",
+        "lean_rgc.defect_ontology",
+        "lean_rgc.defect_ontology_lifecycle",
+        "lean_rgc.defect_promotion",
+        "lean_rgc.defects",
+        "lean_rgc.dost.autoplan",
+        "lean_rgc.dost.common",
+        "lean_rgc.dost.dual_select",
+        "lean_rgc.dost.features",
+        "lean_rgc.dost.reports",
+        "lean_rgc.dost.transcripts",
+        "lean_rgc.executor",
+        "lean_rgc.exposure_audit",
+        "lean_rgc.exposure_frontier",
+        "lean_rgc.face_taxonomy",
+        "lean_rgc.failure_signatures",
+        "lean_rgc.focused",
+        "lean_rgc.focused_analysis",
+        "lean_rgc.frontier",
+        "lean_rgc.gamma_transition_learner",
+        "lean_rgc.goal_shape",
+        "lean_rgc.goal_state_dynamics",
+        "lean_rgc.hardening_gap_report",
+        "lean_rgc.ir_candidates",
+        "lean_rgc.ir_defects",
+        "lean_rgc.iteration",
+        "lean_rgc.iteration_report",
+        "lean_rgc.iterative",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.kernel_state",
+        "lean_rgc.lean_server",
+        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.learner",
+        "lean_rgc.lineage",
+        "lean_rgc.minif2f_adapter",
+        "lean_rgc.multicarrier",
+        "lean_rgc.native_worker",
+        "lean_rgc.obstruction_tower",
+        "lean_rgc.persistent_lean_worker",
+        "lean_rgc.pipeline",
+        "lean_rgc.poms_promotion",
+        "lean_rgc.poms_promotion_service",
+        "lean_rgc.poms_status",
+        "lean_rgc.premise_contextual_quotient",
+        "lean_rgc.premise_index",
+        "lean_rgc.premise_response",
+        "lean_rgc.premise_retrieval",
+        "lean_rgc.project_harvest",
+        "lean_rgc.promotion_evidence",
+        "lean_rgc.proof_ir",
+        "lean_rgc.proof_replay",
+        "lean_rgc.qgen",
+        "lean_rgc.quality",
+        "lean_rgc.quotient_coordinate_loop",
+        "lean_rgc.quotient_coordinates",
+        "lean_rgc.realized_response",
+        "lean_rgc.registry_acceptance",
+        "lean_rgc.registry_candidates",
+        "lean_rgc.registry_promotion",
+        "lean_rgc.relaxed_species",
+        "lean_rgc.repair_db",
+        "lean_rgc.repair_gradient_flow",
+        "lean_rgc.repair_space",
+        "lean_rgc.response_completion",
+        "lean_rgc.response_eval",
+        "lean_rgc.response_learner",
+        "lean_rgc.response_model",
+        "lean_rgc.response_quotient",
+        "lean_rgc.robust_acceptance",
+        "lean_rgc.robust_coker",
+        "lean_rgc.selector",
+        "lean_rgc.sharding",
+        "lean_rgc.source_budget_scheduler",
+        "lean_rgc.stage_coker",
+        "lean_rgc.stage_report",
+        "lean_rgc.state_ir",
+        "lean_rgc.state_parser",
+        "lean_rgc.structured_state",
+        "lean_rgc.trajectory",
+        "lean_rgc.trajectory_runner"
+      ],
+      "imports": [
+        "lean_rgc.core.ids",
+        "lean_rgc.core.jsonio",
+        "lean_rgc.core.schemas"
+      ],
+      "module": "lean_rgc.schemas",
+      "path": "lean_rgc/schemas.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline",
+        "lean_rgc.trajectory_runner"
+      ],
+      "imports": [
+        "lean_rgc.carrier",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.selector",
+      "path": "lean_rgc/selector.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.sharding",
+      "path": "lean_rgc/sharding.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.experiment.__init__",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.action_geometry",
+        "lean_rgc.active_audit_scheduler",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.source_budget_scheduler",
+      "path": "lean_rgc/source_budget_scheduler.py"
+    },
+    {
+      "classification": "legacy",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.candidate_acceptance",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.stage_coker",
+      "path": "lean_rgc/stage_coker.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.experiment",
+        "lean_rgc.cli.pipeline",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.stage_report",
+      "path": "lean_rgc/stage_report.py"
+    },
+    {
+      "classification": "dead_candidate",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.goal_shape",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.state_ir",
+      "path": "lean_rgc/state_ir.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.executor"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.state_parser",
+      "path": "lean_rgc/state_parser.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.arithmetic_teacher_kernel_audit",
+        "lean_rgc.kernel_context_cache",
+        "lean_rgc.lean.__init__",
+        "lean_rgc.lean_server",
+        "lean_rgc.persistent_lean_worker",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.proof_ir",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.structured_state",
+      "path": "lean_rgc/structured_state.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.cli.audit",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.lean_worker_supervisor"
+      ],
+      "imports": [],
+      "module": "lean_rgc.timeout_ledger",
+      "path": "lean_rgc/timeout_ledger.py"
+    },
+    {
+      "classification": "experimental",
+      "imported_by": [
+        "lean_rgc.__init__",
+        "lean_rgc.cli.experiment",
+        "lean_rgc.pipeline"
+      ],
+      "imports": [
+        "lean_rgc.candidates",
+        "lean_rgc.carrier",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.gamma",
+        "lean_rgc.response_model",
+        "lean_rgc.schemas"
+      ],
+      "module": "lean_rgc.trajectory",
+      "path": "lean_rgc/trajectory.py"
+    },
+    {
+      "classification": "dead_candidate",
+      "imported_by": [],
+      "imports": [
+        "lean_rgc.candidates",
+        "lean_rgc.carrier",
+        "lean_rgc.defects",
+        "lean_rgc.executor",
+        "lean_rgc.learner",
+        "lean_rgc.schemas",
+        "lean_rgc.selector"
+      ],
+      "module": "lean_rgc.trajectory_runner",
+      "path": "lean_rgc/trajectory_runner.py"
+    }
+  ],
+  "schema_version": "lean-rgc.inventory.v1",
+  "summary": {
+    "core": 79,
+    "dead_candidate": 8,
+    "experimental": 82,
+    "legacy": 6
+  }
+}

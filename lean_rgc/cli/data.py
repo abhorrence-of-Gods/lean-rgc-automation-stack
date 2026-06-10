@@ -7,7 +7,7 @@ import sqlite3
 import sys
 
 from ..audit_db import build_audit_db, query_audit_db, write_query_outputs
-from ..data.store import build_run_db, query_run_db, summarize_run_db, write_query_outputs as write_run_query_outputs
+from ..data.store import build_run_db, check_run_db_invariants, query_run_db, summarize_run_db, write_query_outputs as write_run_query_outputs
 from ..repair_db import build_repair_db, repair_db_query, write_repair_query_outputs
 
 
@@ -94,6 +94,29 @@ def cmd_run_db_summarize(args) -> int:
     return 0
 
 
+def cmd_run_db_check(args) -> int:
+    db = Path(args.db)
+    if not db.exists():
+        rep = {"db": str(db), "ok": False, "error": "missing_db"}
+        print(json.dumps(rep, indent=2, ensure_ascii=False, sort_keys=True) if getattr(args, "json", False) else f"FAIL {db}: missing_db")
+        return 2
+    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        invariants = check_run_db_invariants(conn)
+    finally:
+        conn.close()
+    rep = {"db": str(db), "ok": bool(invariants.get("ok")), "invariants": invariants}
+    if getattr(args, "json", False):
+        print(json.dumps(rep, indent=2, ensure_ascii=False, sort_keys=True))
+    else:
+        status = "OK" if rep["ok"] else "FAIL"
+        print(f"{status} {db}")
+        if not rep["ok"]:
+            print(json.dumps(invariants, indent=2, ensure_ascii=False, sort_keys=True))
+    return 0 if rep["ok"] else 1
+
+
 def cmd_run_db_lineage(args) -> int:
     conn = sqlite3.connect(args.db)
     conn.row_factory = sqlite3.Row
@@ -178,6 +201,11 @@ def register_data_commands(sub) -> None:
     dsum.add_argument("--out-json")
     dsum.set_defaults(func=cmd_run_db_summarize)
 
+    dcheck = data_sub.add_parser("check")
+    dcheck.add_argument("--db", required=True)
+    dcheck.add_argument("--json", action="store_true")
+    dcheck.set_defaults(func=cmd_run_db_check)
+
     dlin = data_sub.add_parser("lineage")
     dlin.add_argument("--db", required=True)
     dlin.add_argument("--edge-type")
@@ -247,6 +275,7 @@ __all__ = [
     "cmd_repair_db_build",
     "cmd_repair_db_query",
     "cmd_run_db_build",
+    "cmd_run_db_check",
     "cmd_run_db_lineage",
     "cmd_run_db_query",
     "cmd_run_db_summarize",

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
+from .core.schemas import PRODUCTION_METADATA_FIELDS, PRODUCTION_RECORD_TYPES, SCHEMA_CONTRACT_VERSION
 from .core.ids import stable_hash
 from .core.jsonio import default_run_id_for_path, read_jsonl, write_jsonl, write_records
 
