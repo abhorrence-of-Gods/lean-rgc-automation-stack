@@ -345,6 +345,15 @@ def summarize_repair_db(conn: sqlite3.Connection) -> dict[str, Any]:
     v_hard = safe_float(conn.execute("SELECT COALESCE(MAX(audited_score), 0.0) FROM crg_audit_rows").fetchone()[0], 0.0)
     v_audit = v_hard
     hardening_gap = safe_float(conn.execute("SELECT COALESCE(MAX(hardening_gap), 0.0) FROM crg_audit_rows").fetchone()[0], 0.0)
+    n_cache_hit = 0
+    n_timeout = 0
+    try:
+        if conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='audit_result_cache_index'").fetchone():
+            n_cache_hit = int(conn.execute("SELECT COALESCE(SUM(n_cache_hit), 0) FROM audit_result_cache_index").fetchone()[0] or 0)
+        if conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='timeout_events'").fetchone():
+            n_timeout = int(conn.execute("SELECT COUNT(*) FROM timeout_events").fetchone()[0] or 0)
+    except Exception:
+        pass
     species_row = conn.execute(
         """
         SELECT repair_species, MAX(relaxed_score) AS score
@@ -362,6 +371,8 @@ def summarize_repair_db(conn: sqlite3.Connection) -> dict[str, Any]:
         "V_hard": v_hard,
         "V_audit": v_audit,
         "hardening_gap": hardening_gap,
+        "n_cache_hit": n_cache_hit,
+        "n_timeout": n_timeout,
         "dominant_species": dominant_species,
     }
 
@@ -448,6 +459,8 @@ def failure_attribution_report(
                 "V_hard": rep.get("V_hard", 0.0),
                 "V_audit": rep.get("V_audit", 0.0),
                 "hardening_gap": rep.get("hardening_gap", 0.0),
+                "n_cache_hit": rep.get("n_cache_hit", 0),
+                "n_timeout": rep.get("n_timeout", 0),
                 "dominant_species": rep.get("dominant_species", ""),
             },
             "recommended_next": _recommend_next(str(rep.get("diagnosis") or "")),
