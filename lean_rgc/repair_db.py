@@ -308,6 +308,7 @@ def import_repair_artifacts(conn: sqlite3.Connection, run_dir: str | Path) -> di
                     ),
                 )
             elif table == "concept_search_rows":
+                decoder = row.get("decoder") if isinstance(row.get("decoder"), dict) else {}
                 conn.execute(
                     "INSERT OR IGNORE INTO concept_search_rows VALUES (?,?,?,?,?,?,?,?,?)",
                     (
@@ -315,9 +316,9 @@ def import_repair_artifacts(conn: sqlite3.Connection, run_dir: str | Path) -> di
                         str(root),
                         str(path),
                         str(row.get("concept_id") or row.get("target_concept_id") or rh),
-                        safe_float(row.get("score"), safe_float((row.get("scores") or {}).get("score") if isinstance(row.get("scores"), dict) else 0.0, 0.0)),
-                        str(row.get("mode") or row.get("search_mode") or ""),
-                        str(row.get("target_species") or ((row.get("decoder") or {}).get("target_species") if isinstance(row.get("decoder"), dict) else "") or ""),
+                        safe_float(row.get("repair_score"), safe_float(row.get("score"), safe_float((row.get("scores") or {}).get("score") if isinstance(row.get("scores"), dict) else 0.0, 0.0))),
+                        str(row.get("mode") or row.get("search_mode") or row.get("search_method") or ""),
+                        str(row.get("target_species") or decoder.get("target_species") or ""),
                         str(row.get("canonical_status") or ""),
                         _json(row),
                     ),
@@ -342,6 +343,7 @@ def summarize_repair_db(conn: sqlite3.Connection) -> dict[str, Any]:
     for t in tables:
         counts[t] = int(conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0])
     v_relaxed = safe_float(conn.execute("SELECT COALESCE(MAX(relaxed_score), 0.0) FROM relaxed_candidates").fetchone()[0], 0.0)
+    v_concept = safe_float(conn.execute("SELECT COALESCE(MAX(score), 0.0) FROM concept_search_rows").fetchone()[0], 0.0)
     v_hard = safe_float(conn.execute("SELECT COALESCE(MAX(audited_score), 0.0) FROM crg_audit_rows").fetchone()[0], 0.0)
     v_audit = v_hard
     hardening_gap = safe_float(conn.execute("SELECT COALESCE(MAX(hardening_gap), 0.0) FROM crg_audit_rows").fetchone()[0], 0.0)
@@ -368,6 +370,7 @@ def summarize_repair_db(conn: sqlite3.Connection) -> dict[str, Any]:
         "schema_version": SCHEMA_REPAIR_DB,
         "tables": counts,
         "V_relaxed": v_relaxed,
+        "V_concept": v_concept,
         "V_hard": v_hard,
         "V_audit": v_audit,
         "hardening_gap": hardening_gap,
@@ -456,6 +459,7 @@ def failure_attribution_report(
             "diagnosis": rep.get("diagnosis"),
             "evidence": {
                 "V_relaxed": rep.get("V_relaxed", 0.0),
+                "V_concept": rep.get("V_concept", 0.0),
                 "V_hard": rep.get("V_hard", 0.0),
                 "V_audit": rep.get("V_audit", 0.0),
                 "hardening_gap": rep.get("hardening_gap", 0.0),

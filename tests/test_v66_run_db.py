@@ -122,6 +122,53 @@ def test_run_db_imports_audit_crg_poms_and_lineage(tmp_path: Path):
         [{"candidate_id": "cand_1", "problem_id": "crg_1", "relaxed_score": 0.7, "audited_score": 0.0, "hardening_gap": 0.7}],
     )
     write_jsonl(
+        run / "concept_geometry" / "concept_points.jsonl",
+        [
+            {
+                "concept_id": "concept_eq",
+                "concept_species": "kernel_like",
+                "origin": "feature",
+                "cost_embedding": {"audit_risk": 0.1, "hardening_risk": 0.2},
+                "canonical_status": "concept_chart_not_canonical",
+            }
+        ],
+    )
+    write_jsonl(
+        run / "concept_geometry" / "concept_search_rows.jsonl",
+        [
+            {
+                "search_row_id": "csearch_eq",
+                "concept_id": "concept_eq",
+                "repair_score": 0.9,
+                "search_method": "response-nearest-neighbor",
+                "decoder": {"target_species": "concept_latent"},
+                "canonical_status": "concept_search_witness_not_canonical",
+            }
+        ],
+    )
+    write_jsonl(
+        run / "concept_geometry" / "concept_decoded_repair_atoms.jsonl",
+        [
+            {
+                "repair_atom_id": "rel_atom_concept_eq",
+                "species_id": "concept_latent",
+                "repair_species": "concept_latent",
+                "source": "concept_search",
+                "source_id": "concept_eq",
+                "cost_vector": {"cost": 1.0, "audit_risk": 0.1},
+                "provenance": {
+                    "source_row": {
+                        "metadata": {
+                            "concept_id": "concept_eq",
+                            "concept_search_row_id": "csearch_eq",
+                        }
+                    }
+                },
+                "canonical_status": "repair_witness_not_canonical",
+            }
+        ],
+    )
+    write_jsonl(
         run / "poms_evidence.jsonl",
         [{"evidence_id": "ev1", "action_id": "h1", "parent_nonpaid": True, "dual_certificate": True}],
     )
@@ -137,19 +184,28 @@ def test_run_db_imports_audit_crg_poms_and_lineage(tmp_path: Path):
     # Existing audit_db compatibility imports both responses.jsonl and
     # micro_audit.jsonl into response_rows when response values are present.
     assert summary["tables"]["response_rows"] == 2
+    assert summary["tables"]["concept_points"] == 1
+    assert summary["tables"]["concept_search_rows"] == 1
+    assert summary["tables"]["repair_atoms"] >= 2
     assert summary["tables"]["relaxed_candidates"] == 1
     assert summary["tables"]["hard_candidates"] == 1
     assert summary["tables"]["poms_evidence"] >= 1
     assert summary["tables"]["poms_promotion_decisions"] >= 1
     assert summary["tables"]["lineage_edges"] > 0
     assert summary["V_relaxed"] == 0.7
+    assert summary["V_concept"] == 0.9
     assert summary["n_cache_hit"] == 1
+    assert report["evidence"]["V_concept"] == 0.9
     assert report["evidence"]["n_cache_hit"] == 1
 
     con = sqlite3.connect(run / "runs.db")
     try:
         legacy = con.execute("SELECT schema_version FROM artifacts WHERE schema_version='legacy.unknown' LIMIT 1").fetchone()
         assert legacy is not None
+        concept_edge = con.execute(
+            "SELECT 1 FROM lineage_edges WHERE edge_type='concept_search_yields_repair_atom' LIMIT 1"
+        ).fetchone()
+        assert concept_edge is not None
     finally:
         con.close()
 

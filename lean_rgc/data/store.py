@@ -94,6 +94,8 @@ def _artifact_type(path: Path) -> str:
         return "actions"
     if name == "repair_faces.jsonl" or "repair_face" in name or name == "tower_faces.jsonl":
         return "repair_faces"
+    if name == "concept_decoded_repair_atoms.jsonl":
+        return "concept_decoded_repair_atoms"
     if parent == "crg":
         return name.removesuffix(".jsonl").removesuffix(".json")
     if parent == "concept_geometry":
@@ -847,6 +849,34 @@ class RepairStore:
                             _json(row),
                         ),
                     )
+            if atype == "concept_decoded_repair_atoms":
+                for row in rows:
+                    atom_id = str(row.get("repair_atom_id") or row.get("atom_id") or "")
+                    costs = row.get("cost_vector") if isinstance(row.get("cost_vector"), dict) else {}
+                    rh = _row_hash(self.run_id, artifact["artifact_id"], "concept_decoded_repair_atom", atom_id, row)
+                    self.conn.execute(
+                        """
+                        INSERT OR IGNORE INTO repair_atoms(
+                            row_hash, run_dir, artifact_path, repair_atom_id, species_id, source, source_id,
+                            cost, audit_risk, source_risk, ghost_risk, canonical_status, row_json
+                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        """,
+                        (
+                            rh,
+                            str(self.run_dir),
+                            str(path),
+                            atom_id or rh,
+                            str(row.get("species_id") or row.get("repair_species") or "concept_latent"),
+                            str(row.get("source") or "concept_search"),
+                            str(row.get("source_id") or ""),
+                            _float(costs.get("cost") or costs.get("cost_estimate"), 1.0),
+                            _float(costs.get("audit_risk") or row.get("audit_risk"), 0.0),
+                            _float(costs.get("source_risk") or row.get("source_risk"), 0.0),
+                            _float(costs.get("ghost_risk") or row.get("ghost_risk"), 0.0),
+                            str(row.get("canonical_status") or ""),
+                            _json(row),
+                        ),
+                    )
 
 
 class LineageStore:
@@ -941,6 +971,48 @@ class LineageStore:
         if _table_exists(self.conn, "poms_promotion_decisions"):
             for r in self.conn.execute("SELECT decision_id, action_id FROM poms_promotion_decisions").fetchall():
                 self.add_edge(src_type="poms_evidence", src_id=str(r["action_id"] or ""), dst_type="poms_promotion_decision", dst_id=str(r["decision_id"] or ""), edge_type="poms_evidence_yields_promotion_decision")
+        if _table_exists(self.conn, "concept_search_rows"):
+            for r in self.conn.execute("SELECT row_hash, concept_id, row_json FROM concept_search_rows").fetchall():
+                payload = _loads(r["row_json"]) if "row_json" in r.keys() else None
+                if not isinstance(payload, dict):
+                    payload = {}
+                search_id = str(payload.get("search_row_id") or r["row_hash"] or "")
+                concept_id = str(r["concept_id"] or payload.get("concept_id") or "")
+                self.add_edge(
+                    src_type="concept_point",
+                    src_id=concept_id,
+                    dst_type="concept_search_row",
+                    dst_id=search_id,
+                    edge_type="concept_point_yields_search_witness",
+                    payload={"row_hash": r["row_hash"]},
+                )
+        if _table_exists(self.conn, "repair_atoms"):
+            for r in self.conn.execute("SELECT repair_atom_id, species_id, source, source_id, row_json FROM repair_atoms").fetchall():
+                if str(r["species_id"] or "") != "concept_latent":
+                    continue
+                payload = _loads(r["row_json"]) if "row_json" in r.keys() else None
+                if not isinstance(payload, dict):
+                    payload = {}
+                source_row = payload.get("provenance", {}).get("source_row") if isinstance(payload.get("provenance"), dict) else {}
+                meta = source_row.get("metadata") if isinstance(source_row, dict) and isinstance(source_row.get("metadata"), dict) else {}
+                search_id = str(meta.get("concept_search_row_id") or "")
+                concept_id = str(meta.get("concept_id") or r["source_id"] or "")
+                if search_id:
+                    self.add_edge(
+                        src_type="concept_search_row",
+                        src_id=search_id,
+                        dst_type="repair_atom",
+                        dst_id=str(r["repair_atom_id"] or ""),
+                        edge_type="concept_search_yields_repair_atom",
+                    )
+                elif concept_id:
+                    self.add_edge(
+                        src_type="concept_point",
+                        src_id=concept_id,
+                        dst_type="repair_atom",
+                        dst_id=str(r["repair_atom_id"] or ""),
+                        edge_type="concept_decode_yields_repair_atom",
+                    )
 
 
 def _import_poms_rows(conn: sqlite3.Connection, run_dir: Path, run_id: str, artifacts: list[sqlite3.Row]) -> None:
@@ -1035,6 +1107,7 @@ def summarize_run_db(conn: sqlite3.Connection) -> dict[str, Any]:
         else:
             counts[table] = 0
     v_relaxed = _float(conn.execute("SELECT COALESCE(MAX(relaxed_score), 0.0) FROM relaxed_candidates").fetchone()[0] if _table_exists(conn, "relaxed_candidates") else 0.0)
+    v_concept = _float(conn.execute("SELECT COALESCE(MAX(score), 0.0) FROM concept_search_rows").fetchone()[0] if _table_exists(conn, "concept_search_rows") else 0.0)
     v_hard = _float(conn.execute("SELECT COALESCE(MAX(audited_score), 0.0) FROM crg_audit_rows").fetchone()[0] if _table_exists(conn, "crg_audit_rows") else 0.0)
     hardening_gap = _float(conn.execute("SELECT COALESCE(MAX(hardening_gap), 0.0) FROM crg_audit_rows").fetchone()[0] if _table_exists(conn, "crg_audit_rows") else 0.0)
     cache_hit = int(conn.execute("SELECT COALESCE(SUM(n_cache_hit), 0) FROM audit_result_cache_index").fetchone()[0] if _table_exists(conn, "audit_result_cache_index") else 0)
@@ -1049,6 +1122,7 @@ def summarize_run_db(conn: sqlite3.Connection) -> dict[str, Any]:
         "schema_version": SCHEMA_RUN_DB,
         "tables": counts,
         "V_relaxed": v_relaxed,
+        "V_concept": v_concept,
         "V_hard": v_hard,
         "V_audit": v_hard,
         "hardening_gap": hardening_gap,
