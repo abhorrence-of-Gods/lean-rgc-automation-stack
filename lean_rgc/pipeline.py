@@ -129,6 +129,47 @@ from .kernel_context_cache import audit_contextual_candidates_with_kernel_cache
 
 
 
+from .cli_experiment import (
+    cmd_candidates,
+    cmd_registry_candidates,
+    cmd_build_premise_index,
+    cmd_premise_retrieve,
+    cmd_premise_actions,
+    cmd_premise_response_registry,
+    cmd_premise_response_retrieve,
+    cmd_premise_quotient_mine,
+    cmd_parse_states,
+    cmd_ir_defects,
+    cmd_exposure_report,
+    cmd_exposure_candidates,
+    cmd_action_report,
+    cmd_quotient,
+    cmd_carrier_generate,
+    cmd_carrier_coker,
+    cmd_mine_defects,
+    cmd_promote_registry,
+    cmd_auto_defects,
+    cmd_failure_signatures,
+    cmd_train_response,
+    cmd_eval_response,
+    cmd_gamma_audit,
+    cmd_make_transitions,
+    cmd_carrier_actions,
+    cmd_carrier_accept,
+    cmd_carrier_accept_summary,
+    cmd_accepted_carrier_actions,
+    cmd_robust_accept,
+    cmd_registry_accept,
+    cmd_accept_candidates,
+    cmd_ir_candidates,
+    cmd_carrier_matrix,
+    cmd_carrier_matrix_merge_patches,
+    cmd_carrier_safe_actions,
+    cmd_multi_carrier_report,
+    cmd_robust_coker_accept,
+    cmd_expose_frontiers,
+    cmd_carrier_patch_audit,
+)
 @dataclass
 class PipelineConfig:
     tasks: str
@@ -615,383 +656,6 @@ def _materialize_total_budget_task_actions(
         "canonical_status": "task_budget_materialization_chart_not_canonical",
     }
     return summary
-
-def cmd_candidates(args):
-    tasks=_normalize_tasks_imports(_load_tasks(args.tasks), args.import_mode, None, None)
-    gen=StateDependentCandidateGenerator() if args.candidate_mode=="state" else TacticCandidateGenerator(CandidateGeneratorConfig(use_carrier_exposure=False, max_candidates=args.max_candidates))
-    rows=[]
-    for task in tasks:
-        state=ProofState.from_task(task)
-        cands=gen.candidates(task,state,max_candidates=args.max_candidates) if isinstance(gen,StateDependentCandidateGenerator) else gen.candidates(task,state)[:args.max_candidates]
-        for a in cands:
-            d=a.to_dict(); d["task_id"]=task.task_id; d.setdefault("metadata", {})["task_id"]=task.task_id; rows.append(d)
-    write_jsonl(args.out, rows); print(json.dumps({"n": len(rows), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_registry_candidates(args):
-    registry_candidates_cli(args.tasks, args.registry, args.out, max_candidates=args.max_candidates)
-    print(json.dumps({"out": args.out, "registry": args.registry}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_build_premise_index(args):
-    idx = build_premise_index(tasks=args.tasks, actions=args.actions, out=args.out)
-    print(json.dumps({"n_docs": len(idx.docs), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_premise_retrieve(args):
-    idx = PremiseIndex.load(args.index)
-    queries: list[str] = []
-    if args.query:
-        queries.append(args.query)
-    if args.tasks:
-        tasks = _normalize_tasks_imports(_load_tasks(args.tasks), args.import_mode, None, None)
-        for t in tasks:
-            queries.append(t.statement)
-    if args.states:
-        for r in read_jsonl(args.states):
-            queries.append("\n".join([str(r.get("target", "")), str(r.get("goals_text", "")), json.dumps(r.get("carrier", {}), ensure_ascii=False)]))
-    rows=[]
-    for qi, q in enumerate(queries):
-        hits = idx.search(q, k=args.k, kind=args.kind)
-        rows.append({"query_id": qi, "query": q[:500], "hits": [h.to_dict() for h in hits]})
-    write_jsonl(args.out, rows)
-    print(json.dumps({"n_queries": len(rows), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_premise_actions(args):
-    rows=[]
-    for row in read_jsonl(args.hits):
-        from .premise_index import PremiseHit
-        hits=[PremiseHit(**h) for h in row.get("hits", [])]
-        acts=premise_actions_from_hits(hits, prefix=f"premise:{row.get('query_id', len(rows))}")[:args.max_actions_per_query]
-        for a in acts:
-            d=a
-            if args.task_id:
-                d.setdefault("metadata", {})["task_id"] = args.task_id
-                d["task_id"] = args.task_id
-            rows.append(d)
-    write_jsonl(args.out, rows)
-    print(json.dumps({"n": len(rows), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_premise_response_registry(args):
-    summary = build_premise_response_registry(
-        actions_path=getattr(args, "actions", None),
-        responses_path=args.responses,
-        out=args.out,
-        summary_out=getattr(args, "summary_out", None),
-        min_count=getattr(args, "min_count", 1),
-    )
-    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
-
-def cmd_premise_response_retrieve(args):
-    rn = _parse_json_or_file(getattr(args, "response_normal", None) or getattr(args, "response_normal_json", None))
-    cn = _parse_json_or_file(getattr(args, "carrier_normal", None) or getattr(args, "carrier_normal_json", None))
-    summary = retrieve_premise_responses(
-        registry_path=args.registry,
-        out=args.out,
-        summary_out=getattr(args, "summary_out", None),
-        response_normal=rn,
-        carrier_normal=cn,
-        top_k=getattr(args, "top_k", None),
-        cost_weight=getattr(args, "cost_weight", 0.05),
-        uncertainty_weight=getattr(args, "uncertainty_weight", 0.10),
-        audit_weight=getattr(args, "audit_weight", 0.20),
-        carrier_safe=getattr(args, "carrier_safe", False),
-        carrier_budget=getattr(args, "carrier_budget", 0.0),
-    )
-    if getattr(args, "out_actions", None):
-        act_meta = write_premise_retrieved_actions(retrieved_path=args.out, out=args.out_actions)
-        summary["actions"] = act_meta
-        if getattr(args, "summary_out", None):
-            Path(args.summary_out).write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
-
-def cmd_premise_quotient_mine(args):
-    summary = mine_premise_quotient(
-        registry_path=args.registry,
-        out_dir=args.out,
-        cosine_threshold=getattr(args, "cosine_threshold", 0.95),
-        distance_threshold=getattr(args, "distance_threshold", 0.25),
-        include_carrier=not getattr(args, "no_carrier", False),
-    )
-    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
-
-def cmd_parse_states(args):
-    rows=parse_audits_to_ir(args.audits,args.out); print(json.dumps({"n":len(rows),"out":args.out},indent=2,ensure_ascii=False)); return 0
-
-def cmd_ir_defects(args):
-    rows = ir_defects_file(args.ir, args.out); print(json.dumps({"n": len(rows), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_exposure_report(args):
-    rep=summarize_exposures(args.responses,args.out); print(json.dumps({"n_rows":rep.get("n_rows",0),"n_prefixes":len(rep.get("by_exposure_prefix",[])),"out":args.out},indent=2,ensure_ascii=False)); return 0
-
-def cmd_exposure_candidates(args):
-    meta = exposure_actions_for_tasks(args.tasks, args.out, include_identity=args.include_identity, import_mode=getattr(args, 'import_mode', 'preserve'))
-    print(json.dumps(meta, indent=2, ensure_ascii=False)); return 0
-
-def cmd_action_report(args):
-    keys = args.group_keys.split(',') if args.group_keys else None
-    rep = write_action_group_report(args.responses, args.out, args.csv_out, group_keys=keys)
-    print(json.dumps({"n_responses": rep.get("n_responses", 0), "n_groups": len(rep.get("groups", [])), "out": args.out, "csv": args.csv_out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_quotient(args):
-    rows=read_jsonl(args.responses); by={}
-    for r in rows: by.setdefault(str(r["action_id"]),[]).append(np.asarray(r.get("response_flat",[]),dtype=float))
-    ids=sorted(by); mat=np.stack([np.mean(by[i],axis=0) for i in ids],axis=0) if ids else np.zeros((0,0))
-    comps=ResponseQuotientDiscovery(tolerance=args.tolerance).discover(ids,mat) if ids else []
-    write_jsonl(args.out,[c.__dict__ for c in comps]); print(json.dumps({"n": len(comps), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_carrier_generate(args):
-    rows=read_jsonl(args.defects); gen=CarrierGenerator(); out=[]
-    for row in rows:
-        carrier=row.get("carrier") or row.get("defect",{}).get("carrier",{})
-        residual=[k for k,v in carrier.items() if float(v)>args.threshold]
-        text=row.get("target","") or row.get("goals_text","") or json.dumps(row)[:512]
-        out.append({"state_id":row.get("state_id"),"task_id":row.get("task_id"),"residual_atoms":residual,"generated_contexts":gen.generate(residual,text)})
-    write_jsonl(args.out,out); print(json.dumps({"n": len(out), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_carrier_coker(args):
-    rows=read_jsonl(args.defects); actions=_load_actions(args.actions); extractor=ProofDefectExtractor(); out=[]
-    for row in rows:
-        if "flat" in row and "flat_keys" in row:
-            defect=DefectVector.from_dict({k:row[k] for k in ["goal","type","search","carrier","audit","flat","flat_keys","quotient_meta"] if k in row})
-        else:
-            defect=extractor.extract(ProofState(state_id=row.get("state_id","unknown"),task_id=row.get("task_id","unknown"),target=row.get("target",""),goals_text=row.get("goals_text","")))
-            if "carrier" in row: defect.carrier={k:float(v) for k,v in row["carrier"].items()}
-        rep=carrier_coker_proxy(defect, actions); out.append({"state_id":row.get("state_id"),"task_id":row.get("task_id"),**rep.__dict__})
-    write_jsonl(args.out,out); print(json.dumps({"n": len(out), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_mine_defects(args):
-    score_out=args.scores_out or str(Path(args.out).with_suffix(".scores.jsonl")); reg=mine_defects_file(args.audits,args.responses,args.out,score_out,min_support=args.min_support,min_response_contrast=args.min_response_contrast,min_stability=args.min_stability,min_intervention_success=getattr(args,'min_intervention_success',0.0),min_coker_reduction=getattr(args,'min_coker_reduction',0.0)); print(json.dumps({"n_atoms":len(reg.atoms),"out":args.out,"scores":score_out},indent=2,ensure_ascii=False)); return 0
-
-def cmd_promote_registry(args):
-    audits_path = Path(args.audits)
-    if audits_path.is_dir():
-        audits_path = audits_path / "micro_audit.jsonl"
-    responses = args.responses
-    if responses is None:
-        cand = audits_path.parent / "responses.jsonl"
-        if cand.exists():
-            responses = str(cand)
-    reg, rep = promote_registry_file(
-        args.registry,
-        str(audits_path),
-        args.out,
-        responses_path=responses,
-        report_out=args.report_out,
-        min_support=args.min_support,
-        min_intervention_success=args.min_intervention_success,
-        min_coker_reduction=args.min_coker_reduction,
-        min_promotion_score=args.min_promotion_score,
-        drop_rejected=args.drop_rejected,
-    )
-    print(json.dumps({"n_atoms": len(reg.atoms), "validated": rep.n_validated, "rejected": rep.n_rejected, "out": args.out, "report": args.report_out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_auto_defects(args):
-    ext=AutoDefectExtractor(args.registry); rows=[]
-    if args.tasks:
-        tasks=_normalize_tasks_imports(_load_tasks(args.tasks), args.import_mode, None, None)
-        for t in tasks:
-            st=ProofState.from_task(t); rows.append({"task_id":t.task_id,"state_id":st.state_id,"auto_defects":ext.extract_atoms(st)})
-    elif args.states:
-        for r in read_jsonl(args.states):
-            st=ProofState(state_id=str(r.get("state_id","state")),task_id=str(r.get("task_id","task")),target=str(r.get("target","")),goals_text=str(r.get("goals_text","")),raw_messages=[str(m) for m in r.get("messages",[]) or []]); rows.append({"task_id":st.task_id,"state_id":st.state_id,"auto_defects":ext.extract_atoms(st)})
-    else: raise SystemExit("auto-defects requires --tasks or --states")
-    write_jsonl(args.out,rows); print(json.dumps({"n": len(rows), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_failure_signatures(args):
-    responses = args.responses
-    if responses is None:
-        cand = Path(args.audits).parent / "responses.jsonl"
-        if cand.exists():
-            responses = str(cand)
-    summary_out = args.summary_out or str(Path(args.out).with_suffix(".summary.json"))
-    res = mine_failure_signatures(
-        args.audits,
-        args.out,
-        responses=responses,
-        actions_out=args.actions_out,
-        summary_out=summary_out,
-        min_support=args.min_support,
-    )
-    print(json.dumps({"n_signatures": len(res.signatures), "n_actions": len(res.actions), "out": args.out, "actions_out": args.actions_out, "summary_out": summary_out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_train_response(args):
-    cfg=ResponseModelConfig(lcb_kappa=args.lcb_kappa,min_count_for_action=args.min_count_for_action,shrink=args.shrink); model=train_response_model(args.responses,args.actions,args.out,config=cfg); print(json.dumps({"response_dim":len(model.response_keys),"n_actions":len(getattr(model,"by_action",{})),"n_classes":len(getattr(model,"by_class",{})),"out":str(args.out)},indent=2,ensure_ascii=False)); return 0
-
-def cmd_eval_response(args):
-    rows, summary = evaluate_response_model(
-        args.model,
-        args.responses,
-        mode=args.mode,
-        out_rows=args.out_rows,
-        out_summary=args.out,
-        out_csv=args.csv_out,
-    )
-    print(json.dumps(summary.to_dict(), indent=2, ensure_ascii=False)); return 0
-
-def cmd_gamma_audit(args):
-    rows=read_jsonl(args.transitions); auditor=GammaAuditor(ridge=args.ridge); residuals=[]; nexts=[]
-    for row in rows:
-        D=np.asarray(row['defect'],dtype=float); R=np.asarray(row['pred_response'],dtype=float); N=np.asarray(row['next_defect'],dtype=float); residuals.append(D-R); nexts.append(N)
-    gamma=auditor.fit_linear_gamma(np.stack(residuals),np.stack(nexts)) if args.fit_gamma and residuals else None; reports=[]
-    for row in rows:
-        rep=auditor.audit(np.asarray(row['defect'],dtype=float),np.asarray(row['pred_response'],dtype=float),np.asarray(row['next_defect'],dtype=float),gamma=gamma,horizon=args.horizon); d=rep.__dict__
-        if gamma is not None and args.include_gamma_matrix: d['gamma']=gamma.tolist()
-        reports.append(d)
-    write_jsonl(args.out,reports); print(json.dumps({"n": len(reports), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_make_transitions(args): rows=transitions_from_responses(args.responses,args.out); print(json.dumps({"n": len(rows), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_carrier_actions(args):
-    rows=[]
-    for proposal in read_jsonl(args.proposals):
-        task_id = proposal.get("task_id") or proposal.get("state_id") or ""
-        contexts = proposal.get("generated_contexts")
-        if contexts is None:
-            contexts = [proposal]
-        for ci, ctx in enumerate(contexts):
-            for action in context_to_actions(ctx, prefix=f"{args.prefix}:{task_id}:{ci}")[:args.max_actions_per_context]:
-                d=action.to_dict(); d["context_kind"]=ctx.get("kind"); d["source_context"]=ctx
-                if task_id:
-                    d["task_id"]=task_id; d.setdefault("metadata", {})["task_id"]=task_id
-                d.setdefault("metadata", {}).setdefault("generated_by", "carrier_actions")
-                rows.append(d)
-    write_jsonl(args.out, rows); print(json.dumps({"n": len(rows), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_carrier_accept(args):
-    executor=_executor_from_args(args); tasks=_normalize_tasks_imports(_load_tasks(args.tasks),args.import_mode,args.workdir,args.lean_cmd); norm=Path(args.out).parent/'_carrier_accept_tasks.normalized.jsonl'; write_jsonl(norm,[t.to_dict() for t in tasks]); rows=accept_carrier_contexts(norm,args.proposals,args.out,executor,max_actions=args.max_actions,margin_threshold=args.margin_threshold,cost_weight=args.cost_weight); print(json.dumps({"n": len(rows), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_carrier_accept_summary(args):
-    rows=read_jsonl(args.accepted); n=len(rows); acc=[r for r in rows if r.get('accepted')]; by={}
-    for r in rows: by[str(r.get('context_kind','unknown'))]=by.get(str(r.get('context_kind','unknown')),0)+1
-    margins=[float(r.get('coker_margin_proxy',0.0)) for r in rows]
-    summary={'n':n,'accepted':len(acc),'accept_rate':len(acc)/max(1,n),'mean_margin':float(np.mean(margins)) if margins else 0.0,'by_kind':by}
-    Path(args.out).parent.mkdir(parents=True,exist_ok=True); Path(args.out).write_text(json.dumps(summary,indent=2,ensure_ascii=False),encoding='utf-8'); print(json.dumps(summary,indent=2,ensure_ascii=False)); return 0
-
-def cmd_accepted_carrier_actions(args):
-    summary = write_accepted_carrier_actions(args.accepted, args.out, min_margin=args.min_margin, accepted_only=not args.include_rejected)
-    print(json.dumps({"summary": summary, "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_robust_accept(args):
-    rows, summary = run_robust_acceptance(
-        args.base_responses,
-        args.candidate_responses,
-        args.out,
-        summary_out=args.report_out,
-        accepted_actions_out=args.accepted_actions_out,
-        per_row_out=args.per_row_out,
-        margin_threshold=args.margin_threshold,
-        cost_weight=args.cost_weight,
-        carrier_bonus=args.carrier_weight,
-        goal_bonus=args.goal_weight,
-        max_mass=args.max_mass,
-        ridge=args.ridge,
-        z_value=args.robust_z,
-        min_repeats=args.robust_min_repeats,
-        min_success_rate=args.robust_min_success_rate,
-        max_per_task=args.max_per_task,
-    )
-    print(json.dumps({"n_groups": summary.get("n_groups", 0), "n_accepted": summary.get("n_accepted", 0), "out": args.out, "report": args.report_out}, indent=2, ensure_ascii=False))
-    return 0
-
-def cmd_registry_accept(args):
-    rows, summary = run_registry_acceptance(
-        args.base_responses,
-        args.registry_responses,
-        args.audit_out or args.accepted_actions_out,
-        summary_out=args.report_out,
-        accepted_actions_out=args.accepted_actions_out,
-        margin_threshold=args.margin_threshold,
-        cost_weight=args.cost_weight,
-        carrier_bonus=args.carrier_weight,
-        goal_bonus=args.goal_weight,
-        robust_radius=getattr(args, 'robust_radius', 0.0),
-        robust_relative_radius=getattr(args, 'robust_relative_radius', 0.0),
-        accept_on_robust=getattr(args, 'accept_on_robust', False),
-    )
-    print(json.dumps(summary, indent=2, ensure_ascii=False)); return 0
-
-def cmd_accept_candidates(args):
-    rows, summary = accept_candidates_file(
-        args.base_responses,
-        args.candidate_responses,
-        args.out,
-        summary_out=args.summary_out,
-        margin_threshold=args.margin_threshold,
-        cost_weight=args.cost_weight,
-        carrier_weight=args.carrier_weight,
-        audit_penalty=args.audit_penalty,
-        require_success=args.require_success,
-    )
-    print(json.dumps({"n": len(rows), "accepted": summary.get("accepted", 0), "out": args.out, "summary": args.summary_out}, indent=2, ensure_ascii=False))
-    return 0
-
-def cmd_ir_candidates(args):
-    rows = ir_candidates_file(args.ir, args.out, max_candidates=args.max_candidates)
-    print(json.dumps({"n": len(rows), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_carrier_matrix(args):
-    cm = build_carrier_matrix_from_responses(args.responses, args.out, shrink=args.shrink, min_count=args.min_count)
-    print(json.dumps({"n_atoms": len(cm.atoms), "n_actions": len(cm.action_ids), "out": args.out}, indent=2, ensure_ascii=False)); return 0
-
-def cmd_carrier_matrix_merge_patches(args):
-    cm = merge_carrier_incidence_patches(args.matrix, args.patches, args.out, patch_weight=args.patch_weight, require_safe=args.require_safe)
-    rep = {"n_atoms": len(cm.atoms), "n_actions": len(cm.action_ids), "out": args.out, "patches": args.patches}
-    if getattr(args, "report_out", None):
-        carrier_patch_report(args.patches, args.report_out)
-        rep["report_out"] = args.report_out
-    print(json.dumps(rep, indent=2, ensure_ascii=False)); return 0
-
-def cmd_carrier_safe_actions(args):
-    rep = annotate_actions_with_carrier_matrix(args.actions, args.matrix, args.out, budget=args.budget, keep_unsafe=args.keep_unsafe)
-    print(json.dumps(rep, indent=2, ensure_ascii=False)); return 0
-
-def cmd_multi_carrier_report(args):
-    rep = multi_carrier_report(args.matrix, defects_path=args.defects, out=args.out)
-    print(json.dumps(rep, indent=2, ensure_ascii=False)); return 0
-
-def cmd_robust_coker_accept(args):
-    rep = run_robust_coker_acceptance(
-        args.base_responses,
-        args.candidate_responses,
-        out_report=args.out_report,
-        out_actions=args.out_actions,
-        out_rows=args.out_rows,
-        out_csv=args.csv_out,
-        margin_threshold=args.margin_threshold,
-        holdout_fraction=args.holdout_fraction,
-        ridge=args.ridge,
-        max_mass=args.max_mass,
-        cost_weight=args.cost_weight,
-        carrier_gain_weight=args.carrier_gain_weight,
-        carrier_violation_weight=args.carrier_violation_weight,
-        audit_penalty=args.audit_penalty,
-        uncertainty_weight=args.uncertainty_weight,
-        require_success=args.require_success,
-        max_actions=args.max_actions,
-    )
-    print(json.dumps(rep.to_dict(), indent=2, ensure_ascii=False)); return 0
-
-def cmd_expose_frontiers(args):
-    tasks = _normalize_tasks_imports(_load_tasks(args.tasks), args.import_mode, args.workdir, args.lean_cmd)
-    cfg = LeanExecutorConfig(lean_cmd=args.lean_cmd, timeout_s=args.timeout_s, dry_run=args.dry_run, keep_files=args.keep_files, workdir=args.workdir, cache_dir=args.cache_dir, trace_state=args.trace_state)
-    statuses = set(args.accept_status or ["partial", "success", "dry_run"])
-    rep = build_frontiers(tasks, executor_config=cfg, out_dir=args.out, max_prefixes=args.max_prefixes, include_identity=args.include_identity, accept_statuses=statuses, resume=args.resume)
-    print(json.dumps(rep, indent=2, ensure_ascii=False)); return 0
-
-def cmd_carrier_patch_audit(args):
-    rep = audit_carrier_incidence_patches(
-        args.patches,
-        args.responses,
-        out_report=args.out_report,
-        out_patches=args.out_patches,
-        min_count=args.min_count,
-        min_mean_delta=args.min_mean_delta,
-        require_sign_agreement=not args.no_sign_agreement,
-        holdout_fraction=getattr(args, "holdout_fraction", 0.0),
-        heldout_min_count=getattr(args, "heldout_min_count", None),
-        heldout_min_mean_delta=getattr(args, "heldout_min_mean_delta", None),
-        require_heldout=getattr(args, "require_heldout", False),
-    )
-    print(json.dumps({k: v for k, v in rep.items() if k != "rows"}, indent=2, ensure_ascii=False)); return 0
-
 
 def _summarize_pipeline_responses(responses: list[dict[str, Any]]) -> dict[str, Any]:
     if not responses:
