@@ -278,6 +278,10 @@
     "integration",
     "golden"
   ],
+  "test_v78_lean_runtime_physical_move.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

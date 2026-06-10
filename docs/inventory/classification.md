@@ -1,6 +1,6 @@
 # Inventory Classification
 
-This is the human-reviewed disposition ledger for v77. It complements generated
+This is the human-reviewed disposition ledger for v78. It complements generated
 inventory JSON files and does not authorize deletion by itself.
 
 ## Classes
@@ -14,7 +14,7 @@ inventory JSON files and does not authorize deletion by itself.
 - `dead_candidate`: no current import reachability in generated inventory;
   investigate before moving or deleting.
 
-## v77 Dead Candidate Investigation Targets
+## v78 Dead Candidate Investigation Targets
 
 The current generated import inventory marks these modules as `dead_candidate`:
 
@@ -27,10 +27,10 @@ The current generated import inventory marks these modules as `dead_candidate`:
 - `lean_rgc.state_ir`
 - `lean_rgc.trajectory_runner`
 
-Disposition for v77: keep all eight in place. They are investigation targets,
+Disposition for v78: keep all eight in place. They are investigation targets,
 not deletion targets.
 
-## v77 Legacy Modules
+## v78 Legacy Modules
 
 - `lean_rgc.coker`
 - `lean_rgc.coker_synthesis`
@@ -39,10 +39,11 @@ not deletion targets.
 - `lean_rgc.iterative`
 - `lean_rgc.stage_coker`
 
-Disposition for v77: keep compatibility intact.
+Disposition for v78: keep compatibility intact.
 
-## v77 Runtime Boundary Disposition
+## v78 Runtime Boundary Disposition
 
-The `lean_rgc.lean.*` package paths are now the canonical Lean runtime boundary.
-Top-level runtime modules remain compatibility imports and must not be deleted in
-this phase.
+The `lean_rgc.lean.*` package paths are the canonical Lean runtime boundary.
+`lean_rgc.lean.state_parser` and `lean_rgc.lean.native_worker` now own their
+implementations. Their top-level modules remain compatibility imports and must
+not be deleted in this phase.

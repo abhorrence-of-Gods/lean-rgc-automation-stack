@@ -21,6 +21,7 @@ CORE_MODULES = {
     "lean_rgc.executor",
     "lean_rgc.lean_server",
     "lean_rgc.native_worker",
+    "lean_rgc.state_parser",
     "lean_rgc.persistent_worker",
     "lean_rgc.response_completion",
     "lean_rgc.response_quotient",
@@ -86,4 +87,3 @@ def classify_module(module: str, *, imported_by: list[str] | None = None, cli_re
 def write_inventory(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
-

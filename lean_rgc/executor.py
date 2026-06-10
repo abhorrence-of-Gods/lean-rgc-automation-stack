@@ -11,7 +11,7 @@ import time
 from typing import Sequence
 
 from .schemas import AuditRecord, LeanTask, ProofState, TacticAction, stable_hash
-from .state_parser import LeanMessageParser
+from .lean.state_parser import LeanMessageParser
 from .cache import AuditCache
 
 

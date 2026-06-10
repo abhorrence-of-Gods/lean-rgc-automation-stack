@@ -21,7 +21,7 @@ from .executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
 from .dataset import summarize_response_rows
 from .structured_state import extract_structured_state, extract_structured_state_from_kernel_json
-from .native_worker import native_worker_command, native_worker_manifest
+from .lean.native_worker import native_worker_command, native_worker_manifest
 
 
 @dataclass

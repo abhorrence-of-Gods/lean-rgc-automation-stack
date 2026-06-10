@@ -1496,8 +1496,8 @@
       ],
       "imports": [
         "lean_rgc.cache",
-        "lean_rgc.schemas",
-        "lean_rgc.state_parser"
+        "lean_rgc.lean.state_parser",
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.executor",
       "path": "lean_rgc/executor.py"
@@ -1826,18 +1826,7 @@
     {
       "classification": "core",
       "imported_by": [],
-      "imports": [
-        "lean_rgc.lean.bulk_executor",
-        "lean_rgc.lean.executor",
-        "lean_rgc.lean.frontier",
-        "lean_rgc.lean.goal_state_dynamics",
-        "lean_rgc.lean.kernel_state",
-        "lean_rgc.lean.native_worker",
-        "lean_rgc.lean.persistent_worker",
-        "lean_rgc.lean.server",
-        "lean_rgc.lean.structured_state",
-        "lean_rgc.lean.worker_supervisor"
-      ],
+      "imports": [],
       "module": "lean_rgc.lean.__init__",
       "path": "lean_rgc/lean/__init__.py"
     },
@@ -1846,7 +1835,6 @@
       "imported_by": [
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
-        "lean_rgc.lean.__init__",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -1861,7 +1849,6 @@
         "lean_rgc.cli.audit",
         "lean_rgc.cli.common",
         "lean_rgc.cli.experiment",
-        "lean_rgc.lean.__init__",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -1875,7 +1862,6 @@
       "imported_by": [
         "lean_rgc.cli.experiment",
         "lean_rgc.cli.pipeline",
-        "lean_rgc.lean.__init__",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -1886,9 +1872,7 @@
     },
     {
       "classification": "core",
-      "imported_by": [
-        "lean_rgc.lean.__init__"
-      ],
+      "imported_by": [],
       "imports": [
         "lean_rgc.goal_state_dynamics"
       ],
@@ -1897,9 +1881,7 @@
     },
     {
       "classification": "core",
-      "imported_by": [
-        "lean_rgc.lean.__init__"
-      ],
+      "imported_by": [],
       "imports": [
         "lean_rgc.kernel_state"
       ],
@@ -1910,19 +1892,18 @@
       "classification": "core",
       "imported_by": [
         "lean_rgc.cli.lean",
-        "lean_rgc.lean.__init__"
+        "lean_rgc.lean_server",
+        "lean_rgc.native_worker"
       ],
       "imports": [
-        "lean_rgc.native_worker"
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.lean.native_worker",
       "path": "lean_rgc/lean/native_worker.py"
     },
     {
       "classification": "core",
-      "imported_by": [
-        "lean_rgc.lean.__init__"
-      ],
+      "imported_by": [],
       "imports": [
         "lean_rgc.persistent_worker"
       ],
@@ -1935,7 +1916,6 @@
         "lean_rgc.cli.audit",
         "lean_rgc.cli.common",
         "lean_rgc.cli.experiment",
-        "lean_rgc.lean.__init__",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -1946,9 +1926,12 @@
     },
     {
       "classification": "core",
-      "imported_by": [],
-      "imports": [
+      "imported_by": [
+        "lean_rgc.executor",
         "lean_rgc.state_parser"
+      ],
+      "imports": [
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.lean.state_parser",
       "path": "lean_rgc/lean/state_parser.py"
@@ -1956,7 +1939,6 @@
     {
       "classification": "core",
       "imported_by": [
-        "lean_rgc.lean.__init__",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -1970,7 +1952,6 @@
       "imported_by": [
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
-        "lean_rgc.lean.__init__",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -2001,7 +1982,7 @@
         "lean_rgc.defects",
         "lean_rgc.executor",
         "lean_rgc.goal_state_dynamics",
-        "lean_rgc.native_worker",
+        "lean_rgc.lean.native_worker",
         "lean_rgc.schemas",
         "lean_rgc.structured_state"
       ],
@@ -2078,12 +2059,9 @@
     },
     {
       "classification": "core",
-      "imported_by": [
-        "lean_rgc.lean.native_worker",
-        "lean_rgc.lean_server"
-      ],
+      "imported_by": [],
       "imports": [
-        "lean_rgc.schemas"
+        "lean_rgc.lean.native_worker"
       ],
       "module": "lean_rgc.native_worker",
       "path": "lean_rgc/native_worker.py"
@@ -2782,13 +2760,14 @@
         "lean_rgc.iterative",
         "lean_rgc.kernel_context_cache",
         "lean_rgc.kernel_state",
+        "lean_rgc.lean.native_worker",
+        "lean_rgc.lean.state_parser",
         "lean_rgc.lean_server",
         "lean_rgc.lean_worker_supervisor",
         "lean_rgc.learner",
         "lean_rgc.lineage",
         "lean_rgc.minif2f_adapter",
         "lean_rgc.multicarrier",
-        "lean_rgc.native_worker",
         "lean_rgc.obstruction_tower",
         "lean_rgc.persistent_lean_worker",
         "lean_rgc.pipeline",
@@ -2828,7 +2807,6 @@
         "lean_rgc.stage_coker",
         "lean_rgc.stage_report",
         "lean_rgc.state_ir",
-        "lean_rgc.state_parser",
         "lean_rgc.structured_state",
         "lean_rgc.trajectory",
         "lean_rgc.trajectory_runner"
@@ -2920,13 +2898,10 @@
       "path": "lean_rgc/state_ir.py"
     },
     {
-      "classification": "experimental",
-      "imported_by": [
-        "lean_rgc.executor",
-        "lean_rgc.lean.state_parser"
-      ],
+      "classification": "core",
+      "imported_by": [],
       "imports": [
-        "lean_rgc.schemas"
+        "lean_rgc.lean.state_parser"
       ],
       "module": "lean_rgc.state_parser",
       "path": "lean_rgc/state_parser.py"
@@ -2997,9 +2972,9 @@
   ],
   "schema_version": "lean-rgc.inventory.v1",
   "summary": {
-    "core": 91,
+    "core": 92,
     "dead_candidate": 8,
-    "experimental": 82,
+    "experimental": 81,
     "legacy": 6
   }
 }

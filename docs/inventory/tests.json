@@ -1050,6 +1050,17 @@
       ]
     },
     {
+      "classification": "core",
+      "file": "tests/test_v78_lean_runtime_physical_move.py",
+      "imports": [
+        "lean_rgc.lean.native_worker"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
       "classification": "legacy",
       "file": "tests/test_v7_carrier_promotion.py",
       "imports": [
@@ -1184,13 +1195,13 @@
   "inventory_type": "tests",
   "schema_version": "lean-rgc.inventory.v1",
   "summary": {
-    "core": 25,
+    "core": 26,
     "legacy": 71
   },
   "tier_summary": {
     "e2e": 1,
-    "golden": 14,
-    "integration": 20,
+    "golden": 15,
+    "integration": 21,
     "legacy": 71,
     "unit": 2
   }

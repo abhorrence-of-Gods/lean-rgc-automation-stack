@@ -30,15 +30,32 @@ use canonical imports for Lean runtime dependencies.
 Do not delete or rename the top-level modules in v77. They remain supported
 compatibility imports while downstream callers migrate.
 
+## v78 Physical Move I
+
+`lean_rgc.lean.state_parser` and `lean_rgc.lean.native_worker` now own their
+implementations. The top-level modules `lean_rgc.state_parser` and
+`lean_rgc.native_worker` are compatibility shims that re-export the canonical
+objects.
+
+The native worker source remains under `lean_rgc/native_lean/`. Both module
+entrypoints are supported:
+
+```bash
+python -m lean_rgc.native_worker --print-command
+python -m lean_rgc.lean.native_worker --print-command
+```
+
+`lean_server` continues to launch `lean_rgc.native_worker` for subprocess
+compatibility in v78.
+
 ## Future Physical Move Order
 
 When the canonical package has stayed stable for another phase, move
 implementation files behind the package boundary in this order:
 
-1. low-dependency helpers: `state_parser`, `native_worker`
-2. executor surfaces: `executor`, `bulk_executor`
-3. state extraction: `structured_state`, `kernel_state`, `goal_state_dynamics`
-4. orchestration: `server`, `persistent_worker`, `worker_supervisor`, `frontier`
+1. executor surfaces: `executor`, `bulk_executor`
+2. state extraction: `structured_state`, `kernel_state`, `goal_state_dynamics`
+3. orchestration: `server`, `persistent_worker`, `worker_supervisor`, `frontier`
 
-Each move should leave a top-level compatibility shim and keep the v77 identity
-tests passing.
+Each move should leave a top-level compatibility shim and keep the v77/v78
+identity tests passing.
