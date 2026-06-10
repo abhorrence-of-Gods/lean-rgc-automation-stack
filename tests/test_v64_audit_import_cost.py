@@ -26,6 +26,24 @@ def _fake_lean(tmp_path: Path, *, sleep_s: float = 0.0, returncode: int = 0) -> 
     return f"{Path(sys.executable).as_posix()} {script.as_posix()}"
 
 
+def _fake_lean_timeout_multi_theorem(tmp_path: Path) -> str:
+    script = tmp_path / "fake_lean_timeout_multi.py"
+    script.write_text(
+        "\n".join(
+            [
+                "import sys, time",
+                "src = open(sys.argv[-1], encoding='utf-8').read() if len(sys.argv) > 1 else ''",
+                "n = sum(1 for line in src.splitlines() if line.startswith('theorem '))",
+                "if n > 1:",
+                "    time.sleep(2.0)",
+                "print('ok')",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return f"{Path(sys.executable).as_posix()} {script.as_posix()}"
+
+
 def test_audit_env_profile_writes_recommendations_without_real_lean(tmp_path: Path):
     task = LeanTask(task_id="t0", statement="True", imports=[])
     action = TacticAction(action_id="trivial", tactic="trivial")
@@ -81,6 +99,39 @@ def test_bulk_queue_materializes_legacy_outputs_with_fake_lean(tmp_path: Path):
     assert len(responses) == 4
     assert len(audits) == 4
     assert all(a["audit_flags"]["audit_queue_backend"] == "bulk" for a in audits)
+
+
+def test_bulk_queue_retries_timed_out_batches_as_smaller_chunks(tmp_path: Path):
+    db = tmp_path / "audit.sqlite"
+    out = tmp_path / "audit"
+    tasks = [LeanTask(task_id=f"t{i}", statement="True", imports=[]) for i in range(4)]
+    actions = [TacticAction(action_id="trivial", tactic="trivial")]
+    lean_cmd = _fake_lean_timeout_multi_theorem(tmp_path)
+    fp = project_fingerprint(lean_cmd=lean_cmd, workdir=None, backend="source_check_bulk", import_mode="preserve")
+
+    enqueue_audit_jobs(
+        db,
+        tasks,
+        actions,
+        run_id="bulk_retry",
+        backend="source_check_bulk",
+        import_mode="preserve",
+        project_fingerprint_value=fp,
+    )
+    summary = run_bulk_audit_queue(
+        db_path=db,
+        out_dir=out,
+        executor_config=LeanExecutorConfig(lean_cmd=lean_cmd, timeout_s=0.75),
+        run_id="bulk_retry",
+        workers=1,
+        job_timeout_s=0.75,
+        batch_size=4,
+    )
+
+    assert summary["n_succeeded"] == 4
+    assert summary["n_timeout"] == 0
+    assert summary["bulk_retry_batches"] > 0
+    assert summary["bulk_attempts"] > summary["bulk_initial_batches"]
 
 
 def test_import_scoped_timeouts_do_not_quarantine_core_action(tmp_path: Path):

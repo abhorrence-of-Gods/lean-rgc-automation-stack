@@ -567,6 +567,61 @@ def _run_bulk_chunk(
     return out
 
 
+def _bulk_timed_out(results: list[tuple[AuditJob, str, dict[str, Any], float, str | None]]) -> bool:
+    return any(queue_status == "timeout" for _job, queue_status, _result, _elapsed_s, _timeout_scope in results)
+
+
+def _run_bulk_chunk_with_retry(
+    jobs: list[AuditJob],
+    *,
+    executor_config: LeanExecutorConfig,
+    timeout_s: float,
+    batch_size: int,
+    import_wall_s: float | None,
+    worker_id: str,
+    depth: int = 0,
+) -> dict[str, Any]:
+    results = _run_bulk_chunk(
+        jobs,
+        executor_config=executor_config,
+        timeout_s=timeout_s,
+        batch_size=batch_size,
+        import_wall_s=import_wall_s,
+        worker_id=worker_id,
+    )
+    stats = {
+        "results": results,
+        "bulk_attempts": 1,
+        "bulk_retry_batches": 0,
+        "bulk_retry_singletons": 0,
+    }
+    if len(jobs) <= 1 or not _bulk_timed_out(results):
+        return stats
+
+    mid = max(1, len(jobs) // 2)
+    parts = [jobs[:mid], jobs[mid:]]
+    retry_results: list[tuple[AuditJob, str, dict[str, Any], float, str | None]] = []
+    stats["bulk_retry_batches"] += 1
+    for part_index, part in enumerate(part for part in parts if part):
+        sub = _run_bulk_chunk_with_retry(
+            part,
+            executor_config=executor_config,
+            timeout_s=timeout_s,
+            batch_size=len(part),
+            import_wall_s=import_wall_s,
+            worker_id=f"{worker_id}.retry{depth}.{part_index}",
+            depth=depth + 1,
+        )
+        retry_results.extend(sub["results"])
+        stats["bulk_attempts"] += int(sub.get("bulk_attempts", 0))
+        stats["bulk_retry_batches"] += int(sub.get("bulk_retry_batches", 0))
+        stats["bulk_retry_singletons"] += int(sub.get("bulk_retry_singletons", 0))
+    final_timeout_ids = {job.job_id for job, queue_status, _result, _elapsed_s, _scope in retry_results if queue_status == "timeout"}
+    stats["bulk_retry_singletons"] += len(final_timeout_ids)
+    stats["results"] = retry_results
+    return stats
+
+
 def run_bulk_audit_queue(
     *,
     db_path: str | Path,
@@ -638,10 +693,10 @@ def run_bulk_audit_queue(
             for job in chunk:
                 mark_job_running(conn, job.job_id, worker_id=worker_id)
                 record_worker_event(conn, worker_id=worker_id, event_type="start", job_id=job.job_id, backend=job.backend, lane=job.lane, detail={"bulk": True, "batch_size": len(chunk)})
-        def run_one(index_and_chunk: tuple[int, list[AuditJob]]) -> list[tuple[AuditJob, str, dict[str, Any], float, str | None]]:
+        def run_one(index_and_chunk: tuple[int, list[AuditJob]]) -> dict[str, Any]:
             idx, chunk = index_and_chunk
             worker_id = f"lean-bulk-{os.getpid()}-{idx}"
-            return _run_bulk_chunk(
+            return _run_bulk_chunk_with_retry(
                 chunk,
                 executor_config=executor_config,
                 timeout_s=timeout_s,
@@ -655,7 +710,14 @@ def run_bulk_audit_queue(
         else:
             with ThreadPoolExecutor(max_workers=max_workers) as pool:
                 all_results = [f.result() for f in as_completed([pool.submit(run_one, (i, c)) for i, c in enumerate(chunks)])]
-        for batch_results in all_results:
+        bulk_attempts = 0
+        bulk_retry_batches = 0
+        bulk_retry_singletons = 0
+        for batch_run in all_results:
+            bulk_attempts += int(batch_run.get("bulk_attempts", 0))
+            bulk_retry_batches += int(batch_run.get("bulk_retry_batches", 0))
+            bulk_retry_singletons += int(batch_run.get("bulk_retry_singletons", 0))
+            batch_results = batch_run.get("results", [])
             for job, queue_status, result, elapsed_s, timeout_scope in batch_results:
                 if queue_status == "timeout":
                     audit = result.get("audit") if isinstance(result.get("audit"), dict) else {}
@@ -688,6 +750,10 @@ def run_bulk_audit_queue(
             {
                 "audit_queue_backend": "bulk",
                 "bulk_batch_size": bs,
+                "bulk_attempts": bulk_attempts,
+                "bulk_initial_batches": len(chunks),
+                "bulk_retry_batches": bulk_retry_batches,
+                "bulk_retry_singletons": bulk_retry_singletons,
                 "n_executed_this_run": executed,
                 "worker_restarts": int(timeout_report.get("worker_restarts", 0)),
                 "timeout_report": timeout_report,
