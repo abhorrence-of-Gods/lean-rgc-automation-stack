@@ -30,6 +30,101 @@ def _row_hash(row: dict[str, Any]) -> str:
     return stable_hash(row, 32)
 
 
+def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+    return bool(conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone())
+
+
+def _count_by(conn: sqlite3.Connection, table: str, column: str) -> dict[str, int]:
+    if not _table_exists(conn, table):
+        return {}
+    try:
+        return {
+            str(r[column] or ""): int(r["n"] or 0)
+            for r in conn.execute(
+                f"SELECT {column}, COUNT(*) AS n FROM {table} GROUP BY {column} ORDER BY {column}"
+            ).fetchall()
+        }
+    except Exception:
+        return {}
+
+
+def _sum_int(conn: sqlite3.Connection, table: str, column: str) -> int:
+    if not _table_exists(conn, table):
+        return 0
+    try:
+        return int(conn.execute(f"SELECT COALESCE(SUM({column}), 0) FROM {table}").fetchone()[0] or 0)
+    except Exception:
+        return 0
+
+
+def summarize_execution_metrics(conn: sqlite3.Connection) -> dict[str, Any]:
+    """Compact audit execution metrics shared by repair DB and unified run DB."""
+    job_by_status = _count_by(conn, "audit_jobs", "status")
+    job_by_lane = _count_by(conn, "audit_jobs", "lane")
+    timeout_by_scope = _count_by(conn, "timeout_events", "timeout_scope")
+    quarantine_by_status = _count_by(conn, "action_quarantine", "status")
+    worker_event_by_type = _count_by(conn, "worker_events", "event_type")
+    promotion_by_status = _count_by(conn, "poms_promotion_decisions", "promotion_status")
+    readiness_by_status = _count_by(conn, "crg_audit_rows", "promotion_readiness")
+    n_jobs = sum(job_by_status.values())
+    n_timeout_events = sum(timeout_by_scope.values())
+    n_timeout_jobs = int(job_by_status.get("timeout", 0))
+    n_tactic_timeout = int(timeout_by_scope.get("tactic_timeout", 0))
+    n_timeout = max(n_timeout_events, n_timeout_jobs)
+    n_infra_timeout = max(0, n_timeout - n_tactic_timeout)
+    n_cache_lookup = _sum_int(conn, "audit_result_cache_index", "n_cache_lookup")
+    n_cache_hit = max(_sum_int(conn, "audit_result_cache_index", "n_cache_hit"), int(job_by_status.get("succeeded_from_cache", 0)))
+    n_cache_miss = _sum_int(conn, "audit_result_cache_index", "n_cache_miss")
+    n_cache_stored = _sum_int(conn, "audit_result_cache_index", "n_stored")
+    denom = n_cache_lookup if n_cache_lookup > 0 else (n_cache_hit + n_cache_miss)
+    cache_hit_rate = float(n_cache_hit / denom) if denom else 0.0
+    n_quarantined = max(int(job_by_status.get("quarantined", 0)), int(quarantine_by_status.get("quarantined", 0)))
+    promotion_readiness = ""
+    for key in ("promotion_candidate", "paid_witness", "witness_only"):
+        if readiness_by_status.get(key, 0) > 0:
+            promotion_readiness = key
+            break
+    source_safe = True
+    carrier_safe = True
+    if _table_exists(conn, "crg_audit_rows"):
+        try:
+            source_safe = int(conn.execute("SELECT COUNT(*) FROM crg_audit_rows WHERE COALESCE(source_safe, 1)=0").fetchone()[0] or 0) == 0
+            carrier_safe = int(conn.execute("SELECT COUNT(*) FROM crg_audit_rows WHERE COALESCE(carrier_safe, 1)=0").fetchone()[0] or 0) == 0
+        except Exception:
+            source_safe = True
+            carrier_safe = True
+    return {
+        "n_jobs": n_jobs,
+        "job_by_status": job_by_status,
+        "job_by_lane": job_by_lane,
+        "n_succeeded": int(job_by_status.get("succeeded", 0) + job_by_status.get("succeeded_from_cache", 0)),
+        "n_failed": int(job_by_status.get("failed", 0)),
+        "n_running": int(job_by_status.get("running", 0)),
+        "n_queued": int(job_by_status.get("queued", 0)),
+        "n_timeout_jobs": n_timeout_jobs,
+        "n_timeout": n_timeout,
+        "n_tactic_timeout": n_tactic_timeout,
+        "n_infra_timeout": n_infra_timeout,
+        "n_quarantine_suppressed_by_import_cost": n_infra_timeout,
+        "timeout_by_scope": timeout_by_scope,
+        "n_quarantined": n_quarantined,
+        "quarantine_by_status": quarantine_by_status,
+        "worker_event_by_type": worker_event_by_type,
+        "worker_restarts": int(worker_event_by_type.get("restart", 0) + worker_event_by_type.get("killed_timeout", 0)),
+        "n_cache_lookup": n_cache_lookup,
+        "n_cache_hit": n_cache_hit,
+        "n_cache_miss": n_cache_miss,
+        "n_cache_stored": n_cache_stored,
+        "cache_hit_rate": cache_hit_rate,
+        "promotion_by_status": promotion_by_status,
+        "promotion_readiness_by_status": readiness_by_status,
+        "promotion_readiness": promotion_readiness,
+        "poms_promoted": bool(promotion_by_status.get("canonical_candidate", 0) or promotion_by_status.get("canonical_observable", 0)),
+        "source_safe": source_safe,
+        "carrier_safe": carrier_safe,
+    }
+
+
 def connect_repair_db(db_path: str | Path) -> sqlite3.Connection:
     db = Path(db_path)
     db.parent.mkdir(parents=True, exist_ok=True)
@@ -347,15 +442,7 @@ def summarize_repair_db(conn: sqlite3.Connection) -> dict[str, Any]:
     v_hard = safe_float(conn.execute("SELECT COALESCE(MAX(audited_score), 0.0) FROM crg_audit_rows").fetchone()[0], 0.0)
     v_audit = v_hard
     hardening_gap = safe_float(conn.execute("SELECT COALESCE(MAX(hardening_gap), 0.0) FROM crg_audit_rows").fetchone()[0], 0.0)
-    n_cache_hit = 0
-    n_timeout = 0
-    try:
-        if conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='audit_result_cache_index'").fetchone():
-            n_cache_hit = int(conn.execute("SELECT COALESCE(SUM(n_cache_hit), 0) FROM audit_result_cache_index").fetchone()[0] or 0)
-        if conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='timeout_events'").fetchone():
-            n_timeout = int(conn.execute("SELECT COUNT(*) FROM timeout_events").fetchone()[0] or 0)
-    except Exception:
-        pass
+    execution = summarize_execution_metrics(conn)
     species_row = conn.execute(
         """
         SELECT repair_species, MAX(relaxed_score) AS score
@@ -366,7 +453,7 @@ def summarize_repair_db(conn: sqlite3.Connection) -> dict[str, Any]:
         """
     ).fetchone()
     dominant_species = str(species_row["repair_species"]) if species_row else ""
-    return {
+    summary = {
         "schema_version": SCHEMA_REPAIR_DB,
         "tables": counts,
         "V_relaxed": v_relaxed,
@@ -374,10 +461,10 @@ def summarize_repair_db(conn: sqlite3.Connection) -> dict[str, Any]:
         "V_hard": v_hard,
         "V_audit": v_audit,
         "hardening_gap": hardening_gap,
-        "n_cache_hit": n_cache_hit,
-        "n_timeout": n_timeout,
         "dominant_species": dominant_species,
     }
+    summary.update(execution)
+    return summary
 
 
 def classify_failure_from_summary(summary: dict[str, Any]) -> str:
@@ -463,9 +550,27 @@ def failure_attribution_report(
                 "V_hard": rep.get("V_hard", 0.0),
                 "V_audit": rep.get("V_audit", 0.0),
                 "hardening_gap": rep.get("hardening_gap", 0.0),
-                "n_cache_hit": rep.get("n_cache_hit", 0),
+                "n_jobs": rep.get("n_jobs", 0),
+                "n_succeeded": rep.get("n_succeeded", 0),
+                "n_failed": rep.get("n_failed", 0),
                 "n_timeout": rep.get("n_timeout", 0),
+                "n_tactic_timeout": rep.get("n_tactic_timeout", 0),
+                "n_infra_timeout": rep.get("n_infra_timeout", 0),
+                "n_quarantined": rep.get("n_quarantined", 0),
+                "worker_restarts": rep.get("worker_restarts", 0),
+                "n_cache_lookup": rep.get("n_cache_lookup", 0),
+                "n_cache_hit": rep.get("n_cache_hit", 0),
+                "n_cache_miss": rep.get("n_cache_miss", 0),
+                "n_cache_stored": rep.get("n_cache_stored", 0),
+                "cache_hit_rate": rep.get("cache_hit_rate", 0.0),
                 "dominant_species": rep.get("dominant_species", ""),
+                "promotion_readiness": rep.get("promotion_readiness", ""),
+                "source_safe": rep.get("source_safe", True),
+                "carrier_safe": rep.get("carrier_safe", True),
+                "job_by_status": rep.get("job_by_status", {}),
+                "timeout_by_scope": rep.get("timeout_by_scope", {}),
+                "quarantine_by_status": rep.get("quarantine_by_status", {}),
+                "promotion_by_status": rep.get("promotion_by_status", {}),
             },
             "recommended_next": _recommend_next(str(rep.get("diagnosis") or "")),
             "db_summary": rep,
@@ -510,6 +615,7 @@ __all__ = [
     "ensure_repair_schema",
     "failure_attribution_report",
     "repair_db_query",
+    "summarize_execution_metrics",
     "summarize_repair_db",
     "write_repair_query_outputs",
 ]

@@ -1,16 +1,105 @@
 import json
 import sqlite3
+import time
 from pathlib import Path
 
+from lean_rgc.action_quarantine import ensure_quarantine_schema
+from lean_rgc.audit_job_queue import connect_queue, ensure_audit_queue_schema
 from lean_rgc.cli import main
 from lean_rgc.data.store import RunStore, build_run_db, summarize_run_db
 from lean_rgc.repair_db import failure_attribution_report
 from lean_rgc.schemas import write_jsonl
+from lean_rgc.timeout_ledger import ensure_timeout_schema, record_timeout_event, record_worker_event
 
 
 def _write_json(path: Path, obj: dict):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(obj, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+
+
+def _write_queue_fixture(db_path: Path) -> None:
+    conn = connect_queue(db_path)
+    try:
+        ensure_audit_queue_schema(conn)
+        ensure_timeout_schema(conn)
+        ensure_quarantine_schema(conn)
+        now = time.time()
+        for idx, status in enumerate(["succeeded", "succeeded_from_cache", "failed", "timeout", "quarantined"]):
+            conn.execute(
+                """
+                INSERT INTO audit_jobs(
+                    job_id, run_id, task_id, state_id, action_id, tactic_hash, backend, lane,
+                    import_mode, project_fingerprint, status, priority, attempt_count, max_attempts,
+                    leased_until, worker_id, created_at, updated_at, payload_json, result_json, last_error
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    f"job_{idx}",
+                    "source_run",
+                    f"task_{idx}",
+                    f"state_{idx}",
+                    f"action_{idx}",
+                    f"hash_{idx}",
+                    "source_check",
+                    "source_check",
+                    "preserve",
+                    "project",
+                    status,
+                    0.0,
+                    1,
+                    1,
+                    None,
+                    "worker_0",
+                    now,
+                    now,
+                    "{}",
+                    "{}",
+                    "",
+                ),
+            )
+        record_timeout_event(
+            conn,
+            job_id="job_3",
+            task_id="task_3",
+            action_id="action_3",
+            tactic_hash="hash_3",
+            backend="source_check",
+            lane="source_check",
+            timeout_s=30.0,
+            elapsed_s=30.0,
+            stdout_tail="",
+            stderr_tail="timeout",
+            worker_id="worker_0",
+            timeout_scope="tactic_timeout",
+        )
+        record_timeout_event(
+            conn,
+            job_id="job_import",
+            task_id="task_import",
+            action_id="action_import",
+            tactic_hash="hash_import",
+            backend="source_check",
+            lane="source_check",
+            timeout_s=30.0,
+            elapsed_s=30.0,
+            stdout_tail="",
+            stderr_tail="import timeout",
+            worker_id="worker_0",
+            timeout_scope="import_timeout",
+        )
+        record_worker_event(conn, worker_id="worker_0", event_type="killed_timeout", job_id="job_3", backend="source_check", lane="source_check")
+        conn.execute(
+            """
+            INSERT INTO action_quarantine(
+                key_type, key_value, status, reason, n_attempts, n_timeouts,
+                timeout_rate, first_seen, updated_at, detail_json
+            ) VALUES (?,?,?,?,?,?,?,?,?,?)
+            """,
+            ("action_id", "action_3", "quarantined", "test quarantine", 3, 3, 1.0, now, now, "{}"),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def test_run_db_schema_initializes_all_required_tables(tmp_path: Path):
@@ -39,6 +128,7 @@ def test_run_db_schema_initializes_all_required_tables(tmp_path: Path):
         "carrier_values",
         "audit_jobs",
         "timeout_events",
+        "worker_events",
         "action_quarantine",
         "audit_result_cache_index",
         "repair_atoms",
@@ -97,6 +187,7 @@ def test_run_db_imports_audit_crg_poms_and_lineage(tmp_path: Path):
             "n_cache_hit": 1,
         },
     )
+    _write_queue_fixture(run / "audit" / "audit_queue.sqlite")
     write_jsonl(
         run / "crg" / "repair_species_registry.jsonl",
         [{"repair_atom_id": "atom_1", "species_id": "action_distribution", "source": "actions"}],
@@ -194,9 +285,26 @@ def test_run_db_imports_audit_crg_poms_and_lineage(tmp_path: Path):
     assert summary["tables"]["lineage_edges"] > 0
     assert summary["V_relaxed"] == 0.7
     assert summary["V_concept"] == 0.9
+    assert summary["n_jobs"] == 5
+    assert summary["n_succeeded"] == 2
+    assert summary["n_failed"] == 1
+    assert summary["n_timeout"] == 2
+    assert summary["n_timeout_jobs"] == 1
+    assert summary["n_tactic_timeout"] == 1
+    assert summary["n_infra_timeout"] == 1
+    assert summary["n_quarantined"] == 1
+    assert summary["worker_restarts"] == 1
+    assert summary["job_by_status"]["succeeded_from_cache"] == 1
+    assert summary["timeout_by_scope"]["import_timeout"] == 1
     assert summary["n_cache_hit"] == 1
     assert report["evidence"]["V_concept"] == 0.9
+    assert report["evidence"]["n_jobs"] == 5
+    assert report["evidence"]["n_infra_timeout"] == 1
+    assert report["evidence"]["n_quarantined"] == 1
     assert report["evidence"]["n_cache_hit"] == 1
+    assert report["evidence"]["worker_restarts"] == 1
+    assert report["evidence"]["timeout_by_scope"]["tactic_timeout"] == 1
+    assert report["evidence"]["job_by_status"]["timeout"] == 1
 
     con = sqlite3.connect(run / "runs.db")
     try:

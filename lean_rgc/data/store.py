@@ -10,7 +10,7 @@ import sqlite3
 import time
 
 from ..audit_db import build_audit_db, discover_artifacts, query_audit_db
-from ..repair_db import import_repair_artifacts, summarize_repair_db
+from ..repair_db import import_repair_artifacts, summarize_execution_metrics, summarize_repair_db
 from ..schemas import stable_hash
 
 
@@ -348,6 +348,17 @@ def ensure_run_schema(conn: sqlite3.Connection) -> None:
             timeout_scope TEXT,
             detail_json TEXT
         );
+        CREATE TABLE IF NOT EXISTS worker_events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts REAL,
+            run_id TEXT,
+            worker_id TEXT,
+            event_type TEXT,
+            job_id TEXT,
+            backend TEXT,
+            lane TEXT,
+            detail_json TEXT
+        );
         CREATE TABLE IF NOT EXISTS action_quarantine (
             key_type TEXT NOT NULL,
             key_value TEXT NOT NULL,
@@ -551,6 +562,13 @@ def ensure_run_schema(conn: sqlite3.Connection) -> None:
             "CREATE INDEX IF NOT EXISTS idx_run_timeout_scope "
             "ON timeout_events(run_id, timeout_scope)"
         )
+    if _table_exists(conn, "worker_events"):
+        _ensure_column(conn, "worker_events", "run_id", "TEXT")
+        _ensure_column(conn, "worker_events", "event_type", "TEXT")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_run_worker_events_type "
+            "ON worker_events(run_id, event_type)"
+        )
     if _table_exists(conn, "action_quarantine"):
         _ensure_column(conn, "action_quarantine", "run_id", "TEXT")
     if _table_exists(conn, "poms_promotion_decisions"):
@@ -730,6 +748,7 @@ class AuditStore:
                     )
             if _table_exists(src, "timeout_events"):
                 for r in src.execute("SELECT * FROM timeout_events").fetchall():
+                    keys = set(r.keys())
                     self.conn.execute(
                         """
                         INSERT OR IGNORE INTO timeout_events(
@@ -738,9 +757,41 @@ class AuditStore:
                         ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                         """,
                         (
-                            r["ts"], self.run_id, r["job_id"], r["task_id"], r["action_id"], r["tactic_hash"],
-                            r["backend"], r["lane"], r["timeout_s"], r["elapsed_s"], r["stdout_tail"],
-                            r["stderr_tail"], r["worker_id"], r["timeout_scope"], r["detail_json"],
+                            r["ts"] if "ts" in keys else None,
+                            self.run_id,
+                            r["job_id"] if "job_id" in keys else None,
+                            r["task_id"] if "task_id" in keys else None,
+                            r["action_id"] if "action_id" in keys else None,
+                            r["tactic_hash"] if "tactic_hash" in keys else None,
+                            r["backend"] if "backend" in keys else None,
+                            r["lane"] if "lane" in keys else None,
+                            r["timeout_s"] if "timeout_s" in keys else None,
+                            r["elapsed_s"] if "elapsed_s" in keys else None,
+                            r["stdout_tail"] if "stdout_tail" in keys else None,
+                            r["stderr_tail"] if "stderr_tail" in keys else None,
+                            r["worker_id"] if "worker_id" in keys else None,
+                            r["timeout_scope"] if "timeout_scope" in keys else "unknown_timeout",
+                            r["detail_json"] if "detail_json" in keys else None,
+                        ),
+                    )
+            if _table_exists(src, "worker_events"):
+                for r in src.execute("SELECT * FROM worker_events").fetchall():
+                    keys = set(r.keys())
+                    self.conn.execute(
+                        """
+                        INSERT OR IGNORE INTO worker_events(
+                            ts, run_id, worker_id, event_type, job_id, backend, lane, detail_json
+                        ) VALUES (?,?,?,?,?,?,?,?)
+                        """,
+                        (
+                            r["ts"] if "ts" in keys else None,
+                            self.run_id,
+                            r["worker_id"] if "worker_id" in keys else None,
+                            r["event_type"] if "event_type" in keys else None,
+                            r["job_id"] if "job_id" in keys else None,
+                            r["backend"] if "backend" in keys else None,
+                            r["lane"] if "lane" in keys else None,
+                            r["detail_json"] if "detail_json" in keys else None,
                         ),
                     )
             if _table_exists(src, "action_quarantine"):
@@ -1085,6 +1136,7 @@ def summarize_run_db(conn: sqlite3.Connection) -> dict[str, Any]:
         "carrier_values",
         "audit_jobs",
         "timeout_events",
+        "worker_events",
         "action_quarantine",
         "audit_result_cache_index",
         "repair_atoms",
@@ -1110,15 +1162,14 @@ def summarize_run_db(conn: sqlite3.Connection) -> dict[str, Any]:
     v_concept = _float(conn.execute("SELECT COALESCE(MAX(score), 0.0) FROM concept_search_rows").fetchone()[0] if _table_exists(conn, "concept_search_rows") else 0.0)
     v_hard = _float(conn.execute("SELECT COALESCE(MAX(audited_score), 0.0) FROM crg_audit_rows").fetchone()[0] if _table_exists(conn, "crg_audit_rows") else 0.0)
     hardening_gap = _float(conn.execute("SELECT COALESCE(MAX(hardening_gap), 0.0) FROM crg_audit_rows").fetchone()[0] if _table_exists(conn, "crg_audit_rows") else 0.0)
-    cache_hit = int(conn.execute("SELECT COALESCE(SUM(n_cache_hit), 0) FROM audit_result_cache_index").fetchone()[0] if _table_exists(conn, "audit_result_cache_index") else 0)
-    n_timeout = int(conn.execute("SELECT COUNT(*) FROM timeout_events").fetchone()[0] if _table_exists(conn, "timeout_events") else 0)
     dominant = ""
     if _table_exists(conn, "relaxed_candidates"):
         row = conn.execute(
             "SELECT repair_species, MAX(relaxed_score) AS score FROM relaxed_candidates GROUP BY repair_species ORDER BY score DESC LIMIT 1"
         ).fetchone()
         dominant = str(row["repair_species"]) if row else ""
-    return {
+    execution = summarize_execution_metrics(conn)
+    summary = {
         "schema_version": SCHEMA_RUN_DB,
         "tables": counts,
         "V_relaxed": v_relaxed,
@@ -1126,10 +1177,10 @@ def summarize_run_db(conn: sqlite3.Connection) -> dict[str, Any]:
         "V_hard": v_hard,
         "V_audit": v_hard,
         "hardening_gap": hardening_gap,
-        "n_cache_hit": cache_hit,
-        "n_timeout": n_timeout,
         "dominant_species": dominant,
     }
+    summary.update(execution)
+    return summary
 
 
 def build_run_db(
