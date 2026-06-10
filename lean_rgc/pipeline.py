@@ -99,7 +99,7 @@ from .bivariate_contextual_quotient import (
 )
 from .face_taxonomy import build_dual_face_taxonomy
 from .obstruction_tower import build_canonical_obstruction_tower
-from .dost_automation import (
+from .dost import (
     write_primitive_observables,
     build_bounded_transcripts,
     build_feature_closure,

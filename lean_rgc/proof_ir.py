@@ -212,7 +212,8 @@ def parse_proof_state_ir(task: LeanTask | None = None, state: ProofState | None 
 
 def ir_rows_from_tasks(tasks_or_path: str | Path | list[Any], out_path: str | Path | None = None, *, import_mode: str = "preserve") -> list[dict[str, Any]]:
     if isinstance(tasks_or_path, (str, Path)):
-        from .cli import _normalize_tasks_imports, _load_tasks
+        from .cli_common import _load_tasks, _normalize_tasks_imports
+
         tasks = _normalize_tasks_imports(_load_tasks(tasks_or_path), import_mode, None, None)
     else:
         tasks = [LeanTask.from_dict(t) if isinstance(t, dict) else t for t in tasks_or_path]

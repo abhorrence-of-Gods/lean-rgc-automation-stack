@@ -67,7 +67,7 @@ from .proof_replay import ProofScript, scripts_from_trajectories, replay_proof_s
 
 from .structured_state import StructuredProofState, GoalASTNode, LocalContextGraph, MetaVarGraph, TypeclassObligationGraph, extract_structured_state
 from .kernel_state import KernelGoalStateServer, KernelGoalStateServerConfig, normalize_kernel_state_v1, structural_kernel_response
-from .dost_automation import (
+from .dost import (
     write_primitive_observables,
     build_bounded_transcripts,
     build_feature_closure,
