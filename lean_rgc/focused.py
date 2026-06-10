@@ -6,7 +6,7 @@ from typing import Any
 import json
 
 from .schemas import LeanTask, ProofState, TacticAction, write_jsonl, read_jsonl, stable_hash
-from .executor import LeanExecutor, LeanExecutorConfig
+from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
 from .carrier_exposure import CarrierNormalizer
 from .candidates import TacticCandidateGenerator, CandidateGeneratorConfig

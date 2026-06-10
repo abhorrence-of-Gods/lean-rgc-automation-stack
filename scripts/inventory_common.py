@@ -18,6 +18,7 @@ CORE_MODULES = {
     "lean_rgc.__init__",
     "lean_rgc.schemas",
     "lean_rgc.batch",
+    "lean_rgc.bulk_executor",
     "lean_rgc.executor",
     "lean_rgc.lean_server",
     "lean_rgc.native_worker",

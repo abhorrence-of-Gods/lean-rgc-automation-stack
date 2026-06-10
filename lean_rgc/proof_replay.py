@@ -7,7 +7,7 @@ import json
 import re
 
 from .schemas import LeanTask, TacticAction, AuditRecord, read_jsonl, write_jsonl, stable_hash
-from .executor import LeanExecutor, LeanExecutorConfig
+from .lean.executor import LeanExecutor, LeanExecutorConfig
 
 
 def _sanitize_ident(x: str) -> str:

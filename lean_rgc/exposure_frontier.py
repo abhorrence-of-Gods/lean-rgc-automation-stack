@@ -7,7 +7,7 @@ import json
 import numpy as np
 
 from .schemas import LeanTask, ProofState, TacticAction, read_jsonl, write_jsonl, stable_hash
-from .executor import LeanExecutor
+from .lean.executor import LeanExecutor
 from .defects import ProofDefectExtractor
 from .carrier_exposure import CarrierNormalizer
 

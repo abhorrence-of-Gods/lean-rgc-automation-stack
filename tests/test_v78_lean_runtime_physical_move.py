@@ -62,8 +62,8 @@ def test_native_worker_compat_and_canonical_module_entrypoints():
 
 
 def test_runtime_modules_import_canonical_helpers():
-    executor_text = (ROOT / "lean_rgc" / "executor.py").read_text(encoding="utf-8")
+    executor_text = (ROOT / "lean_rgc" / "lean" / "executor.py").read_text(encoding="utf-8")
     server_text = (ROOT / "lean_rgc" / "lean_server.py").read_text(encoding="utf-8")
-    assert "from .lean.state_parser import LeanMessageParser" in executor_text
+    assert "from .state_parser import LeanMessageParser" in executor_text
     assert "from .lean.native_worker import native_worker_command, native_worker_manifest" in server_text
     assert '"lean_rgc.native_worker"' in server_text

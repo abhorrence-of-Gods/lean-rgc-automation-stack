@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 
 from .schemas import LeanTask, ProofState, TacticAction, DefectVector, read_jsonl, write_jsonl, stable_hash
-from .executor import LeanExecutor
+from .lean.executor import LeanExecutor
 from .defects import ProofDefectExtractor
 from .carrier import LeanCarrierAlgebra
 

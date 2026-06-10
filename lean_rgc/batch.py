@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .schemas import LeanTask, TacticAction, ProofState, ResponseRecord, write_records, read_jsonl
-from .executor import LeanExecutor, LeanExecutorConfig
+from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
 
 

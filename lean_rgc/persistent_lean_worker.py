@@ -28,7 +28,7 @@ import sys
 import time
 
 from .schemas import AuditRecord, LeanTask, ProofState, TacticAction, stable_hash
-from .executor import LeanExecutor, LeanExecutorConfig
+from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .lean_server import project_fingerprint
 from .structured_state import extract_structured_state, extract_structured_state_from_kernel_json
 from .goal_state_dynamics import compute_goal_state_transition_delta

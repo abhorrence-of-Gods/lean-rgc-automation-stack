@@ -17,7 +17,7 @@ import sys
 
 from .schemas import AuditRecord, LeanTask, ProofState, TacticAction, stable_hash, write_jsonl, write_records, read_jsonl
 from .batch import SCHEMA_AUDIT_ROW, SCHEMA_DEFECT_ROW, SCHEMA_RESPONSE_ROW
-from .executor import LeanExecutor, LeanExecutorConfig
+from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
 from .dataset import summarize_response_rows
 from .structured_state import extract_structured_state, extract_structured_state_from_kernel_json

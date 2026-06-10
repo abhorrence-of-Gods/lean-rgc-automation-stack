@@ -48,14 +48,24 @@ python -m lean_rgc.lean.native_worker --print-command
 `lean_server` continues to launch `lean_rgc.native_worker` for subprocess
 compatibility in v78.
 
+## v79 Physical Move II
+
+`lean_rgc.lean.executor` and `lean_rgc.lean.bulk_executor` now own their
+implementations. The top-level modules `lean_rgc.executor` and
+`lean_rgc.bulk_executor` are compatibility shims that re-export canonical
+objects.
+
+Bulk executor private helper imports used by historical tests remain supported
+through `lean_rgc.bulk_executor`, including `_render_bulk_file`,
+`_errors_by_line`, and `_block_messages`.
+
 ## Future Physical Move Order
 
 When the canonical package has stayed stable for another phase, move
 implementation files behind the package boundary in this order:
 
-1. executor surfaces: `executor`, `bulk_executor`
-2. state extraction: `structured_state`, `kernel_state`, `goal_state_dynamics`
-3. orchestration: `server`, `persistent_worker`, `worker_supervisor`, `frontier`
+1. state extraction: `structured_state`, `kernel_state`, `goal_state_dynamics`
+2. orchestration: `server`, `persistent_worker`, `worker_supervisor`, `frontier`
 
-Each move should leave a top-level compatibility shim and keep the v77/v78
+Each move should leave a top-level compatibility shim and keep the v77-v79
 identity tests passing.

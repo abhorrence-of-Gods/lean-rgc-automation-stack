@@ -3,7 +3,7 @@ from .schemas import (
     LeanTask, ProofState, TacticAction, AuditRecord, DefectVector,
     ResponseRecord, RGCSelection, TrajectoryRecord, TrajectoryStep,
 )
-from .executor import LeanExecutor, LeanExecutorConfig
+from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .defects import ProofDefectExtractor
 from .candidates import TacticCandidateGenerator, CandidateGeneratorConfig
 from .goal_shape import GoalShape, HypInfo, parse_goal_shape, shape_atoms, GoalShapeParser

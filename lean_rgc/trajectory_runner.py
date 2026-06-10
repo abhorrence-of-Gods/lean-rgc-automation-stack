@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 
 from .schemas import LeanTask, ProofState, TacticAction
-from .executor import LeanExecutor
+from .lean.executor import LeanExecutor
 from .defects import ProofDefectExtractor
 from .candidates import TacticCandidateGenerator
 from .carrier import LeanCarrierAlgebra

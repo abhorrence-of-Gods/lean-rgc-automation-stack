@@ -18,7 +18,7 @@ import re
 import time
 
 from .schemas import AuditRecord, LeanTask, ProofState, TacticAction, stable_hash
-from .executor import LeanExecutor, LeanExecutorConfig
+from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .goal_state_dynamics import compute_goal_state_transition_delta
 
 KERNEL_STATE_SCHEMA_VERSION = "lean-rgc-kernel-state-v1"

@@ -282,6 +282,10 @@
     "integration",
     "golden"
   ],
+  "test_v79_lean_executor_bulk_physical_move.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

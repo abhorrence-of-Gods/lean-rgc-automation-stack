@@ -28,10 +28,10 @@ from .audit_result_cache import (
     workdir_fingerprint,
 )
 from .batch import SCHEMA_AUDIT_ROW, SCHEMA_DEFECT_ROW, SCHEMA_RESPONSE_ROW, _pair_key
-from .bulk_executor import BulkAuditConfig, LeanBulkAuditor
+from .lean.bulk_executor import BulkAuditConfig, LeanBulkAuditor
 from .dataset import summarize_response_rows
 from .defects import ProofDefectExtractor
-from .executor import LeanExecutor, LeanExecutorConfig
+from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .schemas import AuditRecord, LeanTask, ProofState, ResponseRecord, TacticAction, write_records
 from .timeout_ledger import ensure_timeout_schema, record_timeout_event, record_worker_event, timeout_ledger_report
 

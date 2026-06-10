@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 
 from .schemas import LeanTask, ProofState, TacticAction, TrajectoryRecord, TrajectoryStep as SchemaTrajectoryStep, write_jsonl
-from .executor import LeanExecutor
+from .lean.executor import LeanExecutor
 from .defects import ProofDefectExtractor
 from .candidates import TacticCandidateGenerator
 from .carrier_exposure import StateDependentCandidateGenerator

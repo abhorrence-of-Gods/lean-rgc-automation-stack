@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 import time
 
-from .executor import LeanExecutor, LeanExecutorConfig
+from .lean.executor import LeanExecutor, LeanExecutorConfig
 from .schemas import LeanTask, TacticAction
 
 try:
