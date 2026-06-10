@@ -1,9 +1,11 @@
+import json
 import sys
 from pathlib import Path
 
 from lean_rgc.action_quarantine import action_quarantine_report
 from lean_rgc.audit_env_profile import profile_audit_environment
 from lean_rgc.audit_job_queue import audit_queue_status, enqueue_audit_jobs, project_fingerprint
+from lean_rgc.cli import _load_actions_grouped, _actions_for_tasks, _materialize_total_budget_task_actions
 from lean_rgc.executor import LeanExecutorConfig
 from lean_rgc.lean_worker_supervisor import run_bulk_audit_queue, run_supervised_audit_queue
 from lean_rgc.schemas import LeanTask, TacticAction, read_jsonl
@@ -132,6 +134,33 @@ def test_bulk_queue_retries_timed_out_batches_as_smaller_chunks(tmp_path: Path):
     assert summary["n_timeout"] == 0
     assert summary["bulk_retry_batches"] > 0
     assert summary["bulk_attempts"] > summary["bulk_initial_batches"]
+
+
+def test_total_budget_materialized_actions_do_not_expand_per_task(tmp_path: Path):
+    tasks = [LeanTask(task_id=f"task{i}", statement="True", imports=[]) for i in range(8)]
+    actions_path = tmp_path / "scheduled.jsonl"
+    out_path = tmp_path / "task_budgeted.jsonl"
+    rows = []
+    for i in range(20):
+        rows.append(
+                {
+                    "action_id": f"a{i}",
+                    "tactic": f"trivial -- {i}",
+                "metadata": {
+                    "source": "bivariate_contextual_probe_v51",
+                    "premise_contextual_probe": True,
+                    "baseline_required_for_incremental_response": False,
+                },
+            }
+        )
+    actions_path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+
+    summary = _materialize_total_budget_task_actions(actions_path, tasks, out_path, budget=10)
+    assert summary["n_actions"] == 10
+    base, by_task = _load_actions_grouped(out_path)
+    assert base == []
+    acts = _actions_for_tasks(tasks, base, by_task, max_candidates=10)
+    assert sum(len(v) for v in acts.values()) == 10
 
 
 def test_import_scoped_timeouts_do_not_quarantine_core_action(tmp_path: Path):

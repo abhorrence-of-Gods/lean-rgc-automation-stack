@@ -46,6 +46,9 @@ def _is_separator_context(row: dict[str, Any]) -> bool:
 
 def _premise_action_from_row(row: dict[str, Any]) -> dict[str, Any]:
     meta = dict(_metadata(row))
+    source_action = meta.get("source_action") if isinstance(meta.get("source_action"), dict) else {}
+    source_meta = source_action.get("metadata") if isinstance(source_action.get("metadata"), dict) else {}
+    task_id = row.get("task_id") or meta.get("task_id") or source_action.get("task_id") or source_meta.get("task_id")
     uid = str(row.get("premise_use_row_id") or row.get("premise_use_id") or meta.get("premise_use_id") or premise_use_id(row))
     premise_id = str(row.get("premise_id") or meta.get("premise_id") or extract_premise_name(row))
     tactic = str(row.get("tactic") or "")
@@ -62,6 +65,7 @@ def _premise_action_from_row(row: dict[str, Any]) -> dict[str, Any]:
         "metadata": {
             **meta,
             "source": "premise_use_row_v51",
+            **({"task_id": str(task_id)} if task_id else {}),
             "premise_use_id": uid,
             "premise_id": premise_id,
             "use_mode": use_mode,
@@ -69,6 +73,8 @@ def _premise_action_from_row(row: dict[str, Any]) -> dict[str, Any]:
             "premise_use_row_id": uid,
         },
     }
+    if task_id:
+        action["task_id"] = str(task_id)
     return action
 
 
@@ -120,6 +126,8 @@ def build_premise_use_rows(
         seen.add(uid)
         premise_id = str(meta.get("premise_id") or extract_premise_name(action))
         use_mode = str(meta.get("use_mode") or action.get("tactic_class") or infer_use_mode(tactic))
+        source_meta = action.get("metadata") if isinstance(action.get("metadata"), dict) else {}
+        task_id = action.get("task_id") or source_meta.get("task_id")
         row = {
             "schema_version": SCHEMA_PREMISE_USE_ROW,
             "premise_use_row_id": uid,
@@ -145,9 +153,12 @@ def build_premise_use_rows(
                 "source": "premise_use_row_extractor_v51",
                 "source_action": action,
                 "role": "premise_use_row",
+                **({"task_id": str(task_id)} if task_id else {}),
             },
             "canonical_status": "premise_use_row_chart_not_canonical",
         }
+        if task_id:
+            row["task_id"] = str(task_id)
         rows.append(row)
         if max_rows is not None and len(rows) >= int(max_rows):
             break

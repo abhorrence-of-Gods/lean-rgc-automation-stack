@@ -173,6 +173,133 @@ def _load_actions_grouped(path: str | Path | None) -> tuple[list[TacticAction], 
     return global_actions, by_task
 
 
+def _action_task_id(row: dict[str, Any]) -> str | None:
+    meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    task_id = row.get("task_id") or meta.get("task_id")
+    return str(task_id) if task_id else None
+
+
+def _is_contextual_baseline_row(row: dict[str, Any]) -> bool:
+    meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    return bool(meta.get("is_contextual_baseline")) or str(meta.get("source") or "").startswith("premise_contextual_baseline")
+
+
+def _clone_action_for_task(row: dict[str, Any], task_id: str, *, role: str = "task_budget") -> dict[str, Any]:
+    out = dict(row)
+    meta = dict(out.get("metadata") if isinstance(out.get("metadata"), dict) else {})
+    source_action_id = str(out.get("action_id") or stable_hash(out, 12))
+    task_suffix = stable_hash({"action_id": source_action_id, "task_id": task_id, "role": role}, 10)
+    out["action_id"] = f"{source_action_id}__task_{task_suffix}"
+    out["task_id"] = task_id
+    out["metadata"] = {
+        **meta,
+        "task_id": task_id,
+        "source_action_id": source_action_id,
+        "task_budget_materialized": True,
+        "task_budget_role": role,
+    }
+    return out
+
+
+def _materialize_total_budget_task_actions(
+    actions_path: str | Path,
+    tasks: list[LeanTask],
+    out_path: str | Path,
+    *,
+    budget: int | None,
+    require_baseline_pairs: bool = False,
+) -> dict[str, Any]:
+    """Convert a global scheduled action budget into a total audit-job budget.
+
+    `_pipeline_audit` treats global actions as a per-task pool.  For scheduled
+    contextual candidates, users usually mean "audit at most N total probes",
+    not "audit N probes on every task".  This helper assigns global rows to
+    concrete tasks, preserving baseline/probe context pairs on the same task.
+    """
+    rows = [r for r in read_jsonl(actions_path) if isinstance(r, dict)]
+    task_ids = [t.task_id for t in tasks]
+    cap = max(0, int(budget or len(rows)))
+    if not rows or not task_ids or cap <= 0:
+        write_jsonl(out_path, [])
+        summary = {
+            "schema_version": "lean-rgc-task-budget-materialized-actions-v64.1",
+            "source": str(actions_path),
+            "out": str(out_path),
+            "budget": cap,
+            "n_source_actions": len(rows),
+            "n_tasks": len(task_ids),
+            "n_actions": 0,
+            "n_baselines": 0,
+            "n_probes": 0,
+            "canonical_status": "task_budget_materialization_chart_not_canonical",
+        }
+        return summary
+
+    baselines_by_id = {str(r.get("action_id")): r for r in rows if _is_contextual_baseline_row(r)}
+    probes = [r for r in rows if not _is_contextual_baseline_row(r)]
+    emitted: list[dict[str, Any]] = []
+    emitted_baseline_for_task: dict[tuple[str, str], str] = {}
+    task_index = 0
+
+    def choose_task(row: dict[str, Any]) -> str:
+        nonlocal task_index
+        explicit = _action_task_id(row)
+        if explicit:
+            return explicit
+        task_id = task_ids[task_index % len(task_ids)]
+        task_index += 1
+        return task_id
+
+    for probe in probes:
+        if len(emitted) >= cap:
+            break
+        meta = probe.get("metadata") if isinstance(probe.get("metadata"), dict) else {}
+        task_id = choose_task(probe)
+        baseline_id = str(meta.get("baseline_action_id") or "")
+        cloned_baseline_id = ""
+        if baseline_id and baseline_id in baselines_by_id:
+            key = (task_id, baseline_id)
+            if key not in emitted_baseline_for_task:
+                if len(emitted) + (2 if require_baseline_pairs else 1) > cap:
+                    break
+                base = _clone_action_for_task(baselines_by_id[baseline_id], task_id, role="baseline")
+                emitted_baseline_for_task[key] = str(base.get("action_id"))
+                emitted.append(base)
+            cloned_baseline_id = emitted_baseline_for_task[key]
+        elif require_baseline_pairs:
+            continue
+        if len(emitted) >= cap:
+            break
+        cloned_probe = _clone_action_for_task(probe, task_id, role="probe")
+        cloned_meta = dict(cloned_probe.get("metadata") if isinstance(cloned_probe.get("metadata"), dict) else {})
+        if cloned_baseline_id:
+            cloned_meta["baseline_action_id"] = cloned_baseline_id
+        cloned_probe["metadata"] = cloned_meta
+        emitted.append(cloned_probe)
+
+    if not probes:
+        for i, row in enumerate(rows[:cap]):
+            emitted.append(_clone_action_for_task(row, task_ids[i % len(task_ids)], role="scheduled"))
+
+    write_jsonl(out_path, emitted)
+    n_baselines = sum(1 for r in emitted if _is_contextual_baseline_row(r))
+    summary = {
+        "schema_version": "lean-rgc-task-budget-materialized-actions-v64.1",
+        "source": str(actions_path),
+        "out": str(out_path),
+        "budget": cap,
+        "n_source_actions": len(rows),
+        "n_tasks": len(task_ids),
+        "n_actions": len(emitted),
+        "n_baselines": n_baselines,
+        "n_probes": len(emitted) - n_baselines,
+        "n_distinct_task_ids": len({str(r.get("task_id")) for r in emitted if r.get("task_id")}),
+        "require_baseline_pairs": bool(require_baseline_pairs),
+        "canonical_status": "task_budget_materialization_chart_not_canonical",
+    }
+    return summary
+
+
 def _detect_import_mode(mode: str, workdir: str | None = None, lean_cmd: str | None = None) -> str:
     mode = mode or "preserve"
     if mode != "auto":
@@ -1578,6 +1705,10 @@ def cmd_report(args):
 
 def cmd_pipeline(args):
     out=Path(args.out); out.mkdir(parents=True,exist_ok=True); audit_dir=out/'audit'
+    def _stage(name: str, **fields: Any) -> None:
+        payload = {"pipeline_stage": name, **fields}
+        print(json.dumps(payload, ensure_ascii=False), flush=True)
+
     def _pipeline_audit(tasks_path, actions_path, out_dir, max_actions, *, state_candidates=False, candidate_mode=None):
         scheduled_actions_path = actions_path
         if getattr(args, 'audit_scheduler', False) and actions_path:
@@ -1619,6 +1750,8 @@ def cmd_pipeline(args):
             tasks = _normalize_tasks_imports(_load_tasks(tasks_path), args.import_mode, args.workdir, args.lean_cmd)
             base, by_task = _load_actions_grouped(str(scheduled_actions_path) if scheduled_actions_path else None)
             acts = _actions_for_tasks(tasks, base, by_task, state_candidates=state_candidates or not (base or by_task), candidate_mode=candidate_mode or args.candidate_mode, max_candidates=max_actions)
+            estimated_jobs = sum(len(v) for v in acts.values()) if isinstance(acts, dict) else len(tasks) * len(acts)
+            _stage("audit_queue_start", out=str(out_dir), tasks=len(tasks), global_actions=len(base), task_action_tasks=len(by_task), estimated_jobs=estimated_jobs, max_actions=max_actions)
             lane = getattr(args, 'audit_lane', None) or getattr(args, 'native_exec_mode', 'source_check')
             if lane not in {'source_check', 'kernel_rpc', 'heavy'}:
                 lane = 'source_check'
@@ -2550,6 +2683,7 @@ def cmd_pipeline(args):
         else:
             premise_contextual_candidates_path = premise_contextual_dir / 'premise_contextual_candidates.jsonl'
             if getattr(args, 'premise_contextual_bivariate', False):
+                _stage("premise_contextual_bivariate_build_start", out=str(premise_contextual_dir), max_premises=getattr(args, 'premise_contextual_max_premises', None), max_left=getattr(args, 'premise_contextual_max_left', 4), max_right=getattr(args, 'premise_contextual_max_right', 4), audit_budget=getattr(args, 'bivariate_audit_budget', None))
                 premise_use_rows_path = Path(getattr(args, 'premise_use_rows_out', None) or premise_contextual_dir / 'premise_use_rows.jsonl')
                 separator_contexts_path = Path(getattr(args, 'separator_contexts_out', None) or getattr(args, 'premise_contextual_contexts', None) or premise_contextual_dir / 'separator_contexts.jsonl')
                 build_premise_use_rows(
@@ -2583,6 +2717,7 @@ def cmd_pipeline(args):
                     report_out=premise_contextual_dir / 'bivariate_contextual_schedule_report.json',
                     require_baseline_pairs=getattr(args, 'bivariate_require_baseline_pairs', False) or getattr(args, 'premise_contextual_baseline_required', False),
                 )
+                _stage("premise_contextual_bivariate_build_done", candidates=str(premise_contextual_candidates_path), scheduled=str(premise_contextual_scheduled_path))
             else:
                 generate_premise_contextual_candidates(
                     source_actions,
@@ -2599,6 +2734,18 @@ def cmd_pipeline(args):
                 premise_contextual_audit_dir = out / 'premise_contextual_audit'
                 audit_actions_path = premise_contextual_scheduled_path if premise_contextual_scheduled_path is not None else premise_contextual_candidates_path
                 audit_budget = getattr(args, 'bivariate_audit_budget', None) or getattr(args, 'premise_contextual_audit_max_actions', 32)
+                if getattr(args, 'premise_contextual_bivariate', False) and audit_actions_path and Path(audit_actions_path).exists():
+                    task_budgeted_actions_path = premise_contextual_dir / 'bivariate_contextual_task_budgeted_actions.jsonl'
+                    task_budget_summary = _materialize_total_budget_task_actions(
+                        audit_actions_path,
+                        _normalize_tasks_imports(_load_tasks(tasks_for_pipeline), args.import_mode, args.workdir, args.lean_cmd),
+                        task_budgeted_actions_path,
+                        budget=audit_budget,
+                        require_baseline_pairs=getattr(args, 'bivariate_require_baseline_pairs', False) or getattr(args, 'premise_contextual_baseline_required', False),
+                    )
+                    (premise_contextual_dir / 'bivariate_contextual_task_budget_report.json').write_text(json.dumps(task_budget_summary, indent=2, ensure_ascii=False), encoding='utf-8')
+                    _stage("premise_contextual_task_budget_materialized", **task_budget_summary)
+                    audit_actions_path = task_budgeted_actions_path
                 use_kernel_context_cache = bool(
                     getattr(args, 'premise_contextual_bivariate', False)
                     and getattr(args, 'audit_mode', 'batch') == 'server'
@@ -2630,7 +2777,9 @@ def cmd_pipeline(args):
                         flush_every=args.flush_every,
                     )
                 else:
+                    _stage("premise_contextual_audit_start", actions=str(audit_actions_path), audit_budget=audit_budget, out=str(premise_contextual_audit_dir))
                     _pipeline_audit(tasks_for_pipeline, str(audit_actions_path), premise_contextual_audit_dir, audit_budget, state_candidates=False, candidate_mode='state')
+                    _stage("premise_contextual_audit_done", out=str(premise_contextual_audit_dir))
                 cmd_action_report(argparse.Namespace(responses=str(premise_contextual_audit_dir/'responses.jsonl'), out=str(out/'premise_contextual_action_report.json'), csv_out=str(out/'premise_contextual_action_report.csv'), group_keys=None))
                 premise_contextual_fingerprints_path = premise_contextual_dir / 'premise_contextual_fingerprints.jsonl'
                 build_premise_contextual_fingerprints(
@@ -2964,7 +3113,9 @@ def cmd_pipeline(args):
             )
         if getattr(args, 'audit_crg_candidates', False) and crg_hard_candidates_path and crg_hard_candidates_path.exists():
             crg_candidate_audit_dir = crg_dir / 'candidate_audit'
+            _stage("crg_candidate_audit_start", actions=str(crg_hard_candidates_path), max_actions=getattr(args, 'crg_audit_max_actions', 16), out=str(crg_candidate_audit_dir))
             _pipeline_audit(tasks_for_pipeline, str(crg_hard_candidates_path), crg_candidate_audit_dir, getattr(args, 'crg_audit_max_actions', 16), state_candidates=False, candidate_mode='state')
+            _stage("crg_candidate_audit_done", out=str(crg_candidate_audit_dir))
             cmd_action_report(argparse.Namespace(responses=str(crg_candidate_audit_dir/'responses.jsonl'), out=str(crg_dir/'candidate_audit_action_report.json'), csv_out=str(crg_dir/'candidate_audit_action_report.csv'), group_keys=None))
         if getattr(args, 'crg_robust_accept', False) and crg_candidate_audit_dir and (crg_candidate_audit_dir / 'responses.jsonl').exists():
             crg_robust_acceptance_rows_path = crg_dir / 'crg_robust_acceptance_rows.jsonl'
