@@ -9,6 +9,7 @@ from ..crg_audit import audit_crg_candidates
 from ..crg_hardening import harden_crg_candidates
 from ..crg_problem import build_crg_problems
 from ..crg_registry import build_repair_species_registry
+from ..grammar_extension_demand import build_grammar_extension_demands
 from ..hardening_gap_report import build_hardening_gap_report
 from ..nonlinear_generator import generate_nonlinear_repair_candidates
 from ..relaxed_species import write_relaxed_species_registry
@@ -165,6 +166,21 @@ def cmd_concept_decode(args):
     return 0
 
 
+def cmd_grammar_extension_demand(args):
+    summary = build_grammar_extension_demands(
+        crg_audit_rows_path=args.crg_audit,
+        out=args.out,
+        candidates_path=getattr(args, "candidates", None),
+        hardening_attempts_path=getattr(args, "hardening_attempts", None),
+        relaxed_positive_threshold=getattr(args, "relaxed_positive_threshold", 0.0),
+        hard_positive_threshold=getattr(args, "hard_positive_threshold", 0.0),
+        merge_existing=not getattr(args, "no_merge_existing", False),
+        summary_out=getattr(args, "summary_out", None),
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False))
+    return 0
+
+
 def register_crg_commands(sub) -> None:
     rsp = sub.add_parser("relaxed-species-registry")
     rsp.add_argument("--out", required=True)
@@ -239,6 +255,17 @@ def register_crg_commands(sub) -> None:
     caud.add_argument("--max-hardening-gap", type=float, default=0.25)
     caud.add_argument("--max-ghost-risk", type=float, default=0.25)
     caud.set_defaults(func=cmd_crg_audit)
+
+    ged = sub.add_parser("grammar-extension-demand")
+    ged.add_argument("--crg-audit", required=True)
+    ged.add_argument("--out", required=True)
+    ged.add_argument("--candidates")
+    ged.add_argument("--hardening-attempts")
+    ged.add_argument("--summary-out")
+    ged.add_argument("--relaxed-positive-threshold", type=float, default=0.0)
+    ged.add_argument("--hard-positive-threshold", type=float, default=0.0)
+    ged.add_argument("--no-merge-existing", action="store_true")
+    ged.set_defaults(func=cmd_grammar_extension_demand)
 
     rgf = sub.add_parser("repair-gradient-flow")
     rgf.add_argument("--problems", required=True)
