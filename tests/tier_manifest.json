@@ -302,6 +302,10 @@
     "integration",
     "golden"
   ],
+  "test_v84_dead_candidate_disposition.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],
