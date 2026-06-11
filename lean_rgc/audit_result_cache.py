@@ -13,7 +13,9 @@ from .audit_job_queue import connect_queue, ensure_audit_queue_schema
 from .schemas import stable_hash
 
 
-SCHEMA_AUDIT_RESULT_CACHE = "lean-rgc-audit-result-cache-v65.0"
+SCHEMA_AUDIT_RESULT_CACHE = "lean-rgc-audit-result-cache-v85.0"
+
+DEFAULT_CACHE_LANE = "source_check"
 
 
 def _now() -> float:
@@ -63,6 +65,7 @@ def ensure_audit_cache_schema(conn: sqlite3.Connection) -> None:
             import_mode TEXT NOT NULL,
             max_heartbeats TEXT NOT NULL,
             trace_state INTEGER NOT NULL,
+            lane TEXT NOT NULL DEFAULT 'source_check',
             audit_status TEXT,
             queue_status TEXT,
             result_json TEXT NOT NULL,
@@ -76,10 +79,49 @@ def ensure_audit_cache_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_audit_result_cache_lean ON audit_result_cache(lean_version);
         """
     )
+    _migrate_cache_lane(conn)
     cur.execute(
         "INSERT OR REPLACE INTO meta(key,value) VALUES (?,?)",
         ("audit_result_cache_schema_version", SCHEMA_AUDIT_RESULT_CACHE),
     )
+    conn.commit()
+
+
+def _migrate_cache_lane(conn: sqlite3.Connection) -> None:
+    # v65 cache rows predate kernel-lane backends, so every existing row is a
+    # source_check observation; their primary keys must be recomputed because
+    # the v85 key includes the lane.
+    columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(audit_result_cache)")}
+    if "lane" in columns:
+        return
+    conn.execute(
+        "ALTER TABLE audit_result_cache ADD COLUMN lane TEXT NOT NULL DEFAULT 'source_check'"
+    )
+    rows = conn.execute(
+        """
+        SELECT cache_key, task_hash, state_hash, tactic_hash, imports_hash,
+               lean_version, workdir_fingerprint, import_mode, max_heartbeats, trace_state
+        FROM audit_result_cache
+        """
+    ).fetchall()
+    for row in rows:
+        fields = {
+            "task_hash": str(row["task_hash"]),
+            "state_hash": str(row["state_hash"]),
+            "tactic_hash": str(row["tactic_hash"]),
+            "imports_hash": str(row["imports_hash"]),
+            "lean_version": str(row["lean_version"]),
+            "workdir_fingerprint": str(row["workdir_fingerprint"]),
+            "import_mode": str(row["import_mode"]),
+            "max_heartbeats": str(row["max_heartbeats"]),
+            "trace_state": int(row["trace_state"]),
+            "lane": DEFAULT_CACHE_LANE,
+        }
+        new_key = stable_hash(fields, 48)
+        conn.execute(
+            "UPDATE OR REPLACE audit_result_cache SET cache_key=?, lane=? WHERE cache_key=?",
+            (new_key, DEFAULT_CACHE_LANE, str(row["cache_key"])),
+        )
     conn.commit()
 
 
@@ -136,6 +178,7 @@ def make_audit_cache_key(
     workdir_fingerprint_value: str,
     import_mode: str,
     trace_state: bool,
+    lane: str,
 ) -> tuple[str, dict[str, Any]]:
     task = payload.get("task") if isinstance(payload.get("task"), dict) else {}
     state = payload.get("state") if isinstance(payload.get("state"), dict) else {}
@@ -172,6 +215,7 @@ def make_audit_cache_key(
         "import_mode": str(import_mode or "preserve"),
         "max_heartbeats": max_hb,
         "trace_state": 1 if trace_state else 0,
+        "lane": str(lane or DEFAULT_CACHE_LANE),
     }
     cache_key = stable_hash(fields, 48)
     return cache_key, fields
@@ -212,7 +256,7 @@ def apply_cache_to_queue(
     try:
         ensure_audit_queue_schema(qconn)
         rows = qconn.execute(
-            "SELECT job_id, payload_json FROM audit_jobs WHERE run_id=? AND status='queued'",
+            "SELECT job_id, payload_json, lane FROM audit_jobs WHERE run_id=? AND status='queued'",
             (run_id,),
         ).fetchall()
         if readonly and not Path(cache_db).exists():
@@ -242,6 +286,7 @@ def apply_cache_to_queue(
                 workdir_fingerprint_value=workdir_fingerprint_value,
                 import_mode=import_mode,
                 trace_state=trace_state,
+                lane=str(row["lane"] or DEFAULT_CACHE_LANE),
             )
             try:
                 cached = cconn.execute(
@@ -316,7 +361,7 @@ def store_queue_results_in_cache(
         ensure_audit_cache_schema(cconn)
         rows = qconn.execute(
             """
-            SELECT payload_json, result_json, status
+            SELECT payload_json, result_json, status, lane
             FROM audit_jobs
             WHERE run_id=? AND status='succeeded' AND result_json IS NOT NULL
             """,
@@ -339,6 +384,7 @@ def store_queue_results_in_cache(
                 workdir_fingerprint_value=workdir_fingerprint_value,
                 import_mode=import_mode,
                 trace_state=trace_state,
+                lane=str(row["lane"] or DEFAULT_CACHE_LANE),
             )
             audit_status = str(audit.get("status") or "")
             cconn.execute(
@@ -346,9 +392,9 @@ def store_queue_results_in_cache(
                 INSERT INTO audit_result_cache(
                     cache_key, task_hash, state_hash, tactic_hash, imports_hash,
                     lean_version, workdir_fingerprint, import_mode, max_heartbeats,
-                    trace_state, audit_status, queue_status, result_json,
+                    trace_state, lane, audit_status, queue_status, result_json,
                     created_at, updated_at, last_hit_at, hit_count
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(cache_key) DO UPDATE SET
                     audit_status=excluded.audit_status,
                     queue_status=excluded.queue_status,
@@ -366,6 +412,7 @@ def store_queue_results_in_cache(
                     fields["import_mode"],
                     fields["max_heartbeats"],
                     int(fields["trace_state"]),
+                    fields["lane"],
                     audit_status,
                     str(row["status"]),
                     _json(result),
@@ -422,6 +469,7 @@ def audit_cache_report(db_path: str | Path) -> dict[str, Any]:
 
 
 __all__ = [
+    "DEFAULT_CACHE_LANE",
     "SCHEMA_AUDIT_RESULT_CACHE",
     "apply_cache_to_queue",
     "audit_cache_report",

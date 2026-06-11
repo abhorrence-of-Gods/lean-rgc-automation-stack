@@ -7,7 +7,7 @@ import json
 from .schemas import read_jsonl
 
 
-SCHEMA_HARDENING_GAP_REPORT = "lean-rgc-hardening-gap-report-v60.0"
+SCHEMA_HARDENING_GAP_REPORT = "lean-rgc-hardening-gap-report-v85.0"
 
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
@@ -30,8 +30,12 @@ def build_hardening_gap_report(
     for row in rows:
         relaxed = _safe_float(row.get("relaxed_score"))
         hard = _safe_float(row.get("audited_score"))
+        # Rows without audit_coverage predate staged audit and were always
+        # fully audited; only a fully audited zero is evidence of a missing
+        # grammar move rather than a skipped budget.
+        coverage = str(row.get("audit_coverage") or "full")
         if relaxed > relaxed_positive_threshold and hard <= hard_positive_threshold:
-            classification = "grammar_defect_candidate"
+            classification = "grammar_defect_candidate" if coverage == "full" else "underaudited"
         elif relaxed > relaxed_positive_threshold and hard > hard_positive_threshold:
             classification = "hardening_realized"
         elif relaxed <= relaxed_positive_threshold:
@@ -46,6 +50,7 @@ def build_hardening_gap_report(
                 "relaxed_score": relaxed,
                 "audited_score": hard,
                 "hardening_gap": _safe_float(row.get("hardening_gap")),
+                "audit_coverage": coverage,
                 "classification": classification,
                 "canonical_status": "hardening_gap_case_is_diagnostic_not_canonical",
             }

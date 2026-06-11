@@ -9,7 +9,7 @@ from .response_completion import response_map_from_row
 from .schemas import read_jsonl, stable_hash, write_jsonl
 
 
-SCHEMA_CRG_AUDIT = "lean-rgc-crg-audit-row-v60.0"
+SCHEMA_CRG_AUDIT = "lean-rgc-crg-audit-row-v85.0"
 
 
 def _json_dump(obj: dict[str, Any], path: str | Path) -> None:
@@ -125,6 +125,17 @@ def audit_crg_candidates(
         normal = _normal(cand)
         relaxed_score = _safe_float((cand.get("scores") or {}).get("lambda_response"), 0.0)
         hard_ids = actions_by_candidate.get(cid, [])
+        unique_hard_ids = list(dict.fromkeys(hard_ids))
+        n_hard_total = len(unique_hard_ids)
+        n_hard_audited = sum(1 for aid in unique_hard_ids if response_by_action.get(aid))
+        # n_hard_total == 0 means hardening decoded nothing, so a zero hard
+        # value is a true statement about the hard grammar, not missing audit.
+        if n_hard_total == 0 or n_hard_audited == n_hard_total:
+            audit_coverage = "full"
+        elif n_hard_audited == 0:
+            audit_coverage = "none"
+        else:
+            audit_coverage = "partial"
         hard_scores: list[float] = []
         hard_statuses: list[str] = []
         carrier_flags: list[bool] = []
@@ -156,6 +167,10 @@ def audit_crg_candidates(
             max_hardening_gap=max_hardening_gap,
             max_ghost_risk=max_ghost_risk,
         )
+        # Budget-skipped hardening must not be promotable: an unaudited hard
+        # action could contradict the audited subset.
+        if audit_coverage != "full" and readiness == "promotion_candidate":
+            readiness = "paid_witness"
         row = {
             "schema_version": SCHEMA_CRG_AUDIT,
             "candidate_id": cid,
@@ -163,6 +178,9 @@ def audit_crg_candidates(
             "parent_face_id": cand.get("parent_face_id"),
             "obstruction_id": cand.get("obstruction_id"),
             "hard_action_ids": hard_ids,
+            "audit_coverage": audit_coverage,
+            "n_hard_actions_total": int(n_hard_total),
+            "n_hard_actions_audited": int(n_hard_audited),
             "relaxed_score": float(relaxed_score),
             "audited_score": float(audited_score),
             "hardening_gap": float(hardening_gap),
@@ -209,6 +227,10 @@ def audit_crg_candidates(
         "n_candidates": len(candidates),
         "n_audit_rows": len(audit_rows),
         "n_promotion_candidates": sum(1 for row in audit_rows if row.get("promotion_readiness") == "promotion_candidate"),
+        "coverage_counts": {
+            key: sum(1 for row in audit_rows if row.get("audit_coverage") == key)
+            for key in ("full", "partial", "none")
+        },
         "canonical_status": "crg_audit_is_witness_chart_not_canonical",
     }
     if summary_out:

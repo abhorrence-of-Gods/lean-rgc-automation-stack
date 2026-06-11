@@ -306,6 +306,9 @@
     "integration",
     "golden"
   ],
+  "test_v85_cache_lane_and_coverage.py": [
+    "integration"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

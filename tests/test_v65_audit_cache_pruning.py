@@ -89,6 +89,7 @@ def test_audit_cache_key_misses_when_imports_change():
         workdir_fingerprint_value="wd",
         import_mode="preserve",
         trace_state=False,
+        lane="source_check",
     )
     key_b, _ = make_audit_cache_key(
         changed,
@@ -96,6 +97,7 @@ def test_audit_cache_key_misses_when_imports_change():
         workdir_fingerprint_value="wd",
         import_mode="preserve",
         trace_state=False,
+        lane="source_check",
     )
 
     assert key_a != key_b
