@@ -60,7 +60,7 @@ def _classify_block_failure(text: str) -> str:
         return "partial"
     if "sorry" in low or "admit" in low or "unsound" in low:
         return "unsafe"
-    if "failed to synthesize" in low or "type mismatch" in low or "unknown identifier" in low:
+    if "failed to synthesize" in low or "type mismatch" in low or "unknown identifier" in low or "unknown module prefix" in low:
         return "elab_error"
     return "fail"
 
@@ -75,12 +75,23 @@ def _sanitize_ident(x: str) -> str:
 def _render_bulk_file(pairs: list[tuple[LeanTask, TacticAction]], *, trace_state: bool = False) -> tuple[str, list[BulkBlock]]:
     imports: list[str] = []
     seen: set[str] = set()
+    preambles: list[str] = []
+    seen_preambles: set[str] = set()
     for task, _ in pairs:
         for imp in task.imports:
             if imp not in seen:
                 seen.add(imp)
                 imports.append(imp)
+        preamble = str((task.metadata or {}).get("top_preamble") or "").strip()
+        if preamble and preamble not in seen_preambles:
+            seen_preambles.add(preamble)
+            preambles.append(preamble)
     lines: list[str] = [f"import {imp}" for imp in imports]
+    if preambles:
+        if imports:
+            lines.append("")
+        for preamble in preambles:
+            lines.extend(preamble.splitlines())
     if imports:
         lines.append("")
     blocks: list[BulkBlock] = []
@@ -141,6 +152,20 @@ def _block_messages(block: BulkBlock, line_errors: dict[int, list[str]]) -> list
     return msgs[-80:]
 
 
+def _global_messages(blocks: list[BulkBlock], line_errors: dict[int, list[str]], combined: str, returncode: int) -> list[str]:
+    msgs: list[str] = []
+    for line, xs in line_errors.items():
+        if not any(block.start_line <= line <= block.end_line for block in blocks):
+            msgs.extend(xs)
+    if returncode != 0 and not msgs and not line_errors:
+        tail = "\n".join(ln for ln in combined.splitlines()[-40:] if ln.strip())
+        if tail:
+            msgs.append(tail)
+        else:
+            msgs.append(f"Lean process exited with code {returncode}")
+    return msgs[-80:]
+
+
 class LeanBulkAuditor:
     """Batch-file Lean executor.
 
@@ -191,13 +216,16 @@ class LeanBulkAuditor:
             try:
                 proc = subprocess.run(cmd, cwd=self.config.workdir or os.getcwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=self.config.timeout_s)
                 stdout, stderr = proc.stdout or "", proc.stderr or ""
+                returncode = int(proc.returncode)
             except subprocess.TimeoutExpired as e:
                 timed_out = True
                 stdout = e.stdout if isinstance(e.stdout, str) else ""
                 stderr = e.stderr if isinstance(e.stderr, str) else ""
+                returncode = -1
             elapsed = (time.time() - t0) * 1000.0
             combined = stdout + "\n" + stderr
             line_errors = _errors_by_line(combined)
+            global_msgs = _global_messages(blocks, line_errors, combined, returncode)
             keep_path = None
             if self.config.keep_files:
                 out_dir = Path(self.config.workdir or os.getcwd()) / ".lean_rgc_bulk_files"
@@ -207,7 +235,7 @@ class LeanBulkAuditor:
             records: list[AuditRecord] = []
             for block in blocks:
                 state = ProofState.from_task(block.task)
-                msgs = _block_messages(block, line_errors)
+                msgs = global_msgs + _block_messages(block, line_errors)
                 if timed_out:
                     status = "timeout"
                     if not msgs:
@@ -227,7 +255,13 @@ class LeanBulkAuditor:
                     stderr="",
                     messages=msgs[-80:],
                     after_state=after_state,
-                    audit_flags={"bulk_file": True, "timeout": status == "timeout", "partial_success": status == "partial"},
+                    audit_flags={
+                        "bulk_file": True,
+                        "lean_returncode": returncode,
+                        "global_error": bool(global_msgs),
+                        "timeout": status == "timeout",
+                        "partial_success": status == "partial",
+                    },
                     lean_file=str(keep_path or lean_file),
                 ))
             return records

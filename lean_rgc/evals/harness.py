@@ -11,7 +11,7 @@ from .arms import render_feedback
 SCHEMA_EVAL_EPISODE = "lean-rgc-eval-episode-v88.0"
 SCHEMA_EVAL_ATTEMPT = "lean-rgc-eval-attempt-v88.0"
 
-DEFAULT_SUCCESS_STATUSES = ("proved", "advanced", "ok", "succeeded")
+DEFAULT_SUCCESS_STATUSES = ("success", "proved", "advanced", "ok", "succeeded")
 
 # proposal_fn(task=..., attempt_index=..., feedback=...) -> list of action dicts
 ProposalFn = Callable[..., list[dict[str, Any]]]

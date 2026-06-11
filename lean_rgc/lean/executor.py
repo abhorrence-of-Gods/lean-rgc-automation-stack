@@ -58,6 +58,7 @@ class LeanExecutor:
 
     def _render_file(self, task: LeanTask, action: TacticAction) -> str:
         imports = "\n".join(f"import {imp}" for imp in task.imports)
+        top_preamble = str((task.metadata or {}).get("top_preamble") or "").strip()
         options = {
             "maxHeartbeats": action.max_heartbeats or task.max_heartbeats,
         }
@@ -85,6 +86,8 @@ class LeanExecutor:
             body_blocks.append("try trace_state")
         body = "\n".join(self._indent_tactic_block(block) for block in body_blocks if block.strip())
         return f"""{imports}
+
+{top_preamble}
 
 {chr(10).join(option_lines)}
 
@@ -240,7 +243,7 @@ class LeanExecutor:
             return "partial"
         if "sorry" in low or "admit" in low or "unsound" in low:
             return "unsafe"
-        if "failed to synthesize" in low or "type mismatch" in low or "unknown identifier" in low:
+        if "failed to synthesize" in low or "type mismatch" in low or "unknown identifier" in low or "unknown module prefix" in low:
             return "elab_error"
         return "fail"
 

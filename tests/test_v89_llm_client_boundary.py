@@ -51,6 +51,39 @@ def test_replay_provider_raises_on_miss_and_reuses_warm_cache(tmp_path: Path):
     assert warmed.text == "warm output"
 
 
+def test_openai_compatible_forwards_response_format_and_headers(tmp_path: Path, monkeypatch):
+    captured = {}
+
+    def fake_post(url, payload, headers, *, timeout_s):
+        captured.update({"url": url, "payload": payload, "headers": headers, "timeout_s": timeout_s})
+        return {
+            "model": "openai/gpt-4.1",
+            "choices": [{"message": {"content": '{"proposals": []}'}}],
+            "usage": {"prompt_tokens": 3, "completion_tokens": 4},
+        }
+
+    monkeypatch.setenv("LEAN_RGC_LLM_API_KEY", "secret")
+    monkeypatch.setattr("lean_rgc.pbct.llm_client._http_post_json", fake_post)
+    client = LLMClient(
+        LLMClientConfig(
+            provider="openai_compatible",
+            model="openai/gpt-4.1",
+            base_url="https://models.github.ai/inference",
+            cache_dir=str(tmp_path / "llm_cache"),
+            response_format={"type": "json_object"},
+            extra_headers={"Accept": "application/vnd.github+json"},
+        )
+    )
+
+    completion = client.complete(system="s", user="u")
+
+    assert completion.text == '{"proposals": []}'
+    assert captured["url"] == "https://models.github.ai/inference/chat/completions"
+    assert captured["payload"]["response_format"] == {"type": "json_object"}
+    assert captured["headers"]["Accept"] == "application/vnd.github+json"
+    assert captured["headers"]["Authorization"] == "Bearer secret"
+
+
 def test_boundary_id_and_render_are_deterministic():
     task = LeanTask(task_id="t0", statement="True", imports=["Mathlib"])
     a = build_prompt_boundary(task=task, feedback_text="fb", attempt_index=1)

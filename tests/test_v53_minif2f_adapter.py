@@ -59,6 +59,7 @@ def test_build_minif2f_tasks_and_cli(tmp_path: Path):
     assert rows[0]["task_id"] == "minif2f_valid_tiny_eq"
     assert rows[0]["statement"] == "∀ (n : Nat), n = n"
     assert rows[0]["imports"] == ["MiniF2F.ProblemImports"]
+    assert "open scoped Nat" in rows[0]["metadata"]["top_preamble"]
     assert rows[0]["metadata"]["task_statement_mode"] == "kernel_rpc_term_type"
 
     cli_out = tmp_path / "tasks_cli.jsonl"

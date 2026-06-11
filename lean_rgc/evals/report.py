@@ -98,12 +98,30 @@ def build_eval_report(
             )
             stats = _paired_bootstrap(deltas, n_bootstrap=n_bootstrap, seed=seed)
             comparisons.append({"arm_a": arm_a, "arm_b": arm_b, "metric": "solve_rate", **stats})
+    primary_comparison = None
+    if "a2_typed_packet" in by_arm and "a1_raw_error" in by_arm:
+        deltas = np.asarray(
+            [
+                float(bool(by_arm["a2_typed_packet"][tid].get("solved")))
+                - float(bool(by_arm["a1_raw_error"][tid].get("solved")))
+                for tid in task_ids
+            ],
+            dtype=float,
+        )
+        primary_comparison = {
+            "arm_a": "a2_typed_packet",
+            "arm_b": "a1_raw_error",
+            "metric": "solve_rate",
+            "preregistered_primary": True,
+            **_paired_bootstrap(deltas, n_bootstrap=n_bootstrap, seed=seed),
+        }
 
     report = {
         "schema_version": SCHEMA_EVAL_REPORT,
         "n_tasks": len(task_ids),
         "seed": int(seed),
         "arms": {arm: _arm_metrics(eps) for arm, eps in by_arm.items()},
+        "primary_comparison": primary_comparison,
         "paired_comparisons": comparisons,
         "episodes_paths": {arm: str(p) for arm, p in episodes_paths.items()},
         "canonical_status": "eval_report_is_measurement_not_canonical",

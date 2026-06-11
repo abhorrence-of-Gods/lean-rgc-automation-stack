@@ -65,6 +65,26 @@ def test_wavefront_episodes_and_budget(tmp_path: Path):
     assert summary["total_llm_calls"] == 1 + 3 + 4
 
 
+def test_eval_harness_treats_lean_success_as_solved(tmp_path: Path):
+    def proposal_fn(**kwargs):
+        return [{"action_id": "a0", "tactic": "trivial"}]
+
+    def runner(*, tasks, **kwargs):
+        return [{"task_id": task.task_id, "audit_status": "success"} for task in tasks]
+
+    summary = run_eval(
+        tasks=[LeanTask(task_id="t0", statement="True", imports=[])],
+        arm="a1_raw_error",
+        proposal_fn=proposal_fn,
+        out_dir=tmp_path,
+        run_id="r0",
+        budget_calls=1,
+        wave_audit_runner=runner,
+    )
+
+    assert summary["n_solved"] == 1
+
+
 def test_arm_feedback_isolation():
     state = {"n_failed": 2, "last_errors": ["unknown identifier foo", "type mismatch"]}
     a0 = render_feedback("a0_onebit", state)
@@ -137,6 +157,25 @@ def test_report_paired_bootstrap_detects_dominant_arm(tmp_path: Path):
     assert comparison["mean_delta"] == 0.75
     assert comparison["ci_excludes_zero"] is True
     assert (tmp_path / "report.json").exists()
+
+
+def test_report_primary_comparison_uses_preregistered_direction(tmp_path: Path):
+    task_ids = [f"t{i}" for i in range(40)]
+    _write_episodes(tmp_path / "a1.jsonl", {tid: (i % 4 == 0) for i, tid in enumerate(task_ids)})
+    _write_episodes(tmp_path / "a2.jsonl", {tid: True for tid in task_ids})
+
+    report = build_eval_report(
+        episodes_paths={"a1_raw_error": tmp_path / "a1.jsonl", "a2_typed_packet": tmp_path / "a2.jsonl"},
+        out=tmp_path / "report.json",
+        n_bootstrap=2000,
+        seed=0,
+    )
+
+    primary = report["primary_comparison"]
+    assert primary["arm_a"] == "a2_typed_packet"
+    assert primary["arm_b"] == "a1_raw_error"
+    assert primary["mean_delta"] == 0.75
+    assert primary["ci_low"] > 0
 
 
 def test_report_rejects_mismatched_task_sets(tmp_path: Path):

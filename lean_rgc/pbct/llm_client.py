@@ -36,6 +36,8 @@ class LLMClientConfig:
     ledger_path: str | None = None
     timeout_s: float = 120.0
     mock_responses: list[str] = field(default_factory=list)
+    response_format: dict[str, Any] | None = None
+    extra_headers: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_file(cls, path: str | Path) -> "LLMClientConfig":
@@ -196,7 +198,9 @@ class LLMClient:
         }
         if cfg.seed is not None:
             payload["seed"] = int(cfg.seed)
-        headers = {}
+        if cfg.response_format:
+            payload["response_format"] = dict(cfg.response_format)
+        headers = dict(cfg.extra_headers or {})
         key = os.environ.get(cfg.api_key_env, "")
         if key:
             headers["Authorization"] = f"Bearer {key}"

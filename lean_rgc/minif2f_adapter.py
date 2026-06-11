@@ -15,6 +15,14 @@ from .schemas import stable_hash, write_jsonl
 DEFAULT_MINIF2F_LEAN4_URL = "https://github.com/google-deepmind/miniF2F.git"
 SCHEMA_MINIF2F_TASKS = "lean-rgc-minif2f-tasks-v53.0"
 SCHEMA_MINIF2F_FETCH = "lean-rgc-minif2f-fetch-v53.0"
+MINIF2F_TOP_PREAMBLE = "\n".join(
+    [
+        "open scoped Nat",
+        "open scoped Real",
+        "open scoped Topology",
+        "open scoped Polynomial",
+    ]
+)
 
 
 @dataclass
@@ -287,6 +295,7 @@ def _task_from_theorem(
             "informal_doc": thm.informal_doc,
             "original_declaration": thm.original_declaration,
             "task_statement_mode": "kernel_rpc_term_type",
+            "top_preamble": MINIF2F_TOP_PREAMBLE,
             "canonical_status": "external_benchmark_task_chart_not_canonical",
         },
     }

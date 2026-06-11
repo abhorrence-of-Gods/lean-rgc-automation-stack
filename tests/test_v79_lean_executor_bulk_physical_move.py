@@ -54,6 +54,42 @@ def test_bulk_private_helper_compatibility_still_works():
     assert any("unknown identifier" in m for m in _block_messages(blocks[0], errs))
 
 
+def test_bulk_executor_marks_global_lean_errors_as_failures(tmp_path: Path):
+    from lean_rgc.lean.bulk_executor import BulkAuditConfig, LeanBulkAuditor
+
+    fake_lean = tmp_path / "fake_lean.py"
+    fake_lean.write_text(
+        "\n".join(
+            [
+                "import sys",
+                "print(f'{sys.argv[-1]}:1:0: error: unknown module prefix MiniF2F')",
+                "raise SystemExit(1)",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    auditor = LeanBulkAuditor(
+        BulkAuditConfig(
+            lean_cmd=f"{Path(sys.executable).as_posix()} {fake_lean.as_posix()}",
+            workdir=str(tmp_path),
+            timeout_s=5,
+            batch_size=1,
+        )
+    )
+    records, report = auditor.run_pairs(
+        [
+            (
+                LeanTask(task_id="t1", statement="True", imports=["MiniF2F.ProblemImports"]),
+                TacticAction(action_id="trivial", tactic="trivial"),
+            )
+        ]
+    )
+
+    assert records[0].status == "elab_error"
+    assert records[0].audit_flags["global_error"] is True
+    assert report.status_counts == {"elab_error": 1}
+
+
 def test_lean_executor_dry_run_still_audits_tiny_task():
     from lean_rgc.lean.executor import LeanExecutor, LeanExecutorConfig
 
