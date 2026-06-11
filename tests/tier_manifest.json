@@ -298,6 +298,10 @@
     "integration",
     "golden"
   ],
+  "test_v83_runtime_boundary_enforcement.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

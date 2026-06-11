@@ -1,6 +1,6 @@
 # Inventory Classification
 
-This is the human-reviewed disposition ledger for v82. It complements generated
+This is the human-reviewed disposition ledger for v83. It complements generated
 inventory JSON files and does not authorize deletion by itself.
 
 ## Classes
@@ -14,7 +14,7 @@ inventory JSON files and does not authorize deletion by itself.
 - `dead_candidate`: no current import reachability in generated inventory;
   investigate before moving or deleting.
 
-## v82 Dead Candidate Investigation Targets
+## v83 Dead Candidate Investigation Targets
 
 The current generated import inventory marks these modules as `dead_candidate`:
 
@@ -27,10 +27,10 @@ The current generated import inventory marks these modules as `dead_candidate`:
 - `lean_rgc.state_ir`
 - `lean_rgc.trajectory_runner`
 
-Disposition for v82: keep all eight in place. They are investigation targets,
+Disposition for v83: keep all eight in place. They are investigation targets,
 not deletion targets.
 
-## v82 Legacy Modules
+## v83 Legacy Modules
 
 - `lean_rgc.coker`
 - `lean_rgc.coker_synthesis`
@@ -39,9 +39,9 @@ not deletion targets.
 - `lean_rgc.iterative`
 - `lean_rgc.stage_coker`
 
-Disposition for v82: keep compatibility intact.
+Disposition for v83: keep compatibility intact.
 
-## v82 Runtime Boundary Disposition
+## v83 Runtime Boundary Disposition
 
 The `lean_rgc.lean.*` package paths are the canonical Lean runtime boundary.
 `lean_rgc.lean.state_parser`, `lean_rgc.lean.native_worker`,
@@ -56,4 +56,9 @@ imports and must not be deleted in this phase.
 `lean_rgc.lean_server`, `lean_rgc.persistent_lean_worker`, and
 `lean_rgc.persistent_worker` are compatibility surfaces. The server still uses
 `lean_rgc.persistent_lean_worker` as its persistent subprocess module string in
-v82.
+v83.
+
+Runtime boundary enforcement is checked by `scripts/check_runtime_boundary.py`
+and default CI. A passing check means compatibility shims are thin, canonical
+exports preserve identity, and runtime-facing code does not import top-level
+runtime shims directly.

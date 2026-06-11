@@ -103,17 +103,27 @@ python -m lean_rgc.lean.persistent_worker --dry-run
 `LeanServerAdapter(backend="persistent")` continues to launch
 `lean_rgc.persistent_lean_worker` for subprocess compatibility in v82.
 
+## v83 Runtime Boundary Enforcement
+
+The runtime package boundary is now checked by `scripts/check_runtime_boundary.py`.
+The check verifies that top-level runtime modules are thin compatibility shims,
+that canonical and compatibility exports preserve object identity, and that
+runtime-facing code imports `lean_rgc.lean.*` rather than top-level runtime
+shims.
+
+The default CI runs the boundary check before `python -m pytest -q`.
+
 ## Future Boundary Work
 
 The runtime implementation files now sit behind the canonical package boundary.
 Future phases should focus on compatibility hardening and inventory cleanup:
 
-1. audit remaining top-level runtime shims as compatibility surfaces
+1. keep top-level runtime shims as supported compatibility surfaces
 2. decide whether `lean_rgc.persistent_lean_worker` should remain the subprocess
    command string permanently or gain a canonical command string after one more
    compatibility phase
 3. defer deletion, physical test relocation, and `pipeline.py` splitting until
    import compatibility has stayed stable
 
-Each phase should keep the v77-v82
+Each phase should keep the v77-v83
 identity tests passing.
