@@ -315,6 +315,9 @@
   "test_v87_grammar_extension_demand.py": [
     "integration"
   ],
+  "test_v88_eval_harness.py": [
+    "integration"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],
