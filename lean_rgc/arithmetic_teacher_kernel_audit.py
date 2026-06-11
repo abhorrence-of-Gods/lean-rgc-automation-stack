@@ -7,7 +7,7 @@ import math
 
 from .schemas import LeanTask, ProofState, TacticAction, read_jsonl, write_jsonl, stable_hash
 from .defects import ProofDefectExtractor
-from .lean_server import LeanServerAdapter, LeanServerConfig
+from .lean.server import LeanServerAdapter, LeanServerConfig
 from .lean.structured_state import extract_structured_state
 from .arithmetic_teacher import default_arithmetic_identities
 

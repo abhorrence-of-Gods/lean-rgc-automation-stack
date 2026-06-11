@@ -82,12 +82,38 @@ canonical imports for frontier construction and worker-supervised audit queues.
 Historical tests and external callers can continue using the top-level
 compatibility paths.
 
-## Future Physical Move Order
+## v82 Physical Move V
 
-When the canonical package has stayed stable for another phase, move
-implementation files behind the package boundary in this order:
+`lean_rgc.lean.server`, `lean_rgc.lean.persistent_lean_worker`, and
+`lean_rgc.lean.persistent_worker` now own their implementations. The top-level
+modules `lean_rgc.lean_server`, `lean_rgc.persistent_lean_worker`, and
+`lean_rgc.persistent_worker` are compatibility shims that re-export canonical
+objects.
 
-1. orchestration entrypoints: `server`, `persistent_worker`, `persistent_lean_worker`
+Persistent worker module entrypoints remain supported through both compatibility
+and canonical paths:
 
-Each move should leave a top-level compatibility shim and keep the v77-v81
+```bash
+python -m lean_rgc.persistent_lean_worker --backend dry_run
+python -m lean_rgc.lean.persistent_lean_worker --backend dry_run
+python -m lean_rgc.persistent_worker --dry-run
+python -m lean_rgc.lean.persistent_worker --dry-run
+```
+
+`LeanServerAdapter(backend="persistent")` continues to launch
+`lean_rgc.persistent_lean_worker` for subprocess compatibility in v82.
+
+## Future Boundary Work
+
+The runtime implementation files now sit behind the canonical package boundary.
+Future phases should focus on compatibility hardening and inventory cleanup:
+
+1. audit remaining top-level runtime shims as compatibility surfaces
+2. decide whether `lean_rgc.persistent_lean_worker` should remain the subprocess
+   command string permanently or gain a canonical command string after one more
+   compatibility phase
+3. defer deletion, physical test relocation, and `pipeline.py` splitting until
+   import compatibility has stayed stable
+
+Each phase should keep the v77-v82
 identity tests passing.

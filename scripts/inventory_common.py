@@ -26,6 +26,7 @@ CORE_MODULES = {
     "lean_rgc.lean_worker_supervisor",
     "lean_rgc.lean_server",
     "lean_rgc.native_worker",
+    "lean_rgc.persistent_lean_worker",
     "lean_rgc.state_parser",
     "lean_rgc.structured_state",
     "lean_rgc.persistent_worker",

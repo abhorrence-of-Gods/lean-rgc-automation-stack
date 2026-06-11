@@ -9,7 +9,7 @@ import time
 from .contextual_congruence import IDENTITY_CONTEXT_ID
 from .dataset import summarize_response_rows
 from .defects import ProofDefectExtractor
-from .lean_server import LeanServerAdapter, LeanServerConfig
+from .lean.server import LeanServerAdapter, LeanServerConfig
 from .schemas import AuditRecord, LeanTask, ProofState, TacticAction, read_jsonl, stable_hash, write_jsonl
 from .lean.structured_state import extract_structured_state_from_kernel_json
 

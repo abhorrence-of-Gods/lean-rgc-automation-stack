@@ -1150,6 +1150,15 @@
       ]
     },
     {
+      "classification": "core",
+      "file": "tests/test_v82_lean_server_persistent_physical_move.py",
+      "imports": [],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
       "classification": "legacy",
       "file": "tests/test_v8_harvest_shard.py",
       "imports": [
@@ -1236,13 +1245,13 @@
   "inventory_type": "tests",
   "schema_version": "lean-rgc.inventory.v1",
   "summary": {
-    "core": 29,
+    "core": 30,
     "legacy": 71
   },
   "tier_summary": {
     "e2e": 1,
-    "golden": 18,
-    "integration": 24,
+    "golden": 19,
+    "integration": 25,
     "legacy": 71,
     "unit": 2
   }

@@ -41,7 +41,7 @@ def cmd_lean_server_audit(args: argparse.Namespace) -> int:
 
 
 def cmd_persistent_worker(args: argparse.Namespace) -> int:
-    from ..persistent_lean_worker import main as worker_main
+    from ..lean.persistent_lean_worker import main as worker_main
 
     argv = ["--backend", args.backend, "--lean-cmd", args.lean_cmd, "--timeout-s", str(args.timeout_s)]
     if args.workdir:
@@ -189,7 +189,7 @@ def cmd_frontier_audit(args: argparse.Namespace) -> int:
 
 def cmd_lean_worker(args: argparse.Namespace) -> int:
     # Backward-compatible alias for the v27 persistent JSONL worker.
-    from ..persistent_lean_worker import main as worker_main
+    from ..lean.persistent_lean_worker import main as worker_main
 
     argv = ["--backend", "dry_run" if args.dry_run else "file", "--lean-cmd", args.lean_cmd, "--timeout-s", str(args.timeout_s)]
     if args.workdir:

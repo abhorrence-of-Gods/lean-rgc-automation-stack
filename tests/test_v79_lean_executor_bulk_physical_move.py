@@ -85,16 +85,16 @@ def test_runtime_imports_use_canonical_executor_and_bulk_paths():
         "batch.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",
         "lean/frontier.py": "from .executor import LeanExecutor, LeanExecutorConfig",
         "lean/kernel_state.py": "from .executor import LeanExecutor, LeanExecutorConfig",
-        "lean_server.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",
+        "lean/server.py": "from .executor import LeanExecutor, LeanExecutorConfig",
         "lean/worker_supervisor.py": "from .bulk_executor import BulkAuditConfig, LeanBulkAuditor",
-        "persistent_lean_worker.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",
+        "lean/persistent_lean_worker.py": "from .executor import LeanExecutor, LeanExecutorConfig",
         "proof_replay.py": "from .lean.executor import LeanExecutor, LeanExecutorConfig",
     }
     for filename, needle in expected.items():
         text = (ROOT / "lean_rgc" / filename).read_text(encoding="utf-8")
         assert needle in text
 
-    for filename in ["audit_env_profile.py", "batch.py", "lean_server.py"]:
+    for filename in ["audit_env_profile.py", "batch.py"]:
         text = (ROOT / "lean_rgc" / filename).read_text(encoding="utf-8")
         assert "from .executor import" not in text
         assert "from .bulk_executor import" not in text

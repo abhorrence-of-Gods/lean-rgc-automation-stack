@@ -75,23 +75,23 @@ import lean_rgc.persistent_lean_worker
 
 def test_runtime_callers_use_canonical_state_extraction_imports():
     expected = {
-        "arithmetic_teacher_kernel_audit.py": "from .lean.structured_state import extract_structured_state",
-        "lean_server.py": "from .lean.structured_state import extract_structured_state, extract_structured_state_from_kernel_json",
+        "arithmetic_teacher_kernel_audit.py": "from .lean.server import LeanServerAdapter, LeanServerConfig",
+        "lean/server.py": "from .structured_state import extract_structured_state, extract_structured_state_from_kernel_json",
         "kernel_context_cache.py": "from .lean.structured_state import extract_structured_state_from_kernel_json",
-        "persistent_lean_worker.py": "from .lean.structured_state import extract_structured_state, extract_structured_state_from_kernel_json",
+        "lean/persistent_lean_worker.py": "from .structured_state import extract_structured_state, extract_structured_state_from_kernel_json",
         "__init__.py": "from .lean.kernel_state import KernelGoalStateServer",
     }
     for filename, needle in expected.items():
         text = (ROOT / "lean_rgc" / filename).read_text(encoding="utf-8")
         assert needle in text
 
-    server_text = (ROOT / "lean_rgc" / "lean_server.py").read_text(encoding="utf-8")
+    server_text = (ROOT / "lean_rgc" / "lean" / "server.py").read_text(encoding="utf-8")
     cache_text = (ROOT / "lean_rgc" / "kernel_context_cache.py").read_text(encoding="utf-8")
-    worker_text = (ROOT / "lean_rgc" / "persistent_lean_worker.py").read_text(encoding="utf-8")
-    assert "from .lean.goal_state_dynamics import goal_state_transition_from_audit" in server_text
+    worker_text = (ROOT / "lean_rgc" / "lean" / "persistent_lean_worker.py").read_text(encoding="utf-8")
+    assert "from .goal_state_dynamics import goal_state_transition_from_audit" in server_text
     assert "from .lean.goal_state_dynamics import goal_state_transition_from_audit" in cache_text
-    assert "from .lean.goal_state_dynamics import compute_goal_state_transition_delta" in worker_text
-    assert "from .lean.kernel_state import normalize_kernel_state_v1" in worker_text
+    assert "from .goal_state_dynamics import compute_goal_state_transition_delta" in worker_text
+    assert "from .kernel_state import normalize_kernel_state_v1" in worker_text
 
 
 def test_state_extraction_helpers_still_work_through_compatibility_paths():

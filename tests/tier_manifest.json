@@ -294,6 +294,10 @@
     "integration",
     "golden"
   ],
+  "test_v82_lean_server_persistent_physical_move.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],
