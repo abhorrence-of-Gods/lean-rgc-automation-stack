@@ -321,6 +321,9 @@
   "test_v89_llm_client_boundary.py": [
     "integration"
   ],
+  "test_v90_signal_bridge_episode_store.py": [
+    "integration"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

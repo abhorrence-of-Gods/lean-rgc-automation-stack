@@ -174,6 +174,7 @@ def run_eval(
             else:
                 state["n_failed"] += 1
                 state["last_errors"] = [_response_error_text(r) for r in rows][:8]
+            state["last_responses"] = rows
             attempt_rows.append(
                 {
                     "schema_version": SCHEMA_EVAL_ATTEMPT,
