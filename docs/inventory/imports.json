@@ -20,11 +20,11 @@
         "lean_rgc.dost",
         "lean_rgc.exposure_audit",
         "lean_rgc.failure_signatures",
-        "lean_rgc.frontier",
         "lean_rgc.gamma",
         "lean_rgc.goal_shape",
         "lean_rgc.ir_defects",
         "lean_rgc.lean.executor",
+        "lean_rgc.lean.frontier",
         "lean_rgc.lean.kernel_state",
         "lean_rgc.lean.structured_state",
         "lean_rgc.premise_index",
@@ -100,7 +100,7 @@
       "imported_by": [
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
-        "lean_rgc.lean_worker_supervisor"
+        "lean_rgc.lean.worker_supervisor"
       ],
       "imports": [
         "lean_rgc.schemas"
@@ -209,7 +209,7 @@
         "lean_rgc.audit_result_cache",
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
-        "lean_rgc.lean_worker_supervisor"
+        "lean_rgc.lean.worker_supervisor"
       ],
       "imports": [
         "lean_rgc.schemas"
@@ -232,7 +232,7 @@
     {
       "classification": "experimental",
       "imported_by": [
-        "lean_rgc.lean_worker_supervisor"
+        "lean_rgc.lean.worker_supervisor"
       ],
       "imports": [
         "lean_rgc.audit_job_queue",
@@ -271,8 +271,8 @@
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
         "lean_rgc.lean.bulk_executor",
+        "lean_rgc.lean.worker_supervisor",
         "lean_rgc.lean_server",
-        "lean_rgc.lean_worker_supervisor",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -345,7 +345,7 @@
         "lean_rgc.cli.experiment",
         "lean_rgc.experiment.__init__",
         "lean_rgc.focused",
-        "lean_rgc.frontier",
+        "lean_rgc.lean.frontier",
         "lean_rgc.pipeline",
         "lean_rgc.trajectory",
         "lean_rgc.trajectory_runner"
@@ -405,7 +405,7 @@
         "lean_rgc.exposure_audit",
         "lean_rgc.exposure_frontier",
         "lean_rgc.focused",
-        "lean_rgc.frontier",
+        "lean_rgc.lean.frontier",
         "lean_rgc.pipeline",
         "lean_rgc.registry_candidates",
         "lean_rgc.trajectory"
@@ -423,7 +423,7 @@
       "imported_by": [
         "lean_rgc.__init__",
         "lean_rgc.candidates",
-        "lean_rgc.frontier"
+        "lean_rgc.lean.frontier"
       ],
       "imports": [
         "lean_rgc.goal_shape",
@@ -1203,8 +1203,8 @@
         "lean_rgc.focused",
         "lean_rgc.kernel_context_cache",
         "lean_rgc.lean.bulk_executor",
+        "lean_rgc.lean.worker_supervisor",
         "lean_rgc.lean_server",
-        "lean_rgc.lean_worker_supervisor",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -1303,11 +1303,11 @@
         "lean_rgc.cli.lean",
         "lean_rgc.exposure_frontier",
         "lean_rgc.focused",
-        "lean_rgc.frontier",
         "lean_rgc.kernel_context_cache",
         "lean_rgc.lean.bulk_executor",
+        "lean_rgc.lean.frontier",
+        "lean_rgc.lean.worker_supervisor",
         "lean_rgc.lean_server",
-        "lean_rgc.lean_worker_supervisor",
         "lean_rgc.pipeline",
         "lean_rgc.trajectory",
         "lean_rgc.trajectory_runner"
@@ -1569,7 +1569,7 @@
       "classification": "experimental",
       "imported_by": [
         "lean_rgc.cli.experiment",
-        "lean_rgc.frontier"
+        "lean_rgc.lean.frontier"
       ],
       "imports": [
         "lean_rgc.candidates",
@@ -1595,19 +1595,10 @@
       "path": "lean_rgc/focused_analysis.py"
     },
     {
-      "classification": "experimental",
-      "imported_by": [
-        "lean_rgc.__init__",
-        "lean_rgc.lean.frontier"
-      ],
+      "classification": "core",
+      "imported_by": [],
       "imports": [
-        "lean_rgc.candidates",
-        "lean_rgc.carrier_exposure",
-        "lean_rgc.carrier_normalizer",
-        "lean_rgc.defects",
-        "lean_rgc.focused",
-        "lean_rgc.lean.executor",
-        "lean_rgc.schemas"
+        "lean_rgc.lean.frontier"
       ],
       "module": "lean_rgc.frontier",
       "path": "lean_rgc/frontier.py"
@@ -1798,7 +1789,7 @@
         "lean_rgc.bulk_executor",
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
-        "lean_rgc.lean_worker_supervisor",
+        "lean_rgc.lean.worker_supervisor",
         "lean_rgc.pipeline"
       ],
       "imports": [
@@ -1824,11 +1815,11 @@
         "lean_rgc.executor",
         "lean_rgc.exposure_frontier",
         "lean_rgc.focused",
-        "lean_rgc.frontier",
         "lean_rgc.lean.bulk_executor",
+        "lean_rgc.lean.frontier",
         "lean_rgc.lean.kernel_state",
+        "lean_rgc.lean.worker_supervisor",
         "lean_rgc.lean_server",
-        "lean_rgc.lean_worker_supervisor",
         "lean_rgc.persistent_lean_worker",
         "lean_rgc.pipeline",
         "lean_rgc.proof_replay",
@@ -1846,12 +1837,20 @@
     {
       "classification": "core",
       "imported_by": [
+        "lean_rgc.__init__",
         "lean_rgc.cli.experiment",
         "lean_rgc.cli.pipeline",
+        "lean_rgc.frontier",
         "lean_rgc.pipeline"
       ],
       "imports": [
-        "lean_rgc.frontier"
+        "lean_rgc.candidates",
+        "lean_rgc.carrier_exposure",
+        "lean_rgc.carrier_normalizer",
+        "lean_rgc.defects",
+        "lean_rgc.focused",
+        "lean_rgc.lean.executor",
+        "lean_rgc.schemas"
       ],
       "module": "lean_rgc.lean.frontier",
       "path": "lean_rgc/lean/frontier.py"
@@ -1957,10 +1956,20 @@
       "imported_by": [
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
+        "lean_rgc.lean_worker_supervisor",
         "lean_rgc.pipeline"
       ],
       "imports": [
-        "lean_rgc.lean_worker_supervisor"
+        "lean_rgc.action_quarantine",
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.audit_result_cache",
+        "lean_rgc.batch",
+        "lean_rgc.dataset",
+        "lean_rgc.defects",
+        "lean_rgc.lean.bulk_executor",
+        "lean_rgc.lean.executor",
+        "lean_rgc.schemas",
+        "lean_rgc.timeout_ledger"
       ],
       "module": "lean_rgc.lean.worker_supervisor",
       "path": "lean_rgc/lean/worker_supervisor.py"
@@ -1996,20 +2005,9 @@
     },
     {
       "classification": "core",
-      "imported_by": [
-        "lean_rgc.lean.worker_supervisor"
-      ],
+      "imported_by": [],
       "imports": [
-        "lean_rgc.action_quarantine",
-        "lean_rgc.audit_job_queue",
-        "lean_rgc.audit_result_cache",
-        "lean_rgc.batch",
-        "lean_rgc.dataset",
-        "lean_rgc.defects",
-        "lean_rgc.lean.bulk_executor",
-        "lean_rgc.lean.executor",
-        "lean_rgc.schemas",
-        "lean_rgc.timeout_ledger"
+        "lean_rgc.lean.worker_supervisor"
       ],
       "module": "lean_rgc.lean_worker_supervisor",
       "path": "lean_rgc/lean_worker_supervisor.py"
@@ -2751,7 +2749,6 @@
         "lean_rgc.failure_signatures",
         "lean_rgc.focused",
         "lean_rgc.focused_analysis",
-        "lean_rgc.frontier",
         "lean_rgc.gamma_transition_learner",
         "lean_rgc.goal_shape",
         "lean_rgc.hardening_gap_report",
@@ -2763,13 +2760,14 @@
         "lean_rgc.kernel_context_cache",
         "lean_rgc.lean.bulk_executor",
         "lean_rgc.lean.executor",
+        "lean_rgc.lean.frontier",
         "lean_rgc.lean.goal_state_dynamics",
         "lean_rgc.lean.kernel_state",
         "lean_rgc.lean.native_worker",
         "lean_rgc.lean.state_parser",
         "lean_rgc.lean.structured_state",
+        "lean_rgc.lean.worker_supervisor",
         "lean_rgc.lean_server",
-        "lean_rgc.lean_worker_supervisor",
         "lean_rgc.learner",
         "lean_rgc.lineage",
         "lean_rgc.minif2f_adapter",
@@ -2925,7 +2923,7 @@
       "imported_by": [
         "lean_rgc.cli.audit",
         "lean_rgc.cli.experiment",
-        "lean_rgc.lean_worker_supervisor"
+        "lean_rgc.lean.worker_supervisor"
       ],
       "imports": [],
       "module": "lean_rgc.timeout_ledger",
@@ -2969,9 +2967,9 @@
   ],
   "schema_version": "lean-rgc.inventory.v1",
   "summary": {
-    "core": 96,
+    "core": 97,
     "dead_candidate": 8,
-    "experimental": 77,
+    "experimental": 76,
     "legacy": 6
   }
 }

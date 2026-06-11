@@ -57,7 +57,7 @@ from .candidate_acceptance import accept_candidates_file, promote_registry_from_
 from .project_harvest import HarvestedDeclaration, harvest_lean_project, parse_lean_file
 from .sharding import shard_jsonl, merge_jsonl
 
-from .frontier import build_frontiers, exposure_actions_for_task, FrontierAuditor, expose_frontier_files
+from .lean.frontier import build_frontiers, exposure_actions_for_task, FrontierAuditor, expose_frontier_files
 
 from .action_analysis import summarize_action_groups, write_action_group_report
 from .exposure_audit import exposure_actions_for_tasks, summarize_exposure_audit

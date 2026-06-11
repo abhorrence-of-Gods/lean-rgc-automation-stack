@@ -1135,6 +1135,21 @@
       ]
     },
     {
+      "classification": "core",
+      "file": "tests/test_v81_lean_orchestration_physical_move.py",
+      "imports": [
+        "lean_rgc.audit_job_queue",
+        "lean_rgc.cli",
+        "lean_rgc.lean.executor",
+        "lean_rgc.lean.worker_supervisor",
+        "lean_rgc.schemas"
+      ],
+      "tiers": [
+        "integration",
+        "golden"
+      ]
+    },
+    {
       "classification": "legacy",
       "file": "tests/test_v8_harvest_shard.py",
       "imports": [
@@ -1221,13 +1236,13 @@
   "inventory_type": "tests",
   "schema_version": "lean-rgc.inventory.v1",
   "summary": {
-    "core": 28,
+    "core": 29,
     "legacy": 71
   },
   "tier_summary": {
     "e2e": 1,
-    "golden": 17,
-    "integration": 23,
+    "golden": 18,
+    "integration": 24,
     "legacy": 71,
     "unit": 2
   }

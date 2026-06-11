@@ -70,12 +70,24 @@ objects.
 Runtime callers use canonical imports for state extraction. Historical tests and
 external callers can continue using the top-level compatibility paths.
 
+## v81 Physical Move IV
+
+`lean_rgc.lean.frontier` and `lean_rgc.lean.worker_supervisor` now own their
+implementations. The top-level modules `lean_rgc.frontier` and
+`lean_rgc.lean_worker_supervisor` are compatibility shims that re-export
+canonical objects.
+
+Runtime-facing package exports, CLI modules, and pipeline entrypoints use
+canonical imports for frontier construction and worker-supervised audit queues.
+Historical tests and external callers can continue using the top-level
+compatibility paths.
+
 ## Future Physical Move Order
 
 When the canonical package has stayed stable for another phase, move
 implementation files behind the package boundary in this order:
 
-1. orchestration: `server`, `persistent_worker`, `worker_supervisor`, `frontier`
+1. orchestration entrypoints: `server`, `persistent_worker`, `persistent_lean_worker`
 
-Each move should leave a top-level compatibility shim and keep the v77-v80
+Each move should leave a top-level compatibility shim and keep the v77-v81
 identity tests passing.

@@ -290,6 +290,10 @@
     "integration",
     "golden"
   ],
+  "test_v81_lean_orchestration_physical_move.py": [
+    "integration",
+    "golden"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],
