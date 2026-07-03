@@ -13,7 +13,7 @@ from .audit_job_queue import connect_queue, ensure_audit_queue_schema
 from .schemas import stable_hash
 
 
-SCHEMA_AUDIT_RESULT_CACHE = "lean-rgc-audit-result-cache-v85.0"
+SCHEMA_AUDIT_RESULT_CACHE = "lean-rgc-audit-result-cache-v92.0"
 
 DEFAULT_CACHE_LANE = "source_check"
 
@@ -144,6 +144,28 @@ def detect_lean_version(lean_cmd: str, *, workdir: str | None = None, timeout_s:
     return out.splitlines()[0][:240]
 
 
+# Newest Lake layout first; the two fallbacks cover older toolchains.
+_BUILD_LIB_DIRS = (".lake/build/lib/lean", ".lake/build/lib", "build/lib")
+
+
+def _build_state_marker(root: Path) -> Any:
+    # Manifest and toolchain are identical before and after `lake build`, so
+    # they cannot distinguish a workdir whose audits all fail with "unknown
+    # module prefix" (no .olean files yet) from a healthy one. The set of
+    # top-level .olean names flips exactly when the built root modules change,
+    # without invalidating the cache on mere rebuilds of the same modules.
+    for rel in _BUILD_LIB_DIRS:
+        lib = root.joinpath(*rel.split("/"))
+        if not lib.is_dir():
+            continue
+        try:
+            oleans = sorted(p.name for p in lib.iterdir() if p.suffix == ".olean")
+        except Exception:
+            return {"lib_dir": rel, "oleans": "unreadable"}
+        return {"lib_dir": rel, "oleans": oleans}
+    return "missing"
+
+
 def workdir_fingerprint(workdir: str | None) -> str:
     if not workdir:
         return stable_hash({"workdir": ""}, 24)
@@ -159,6 +181,11 @@ def workdir_fingerprint(workdir: str | None) -> str:
                 payload[p.name] = "unreadable"
         else:
             payload[p.name] = "missing"
+    # v92: adding this key changes every fingerprint, which orphans all pre-v92
+    # cache rows. Unlike the v85 lane migration they are not rekeyed: the build
+    # state at write time is unknowable, and rows written against an unbuilt
+    # workdir are exactly the ones that must never hit again.
+    payload["build_state"] = _build_state_marker(root)
     return stable_hash(payload, 24)
 
 
