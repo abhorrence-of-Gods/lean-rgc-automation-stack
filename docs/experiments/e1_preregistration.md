@@ -55,6 +55,24 @@ If the primary endpoint fails, run packet-block ablations (drop one of
 `include_keys`) on the same task subset before drawing conclusions; the
 follow-up decision is made on which block, if any, carries the signal.
 
+## Amendment 2026-07-03: factorial arm a3_typed_only (pre-registered before frontier E1)
+
+Registered after the local-model pilot (Qwen2.5-7B-AWQ, n=60 mathd slice) and
+before any frontier-model E1 episode. The pilot observed a1 == a0 exactly and
+a2 − a1 = +0.217 with the 95% CI excluding zero, which makes the source of the
+a2 effect (typed structure vs raw error content) the decisive open question.
+
+- New arm `a3_typed_only`: identical to a2 except the packet's raw Lean
+  message strings are dropped (`include_instance_messages=False`); aggregated
+  typed blocks (status counts, observed response maxima) are kept.
+- 2x2 reading: a0 = (no L, no G), a1 = (L only), a3 = (G only), a2 = (L + G),
+  where L = raw instance messages and G = aggregated typed structure.
+- Secondary endpoints: paired deltas a2 − a3 (unique value of instance text
+  given structure) and a3 − a0 (value of structure alone), plus the
+  interaction term a2 − a1 − a3 + a0.
+- The primary endpoint of this document (a2 − a1 on the frontier run) is
+  unchanged.
+
 ## Threats to validity acknowledged in advance
 
 - miniF2F is likely in the generator's training data; this affects all arms

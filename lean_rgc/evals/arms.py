@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 
-ARMS = ("a0_onebit", "a1_raw_error", "a2_typed_packet")
+ARMS = ("a0_onebit", "a1_raw_error", "a2_typed_packet", "a3_typed_only")
 
 DEFAULT_MAX_ERROR_MESSAGES = 3
 DEFAULT_MAX_ERROR_CHARS = 500
@@ -34,10 +34,13 @@ def render_feedback(
         for err in errors[: max(0, int(max_error_messages))]:
             lines.append(f"Lean error: {err[: max(0, int(max_error_chars))]}")
         return "\n".join(lines)
+    # a2_typed_packet and a3_typed_only both consume a rendered packet; the
+    # factorial difference (raw instance messages in or out) is decided by
+    # the signal bridge that produced the packet, not here.
     packet_text = state.get("signal_packet_text")
     if not packet_text:
         raise NotImplementedError(
-            "a2_typed_packet requires a rendered signal packet; the prompt signal bridge is not wired yet"
+            f"{arm} requires a rendered signal packet; the prompt signal bridge is not wired yet"
         )
     lines.append(str(packet_text))
     return "\n".join(lines)

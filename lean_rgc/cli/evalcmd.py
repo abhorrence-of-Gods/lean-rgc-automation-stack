@@ -59,7 +59,12 @@ def cmd_eval_run(args):
         max_proposals=args.max_proposals,
         boundaries_out=out_dir / "boundaries.jsonl",
     )
-    signal_packet_fn = make_signal_packet_fn() if args.arm == "a2_typed_packet" else None
+    if args.arm == "a2_typed_packet":
+        signal_packet_fn = make_signal_packet_fn()
+    elif args.arm == "a3_typed_only":
+        signal_packet_fn = make_signal_packet_fn(include_instance_messages=False)
+    else:
+        signal_packet_fn = None
     executor_config = LeanExecutorConfig(
         lean_cmd=args.lean_cmd,
         workdir=args.workdir,
@@ -111,7 +116,7 @@ def register_eval_commands(sub) -> None:
 
     erun = sub.add_parser("eval-run")
     erun.add_argument("--tasks", required=True)
-    erun.add_argument("--arm", required=True, choices=["a0_onebit", "a1_raw_error", "a2_typed_packet"])
+    erun.add_argument("--arm", required=True, choices=["a0_onebit", "a1_raw_error", "a2_typed_packet", "a3_typed_only"])
     erun.add_argument("--llm-config", required=True)
     erun.add_argument("--out-dir", required=True)
     erun.add_argument("--run-id", required=True)

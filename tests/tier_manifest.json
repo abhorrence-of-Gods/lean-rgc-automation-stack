@@ -330,6 +330,9 @@
   "test_v92_audit_cache_build_state_fingerprint.py": [
     "integration"
   ],
+  "test_v93_typed_only_arm.py": [
+    "integration"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

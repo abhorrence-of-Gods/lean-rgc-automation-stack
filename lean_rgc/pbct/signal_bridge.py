@@ -46,8 +46,14 @@ def build_signal_packet(
     poms: dict[str, Any] | None = None,
     max_messages: int = DEFAULT_MAX_MESSAGES,
     max_message_chars: int = DEFAULT_MAX_MESSAGE_CHARS,
+    include_instance_messages: bool = True,
 ) -> dict[str, Any]:
-    """Aggregate audited telemetry into the typed packet of design §9."""
+    """Aggregate audited telemetry into the typed packet of design §9.
+
+    ``include_instance_messages=False`` drops the raw Lean message strings —
+    the instance-local L-channel content — while keeping the aggregated typed
+    blocks, so the factorial a3 arm can isolate structure from error text.
+    """
 
     rows = [r for r in response_rows if isinstance(r, dict)]
     status_counts: dict[str, int] = {}
@@ -60,6 +66,8 @@ def build_signal_packet(
         for key, value in response_map_from_row(row).items():
             response_acc[key] = max(response_acc.get(key, float("-inf")), float(value))
     truncated = [m[: max(0, int(max_message_chars))] for m in messages[: max(0, int(max_messages))]]
+    if not include_instance_messages:
+        truncated = []
     packet = {
         "schema_version": SCHEMA_PROMPT_SIGNAL,
         "task_id": str(task_id),
@@ -116,6 +124,7 @@ def make_signal_packet_fn(
     include_keys: tuple[str, ...] | list[str] | None = None,
     max_messages: int = DEFAULT_MAX_MESSAGES,
     max_message_chars: int = DEFAULT_MAX_MESSAGE_CHARS,
+    include_instance_messages: bool = True,
     packets_sink: list[dict[str, Any]] | None = None,
 ) -> Callable[..., str]:
     """Adapt the bridge to the eval harness signal_packet_fn interface.
@@ -135,6 +144,7 @@ def make_signal_packet_fn(
             poms=poms,
             max_messages=max_messages,
             max_message_chars=max_message_chars,
+            include_instance_messages=include_instance_messages,
         )
         if packets_sink is not None:
             packets_sink.append(packet)
