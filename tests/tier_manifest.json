@@ -333,6 +333,9 @@
   "test_v93_typed_only_arm.py": [
     "integration"
   ],
+  "test_v94_wave_rows_messages.py": [
+    "integration"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],

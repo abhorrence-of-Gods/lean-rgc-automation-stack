@@ -84,10 +84,25 @@ def _default_wave_audit_runner(
         max_actions=max(1, max_actions),
         **runner_kwargs,
     )
-    responses_path = wave_dir / "responses.jsonl"
-    if not responses_path.exists():
-        return []
-    return [r for r in read_jsonl(responses_path) if isinstance(r, dict)]
+    return load_wave_rows(wave_dir)
+
+
+def load_wave_rows(wave_dir: str | Path) -> list[dict[str, Any]]:
+    """Load audited rows for one wave.
+
+    micro_audit.jsonl is preferred because it carries the Lean `messages`
+    text; responses.jsonl rows have no message fields at all, which silently
+    starves every feedback arm of real error content (found in pilot6, where
+    the empty-message a2 and a3 prompts became byte-identical).
+    """
+
+    from ..schemas import read_jsonl
+
+    for name in ("micro_audit.jsonl", "responses.jsonl"):
+        path = Path(wave_dir) / name
+        if path.exists():
+            return [r for r in read_jsonl(path) if isinstance(r, dict)]
+    return []
 
 
 def run_eval(
@@ -238,6 +253,7 @@ __all__ = [
     "DEFAULT_SUCCESS_STATUSES",
     "SCHEMA_EVAL_ATTEMPT",
     "SCHEMA_EVAL_EPISODE",
+    "load_wave_rows",
     "run_eval",
     "select_task_subset",
 ]
