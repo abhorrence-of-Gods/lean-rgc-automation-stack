@@ -67,9 +67,15 @@ def _classify_block_failure(text: str) -> str:
 
 def _sanitize_ident(x: str) -> str:
     y = re.sub(r"[^A-Za-z0-9_]", "_", x)
-    if not y or y[0].isdigit():
+    # Mathlib's linter.style.nameCheck flags identifiers containing "__", and
+    # a style warning on the generated wrapper name fails the whole audit
+    # block (found by the g1 positive control: task_id "__positive_control__").
+    y = re.sub(r"_+", "_", y).strip("_")
+    if not y:
+        y = "x"
+    if y[0].isdigit():
         y = "x_" + y
-    return y[:80]
+    return y[:80].rstrip("_") or "x"
 
 
 def _render_bulk_file(pairs: list[tuple[LeanTask, TacticAction]], *, trace_state: bool = False) -> tuple[str, list[BulkBlock]]:

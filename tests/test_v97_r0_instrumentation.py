@@ -36,6 +36,21 @@ def test_bulk_audit_flags_carry_block_line_offsets(monkeypatch):
         assert block.start_line < block.end_line
 
 
+def test_sanitize_ident_is_style_linter_clean():
+    # Regression: "__positive_control__" rendered a theorem name with "__",
+    # mathlib's linter.style.nameCheck warned, and the audit classified the
+    # note as failure — the g1 positive control gate tripped on it.
+    assert bx._sanitize_ident("__positive_control__") == "positive_control"
+    assert bx._sanitize_ident("a--b..c") == "a_b_c"
+    assert bx._sanitize_ident("123abc") == "x_123abc"
+    assert bx._sanitize_ident("___") == "x"
+    task = LeanTask(task_id="__positive_control__", statement="True", imports=[])
+    action = TacticAction(action_id="control_trivial", tactic="trivial", tactic_class="trivial")
+    src, blocks = bx._render_bulk_file([(task, action)])
+    assert "__" not in blocks[0].theorem_name
+    assert f"theorem {blocks[0].theorem_name} : True := by" in src
+
+
 # ---- prompt boundary: prefix visibility with hash stability ----
 
 def test_boundary_without_prefix_has_no_prefix_key():
