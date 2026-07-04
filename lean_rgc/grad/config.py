@@ -29,6 +29,8 @@ class GradInvariants:
     lora_dropout: float = 0.05
     # rollout
     min_rollout_batch: int = 8          # load-bearing: batch-1 decode ~20-25 tok/s kills throughput
+    rollout_chunk: int = 32             # decode chunk: output_logits holds steps x batch x vocab, so
+                                        # an unchunked wavefront (100s of seqs) OOMs at max_new_tokens
     max_new_tokens: int = 512           # decode time dominates beyond this; verified budget
     group_size: int = 8                 # RLOO group G
     temperature: float = 0.7
@@ -54,6 +56,16 @@ class GradInvariants:
         problems: list[str] = []
         if self.min_rollout_batch < 8:
             problems.append(f"min_rollout_batch={self.min_rollout_batch} < 8 (batched decode is load-bearing)")
+        if self.rollout_chunk < self.min_rollout_batch:
+            problems.append(
+                f"rollout_chunk={self.rollout_chunk} < min_rollout_batch={self.min_rollout_batch}: "
+                "chunked decode would sink below the batch floor"
+            )
+        if self.rollout_chunk > 64:
+            problems.append(
+                f"rollout_chunk={self.rollout_chunk} > 64: output_logits retention "
+                "(steps x batch x vocab) exceeds the verified memory budget at max_new_tokens"
+            )
         if self.max_new_tokens > 512:
             problems.append(f"max_new_tokens={self.max_new_tokens} > 512 (decode budget)")
         if not self.gradient_checkpointing:
@@ -78,6 +90,7 @@ class GradInvariants:
             "lora_r": self.lora_r,
             "lora_alpha": self.lora_alpha,
             "min_rollout_batch": self.min_rollout_batch,
+            "rollout_chunk": self.rollout_chunk,
             "max_new_tokens": self.max_new_tokens,
             "group_size": self.group_size,
             "temperature": self.temperature,

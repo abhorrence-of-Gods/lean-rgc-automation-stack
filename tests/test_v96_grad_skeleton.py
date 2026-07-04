@@ -28,6 +28,10 @@ def test_invariants_reject_verified_violations():
         GradInvariants(inner_epochs=2).validate()
     with pytest.raises(GradInvariantError, match="NF4"):
         GradInvariants(load_in_4bit=False).validate()
+    with pytest.raises(GradInvariantError, match="batch floor"):
+        GradInvariants(rollout_chunk=4).validate()
+    with pytest.raises(GradInvariantError, match="output_logits"):
+        GradInvariants(rollout_chunk=128).validate()
     GradInvariants().validate()  # defaults are the verified operating point
 
 

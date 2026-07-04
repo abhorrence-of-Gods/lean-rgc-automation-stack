@@ -198,53 +198,63 @@ class RolloutEngine:
             torch.cuda.reset_peak_memory_stats()
         self._model.eval()  # checkpointing off, KV cache on: linear-time decode
         tok = self._tokenizer
-        ids = [self._chat_ids(p["system"], p["user"]) for p in expanded]
-        batch = tok.pad({"input_ids": ids}, return_tensors="pt").to(self._model.device)
-        start = time.monotonic()
-        with torch.no_grad():
-            out = self._model.generate(
-                **batch,
-                do_sample=True,
-                temperature=self.inv.temperature,
-                top_p=self.inv.top_p,
-                max_new_tokens=self.inv.max_new_tokens,
-                return_dict_in_generate=True,
-                output_logits=True,
-                pad_token_id=tok.pad_token_id,
-            )
-        elapsed = time.monotonic() - start
-        prompt_len = batch["input_ids"].shape[1]
-        completions = out.sequences[:, prompt_len:]
-        # Batched raw logprobs, one (B, V) log_softmax per decode step.
-        step_logprobs = []
-        for t, logits in enumerate(out.logits):
-            lp = torch.log_softmax(logits.float(), dim=-1)
-            step_logprobs.append(lp.gather(1, completions[:, t : t + 1]).squeeze(1))
-        lp_matrix = torch.stack(step_logprobs, dim=1) if step_logprobs else torch.zeros((len(expanded), 0))
+        # output_logits retains every decode step's (B, vocab) logits until
+        # we gather from them, so memory grows with batch x steps x vocab —
+        # a full wavefront (hundreds of sequences) at max_new_tokens would
+        # OOM. Decode in chunks; each chunk still satisfies the batch floor.
+        chunk_size = max(1, int(self.inv.rollout_chunk))
         samples: list[dict[str, Any]] = []
-        for i, prompt in enumerate(expanded):
-            comp_ids = self._truncate_at_eos(completions[i].tolist())
-            n_tok = len(comp_ids)
-            logprob_sum = float(lp_matrix[i, :n_tok].sum()) if n_tok else 0.0
-            text = tok.decode(comp_ids, skip_special_tokens=True)
-            samples.append(
-                {
-                    "task_id": prompt["task_id"],
-                    "boundary": prompt["boundary"],
-                    "system": prompt["system"],
-                    "user": prompt["user"],
-                    "text": text,
-                    "tactic": _clean_tactic(text),
-                    "completion_ids": comp_ids,
-                    "rollout_logprob_sum": logprob_sum,
-                    "n_completion_tokens": n_tok,
-                }
-            )
+        elapsed_total = 0.0
+        for c0 in range(0, len(expanded), chunk_size):
+            chunk = expanded[c0 : c0 + chunk_size]
+            ids = [self._chat_ids(p["system"], p["user"]) for p in chunk]
+            batch = tok.pad({"input_ids": ids}, return_tensors="pt").to(self._model.device)
+            start = time.monotonic()
+            with torch.no_grad():
+                out = self._model.generate(
+                    **batch,
+                    do_sample=True,
+                    temperature=self.inv.temperature,
+                    top_p=self.inv.top_p,
+                    max_new_tokens=self.inv.max_new_tokens,
+                    return_dict_in_generate=True,
+                    output_logits=True,
+                    pad_token_id=tok.pad_token_id,
+                )
+            elapsed_total += time.monotonic() - start
+            prompt_len = batch["input_ids"].shape[1]
+            completions = out.sequences[:, prompt_len:]
+            # Batched raw logprobs, one (B, V) log_softmax per decode step.
+            step_logprobs = []
+            for t, logits in enumerate(out.logits):
+                lp = torch.log_softmax(logits.float(), dim=-1)
+                step_logprobs.append(lp.gather(1, completions[:, t : t + 1]).squeeze(1))
+            lp_matrix = torch.stack(step_logprobs, dim=1) if step_logprobs else torch.zeros((len(chunk), 0))
+            del out, step_logprobs
+            for i, prompt in enumerate(chunk):
+                comp_ids = self._truncate_at_eos(completions[i].tolist())
+                n_tok = len(comp_ids)
+                logprob_sum = float(lp_matrix[i, :n_tok].sum()) if n_tok else 0.0
+                text = tok.decode(comp_ids, skip_special_tokens=True)
+                samples.append(
+                    {
+                        "task_id": prompt["task_id"],
+                        "boundary": prompt["boundary"],
+                        "system": prompt["system"],
+                        "user": prompt["user"],
+                        "text": text,
+                        "tactic": _clean_tactic(text),
+                        "completion_ids": comp_ids,
+                        "rollout_logprob_sum": logprob_sum,
+                        "n_completion_tokens": n_tok,
+                    }
+                )
         total_new = sum(s["n_completion_tokens"] for s in samples)
         self._last_rollout = {
-            "tokens_per_second": total_new / elapsed if elapsed > 0 else 0.0,
+            "tokens_per_second": total_new / elapsed_total if elapsed_total > 0 else 0.0,
             "peak_gb": self._measured_peak_gb(),
             "batch": len(expanded),
+            "n_chunks": math.ceil(len(expanded) / chunk_size),
         }
         return samples
 
