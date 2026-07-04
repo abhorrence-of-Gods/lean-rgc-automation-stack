@@ -142,3 +142,95 @@ def test_run_emz_report_shape(tmp_path):
     assert report["n_chains"] == 12
     assert set(report["arms"]) == {"L34", "LTXT", "BOTH", "T2_L34"}
     assert report["decision"] in {"kill_memory_module", "ema_port_only", "learned_memory_justified"}
+
+
+# ---------------- M1 reuse ladder ----------------
+
+def test_m1_alpha_gauge_unifies_renamed_goals():
+    from lean_rgc.evals.reuse_ladder import key_k1, key_k2, parse_goal
+
+    g1 = parse_goal(["n : Nat"], "n + 0 = n")
+    g2 = parse_goal(["m : Nat"], "m + 0 = m")
+    assert key_k1(g1) == key_k1(g2)
+    assert key_k2(g1) == key_k2(g2) == "v0 + 0 = v0"
+
+
+def test_m1_support_gauge_ignores_garbage_context():
+    from lean_rgc.evals.reuse_ladder import key_k1, key_k3, parse_goal
+
+    clean = parse_goal(["n : Nat", "h : 0 < n"], "n + 0 = n")
+    garbage = parse_goal(["n : Nat", "h : 0 < n", "junk : List Bool", "u : junk = junk"], "n + 0 = n")
+    # h is in the closure only if referenced from the target; here only n is.
+    assert key_k3(clean) == key_k3(garbage)
+    assert key_k1(clean) != key_k1(garbage)
+
+
+def test_m1_dependency_closure_is_transitive():
+    from lean_rgc.evals.reuse_ladder import _dependency_closure, parse_goal
+
+    g = parse_goal(["a : Nat", "h : a < b", "b : Nat", "z : Bool"], "a = 0")
+    names = {n for n, _ in _dependency_closure(g)}
+    # target -> a; a appears in h's type? h : a < b references a, but closure
+    # follows FROM target names to hyps whose names occur in visited types:
+    # target mentions a only; a's type mentions nothing; h is NOT pulled in
+    # because 'h' does not occur in the target.
+    assert names == {"a"}
+
+
+def test_m1_trivial_target_proxy():
+    from lean_rgc.evals.reuse_ladder import is_trivial_target
+
+    assert is_trivial_target("True")
+    assert is_trivial_target("v0 = v0")
+    assert is_trivial_target("1 + 1 = 2")
+    assert not is_trivial_target("v0 + 0 = v0")
+    assert not is_trivial_target("v0 ^ 2 + v1 ^ 2 = 369")
+
+
+def test_m1_parser_handles_subscripts_and_multibinder():
+    from lean_rgc.lean.state_parser import LeanMessageParser
+
+    text = (
+        "unsolved goals\n"
+        "b h v : ℝ\n"
+        "h₀ : 0 < b ∧ 0 < h\n"
+        "⊢ v = 65\n"
+    )
+    goals = LeanMessageParser().extract_goals(text)
+    assert len(goals) == 1
+    assert goals[0].hypotheses == ["b h v : ℝ", "h₀ : 0 < b ∧ 0 < h"]
+
+
+def test_m1_end_to_end_ladder(tmp_path):
+    from lean_rgc.evals.reuse_ladder import run_reuse_ladder
+    from lean_rgc.schemas import write_jsonl
+
+    root = tmp_path / "waves"
+    # Two theorems reaching alpha-equivalent residual goals + garbage variant.
+    rows_a = [
+        {"task_id": "thmA", "status": "partial",
+         "after_state": {"goals_text": "unsolved goals\nn : Nat\n⊢ n + 0 = n"}},
+        {"task_id": "thmA", "status": "partial",
+         "after_state": {"goals_text": "unsolved goals\nn : Nat\njunk : Bool\n⊢ n + 0 = n"}},
+    ]
+    rows_b = [
+        {"task_id": "thmB", "status": "partial",
+         "after_state": {"goals_text": "unsolved goals\nm : Nat\n⊢ m + 0 = m"}},
+        {"task_id": "thmB", "status": "fail",
+         "after_state": {"goals_text": "error: unknown identifier"}},
+    ]
+    write_jsonl(root / "run1" / "wave_0" / "micro_audit.jsonl", rows_a)
+    write_jsonl(root / "run1" / "wave_1" / "micro_audit.jsonl", rows_b)
+    report = run_reuse_ladder(root)
+    assert report["n_goal_instances"] == 3
+    r = report["rungs"]
+    # Raw strings never collide across the garbage variant or renaming.
+    assert r["K0_raw"]["inter_theorem_rate"] == 0.0
+    assert r["K0_raw"]["within_theorem_dup_rate"] == 0.0
+    # K1 unifies renaming (thmA clean vs thmB) but not garbage.
+    assert r["K1_alpha"]["inter_theorem_rate"] > 0.0
+    # K3 unifies all three: garbage dropped, variables renamed.
+    assert r["K3_goal_support"]["n_unique_keys"] == 1
+    assert r["K3_goal_support"]["inter_theorem_rate"] == 1.0
+    assert r["K3_goal_support"]["within_theorem_dup_rate"] == 1 / 3
+    assert report["decision"] == "central_layer_live"

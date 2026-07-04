@@ -90,7 +90,10 @@ class LeanMessageParser:
                 before, after = raw.split("⊢", 1)
                 target = after.strip().splitlines()[0].strip() if after.strip() else ""
                 for ln in before.splitlines():
-                    if re.match(r"\s*[A-Za-z_][A-Za-z0-9_']*\s*:", ln):
+                    # Real Lean hypothesis lines carry subscripted names
+                    # (h₀), inaccessible markers (x✝, a✝¹) and multi-binder
+                    # groups (b h v : ℝ) — all must count as hypotheses.
+                    if re.match(r"\s*[A-Za-z_][A-Za-z0-9_'₀-₉✝⁰¹²³⁴⁵⁶⁷⁸⁹]*(?:\s+[A-Za-z_][A-Za-z0-9_'₀-₉✝⁰¹²³⁴⁵⁶⁷⁸⁹]*)*\s*:", ln):
                         hyps.append(ln.strip())
             goals.append(ParsedGoal(raw=raw, hypotheses=hyps, target=target, case_name=case_name))
         return goals

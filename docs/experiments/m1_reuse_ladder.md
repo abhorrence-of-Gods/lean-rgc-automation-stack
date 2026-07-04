@@ -71,6 +71,48 @@ Secondary readouts (reported, not gating): the full rung-by-rung ladder
 (where does the entropy live), per-wave breakdown, and the trivial fraction
 of inter-theorem hits (squeeze evidence).
 
+## Results 2026-07-05 (registered analysis, first execution)
+
+Report: `runs/m1_reuse_ladder/report.json`. Extraction: 4,522/4,522 partial
+rows parsed (zero failures; enabled by the same-day state_parser fixes:
+mojibake turnstile, subscripted/multi-binder hypothesis lines), 4,536 goal
+instances across 114 tasks.
+
+Ladder (within-theorem dup rate / inter-theorem rate):
+
+- K0 raw:          75.3% / 0.0%
+- K1 text-alpha:   92.4% / 1.04%
+- K2 goal-only:    93.1% / 1.12%
+- K3 goal+support: 93.1% / 1.04%
+
+DECISION (frozen rule): central_layer_live — the within-theorem arm passes
+overwhelmingly (93.1% >= 10%; secondary readout: 69.8% even restricted to a
+single (task, run), so confluence is not a cross-run artifact).
+
+Honest inspection amendment (same day, before any downstream use): the
+squeeze_check's automated trivial_fraction read 0.0, but manual inspection
+of ALL shared K3 keys shows the automated proxy has false negatives. The
+inter-theorem hits are exactly three key groups: `⊢ ∀ (x : ℝ), True`
+(39 instances — forall-wrapped True, trivial, missed by the proxy) and
+`⊢ ?m.46` / `⊢ ?m.32` (8 instances — bare unassigned metavariable targets,
+elaboration artifacts whose numeric coincidence across tasks is
+meaningless). Corrected reading: NON-TRIVIAL inter-theorem reuse at the
+text gauge is ~0%. The squeeze prediction is CONFIRMED, not refuted.
+
+Consequences:
+- Within-theorem transposition value is real and large (a ~13x key
+  compression: 4,536 instances -> 341 unique K1 keys): residual-state
+  dedup for repair prompting, RFT trace dedup, and twist sharing are
+  licensed as within-theorem machinery.
+- Inter-theorem accumulation does NOT live at the residual-state text
+  gauge. If it lives anywhere, it is at the kernel/lemma gauge — M2
+  (proof-term support extraction + mvar-closure certification on
+  kernel_rpc, R8 cargo) remains the decisive measurement, and offline
+  lemma distillation remains the accumulation route.
+- Proxy fix for any rerun: extend is_trivial_target to strip binder
+  prefixes and to treat bare-metavariable targets as degenerate (excluded,
+  not merely trivial).
+
 ## Threats to validity acknowledged in advance
 
 - Text-level canonicalization is approximate; K1-K3 rates are lower bounds
