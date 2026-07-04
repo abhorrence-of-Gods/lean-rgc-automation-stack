@@ -161,7 +161,7 @@ def _fake_audit(*, tasks, actions_by_task, wave_dir, run_id, drop_action_ids=fro
         for a in actions_by_task.get(t.task_id, []):
             if a["action_id"] in drop_action_ids:
                 continue
-            ok = a["tactic"] == "win"
+            ok = a["tactic"] == "win" or (t.task_id == "__positive_control__" and a["tactic"] == "trivial")
             rows.append(
                 {
                     "task_id": t.task_id,
@@ -216,9 +216,11 @@ def test_run_grad_loop_excludes_unaudited_from_rloo(tmp_path: Path):
 
     def audit(*, tasks, actions_by_task, wave_dir, run_id, **kw):
         # drop the first action's row: it must be excluded, not counted as failed
-        for acts in actions_by_task.values():
-            if acts:
-                dropped.add(acts[0]["action_id"])
+        # (the positive control run is left intact — it must pass to reach waves)
+        if not run_id.endswith("_control"):
+            for acts in actions_by_task.values():
+                if acts:
+                    dropped.add(acts[0]["action_id"])
         return _fake_audit(
             tasks=tasks, actions_by_task=actions_by_task, wave_dir=wave_dir, run_id=run_id,
             drop_action_ids=frozenset(dropped),
@@ -230,6 +232,67 @@ def test_run_grad_loop_excludes_unaudited_from_rloo(tmp_path: Path):
     )
     updates = read_jsonl(tmp_path / "grad_run.jsonl")
     assert updates[0]["n_unaudited"] == 1
+
+
+def test_clean_tactic_extracts_from_proposal_json():
+    from lean_rgc.grad.engine import _clean_tactic
+
+    js = '{"proposals": [{"proposal_kind": "tactic", "lean_tactic": "rw [h₁]; ring", "confidence": 0.9}]};'
+    assert _clean_tactic(js) == "rw [h₁]; ring"
+    assert _clean_tactic("norm_num") == "norm_num"
+    assert _clean_tactic("```lean\nsimp\n```") == "simp"
+    # truncated JSON falls back to the first line (fails Lean, reward 0)
+    assert _clean_tactic('{"proposals": [{"lean_ta').startswith("{")
+
+
+def test_run_grad_loop_positive_control_gate(tmp_path: Path):
+    from lean_rgc.grad.config import GradInvariantError
+
+    inv = GradInvariants(group_size=4)
+    tasks = [LeanTask(task_id="t0", statement="True", imports=[])]
+
+    def broken_audit(*, tasks, actions_by_task, wave_dir, run_id, **kw):
+        return [
+            {
+                "task_id": t.task_id,
+                "action_id": a["action_id"],
+                "status": "fail",
+                "messages": ["FileNotFoundError(2, 'No such file or directory')"],
+                "action": a,
+            }
+            for t in tasks
+            for a in actions_by_task.get(t.task_id, [])
+        ]
+
+    engine = FakeEngine(inv)
+    with pytest.raises(GradInvariantError, match="positive control"):
+        run_grad_loop(
+            tasks=tasks, out_dir=tmp_path, run_id="gc", invariants=inv,
+            engine=engine, wave_audit_runner=broken_audit, n_waves=1,
+        )
+    assert engine.train_calls == [], "no gradient step may run behind a failed control"
+
+
+def test_run_grad_loop_aborts_on_majority_infra_failures(tmp_path: Path):
+    from lean_rgc.grad.config import GradInvariantError
+
+    inv = GradInvariants(group_size=8)
+    tasks = [LeanTask(task_id="t1", statement="False", imports=[])]
+
+    def audit(*, tasks, actions_by_task, wave_dir, run_id, **kw):
+        rows = _fake_audit(tasks=tasks, actions_by_task=actions_by_task, wave_dir=wave_dir, run_id=run_id)
+        if run_id.endswith("_control"):
+            return rows
+        for row in rows:  # Lean breaks mid-run: every wave row is an OS error
+            row["status"] = "fail"
+            row["messages"] = ["FileNotFoundError(2, 'No such file or directory')"]
+        return rows
+
+    with pytest.raises(GradInvariantError, match="infrastructure"):
+        run_grad_loop(
+            tasks=tasks, out_dir=tmp_path, run_id="gi", invariants=inv,
+            engine=FakeEngine(inv), wave_audit_runner=audit, n_waves=1,
+        )
 
 
 def test_real_engine_requires_torch_lazily():

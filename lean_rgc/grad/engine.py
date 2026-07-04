@@ -25,7 +25,7 @@ import time
 
 from ..pbct.boundary import build_prompt_boundary, render_boundary
 from ..schemas import LeanTask, stable_hash, write_jsonl
-from .config import GradInvariants, assert_rollout_batch, assert_train_memory
+from .config import GradInvariantError, GradInvariants, assert_rollout_batch, assert_train_memory
 from .estimators import DEFAULT_SUCCESS_STATUSES, SCHEMA_GRAD_UPDATE, SCHEMA_RFT_TRACE, grouped_rloo
 
 
@@ -47,9 +47,28 @@ def _require_torch():
 
 
 def _clean_tactic(text: str) -> str:
-    line = text.strip().splitlines()[0].strip() if text.strip() else ""
+    stripped = text.strip()
+    if not stripped:
+        return ""
+    # Tolerate proposal-JSON outputs (the v89 boundary format the base model
+    # has seen): extract the first lean_tactic instead of sending raw JSON
+    # to Lean. The prompt asks for a bare tactic, so this is a fallback.
+    if stripped.startswith("{"):
+        try:
+            obj = json.loads(stripped.rstrip(";").strip())
+        except json.JSONDecodeError:
+            obj = None
+        if isinstance(obj, dict):
+            proposals = obj.get("proposals")
+            if isinstance(proposals, list):
+                for p in proposals:
+                    if isinstance(p, dict):
+                        tactic = str(p.get("lean_tactic") or p.get("tactic") or "").strip()
+                        if tactic:
+                            return tactic
+    line = stripped.splitlines()[0].strip()
     if line.startswith("```"):
-        lines = [l for l in text.strip().splitlines() if not l.strip().startswith("```")]
+        lines = [l for l in stripped.splitlines() if not l.strip().startswith("```")]
         line = lines[0].strip() if lines else ""
     return line
 
@@ -81,13 +100,17 @@ class RolloutEngine:
                 feedback_text=feedback_by_task.get(task.task_id, ""),
                 attempt_index=attempt_index,
                 max_proposals=1,
+                output_schema="lean-rgc-grad-raw-tactic-v96.1",
             )
-            system, user = render_boundary(boundary)
+            # The raw-tactic instruction REPLACES the JSON-proposal one;
+            # appending it after the JSON instruction left two contradicting
+            # format demands and the model followed the JSON one.
+            system, user = render_boundary(boundary, output_instruction=GRAD_SYSTEM_SUFFIX)
             prompts.append(
                 {
                     "task_id": task.task_id,
                     "boundary": boundary,
-                    "system": f"{system}\n{GRAD_SYSTEM_SUFFIX}",
+                    "system": system,
                     "user": user,
                 }
             )
@@ -392,6 +415,57 @@ def _default_wave_audit(
     return load_wave_rows(wave_dir)
 
 
+# Messages produced when the auditor could not run Lean at all (missing
+# binary, broken PATH/workdir). Rewarding or feeding back these rows would
+# poison the whole run, so they are gated, not scored.
+_INFRA_FAILURE_MARKERS = ("FileNotFoundError(", "PermissionError(", "NotADirectoryError(")
+
+
+def _is_infra_failure(row: dict[str, Any]) -> bool:
+    return any(m in str(msg) for msg in (row.get("messages") or []) for m in _INFRA_FAILURE_MARKERS)
+
+
+def _run_positive_control(
+    audit: Callable[..., list[dict[str, Any]]],
+    *,
+    tasks: list[LeanTask],
+    out: Path,
+    run_id: str,
+    success: set[str],
+    runner_kwargs: dict[str, Any],
+) -> None:
+    """Verify the audit path can prove `True := by trivial` before spending
+    a wave. The pilots taught this the hard way: a broken Lean environment
+    returns plain failures, which are indistinguishable from model failures
+    downstream (protocol: positive control before any scored run)."""
+
+    control = LeanTask(
+        task_id="__positive_control__",
+        statement="True",
+        imports=list(tasks[0].imports) if tasks else [],
+    )
+    rows = audit(
+        tasks=[control],
+        actions_by_task={
+            control.task_id: [
+                {"action_id": "control_trivial", "tactic": "trivial", "metadata": {"boundary_id": "pb_control"}}
+            ]
+        },
+        wave_dir=out / "wave_control",
+        run_id=f"{run_id}_control",
+        **runner_kwargs,
+    )
+    ok = any(str(r.get("audit_status") or r.get("status") or "") in success for r in rows)
+    if not ok:
+        details = [str((r.get("messages") or ["<no message>"])[0])[:300] for r in rows[:3]] or ["<no rows>"]
+        raise GradInvariantError(
+            "positive control failed: the audit path could not verify "
+            f"'theorem : True := by trivial' (messages: {details}). Lean/lake is broken or "
+            "unreachable from this process; refusing to run waves whose rewards and feedback "
+            "would be infrastructure noise."
+        )
+
+
 def run_grad_loop(
     *,
     tasks: list[LeanTask],
@@ -418,6 +492,9 @@ def run_grad_loop(
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     success = set(success_statuses)
+    _run_positive_control(
+        audit, tasks=tasks, out=out, run_id=run_id, success=success, runner_kwargs=runner_kwargs
+    )
 
     solved: set[str] = set()
     feedback: dict[str, str] = {}
@@ -458,10 +535,17 @@ def run_grad_loop(
         audit_anomaly = bool(actions_by_task) and not rows
         audited: set[str] = set()
         rewards: dict[str, float] = {}
+        n_infra_failures = 0
         for row in rows:
             action = row.get("action") if isinstance(row.get("action"), dict) else {}
             aid = str(row.get("action_id") or action.get("action_id") or "")
             if aid not in by_action:
+                continue
+            if _is_infra_failure(row):
+                # Lean never ran: not a model failure. Leave the sample
+                # unaudited (excluded from RLOO) and never feed the OS error
+                # back to the model as if it were a Lean message.
+                n_infra_failures += 1
                 continue
             audited.add(aid)
             status = str(row.get("audit_status") or row.get("status") or "")
@@ -474,6 +558,12 @@ def run_grad_loop(
                 msgs = row.get("messages") or []
                 if msgs:
                     feedback[sample["task_id"]] = f"Lean error: {str(msgs[0])[:500]}"
+        if rows and n_infra_failures > len(rows) / 2:
+            raise GradInvariantError(
+                f"wave {wave}: {n_infra_failures}/{len(rows)} audit rows failed before Lean ran "
+                "(infrastructure errors, e.g. missing lake on PATH); aborting instead of training "
+                "on infrastructure noise"
+            )
         n_unaudited = 0
         groups: dict[str, list[float]] = {}
         members: dict[str, list[dict[str, Any]]] = {}
@@ -515,6 +605,7 @@ def run_grad_loop(
                 "n_samples_per_task": n_samples,
                 "n_empty_tactic": n_empty_tactic,
                 "n_unaudited": n_unaudited,
+                "n_infra_failures": n_infra_failures,
                 "audit_anomaly": audit_anomaly,
                 "n_rft_traces": len(trace_samples),
                 "rloo": rloo_stats.to_dict(),

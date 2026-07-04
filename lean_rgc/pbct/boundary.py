@@ -34,6 +34,7 @@ def build_prompt_boundary(
     forbidden_operations: tuple[str, ...] | list[str] = DEFAULT_FORBIDDEN_OPERATIONS,
     max_proposals: int = 4,
     decoding: dict[str, Any] | None = None,
+    output_schema: str | None = None,
 ) -> dict[str, Any]:
     """Build the boundary object; the rendered prompt is derived from it.
 
@@ -54,7 +55,7 @@ def build_prompt_boundary(
         "forbidden_operations": sorted(str(x) for x in forbidden_operations),
         "max_proposals": int(max_proposals),
         "decoding": dict(decoding or {}),
-        "output_schema": "lean-rgc-llm-repair-proposal-v89.0",
+        "output_schema": str(output_schema or "lean-rgc-llm-repair-proposal-v89.0"),
     }
     return {
         **content,
@@ -63,8 +64,13 @@ def build_prompt_boundary(
     }
 
 
-def render_boundary(boundary: dict[str, Any]) -> tuple[str, str]:
-    """Serialize a boundary into (system, user) prompts, deterministically."""
+def render_boundary(boundary: dict[str, Any], *, output_instruction: str | None = None) -> tuple[str, str]:
+    """Serialize a boundary into (system, user) prompts, deterministically.
+
+    `output_instruction` overrides the default JSON-proposal instruction —
+    a caller that demands a different output format (e.g. the grad loop's
+    raw-tactic contract) must replace it, not append a contradicting line.
+    """
 
     forbidden = ", ".join(boundary.get("forbidden_operations") or [])
     system_lines = [
@@ -72,7 +78,9 @@ def render_boundary(boundary: dict[str, Any]) -> tuple[str, str]:
         "Your proposals are noncanonical witnesses; every output is replayed against Lean before use.",
         f"Never use: {forbidden}.",
         "Only reference identifiers that exist in the stated imports.",
-        OUTPUT_SCHEMA_INSTRUCTION.replace("{n}", str(int(boundary.get("max_proposals") or 4))),
+        output_instruction
+        if output_instruction is not None
+        else OUTPUT_SCHEMA_INSTRUCTION.replace("{n}", str(int(boundary.get("max_proposals") or 4))),
     ]
     user_lines = [
         f"Theorem statement:\n{boundary.get('statement') or ''}",
