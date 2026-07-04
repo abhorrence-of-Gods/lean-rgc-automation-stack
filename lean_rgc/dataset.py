@@ -93,7 +93,59 @@ def split_jsonl(path: str | Path, out_dir: str | Path, *, train_frac: float = 0.
     return meta
 
 
-def transitions_from_responses(responses_path: str | Path, out: str | Path) -> list[dict[str, Any]]:
+def _model_predicted_response(model: Any, row: dict[str, Any], mode: str, dim: int) -> list[float] | None:
+    """Predict a response vector for one response row, aligned to its chart.
+
+    Returns None when the prediction cannot be produced or aligned to the
+    row's dimension, so the caller can fall back explicitly.
+    """
+    try:
+        from .schemas import TacticAction
+
+        action_dict = row.get("action") if isinstance(row.get("action"), dict) else None
+        if action_dict:
+            action = TacticAction.from_dict(action_dict)
+        else:
+            aid = str(row.get("action_id") or "")
+            action = TacticAction(action_id=aid, tactic=str(row.get("tactic") or aid))
+        pred = model.predict(action, mode=mode)
+        vals = [float(v) for v in (pred.mean or [])]
+        model_keys = [str(k) for k in (getattr(model, "response_keys", None) or [])]
+        row_keys = [str(k) for k in (row.get("response_keys") or [])]
+        if row_keys and model_keys and row_keys != model_keys:
+            by_key = dict(zip(model_keys, vals))
+            vals = [float(by_key.get(k, 0.0)) for k in row_keys]
+        if len(vals) != dim:
+            return None
+        return vals
+    except Exception:
+        return None
+
+
+def transitions_from_responses(
+    responses_path: str | Path,
+    out: str | Path,
+    *,
+    response_model: Any = None,
+    response_mode: str = "mean",
+) -> list[dict[str, Any]]:
+    """Build Gamma-transition rows from realized response records.
+
+    ``pred_response`` only carries training signal when it is a model
+    prediction: the realized response equals ``defect - next_defect`` by
+    construction, so using it as the prediction makes the residual
+    ``defect - pred_response`` identical to ``next_defect`` and any Gamma fit
+    trivially near-identity. Pass ``response_model`` (a ResponseModel /
+    ResponseLearnerModel instance or a path to a saved model) to emit genuine
+    predictions. The realized response is always kept in ``response_realized``;
+    without a model the degenerate legacy behavior is preserved and flagged
+    via ``pred_response_source``.
+    """
+    model = response_model
+    if isinstance(response_model, (str, Path)):
+        from .response_model import ResponseModel
+
+        model = ResponseModel.load(response_model)
     rows = read_jsonl(responses_path)
     transitions: list[dict[str, Any]] = []
     for r in rows:
@@ -101,11 +153,16 @@ def transitions_from_responses(responses_path: str | Path, out: str | Path) -> l
         da = (r.get("defect_after") or {}).get("flat", [])
         rr = r.get("response_flat", [])
         if db and da and rr and len(db) == len(da) == len(rr):
+            realized = [float(v) for v in rr]
+            pred = _model_predicted_response(model, r, response_mode, len(db)) if model is not None else None
+            source = "response_model" if pred is not None else "realized_fallback_degenerate"
             transitions.append({
                 "state_id": r.get("state_id"),
                 "action_id": r.get("action_id"),
                 "defect": db,
-                "pred_response": rr,
+                "pred_response": pred if pred is not None else realized,
+                "response_realized": realized,
+                "pred_response_source": source,
                 "next_defect": da,
                 "audit_status": r.get("audit_status"),
             })

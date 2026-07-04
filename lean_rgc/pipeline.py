@@ -1374,8 +1374,17 @@ def run_pipeline(args, *, emit_stage: bool = True) -> dict[str, Any]:
     if getattr(args, 'action_geometry', False):
         action_geometry_dir = out / 'action_geometry'
         ag_transitions_path = out / 'transitions.jsonl'
+        # The shared response model is normally trained later in the pipeline;
+        # train it here first so these transitions carry model predictions in
+        # pred_response instead of the degenerate realized response.
+        ag_response_model_path = out / 'response_model.json'
+        if not ag_response_model_path.exists():
+            try:
+                train_response_model(str(audit_dir/'responses.jsonl'), args.actions, str(ag_response_model_path), config=ResponseModelConfig(lcb_kappa=1.0, min_count_for_action=2, shrink=2.0))
+            except Exception:
+                pass
         try:
-            cmd_make_transitions(argparse.Namespace(responses=str(audit_dir/'responses.jsonl'), out=str(ag_transitions_path)))
+            cmd_make_transitions(argparse.Namespace(responses=str(audit_dir/'responses.jsonl'), out=str(ag_transitions_path), response_model=str(ag_response_model_path) if ag_response_model_path.exists() else None, response_mode='mean'))
         except Exception:
             ag_transitions_path = None
         qrep = qgen_dir / 'qgen_report.json' if qgen_dir and (qgen_dir / 'qgen_report.json').exists() else None
@@ -2414,7 +2423,8 @@ def run_pipeline(args, *, emit_stage: bool = True) -> dict[str, Any]:
         qgen_acceptance_lineage_path = out/'qgen_acceptance_lineage.json'
         build_qgen_acceptance_lineage(qgen_dir, accepted_actions=accepted_paths, acceptance_rows=row_paths, audit_responses=audit_paths, registry_candidates=registry_paths, out=qgen_acceptance_lineage_path)
     transitions_path=out/'transitions.jsonl'
-    cmd_make_transitions(argparse.Namespace(responses=str(audit_dir/'responses.jsonl'),out=str(transitions_path)))
+    response_model_path=out/'response_model.json'
+    cmd_make_transitions(argparse.Namespace(responses=str(audit_dir/'responses.jsonl'),out=str(transitions_path),response_model=str(response_model_path) if response_model_path.exists() else None,response_mode='mean'))
     gamma_path=out/'gamma_audit.jsonl'
     cmd_gamma_audit(argparse.Namespace(transitions=str(transitions_path),out=str(gamma_path),fit_gamma=args.fit_gamma,ridge=1e-3,horizon=args.gamma_horizon,include_gamma_matrix=False))
     gamma_transition_dir = None

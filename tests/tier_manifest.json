@@ -168,6 +168,9 @@
   "test_v50_premise_contextual_quotient.py": [
     "legacy"
   ],
+  "test_v50_transitions_pred_response.py": [
+    "unit"
+  ],
   "test_v51_bivariate_contextual_quotient.py": [
     "legacy"
   ],
