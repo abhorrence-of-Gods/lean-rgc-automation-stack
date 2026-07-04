@@ -119,12 +119,14 @@ class RolloutEngine:
         if self._tokenizer.pad_token_id is None:
             self._tokenizer.pad_token = self._tokenizer.eos_token
         self._tokenizer.padding_side = "left"
-        model = AutoModelForCausalLM.from_pretrained(
-            self.inv.model_name,
-            quantization_config=quant,
-            torch_dtype=torch.bfloat16,
-            device_map={"": 0},
-        )
+        # transformers v5 treats an explicit quantization_config=None as an
+        # override that DISABLES the checkpoint's own quantization_config,
+        # so prequantized weights then fail with shape mismatches; only pass
+        # the kwarg when we quantize at load time.
+        load_kwargs: dict[str, Any] = {"torch_dtype": torch.bfloat16, "device_map": {"": 0}}
+        if quant is not None:
+            load_kwargs["quantization_config"] = quant
+        model = AutoModelForCausalLM.from_pretrained(self.inv.model_name, **load_kwargs)
         lora = LoraConfig(
             r=self.inv.lora_r,
             lora_alpha=self.inv.lora_alpha,
