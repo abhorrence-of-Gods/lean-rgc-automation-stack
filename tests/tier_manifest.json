@@ -348,6 +348,9 @@
   "test_v97_gamma_audit_pred_response.py": [
     "unit"
   ],
+  "test_v97_log_studies.py": [
+    "unit"
+  ],
   "test_v97_r0_instrumentation.py": [
     "unit"
   ],

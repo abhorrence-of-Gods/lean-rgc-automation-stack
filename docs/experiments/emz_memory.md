@@ -55,6 +55,29 @@ Delta-AUC >= observed.
   variables; E1 pattern): a raw-text port precedes any memory cell, and
   v98's internal order becomes renderer-with-text-port first.
 
+## Results 2026-07-05 (registered analysis, first execution)
+
+Report: `runs/emz_memory/report.json` (681 chains; lengths {2:161, 3:71,
+4:449}; 969 order-1 transitions, 64 positives; seed 0, 200 permutations).
+
+- L34: Delta-AUC = -0.115, p = 1.00 (lag features actively hurt — pure
+  variance at 151 dims / 64 positives).
+- LTXT: Delta-AUC = -0.010, p = 0.36. BOTH: -0.042, p = 0.73.
+- Text-lag escape clause NOT triggered.
+- DECISION (frozen rule): kill_memory_module. The 34-dim reader is
+  approximately Markov for loop purposes; v98 ships renderer-only and
+  memory.py is not built.
+
+Anomaly recorded for honesty: the T2 arm (length-4 chains, adding f_0 on
+top of [f_2, f_1]) shows Delta-AUC = +0.116, p = 0.005 (null q95 0.082,
+n=449 transitions / 33 positives). Interpretation: not recurrence — the
+registered t-1 criterion is decisively null — but evidence that WAVE-0
+summaries carry a persistent task-difficulty fingerprint that later,
+feedback-conditioned waves dilute. Consequence: include wave-0/root
+features in the D5 difficulty predictor and the twist's state features;
+do not resurrect a memory cell on this basis. If the reader coordinates
+change (G3), rerun per the threat noted below.
+
 ## Threats to validity acknowledged in advance
 
 - Chains exist only where earlier waves failed (failure conditioning);

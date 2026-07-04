@@ -76,6 +76,29 @@ non-independent). Seed 0 everywhere.
 - C4 fail -> text port mandatory before any deployment; record as direct
   sizing input for the G3 renderer decision.
 
+## Results 2026-07-05 (registered analysis, first execution)
+
+Report: `runs/d1_twist_gate/report.json` (11,189 rows, 680 successes,
+seed 0, 5-fold task-grouped CV, 1,000 prompt_hash-clustered bootstraps).
+
+- AUC out-of-fold: T 0.734, F 0.744, R 0.721, FR 0.752.
+- C1 PASS: AUC(F) 0.744 >= 0.70. CI [0.696, 0.787] — the lower edge grazes
+  the gate; reported per protocol.
+- C2 PASS: tau* = 0.025 gives FN 3.97% (CI [1.1%, 7.8%] — upper edge above
+  the 5% budget; reported per protocol) at 31.2% call savings.
+  Set-level FN at B_survive 1/2/3: 34.0% / 13.8% / 3.0%.
+- C3 PASS: ECE(F) 0.027.
+- C4 PASS: AUC(R) - AUC(F) = -0.023 <= 0.02. The factorized reader BEAT the
+  raw-signal arm on the reachability task — the inverse of the E1 result on
+  the repair-feedback task. Text adds +0.7pt on top (FR); a text port is
+  optional, not mandatory.
+- Sensitivity (partial rows excluded): AUC(F) 0.752 — robust.
+
+Decisions per the frozen rules: twist cleared for eval-harness budgeting and
+shadow mode in the next GPU run; state_value head cleared as RLOO baseline
+input once stratified grouping lands. Grad-loop pruning stays excluded (see
+deployment note above).
+
 ## Threats to validity acknowledged in advance
 
 - Rows are whole-proof repair proposals, not tactic steps: measured FPR is
