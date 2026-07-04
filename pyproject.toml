@@ -15,6 +15,13 @@ dependencies = [
 test = [
   "pytest>=8",
 ]
+grad = [
+  "torch>=2.4",
+  "transformers>=4.49",
+  "peft>=0.14",
+  "bitsandbytes>=0.44",
+  "accelerate>=1.0",
+]
 
 [project.scripts]
 lean-rgc = "lean_rgc.cli:main"

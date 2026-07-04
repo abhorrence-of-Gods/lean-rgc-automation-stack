@@ -10,6 +10,7 @@ from .crg import register_crg_commands
 from .data import register_data_commands
 from .dost import register_dost_commands
 from .evalcmd import register_eval_commands
+from .gradcmd import register_grad_commands
 from .common import _actions_for_tasks, _load_actions_grouped
 from .experiment import _materialize_total_budget_task_actions, register_experiment_commands
 from .lean import register_lean_commands
@@ -30,6 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_poms_commands(sub)
     register_data_commands(sub)
     register_eval_commands(sub)
+    register_grad_commands(sub)
     return parser
 
 
