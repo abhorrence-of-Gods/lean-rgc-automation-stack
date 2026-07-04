@@ -261,6 +261,11 @@ class LeanBulkAuditor:
                         "global_error": bool(global_msgs),
                         "timeout": status == "timeout",
                         "partial_success": status == "partial",
+                        # Error lines in messages are absolute within the bulk
+                        # file; these offsets are what makes the verified-prefix
+                        # length of a failed script recoverable from the row.
+                        "block_start_line": block.start_line,
+                        "block_end_line": block.end_line,
                     },
                     lean_file=str(keep_path or lean_file),
                 ))

@@ -25,6 +25,7 @@ import time
 
 from ..pbct.boundary import build_prompt_boundary, render_boundary
 from ..schemas import LeanTask, stable_hash, write_jsonl
+from .collect import preserve_wave_rows
 from .config import GradInvariantError, GradInvariants, assert_rollout_batch, assert_train_memory
 from .estimators import DEFAULT_SUCCESS_STATUSES, SCHEMA_GRAD_UPDATE, SCHEMA_RFT_TRACE, grouped_rloo
 
@@ -629,6 +630,15 @@ def run_grad_loop(
         "invariants": inv.to_dict(),
         "updates_out": str(out / "grad_run.jsonl"),
     }
+    (out / "grad_summary.json").write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8"
+    )
+    # Wave rows are the training table for every learned factor downstream;
+    # the pilots lost them once (only episodes left the pod). Preservation is
+    # code, not ops discipline: failures land in the summary, never raise.
+    # Runs after the summary write so the archive captures grad_summary.json,
+    # then the summary is rewritten with the preservation receipt.
+    summary["wave_preservation"] = preserve_wave_rows(out)
     (out / "grad_summary.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8"
     )

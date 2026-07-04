@@ -47,6 +47,16 @@ def cmd_grad_loop(args):
     return 0
 
 
+def cmd_grad_collect(args):
+    from ..grad.collect import archive_run_artifacts, collect_wave_rows
+
+    summary = collect_wave_rows(args.run_dir, out_path=args.out)
+    if not args.no_archive:
+        summary["archive"] = archive_run_artifacts(args.run_dir, archive_path=args.archive)
+    print(json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True))
+    return 0
+
+
 def register_grad_commands(sub) -> None:
     gsm = sub.add_parser("grad-smoke")
     gsm.add_argument("--model")
@@ -68,3 +78,10 @@ def register_grad_commands(sub) -> None:
     glp.add_argument("--workers", type=int, default=4)
     glp.add_argument("--job-timeout-s", type=float, default=300.0)
     glp.set_defaults(func=cmd_grad_loop)
+
+    gcl = sub.add_parser("grad-collect")
+    gcl.add_argument("--run-dir", required=True)
+    gcl.add_argument("--out")
+    gcl.add_argument("--archive")
+    gcl.add_argument("--no-archive", action="store_true")
+    gcl.set_defaults(func=cmd_grad_collect)

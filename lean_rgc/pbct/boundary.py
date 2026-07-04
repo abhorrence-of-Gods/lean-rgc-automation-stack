@@ -57,6 +57,12 @@ def build_prompt_boundary(
         "decoding": dict(decoding or {}),
         "output_schema": str(output_schema or "lean-rgc-llm-repair-proposal-v89.0"),
     }
+    # A frontier/salvage task's verified prefix is part of what Lean will see,
+    # so it must be part of what the model sees. Only present when non-empty:
+    # prefix-less boundaries keep their historical boundary_id/prompt hashes.
+    prefix = str(task_obj.get("prefix") or "")
+    if prefix:
+        content["prefix"] = prefix
     return {
         **content,
         "boundary_id": "pb_" + stable_hash(content, 20),
@@ -84,9 +90,17 @@ def render_boundary(boundary: dict[str, Any], *, output_instruction: str | None 
     ]
     user_lines = [
         f"Theorem statement:\n{boundary.get('statement') or ''}",
+    ]
+    prefix = str(boundary.get("prefix") or "")
+    if prefix:
+        user_lines.append(
+            "Verified proof prefix (already accepted by Lean; your tactic continues after it):\n"
+            f"{prefix}"
+        )
+    user_lines.extend([
         f"Imports: {', '.join(boundary.get('imports') or []) or '(core only)'}",
         f"Attempt index: {int(boundary.get('attempt_index') or 0)}",
-    ]
+    ])
     feedback = str(boundary.get("feedback_text") or "")
     if feedback:
         user_lines.append(f"Feedback from previous audited attempts:\n{feedback}")
