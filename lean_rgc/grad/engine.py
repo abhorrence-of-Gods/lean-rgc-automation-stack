@@ -102,13 +102,17 @@ class RolloutEngine:
         from peft import LoraConfig, get_peft_model
         from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
+        # Prequantized checkpoints (e.g. *-bnb-4bit) carry their own
+        # quantization_config; passing another one conflicts. They satisfy
+        # the load_in_4bit invariant by construction.
+        prequantized = "bnb-4bit" in self.inv.model_name.lower()
         quant = (
             BitsAndBytesConfig(
                 load_in_4bit=True,
                 bnb_4bit_quant_type="nf4",
                 bnb_4bit_compute_dtype=torch.bfloat16,
             )
-            if self.inv.load_in_4bit
+            if self.inv.load_in_4bit and not prequantized
             else None
         )
         self._tokenizer = AutoTokenizer.from_pretrained(self.inv.model_name)
