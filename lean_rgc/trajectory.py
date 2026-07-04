@@ -142,11 +142,61 @@ class LeanTrajectoryRunner:
         rec.metadata = {"trajectory_config": asdict(self.config)}
         return rec
 
-# Compatibility helper used by CLI gamma-audit.
-def audit_gamma_from_responses(responses_path: str, out_json: str):
+def _model_predicted_response(model: Any, row: dict[str, Any], mode: str, dim: int) -> list[float] | None:
+    """Predict a response vector for one response row, aligned to its chart.
+
+    Returns None when the prediction cannot be produced or aligned to the
+    row's dimension, so the caller can fall back explicitly.
+    """
+    try:
+        action_dict = row.get("action") if isinstance(row.get("action"), dict) else None
+        if action_dict:
+            action = TacticAction.from_dict(action_dict)
+        else:
+            aid = str(row.get("action_id") or "")
+            action = TacticAction(action_id=aid, tactic=str(row.get("tactic") or aid))
+        pred = model.predict(action, mode=mode)
+        vals = [float(v) for v in (pred.mean or [])]
+        model_keys = [str(k) for k in (getattr(model, "response_keys", None) or [])]
+        row_keys = [str(k) for k in (row.get("response_keys") or [])]
+        if row_keys and model_keys and row_keys != model_keys:
+            by_key = dict(zip(model_keys, vals))
+            vals = [float(by_key.get(k, 0.0)) for k in row_keys]
+        if len(vals) != dim:
+            return None
+        return vals
+    except Exception:
+        return None
+
+
+# Compatibility helper kept for external callers; the CLI gamma-audit now
+# reads transition files directly (see cli/experiment.py cmd_gamma_audit).
+def audit_gamma_from_responses(
+    responses_path: str,
+    out_json: str,
+    *,
+    response_model: Any = None,
+    response_mode: str = "mean",
+):
+    """Audit finite-chart Gamma directly from realized response records.
+
+    ``pred_response`` only carries audit signal when it is a model prediction:
+    the realized response equals ``defect_before - defect_after`` by
+    construction, so using it makes the residual ``defect - pred_response``
+    identical to ``defect_after`` and the fitted Gamma trivially near-identity.
+    Pass ``response_model`` (a ResponseModel instance or a path to a saved
+    model) to audit genuine predictions. The realized response is always kept
+    in each step's ``metadata["response_realized"]``; without a model the
+    degenerate legacy behavior is preserved and flagged via
+    ``pred_response_source``.
+    """
     from .schemas import read_jsonl
     import json
     from pathlib import Path
+    model = response_model
+    if isinstance(response_model, (str, Path)):
+        from .response_model import ResponseModel
+        model = ResponseModel.load(response_model)
     rows = read_jsonl(responses_path)
     steps = []
     for r in rows:
@@ -154,8 +204,24 @@ def audit_gamma_from_responses(responses_path: str, out_json: str):
         da = r.get("defect_after", {}).get("flat", [])
         rr = r.get("response_flat", [])
         if db and da and rr and len(db) == len(da) == len(rr):
-            steps.append(TrajectoryStep(state_id=r.get("state_id", ""), action_id=r.get("action_id", ""), defect_before=db, pred_response=rr, defect_after=da))
+            realized = [float(v) for v in rr]
+            pred = _model_predicted_response(model, r, response_mode, len(db)) if model is not None else None
+            source = "response_model" if pred is not None else "realized_fallback_degenerate"
+            steps.append(TrajectoryStep(
+                state_id=r.get("state_id", ""),
+                action_id=r.get("action_id", ""),
+                defect_before=db,
+                pred_response=pred if pred is not None else realized,
+                defect_after=da,
+                metadata={"response_realized": realized, "pred_response_source": source},
+            ))
     report = TrajectoryAuditor().audit(steps) if steps else TrajectoryAuditReport(0, {}, [])
+    sources: dict[str, int] = {}
+    for rep, step in zip(report.per_step, steps):
+        src = step.metadata["pred_response_source"]
+        rep["pred_response_source"] = src
+        sources[src] = sources.get(src, 0) + 1
+    report.gamma_report["pred_response_sources"] = sources
     Path(out_json).parent.mkdir(parents=True, exist_ok=True)
     Path(out_json).write_text(json.dumps(report.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
     return report
