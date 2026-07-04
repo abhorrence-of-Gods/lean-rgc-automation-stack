@@ -336,6 +336,9 @@
   "test_v94_wave_rows_messages.py": [
     "integration"
   ],
+  "test_v95_phase_hmm_toy.py": [
+    "unit"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],
