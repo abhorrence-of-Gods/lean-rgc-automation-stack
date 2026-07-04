@@ -143,10 +143,14 @@ class RolloutEngine:
         self._optimizer = torch.optim.AdamW(params, lr=self.inv.learning_rate)
 
     def _chat_ids(self, system: str, user: str) -> list[int]:
+        # return_dict=False keeps the flat list[int] contract on both
+        # transformers 4.x (where it is the default) and 5.x (where the
+        # default flipped to a BatchEncoding, which tok.pad rejects).
         return self._tokenizer.apply_chat_template(
             [{"role": "system", "content": system}, {"role": "user", "content": user}],
             add_generation_prompt=True,
             tokenize=True,
+            return_dict=False,
             return_tensors=None,
         )
 
@@ -333,15 +337,27 @@ class RolloutEngine:
             "train_peak_gb": peak,
         }
 
-    def smoke(self, *, batch_sizes: tuple[int, ...] = (1, 8, 16)) -> dict[str, Any]:
-        """Measured (not asserted) throughput/memory over dummy prompts."""
+    def smoke(self, *, batch_sizes: tuple[int, ...] = (1, 8, 16), train_probe: bool = True) -> dict[str, Any]:
+        """Measured (not asserted) throughput/memory over dummy prompts.
+
+        The train probe runs one real optimizer step over samples from the
+        last rollout so the full training path (teacher forcing, KL reference
+        via disable_adapter, checkpointing, memory assert) is exercised before
+        a long run pays a full rollout+audit wave to discover a break.
+        """
 
         task = LeanTask(task_id="smoke", statement="True", imports=[])
         report: dict[str, Any] = {"batches": []}
+        samples: list[dict[str, Any]] = []
         for b in batch_sizes:
             prompts = self.render_prompts([task] * b, {}, 0)
-            self.generate(prompts, n_samples=1, allow_small_batch=True)
+            samples = self.generate(prompts, n_samples=1, allow_small_batch=True)
             report["batches"].append({"batch": b, **self._last_rollout})
+        if train_probe and len(samples) >= 3:
+            report["train_probe"] = self.train_step(
+                rft_samples=[samples[0]],
+                rloo_samples=[(samples[1], 1.0), (samples[2], -1.0)],
+            )
         return report
 
 
