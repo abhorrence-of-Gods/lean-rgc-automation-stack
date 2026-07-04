@@ -68,17 +68,26 @@ class LeanMessageParser:
                 end = case_matches[i + 1].start() if i + 1 < len(case_matches) else len(body)
                 parts.append((cm.group(1).strip(), body[start:end].strip()))
         else:
-            # Split by repeated turnstile blocks heuristically.
-            chunks = re.split(r"\n\s*\n(?=.*竓｢)", body.strip())
-            parts = [(None, c.strip()) for c in chunks if "竓｢" in c or c.strip()]
+            # Split by repeated turnstile blocks heuristically. Goal blocks are
+            # blank-line separated and may lead with hypotheses rather than ⊢,
+            # so split on blank lines and fold turnstile-free chunks back into
+            # the preceding block.
+            chunks = [c.strip() for c in re.split(r"\n\s*\n", body.strip()) if c.strip()]
+            merged: list[str] = []
+            for chunk in chunks:
+                if "⊢" in chunk or not merged:
+                    merged.append(chunk)
+                else:
+                    merged[-1] = f"{merged[-1]}\n\n{chunk}"
+            parts = [(None, c) for c in merged]
         goals: list[ParsedGoal] = []
         for case_name, raw in parts:
             if not raw:
                 continue
             hyps: list[str] = []
             target = ""
-            if "竓｢" in raw:
-                before, after = raw.split("竓｢", 1)
+            if "⊢" in raw:
+                before, after = raw.split("⊢", 1)
                 target = after.strip().splitlines()[0].strip() if after.strip() else ""
                 for ln in before.splitlines():
                     if re.match(r"\s*[A-Za-z_][A-Za-z0-9_']*\s*:", ln):
