@@ -20,16 +20,32 @@ SCHEMA_RFT_TRACE = "lean-rgc-rft-trace-v96.0"
 DEFAULT_SUCCESS_STATUSES = ("proved", "advanced", "ok", "succeeded", "success")
 
 
-def rloo_advantages(rewards: "np.ndarray | list[float]") -> np.ndarray:
+def rloo_advantages(
+    rewards: "np.ndarray | list[float]",
+    baselines: "np.ndarray | list[float] | None" = None,
+) -> np.ndarray:
     """Leave-one-out advantages: a_i = r_i - mean(r_{-i}) = G/(G-1) * (r_i - mean).
 
     A degenerate group (all rewards equal) yields exactly zero advantages —
     no gradient, which is the honest signal, not an error.
+
+    `baselines` is an optional STATE-level control variate b(s_i) subtracted
+    before the leave-one-out mean. Unbiasedness holds because b(s) does not
+    depend on the sampled action; a baseline constant within the group
+    cancels identically (so this is a no-op under pure per-task grouping —
+    it only reduces variance in mixed-task stratified groups). An all-equal
+    reward group with VARYING baselines carries signal: failing on an easy
+    state is punished harder than failing on a hard one.
     """
 
     r = np.asarray(rewards, dtype=float)
     if r.ndim != 1 or r.size < 2:
         raise ValueError("rloo_advantages needs a flat group of >= 2 rewards")
+    if baselines is not None:
+        b = np.asarray(baselines, dtype=float)
+        if b.shape != r.shape:
+            raise ValueError("baselines must align with rewards")
+        r = r - b
     g = r.size
     return (g / (g - 1.0)) * (r - r.mean())
 
@@ -61,14 +77,24 @@ def degenerate_groups(groups: dict[Any, "list[float]"]) -> list[Any]:
     return [k for k, rewards in groups.items() if len(set(np.round(rewards, 12))) <= 1]
 
 
-def grouped_rloo(groups: dict[Any, "list[float]"]) -> tuple[dict[Any, np.ndarray], RLOOStats]:
+def grouped_rloo(
+    groups: dict[Any, "list[float]"],
+    baselines: "dict[Any, list[float]] | None" = None,
+) -> tuple[dict[Any, np.ndarray], RLOOStats]:
+    """Per-group RLOO. `baselines[key]` aligns with `groups[key]`.
+
+    Degeneracy statistics are computed on RAW rewards (comparable across
+    grouping modes); note a raw-degenerate group can still carry gradient
+    when baselines vary within it.
+    """
     advantages: dict[Any, np.ndarray] = {}
     degenerate = set(degenerate_groups(groups))
     abs_sum = 0.0
     n_items = 0
     reward_sum = 0.0
     for key, rewards in groups.items():
-        adv = rloo_advantages(rewards) if len(rewards) >= 2 else np.zeros(len(rewards))
+        b = baselines.get(key) if baselines is not None else None
+        adv = rloo_advantages(rewards, baselines=b) if len(rewards) >= 2 else np.zeros(len(rewards))
         advantages[key] = adv
         abs_sum += float(np.abs(adv).sum())
         n_items += len(rewards)

@@ -27,7 +27,13 @@ from ..pbct.boundary import build_prompt_boundary, render_boundary
 from ..schemas import LeanTask, stable_hash, write_jsonl
 from .collect import preserve_wave_rows
 from .config import GradInvariantError, GradInvariants, assert_rollout_batch, assert_train_memory
-from .estimators import DEFAULT_SUCCESS_STATUSES, SCHEMA_GRAD_UPDATE, SCHEMA_RFT_TRACE, grouped_rloo
+from .estimators import (
+    DEFAULT_SUCCESS_STATUSES,
+    SCHEMA_GRAD_UPDATE,
+    SCHEMA_RFT_TRACE,
+    grouped_rloo,
+    stratified_groups,
+)
 
 
 GRAD_SYSTEM_SUFFIX = (
@@ -477,6 +483,7 @@ def run_grad_loop(
     wave_audit_runner: Callable[..., list[dict[str, Any]]] | None = None,
     n_waves: int = 4,
     success_statuses: tuple[str, ...] = DEFAULT_SUCCESS_STATUSES,
+    difficulty: dict[str, float] | None = None,
     **runner_kwargs: Any,
 ) -> dict[str, Any]:
     """Alternating wavefront: rollout -> Lean audit -> RFT+RLOO update.
@@ -484,6 +491,13 @@ def run_grad_loop(
     Every update row carries measured KL/memory/throughput plus the audit
     coverage counters (n_unaudited, n_empty_tactic) so silent starvation of
     any signal path is visible in grad_run.jsonl.
+
+    `difficulty` (task_id -> historical success rate, see grad/difficulty.py)
+    switches RLOO from per-task grouping to difficulty-stratified grouping
+    with the difficulty as a state-level control variate — a state baseline
+    cancels identically inside pure per-task groups, so stratification is
+    its precondition, not an option (empirical degenerate-group rate is
+    62-67%, not the design-review 43%).
     """
 
     inv = invariants or GradInvariants()
@@ -566,17 +580,34 @@ def run_grad_loop(
                 "on infrastructure noise"
             )
         n_unaudited = 0
-        groups: dict[str, list[float]] = {}
-        members: dict[str, list[dict[str, Any]]] = {}
+        records: list[dict[str, Any]] = []
         for aid, sample in by_action.items():
             if sample["tactic"] and aid not in audited:
                 n_unaudited += 1  # excluded: an unaudited sample is not a failure (review major)
                 continue
-            reward = rewards.get(aid, 0.0)  # empty tactics: definitional 0
-            key = sample["task_id"]
-            groups.setdefault(key, []).append(reward)
-            members.setdefault(key, []).append(sample)
-        advantages, rloo_stats = grouped_rloo({k: v for k, v in groups.items() if len(v) >= 2})
+            records.append({
+                "task_id": sample["task_id"],
+                "action_id": aid,
+                "wave_index": wave,
+                "reward": rewards.get(aid, 0.0),  # empty tactics: definitional 0
+                "sample": sample,
+            })
+        if difficulty is not None:
+            grouped_recs = stratified_groups(records, group_size=inv.group_size, difficulty=difficulty)
+        else:
+            grouped_recs = {}
+            for rec in records:
+                grouped_recs.setdefault(rec["task_id"], []).append(rec)
+        grouped_recs = {k: v for k, v in grouped_recs.items() if len(v) >= 2}
+        groups = {k: [r["reward"] for r in v] for k, v in grouped_recs.items()}
+        members = {k: [r["sample"] for r in v] for k, v in grouped_recs.items()}
+        baselines = None
+        if difficulty is not None:
+            baselines = {
+                k: [float(difficulty.get(str(r["task_id"]), 0.5)) for r in v]
+                for k, v in grouped_recs.items()
+            }
+        advantages, rloo_stats = grouped_rloo(groups, baselines=baselines)
         rloo_batch: list[tuple[dict[str, Any], float]] = []
         for key, advs in advantages.items():
             for sample, adv in zip(members[key], advs):
@@ -609,6 +640,7 @@ def run_grad_loop(
                 "n_infra_failures": n_infra_failures,
                 "audit_anomaly": audit_anomaly,
                 "n_rft_traces": len(trace_samples),
+                "rloo_grouping": "stratified" if difficulty is not None else "task",
                 "rloo": rloo_stats.to_dict(),
                 "rollout": getattr(eng, "_last_rollout", {}),
                 "update": update,

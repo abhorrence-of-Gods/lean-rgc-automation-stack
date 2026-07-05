@@ -357,6 +357,9 @@
   "test_v97_state_parser_multigoal.py": [
     "unit"
   ],
+  "test_v97_stratified_rloo.py": [
+    "unit"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],
