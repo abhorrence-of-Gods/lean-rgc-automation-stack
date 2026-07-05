@@ -89,6 +89,70 @@ Renderer/G3 (behind the 4th-arm result), memory module (killed by
 E-MZ), BP/junction-tree (behind toy1/S7 exactness evidence), model
 scale-up (behind the S4 verdict — the ladder decides WHERE scale goes).
 
+## Revision 2 (2026-07-06): post-G1re3, response-algebra re-centering
+
+Context. G1re3 (first label-sound execution) landed the pre-declared
+"<+2pt" branch: RFT-primary is unsupported at 7B under this budget
+(honest baseline ~5%, 5 verified traces per 8 waves). The registered
+consequence — marginal GPU pivots to the search side, gradient becomes
+the LAST resource (an internalization event, not a stream) — coincides
+with the response-algebra re-centering: the middle layer (response
+matrix, coker, Gamma, quotient, twist) learns densely from FAILURES and
+is the natural cold-start object. Three ledgers govern everything:
+hard (verifier-adjudicated), soft (calibration; failures update it),
+asset (verified AND walk-forward-valued).
+
+Frozen corrections adopted with the re-centering:
+(a) Response rows of mislabeled audits carry FABRICATED after-states
+    (synthetic closed state on false success) — the middle layer is
+    rebuilt from re-audited rows, not by flipping labels.
+(b) Coker residuals have a 4th false-positive source: the budget
+    constraint |j|_1 <= M; phi must be split into budget-bound vs
+    truly-unpayable by re-solving with relaxed M.
+(c) E1 citations are decontaminated: raw-text conditioning is a prior,
+    not a result (E1 withdrawn under authoritative labels).
+(d) Dense signals (defect deltas, prefix length) NEVER enter the reward
+    channel — hard reward stays 0/1 adjudication; density lives in
+    baselines, curriculum keys and soft calibration. Even
+    verifier-anchored prefix length is gameable.
+(e) Failure-side metrology: isolation confirmation covers successes
+    only; every run adds a random FAILURE spot-check (n>=20 isolated
+    re-audits) to bound the residual false-failure (conservative) bias.
+
+Rungs (S' series; supersedes ordering above where in conflict):
+
+- S'0 Level 0 — definitive corpus re-audit (pod, overnight, CPU).
+  Isolated (batch=1) re-audit of ALL pilot + G1-era rows (~18k),
+  producing sound labels AND sound response vectors in one pass.
+  Everything middle-layer depends on this.
+- S'1 Levels 5-6 — middle-layer rebuild + coker go/no-go (0 GPU).
+  Rebuild R_J / carrier matrix / Gamma (post pred_response fix) /
+  response quotient on S'0 output. REGISTERED GATE: does phi (split per
+  (b)) predict FUTURE walk-forward defect reduction? If not, extend the
+  reader (M_J) before any foundry use. Includes S1-driver OOM fix and
+  the stepwise corpus rerun (S5 measurements ride on it).
+- S'2 Levels 1-3 — training redesign prereg (G1c), gated on S'1.
+  Curriculum from residual goals (D3 verified prefixes as easier
+  subtasks) + valid-split tasks + qgen, targeting per-task p in the
+  information band [0.2, 0.5]; twist state_value allocates samples;
+  dense signals per (d). LAUNCH GATE: projected verified-trace supply
+  >= 20/wave, else training stays shelved.
+- S'3 Level 4 — search-side pivot (where marginal GPU goes now).
+  Twist rerank-only in the eval harness, D3 gated suffix-repair and
+  continuation arms (their gates were position-based and survive the
+  label corrections), SMC-shaped scheduling; the S4 ladder arms (1)(2)
+  re-scoped onto sound labels as the measurement.
+- S'4 Levels 7-8 — coker-conditioned foundry (S6 prereg amended per
+  (b)/(c)): proposal bundles = raw exemplars where phi_true is strong;
+  asset-type and generalization-level selection as reported columns;
+  acquisition model stays one-level log-linear.
+- S'5 Level 9 — internalization as model-release events. Condition:
+  discounted external-reference cost exceeds one-shot internalization
+  cost. Currently trivially unmet (assets tiny); explicitly deferred.
+- S'6 Level 10 — standing metrology: isolation confirmation +
+  canaries + reproducibility (structural since 2026-07-06), plus (e)
+  failure spot-checks; audit means are chosen by value-of-information.
+
 ## Budget note
 
 GPU: S3 ~$20-30, S4 arms (1)(2) ~$5, everything else CPU/local. The
