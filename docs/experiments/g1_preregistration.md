@@ -174,6 +174,24 @@ re-examine: D1 gates used pilot labels with the same hole (retro
 recount via the D3 chunk reconstruction is possible); M1 (partial rows)
 and D3 (error positions, not success labels) are unaffected.
 
+## Amendment 2026-07-05d: G1re — registered re-run with the fixed classifier
+
+Registered BEFORE the re-run starts. Protocol identical to the original
+execution (113 train / 130 eval split, 8 waves, online-stratified RLOO,
+collapse guards, in-process paired eval at 8 attempts / temp 0.2 /
+seed 0, 10k paired bootstrap), with exactly these differences:
+1. Classifier fix a681bd1 active end to end (training labels, RFT trace
+   filter, eval labels): tagged diagnostics now attribute to their own
+   blocks.
+2. Fresh LoRA init (the quarantined wave_7 checkpoint must not seed).
+3. Post-hoc label-audit CANARY GATE: label_audit.recount_run over every
+   produced run dir must find < 1% false-success rows; a violation halts
+   analysis and reopens the classifier investigation before any endpoint
+   is read.
+Primary endpoint, strata, curves, and null branches: unchanged from the
+original registration. The corrected-label +3.85pt from amendment c is
+the prior expectation, NOT a threshold.
+
 ## Threats to validity acknowledged in advance
 
 
