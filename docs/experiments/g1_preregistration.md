@@ -140,6 +140,40 @@ Decision per the frozen rules: supported branch. Next steps that this
 result licenses: scale-up planning may proceed, subject to the
 registered caveats (single seed, miniF2F-internal transfer only).
 
+## Amendment 2026-07-05c: RESULT INVALIDATED BY LABEL DEFECT (supersedes the Results section)
+
+The S1 stepwise replay (exact kernel re-audit of claimed successes)
+exposed a storage-time classifier hole: _ERROR_RE missed tagged Lean
+diagnostics ('error(tag):'), mis-keying them into neighboring blocks —
+a block whose ONLY errors were tagged carried no messages and was
+classified SUCCESS. Training then reinforced tagged-error-failing
+scripts (Lean3-isms such as 'eq.mp', 'int.add_comm'): reward hacking
+through the label hole, i.e., the arbiter itself was gameable — the
+exact Goodhart class this program's design warns about, one level
+deeper than anticipated.
+
+Corrected recount (label_audit, chunk-wide re-attribution against each
+row's own R0c block range; lower bound — tagged errors with no
+preceding plain error anywhere were dropped at storage):
+- Eval C: 36 success rows -> 12 false; corrected 23/130.
+- Eval T: 53 -> 24 false; corrected 28/130.
+- CORRECTED PRIMARY: delta = +3.85pt, 95% CI [-0.77, +8.46] — does NOT
+  exclude zero. THE SUPPORTED VERDICT IS RETRACTED.
+- Training: 71/144 success rows false — roughly half the RFT gradient
+  signal was garbage; the wave_7 checkpoint, the twist-v2 artifact and
+  the difficulty table trained on these labels are QUARANTINED.
+- Ground truth: 5/5 sampled false successes re-audited through the
+  fixed pipeline (tagged-aware _ERROR_RE) now classify elab_error/fail.
+
+Under the corrected point estimate (+3.85pt in [+2pt, floor)) the
+pre-declared power-limited branch would apply, but the deeper defect —
+corrupted training labels — dominates: the honest disposition is
+INVALIDATED PENDING RE-RUN with the fixed classifier end to end
+(training labels, eval labels, and the RFT trace filter). Collateral to
+re-examine: D1 gates used pilot labels with the same hole (retro
+recount via the D3 chunk reconstruction is possible); M1 (partial rows)
+and D3 (error positions, not success labels) are unaffected.
+
 ## Threats to validity acknowledged in advance
 
 
