@@ -47,6 +47,53 @@ def test_attribution_ownership_rule():
     assert global_msgs == ["err: unknown module"]
 
 
+def test_isolation_confirmation_demotes_batch_false_successes(monkeypatch):
+    # Defect #5: a scope-consuming script (unterminated comment) silently
+    # comments out its chunk-mates -> batched run reports success with no
+    # stored diagnostics anywhere. The isolated confirmation must win.
+    from lean_rgc.lean import bulk_executor as bx
+    from lean_rgc.schemas import LeanTask, TacticAction
+
+    task = LeanTask(task_id="t", statement="True", imports=[])
+    pairs = [
+        (task, TacticAction(action_id="a0", tactic="/- swallow")),
+        (task, TacticAction(action_id="a1", tactic="trivial")),
+    ]
+    calls = {"n": 0}
+
+    class _Proc:
+        stderr = ""
+        returncode = 0
+        stdout = ""
+
+    def fake_run(cmd, **kw):
+        calls["n"] += 1
+        p = _Proc()
+        if calls["n"] == 1:
+            # Batched: the swallowed chunk produces NO diagnostics at all —
+            # both blocks silently claim success (the defect-#5 signature).
+            p.stdout = ""
+        elif calls["n"] == 2:
+            # Isolated a0: its own dangling comment now errors.
+            p.stdout = f"{cmd[-1]}:12:0: error: unterminated comment"
+        else:
+            p.stdout = ""  # isolated a1: genuinely clean
+        return p
+
+    monkeypatch.setattr(bx.subprocess, "run", fake_run)
+    auditor = bx.LeanBulkAuditor(bx.BulkAuditConfig(lean_cmd="lean-stub", batch_size=8))
+    records, report = auditor.run_pairs(pairs)
+    by_action = {r.action_id: r for r in records}
+    # SOUNDNESS: the fabricated success is demoted by isolation...
+    assert by_action["a0"].status != "success"
+    assert by_action["a0"].audit_flags.get("batch_claimed_success") is True
+    # ...and the genuine one survives, marked confirmed.
+    assert by_action["a1"].status == "success"
+    assert by_action["a1"].audit_flags.get("isolation_confirmed") is True
+    assert calls["n"] == 3  # one batch + two confirmations
+    assert report.status_counts.get("success", 0) == 1
+
+
 def _row(task, status, msgs, bs, be, lf="/tmp/x/rgc_bulk_0001.lean", tactic="t"):
     return {
         "task_id": task, "status": status, "messages": msgs, "lean_file": lf,

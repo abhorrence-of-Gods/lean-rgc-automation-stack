@@ -27,6 +27,12 @@ class BulkAuditConfig:
     keep_files: bool = False
     import_mode: str = "preserve"
     trace_state: bool = False
+    # Defect #5 (2026-07-05): batching cannot guarantee isolation against
+    # scope-consuming scripts — an unterminated block comment silently
+    # comments out the REST of the chunk, mass-producing false successes
+    # that no retro attribution can detect. Successes are therefore
+    # confirmed by an individual re-audit before they may become labels.
+    confirm_successes: bool = True
 
 
 @dataclass
@@ -231,15 +237,28 @@ class LeanBulkAuditor:
     def run_pairs(self, pairs: list[tuple[LeanTask, TacticAction]]) -> tuple[list[AuditRecord], BulkAuditReport]:
         all_records: list[AuditRecord] = []
         t0 = time.time()
-        status_counts: dict[str, int] = {}
         n_batches = 0
         for i in range(0, len(pairs), max(1, self.config.batch_size)):
             chunk = pairs[i:i + max(1, self.config.batch_size)]
             n_batches += 1
             recs = self._run_chunk(chunk, batch_index=n_batches)
             all_records.extend(recs)
-            for r in recs:
-                status_counts[r.status] = status_counts.get(r.status, 0) + 1
+        if self.config.confirm_successes and self.config.batch_size > 1:
+            # Isolation confirmation: the isolated verdict wins. Successes
+            # are rare, so this costs a handful of single-block audits.
+            for idx, (pair, rec) in enumerate(zip(pairs, all_records)):
+                if rec.status != "success":
+                    continue
+                n_batches += 1
+                iso = self._run_chunk([pair], batch_index=n_batches)[0]
+                iso.audit_flags = dict(iso.audit_flags or {})
+                iso.audit_flags["isolation_confirmed"] = iso.status == "success"
+                if iso.status != "success":
+                    iso.audit_flags["batch_claimed_success"] = True
+                all_records[idx] = iso
+        status_counts: dict[str, int] = {}
+        for r in all_records:
+            status_counts[r.status] = status_counts.get(r.status, 0) + 1
         elapsed = (time.time() - t0) * 1000.0
         report = BulkAuditReport(
             n_blocks=len(pairs),
