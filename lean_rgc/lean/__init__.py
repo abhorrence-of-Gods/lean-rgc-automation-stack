@@ -30,6 +30,7 @@ _EXPORT_MODULES = {
     "goal_state_transitions_from_audits": "goal_state_dynamics",
     "install_native_worker": "native_worker",
     "kernel_state_graphs_from_jsonl": "goal_state_dynamics",
+    "minimal_support_goals": "minimal_support",
     "native_worker_command": "native_worker",
     "native_worker_manifest": "native_worker",
     "normalize_kernel_state_v1": "kernel_state",
@@ -41,6 +42,10 @@ _EXPORT_MODULES = {
     "server_audit_to_files": "server",
     "structured_state_extract_cli": "structured_state",
     "summarize_structured_states": "structured_state",
+    "support_by_mvar": "minimal_support",
+    "support_key": "minimal_support",
+    "used_constants": "minimal_support",
+    "used_hypothesis_names": "minimal_support",
 }
 
 __all__ = list(_EXPORT_MODULES)

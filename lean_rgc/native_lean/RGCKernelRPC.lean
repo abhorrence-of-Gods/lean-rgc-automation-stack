@@ -5,13 +5,17 @@ Lean-RGC in-memory kernel RPC worker.
 
 This worker keeps real Lean elaborator/metavariable state behind opaque
 process-local state ids and applies tactics directly to stored `MVarId`s using
-`Lean.Elab.runTactic`.  It returns the strict `lean-rgc-kernel-state-v2`
+`Lean.Elab.runTactic`.  It returns the strict `lean-rgc-kernel-state-v3`
 payload with Expr DAG, local declaration graph, metavariable graph, a
 typeclass-obligation readout over synthetic/class metavariables, and persistent
-branch/rollback state ids.  v2 adds, for every open metavariable, a bounded
+branch/rollback state ids.  v2 added, for every open metavariable, a bounded
 pretty-printed `type_text` and the `depends_on` list of metavariables occurring
 in its (instantiated) type, plus `target_text` on goals, and replays
-`task.prefix` tactics so the initial state is the post-prefix state.
+`task.prefix` tactics so the initial state is the post-prefix state.  v3 adds
+M2 proof-term minimal support: after a tactic application assigns a goal mvar,
+`minimal_support` records, per closed goal, the local-context hypotheses that
+occur in the instantiated proof term (expanded to their dependency closure in
+the local context) and a bounded list of the constants the proof references.
 -/
 open Lean
 open Lean.Elab
@@ -20,8 +24,9 @@ open Lean.Meta
 namespace RGCLean
 namespace KernelRPC
 
-def schemaVersion : String := "lean-rgc-kernel-state-v2"
+def schemaVersion : String := "lean-rgc-kernel-state-v3"
 def transitionVersion : String := "lean-rgc-kernel-transition-v1"
+def minimalSupportVersion : String := "lean-rgc-minimal-support-v1"
 
 partial def jsonArr (xs : List Json) : Json := Json.arr xs.toArray
 partial def obj (xs : List (String × Json)) : Json := Json.mkObj xs
@@ -454,6 +459,104 @@ def typeclassObligationJson (id : MVarId) (decl : MetavarDecl) (ctx : NormCtx) :
       ("messages", jsonArr [])
     ]))
 
+/-! ## M2: proof-term minimal support
+
+After a tactic application SUCCEEDS (a goal mvar becomes assigned), the
+instantiated assignment is a proof term whose free fvars name exactly the
+hypotheses the proof actually used — the anti-overfit canonicalization gauge
+for the S6 lemma foundry and the exact rung of the M1 reuse ladder. -/
+
+def maxUsedConstants : Nat := 64
+
+partial def collectConstNames (e : Expr) (acc : Std.HashSet Name := {}) : Std.HashSet Name :=
+  match e with
+  | .const n _ => acc.insert n
+  | .app f a => collectConstNames a (collectConstNames f acc)
+  | .lam _ t b _ => collectConstNames b (collectConstNames t acc)
+  | .forallE _ t b _ => collectConstNames b (collectConstNames t acc)
+  | .letE _ t v b _ => collectConstNames b (collectConstNames v (collectConstNames t acc))
+  | .mdata _ x => collectConstNames x acc
+  | .proj n _ x => collectConstNames x (acc.insert n)
+  | _ => acc
+
+def lctxDeclCount (lctx : LocalContext) : Nat :=
+  lctx.foldl (fun n _ => n + 1) 0
+
+/-- Dependency closure of a seed fvar set inside one local context: a used
+hypothesis drags in the fvars occurring in its type (and value, for let
+declarations), transitively.  The outer loop runs |lctx|+1 times, which bounds
+any dependency chain, so the fixpoint is reached without a termination proof. -/
+def fvarSupportClosure (lctx : LocalContext) (seed : List FVarId) : Std.HashSet FVarId := Id.run do
+  let mut support : Std.HashSet FVarId := {}
+  for id in seed do
+    if lctx.contains id then
+      support := support.insert id
+  for _ in [0:lctxDeclCount lctx + 1] do
+    for id in support.toList do
+      match lctx.find? id with
+      | some d =>
+          let exprs := match d.value? (allowNondep := true) with
+            | some v => [d.type, v]
+            | none => [d.type]
+          let deps := exprs.foldl (fun s e => collectFVars e s) ({} : Std.HashSet FVarId)
+          for dep in deps.toList do
+            if lctx.contains dep then
+              support := support.insert dep
+      | none => pure ()
+  return support
+
+def emptyMinimalSupport : Json := obj [
+  ("schema_version", Json.str minimalSupportVersion),
+  ("goals", jsonArr []),
+  ("source", Json.str "lean_kernel_rpc_proof_term_v1")
+]
+
+/-- Minimal support of one just-assigned goal mvar: instantiate its assignment
+and report (a) `used_hypotheses` — the goal-lctx fvars occurring in the proof
+term expanded to their dependency closure, in local-context order, and (b)
+`used_constants` — the constants the proof references, sorted, bounded to
+`maxUsedConstants`.  Returns `none` when the mvar is unknown or unassigned. -/
+def minimalSupportForGoal (g : MVarId) : MetaM (Option Json) := do
+  let mctx ← getMCtx
+  match mctx.decls.find? g with
+  | none => pure none
+  | some decl => do
+      let proof ← instantiateMVars (mkMVar g)
+      if proof == mkMVar g then
+        pure none
+      else
+        let lctx := decl.lctx
+        let seed := (collectFVars proof).toList.filter (fun id => lctx.contains id)
+        let support := fvarSupportClosure lctx seed
+        let mut hyps : Array Json := #[]
+        for d in lctx do
+          if support.contains d.fvarId then
+            let typeText ←
+              try
+                withLCtx lctx decl.localInstances do
+                  pure (truncateText (toString (← ppExpr (← instantiateMVars d.type))))
+              catch _ =>
+                pure (truncateText (toString (repr d.type)))
+            hyps := hyps.push (obj [
+              ("fvar_id", Json.str (localDeclId d)),
+              ("user_name", Json.str (toString d.userName)),
+              ("type_text", Json.str typeText),
+              ("is_implementation_detail", Json.bool d.isImplementationDetail)
+            ])
+        let constNames := ((collectConstNames proof).toList.map toString).toArray.qsort
+          (fun a b => decide (a < b))
+        let residual := collectMVars proof
+        pure (some (obj [
+          ("mvar_id", Json.str (mvarIdString g)),
+          ("used_hypotheses", Json.arr hyps),
+          ("used_constants", jsonArr ((constNames.toList.take maxUsedConstants).map Json.str)),
+          ("n_constants_total", Json.num constNames.size),
+          ("constants_truncated", Json.bool (decide (constNames.size > maxUsedConstants))),
+          ("residual_mvars", jsonArr (mvarStrings residual)),
+          ("fully_closed", Json.bool residual.isEmpty),
+          ("proof_hash_raw", Json.str (hashString (rawExprSig proof)))
+        ]))
+
 structure KState where
   id : String
   env : Environment
@@ -466,6 +569,7 @@ structure KState where
   proofPrefix : String
   parent? : Option String := none
   status : String := "open"
+  minimalSupport : Json := emptyMinimalSupport
 
 structure WorkerState where
   sessionId : String
@@ -668,14 +772,48 @@ unsafe def serializeKernelState (ks : KState) : IO Json := do
         ("tactic_transition_api", Json.bool true),
         ("branch_rollback", Json.bool true),
         ("replay_certificate", Json.bool true),
+        ("minimal_support", Json.bool true),
         ("source", Json.str "lean_kernel_rpc")
       ]),
+      ("minimal_support", ks.minimalSupport),
       ("closed", Json.bool ks.goals.isEmpty),
       ("canonical_status", Json.str "kernel_structured_state_chart_not_canonical")
     ])
   let cctx := coreCtx ks.env ks.opts
   let (payload, _, _) ← serialize.toIO cctx ks.coreState metaCtx ks.metaState
   pure payload
+
+/-- Run `minimalSupportForGoal` for every goal closed by a transition inside
+the post-tactic Core/Meta state.  Extraction failures never fail the
+transition: they degrade to an empty support object carrying `error`. -/
+def minimalSupportJson (ks : KState) (closedGoals : List MVarId) : IO Json := do
+  if closedGoals.isEmpty then
+    pure emptyMinimalSupport
+  else
+    let compute : MetaM Json := do
+      let mut goalObjs : Array Json := #[]
+      for g in closedGoals do
+        try
+          match ← minimalSupportForGoal g with
+          | some j => goalObjs := goalObjs.push j
+          | none => pure ()
+        catch _ => pure ()
+      pure (obj [
+        ("schema_version", Json.str minimalSupportVersion),
+        ("goals", Json.arr goalObjs),
+        ("source", Json.str "lean_kernel_rpc_proof_term_v1")
+      ])
+    try
+      let cctx := coreCtx ks.env ks.opts
+      let (j, _, _) ← compute.toIO cctx ks.coreState metaCtx ks.metaState
+      pure j
+    catch e =>
+      pure (obj [
+        ("schema_version", Json.str minimalSupportVersion),
+        ("goals", jsonArr []),
+        ("source", Json.str "lean_kernel_rpc_proof_term_v1"),
+        ("error", Json.str (toString e))
+      ])
 
 unsafe def replayCertificate (before : KState) (after : KState) (action : Json) : IO Json := do
   let tactic := jsonGetStr? action "tactic" |>.getD ""
@@ -694,13 +832,14 @@ unsafe def replayCertificate (before : KState) (after : KState) (action : Json) 
 unsafe def applyTacticCore (base : KState) (action : Json) (newId : String) : IO (KState × Json × Json) := do
   let tactic := jsonGetStr? action "tactic" |>.getD ""
   if base.goals.isEmpty then
-    let child := {base with id := newId, parent? := some base.id, status := "closed"}
+    let child := {base with id := newId, parent? := some base.id, status := "closed", minimalSupport := emptyMinimalSupport}
     let replay ← replayCertificate base child action
     pure (child, obj [
       ("closed_goals", jsonArr []),
       ("new_goals", jsonArr []),
       ("assigned_mvars", jsonArr []),
-      ("new_mvars", jsonArr [])
+      ("new_mvars", jsonArr []),
+      ("minimal_support", emptyMinimalSupport)
     ], replay)
   else
     let opts :=
@@ -710,20 +849,23 @@ unsafe def applyTacticCore (base : KState) (action : Json) (newId : String) : IO
     let beforeMvars := base.metaState.mctx.decls.toList.map Prod.fst
     let stepped ← stepTactic base tactic opts
     let goals' := stepped.goals
+    let closedGoals := base.goals.filter fun g => !(goals'.contains g)
+    let minimalSupport ← minimalSupportJson stepped closedGoals
     let child : KState := {stepped with
       id := newId,
       proofPrefix := if base.proofPrefix.trimAscii.isEmpty then tactic else base.proofPrefix ++ "\n" ++ tactic,
-      parent? := some base.id
+      parent? := some base.id,
+      minimalSupport := minimalSupport
     }
     let afterMvars := stepped.metaState.mctx.decls.toList.map Prod.fst
-    let closedGoals := base.goals.filter fun g => !(goals'.contains g)
     let newMvars := afterMvars.filter fun m => !(beforeMvars.contains m)
     let assigned := beforeMvars.filter fun m => stepped.metaState.mctx.eAssignment.contains m
     let delta := obj [
       ("closed_goals", jsonArr (closedGoals.map (fun m => Json.str (mvarIdString m)))),
       ("new_goals", jsonArr (goals'.filter (fun m => !(base.goals.contains m)) |>.map (fun m => Json.str (mvarIdString m)))),
       ("assigned_mvars", jsonArr (assigned.map (fun m => Json.str (mvarIdString m)))),
-      ("new_mvars", jsonArr (newMvars.map (fun m => Json.str (mvarIdString m))))
+      ("new_mvars", jsonArr (newMvars.map (fun m => Json.str (mvarIdString m)))),
+      ("minimal_support", minimalSupport)
     ]
     let replay ← replayCertificate base child action
     pure (child, delta, replay)
@@ -882,7 +1024,7 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
               pure (Except.ok (child, delta, replay))
             catch e =>
               let msg := toString e
-              let failed : KState := {base with id := newId, parent? := some base.id, status := if (msg.splitOn "heartbeat").length > 1 then "timeout" else "failed"}
+              let failed : KState := {base with id := newId, parent? := some base.id, status := if (msg.splitOn "heartbeat").length > 1 then "timeout" else "failed", minimalSupport := emptyMinimalSupport}
               let replay ← replayCertificate base failed action
               pure (Except.error (failed, msg, replay))
           let t1 ← IO.monoMsNow
@@ -935,7 +1077,8 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
                 ("closed_goals", jsonArr []),
                 ("new_goals", jsonArr []),
                 ("assigned_mvars", jsonArr []),
-                ("new_mvars", jsonArr [])
+                ("new_mvars", jsonArr []),
+                ("minimal_support", emptyMinimalSupport)
               ]
               let audit := obj [
                 ("task_id", Json.str (jsonGetStr? failed.task "task_id" |>.getD failed.id)),

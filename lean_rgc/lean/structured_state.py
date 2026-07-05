@@ -126,6 +126,7 @@ class StructuredProofState:
     local_context: LocalContextGraph = field(default_factory=LocalContextGraph)
     metavars: MetaVarGraph = field(default_factory=MetaVarGraph)
     typeclasses: TypeclassObligationGraph = field(default_factory=TypeclassObligationGraph)
+    minimal_support: dict[str, Any] = field(default_factory=dict)
     messages: list[str] = field(default_factory=list)
     raw_text_hash: str = ""
     kernel_state_hash: str = ""
@@ -142,6 +143,7 @@ class StructuredProofState:
             "local_context": self.local_context.to_dict(),
             "metavars": self.metavars.to_dict(),
             "typeclasses": self.typeclasses.to_dict(),
+            "minimal_support": dict(self.minimal_support),
             "messages": list(self.messages),
             "raw_text_hash": self.raw_text_hash,
             "kernel_state_hash": self.kernel_state_hash,
@@ -546,6 +548,46 @@ def _coerce_kernel_typeclasses(kernel: dict[str, Any]) -> TypeclassObligationGra
     return TypeclassObligationGraph(obligations=obligations[:512], n_obligations=len(obligations[:512]), source="kernel_json_v28")
 
 
+def _coerce_kernel_minimal_support(kernel: dict[str, Any]) -> dict[str, Any]:
+    """Normalize the v3 `minimal_support` readout (M2 proof-term support).
+
+    Per goal closed by the transition that produced this state, the kernel_rpc
+    worker reports the local hypotheses occurring in the instantiated proof
+    term (dependency-closed in the local context) and the constants the proof
+    references.  Empty dict when the payload predates v3 or carries none.
+    """
+    raw = kernel.get("minimal_support")
+    if isinstance(raw, list):
+        raw = {"goals": raw}
+    if not isinstance(raw, dict):
+        return {}
+    goals_raw = raw.get("goals") or raw.get("entries") or []
+    goals: list[dict[str, Any]] = []
+    for g in goals_raw if isinstance(goals_raw, list) else []:
+        if not isinstance(g, dict):
+            continue
+        gd = dict(g)
+        hyps: list[dict[str, Any]] = []
+        for h in gd.get("used_hypotheses") or []:
+            if isinstance(h, dict):
+                hyps.append(dict(h))
+            elif isinstance(h, str):
+                hyps.append({"user_name": h, "fvar_id": h})
+        gd["used_hypotheses"] = hyps
+        gd["used_hypothesis_names"] = [str(h.get("user_name") or h.get("fvar_id") or "") for h in hyps]
+        gd["used_constants"] = [str(c) for c in (gd.get("used_constants") or [])]
+        goals.append(gd)
+    out: dict[str, Any] = {
+        "schema_version": str(raw.get("schema_version") or "lean-rgc-minimal-support-v1"),
+        "goals": goals,
+        "n_goals": len(goals),
+        "source": str(raw.get("source") or "kernel_json"),
+    }
+    if raw.get("error"):
+        out["error"] = str(raw.get("error"))
+    return out
+
+
 def extract_structured_state_from_kernel_json(kernel_state: dict[str, Any], task: LeanTask | None = None, state: ProofState | None = None, audit: AuditRecord | dict[str, Any] | None = None, *, backend: str = "kernel_json_v28", metadata: dict[str, Any] | None = None) -> StructuredProofState:
     """Normalize Lean-kernel/proof-state JSON into the v28 StructuredProofState schema.
 
@@ -568,6 +610,7 @@ def extract_structured_state_from_kernel_json(kernel_state: dict[str, Any], task
     messages = kernel.get("messages") or []
     if not isinstance(messages, list):
         messages = [str(messages)]
+    minimal_support = _coerce_kernel_minimal_support(kernel)
     meta = dict(metadata or {})
     meta.update(dict(kernel.get("metadata") or {}))
     meta.update({
@@ -575,6 +618,7 @@ def extract_structured_state_from_kernel_json(kernel_state: dict[str, Any], task
         "kernel_backend": backend,
         "source_note": "v28 kernel-backed structured state; still a finite chart, not canonical",
         "n_goals": len(goals),
+        "n_minimal_support_goals": int(minimal_support.get("n_goals", 0) or 0),
     })
     k_hash = str(kernel.get("kernel_state_hash") or stable_hash(kernel, n=24))
     return StructuredProofState(
@@ -584,6 +628,7 @@ def extract_structured_state_from_kernel_json(kernel_state: dict[str, Any], task
         local_context=_coerce_kernel_local_context(kernel),
         metavars=_coerce_kernel_metavars(kernel, goals),
         typeclasses=_coerce_kernel_typeclasses(kernel),
+        minimal_support=minimal_support,
         messages=[str(m) for m in messages[-200:]],
         raw_text_hash=stable_hash(json.dumps(kernel, sort_keys=True, ensure_ascii=False, default=str)[:8000], n=20),
         kernel_state_hash=k_hash,

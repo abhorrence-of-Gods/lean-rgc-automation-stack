@@ -1,10 +1,13 @@
 """v98: kernel RPC substrate for the D4 mvar-sharing detector.
 
-The `lean-rgc-kernel-state-v2` payload emits, for every open metavariable, a
+The `lean-rgc-kernel-state-v2` payload emitted, for every open metavariable, a
 bounded pretty-printed `type_text` and the `depends_on` list of metavariables
 occurring in its instantiated type, plus `target_text` on goals, and replays
 `task.prefix` tactics so the initial state is the post-prefix state.  Fixture
-payloads here mirror live worker output (runs/krpc_* probes, 2026-07-05).
+payloads here mirror live worker output (runs/krpc_* probes, 2026-07-05) and
+deliberately stay at v2: coercion must keep reading old rows after the v3
+(M2 minimal-support) bump, whose live coverage is in
+test_v99_minimal_support.py.
 """
 
 from __future__ import annotations
@@ -125,9 +128,9 @@ def test_dependencies_mvars_fallback_for_entries_without_depends_on():
     assert out["ramified"] is True
 
 
-def test_packaged_worker_source_declares_v2_substrate():
+def test_packaged_worker_source_declares_mvar_substrate():
     text = packaged_kernel_rpc_worker_path().read_text(encoding="utf-8")
-    assert '"lean-rgc-kernel-state-v2"' in text
+    assert '"lean-rgc-kernel-state-v3"' in text
     assert '"depends_on"' in text
     assert '"target_text"' in text
     assert "mvarTypeReadout" in text
@@ -177,7 +180,7 @@ def test_live_worker_feeds_d4_detector_end_to_end():
     assert all(r.get("ok") for r in replies), replies
 
     refine_after = replies[2]["kernel_state_after"]
-    assert refine_after["schema_version"] == "lean-rgc-kernel-state-v2"
+    assert refine_after["schema_version"] == "lean-rgc-kernel-state-v3"
     exists_out = decompose_structured_state(
         extract_structured_state_from_kernel_json(refine_after, backend="kernel_json_v28").to_dict()
     )
