@@ -73,6 +73,21 @@ a2 effect (typed structure vs raw error content) the decisive open question.
 - The primary endpoint of this document (a2 − a1 on the frontier run) is
   unchanged.
 
+## Amendment 2026-07-05: conclusions SUSPENDED under authoritative labels
+
+Three storage-time label defects (tagged-diagnostic mis-attribution,
+dropped tagged errors, bulk syntax bleed/poisoning; see the G1 prereg
+amendments c/e) corrupted the pilot solve labels this experiment's
+episodes were computed from. Under the authoritative isolated re-audit
+of every claimed-success row, the pilot7 arms become: a0 13/130,
+a1 14/130, a2 13/130, a3 12/130 — every paired delta's CI includes
+zero. The previously recorded conclusions (raw error text +19.2pt over
+1-bit; typed-packet negative synergy) were artifacts of the label
+defects and are WITHDRAWN. What survives: at authoritative labels the
+7B generator solves ~10% of the miniF2F eval subset regardless of
+feedback arm, and no feedback-format effect is detectable at n=130.
+Any future feedback-arm claim requires a re-run on the fixed pipeline.
+
 ## Threats to validity acknowledged in advance
 
 - miniF2F is likely in the generator's training data; this affects all arms

@@ -99,6 +99,19 @@ shadow mode in the next GPU run; state_value head cleared as RLOO baseline
 input once stratified grouping lands. Grad-loop pruning stays excluded (see
 deployment note above).
 
+## Amendment 2026-07-05: gate verdicts SUSPENDED (label defects)
+
+The pilot success labels this analysis used were corrupted by three
+storage-time defects (tagged-diagnostic mis-attribution; dropped tagged
+errors; bulk chunk syntax bleed/poisoning — see the G1 prereg
+amendments c/e). The authoritative isolated re-audit leaves only 25
+true success pairs among the 214 claimed in the pilot corpus; at that
+positive count none of the frozen gates can be evaluated with useful
+power. All D1 verdicts (including the C4 "factorized beats raw"
+reading) are SUSPENDED, and the twist artifacts trained on these labels
+are quarantined. The analysis machinery itself is sound and will re-run
+on G1re2-era corpora, whose labels are fixed at source.
+
 ## Threats to validity acknowledged in advance
 
 - Rows are whole-proof repair proposals, not tactic steps: measured FPR is

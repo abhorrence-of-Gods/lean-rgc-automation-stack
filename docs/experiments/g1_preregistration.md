@@ -192,6 +192,30 @@ Primary endpoint, strata, curves, and null branches: unchanged from the
 original registration. The corrected-label +3.85pt from amendment c is
 the prior expectation, NOT a threshold.
 
+## Amendment 2026-07-05e: authoritative labels; defects #3/#4; G1re restarted
+
+The isolated (batch_size=1) re-audit of all 394 claimed-success pairs is
+the authoritative label source (run-to-run reproducibility 21/21).
+Results: pilot 25/214 pairs true, g1_train 6/120, g1_evalC 2/30,
+g1_evalT 0/30. AUTHORITATIVE G1: C = 5/130, T = 4/130, delta = -0.77pt,
+CI [-2.3, +0.0] — nothing remains of the original effect.
+
+Two further storage-time defects were identified while validating the
+correction instrument:
+- Defect #3 (chunk poisoning): a dangling construct in the last block
+  errors past all block ranges; the global message failed every block
+  in the chunk (false failures).
+- Defect #4 (syntax bleed): a block ending in an incomplete construct
+  (e.g. bare `calc`) absorbs the NEXT block's source; the parse error
+  lands in the neighbor's range (false failure) while the offender
+  carries no error (false success) — undetectable from stored rows.
+Both fixed at source by the ownership attribution rule (commit 6d24fe9).
+The first G1re attempt trained under defect #4 and was aborted; G1re2
+relaunched fresh with all fixes active. The label-audit canary gate of
+amendment d still applies, PLUS a new gate: an isolated re-audit of a
+random sample of >= 30 claimed successes from the G1re2 run must agree
+with the stored labels at >= 95%.
+
 ## Threats to validity acknowledged in advance
 
 
