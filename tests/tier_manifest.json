@@ -372,6 +372,9 @@
   "test_v98_kernel_rpc_mvar_substrate.py": [
     "unit"
   ],
+  "test_v99_twist.py": [
+    "unit"
+  ],
   "test_v8_harvest_shard.py": [
     "legacy"
   ],
