@@ -1,0 +1,118 @@
+# G1 Pre-Registration: RFT-primary training vs frozen baseline (production)
+
+Status: registered before the production G1 run. Thresholds frozen;
+amendments require a new dated section with a reason.
+
+Prior-exploration disclosure: a 40-task pilot (g1_rft_pilot, 2026-07-05)
+ran the training loop end-to-end (solve 19->33/40 across 4 waves) WITHOUT a
+control arm; its solve trajectory conflates training with error-feedback
+repair and informs only feasibility/throughput, not effect size. All 40
+pilot tasks lie INSIDE the evaluation set below, so the pilot's LoRA
+weights are contaminated for evaluation and MUST NOT seed the production
+run: training starts from the base model.
+
+## Hypothesis
+
+Under an identical generation protocol and per-theorem budget, the
+RFT-primary (+ stratified-RLOO auxiliary) fine-tuned policy achieves a
+higher paired solve rate than the frozen base policy on a held-out task
+set. Mechanistic secondary claim: gains concentrate in the FLAKY stratum
+(tasks with historical 0 < p <= 0.1), not the reliable one — reweighting
+pass@k into pass@1, not sharpening of already-easy tasks.
+
+## Task split (contamination rule)
+
+- EVAL (frozen): the 130 miniF2F-test tasks of the pilot7 episode set.
+- TRAIN: the 113 miniF2F-test tasks OUTSIDE the eval set (243 total;
+  disjointness verified 2026-07-05). Optionally extended with the miniF2F
+  valid split if fetched; any extension is recorded before the run.
+- No task appears in both. The pilot7 a1 = 47.7% figure is CONTEXT only —
+  the control arm is a fresh base-model evaluation under this protocol
+  (the AWQ-server -> in-process NF4 policy change makes old absolute
+  numbers non-comparable).
+
+## Arms
+
+- C (control): base Qwen2.5-7B-Instruct (prequantized bnb-4bit), no
+  adapter.
+- T (trained): same base + LoRA after N_train waves of run_grad_loop on
+  the TRAIN set with difficulty-stratified RLOO (grad-loop --difficulty)
+  and the three collapse guards (prerequisites below).
+
+Both arms evaluated with the SAME in-process protocol: 8 attempts per
+theorem, raw-Lean-error feedback between attempts (a1 protocol), fixed
+decoding (temperature 0.2, top_p 0.95, max 512 new tokens), same seeds,
+same Lean audit lane. Solve = any attempt verifies.
+
+## Training configuration (frozen)
+
+- GradInvariants defaults (NF4, LoRA r16/a32, G=8, batch>=8, checkpointing,
+  KL hard gate 0.5/seq on RLOO).
+- Difficulty table: recomputed from the run's OWN accumulated wave rows
+  after each wave (grad-difficulty semantics, shrinkage 20; wave 0 runs
+  unstratified). No pilot-derived difficulty enters training (train tasks
+  have no pilot history; eval-task history is never used in training).
+- N_train = 8 waves (sized from measured pilot throughput ~30 min / 4
+  waves / 40 tasks; expected ~4-6 h on the RTX 4090 pod). Checkpoint after
+  every wave; the evaluated T is the LAST checkpoint (no post-hoc
+  checkpoint selection).
+- Supply planning constants: 25-48% of tasks yield >=1 verified trace per
+  wave (measured band), degenerate groups 52-67%.
+
+## Prerequisites (blockers; must land before launch)
+
+1. RFT trace dedup per (task_id, tactic) within a wave + per-task cap of 2
+   traces/wave (empirical duplication 3.2x; M1: 93% residual-state dup).
+2. A drift guard on the RFT path (KL-to-base term or entropy floor) — the
+   KL gate currently covers only RLOO.
+3. Per-wave trace-concentration logging (top-k share of traces by task)
+   in grad_run.jsonl as the collapse early-warning gauge.
+4. An eval-mode driver: budget-8 feedback loop through RolloutEngine
+   generation with NO training step, emitting episode rows compatible with
+   the paired bootstrap report.
+
+## Primary endpoint
+
+Paired solve-rate delta T - C over the 130 eval tasks, 10,000-resample
+paired bootstrap, seed 0. Decision: the training thesis is supported iff
+the 95% CI excludes zero in favor of T. Detection floor at n=130 is
+~7.7-10.8pt; a true effect below that is not resolvable here.
+
+## Secondary endpoints (reported, not gating)
+
+- Stratum deltas using pilot7 pooled per-task p on EVAL tasks:
+  p=0 stratum / flaky (0<p<=0.1) / reliable (p>0.1). Support pattern =
+  flaky-dominant gains; easy-sharpening signature = reliable-only gains
+  (triggers the entropy/dedup review before any follow-up run).
+- Degenerate-group fraction and RLOO advantage mass per wave (stratified
+  vs the 62-67% task-grouped band).
+- Trace concentration (Gini / top-10% share) per wave.
+- Measured throughput and VRAM (replacing the remaining projections).
+- Offline twist shadow calibration: rerun the D1 pipeline on this run's
+  archived wave rows (R0e collector) — no runtime hook needed.
+
+## Pre-declared null/negative branches
+
+- CI includes zero and point estimate < +2pt: the RFT-primary mechanism is
+  not supported at 7B under this budget; the roadmap pivot is search-side
+  (twist-budgeted eval, verified-prefix salvage) per the standing cost
+  analysis — not more waves of the same.
+- CI includes zero and point estimate in [+2pt, floor): power-limited;
+  extend EVAL with the 113 train-disjoint valid-split tasks (if fetched)
+  in a dated amendment BEFORE unblinding any extension data.
+- Positive but reliable-stratum-only: mechanism is easy-sharpening;
+  mitigations (dedup cap tightening, entropy floor) become mandatory
+  before any scale-up claim.
+
+## Threats to validity acknowledged in advance
+
+- miniF2F is likely in the base model's training data; the paired design
+  absorbs this for the delta, but absolute rates are not generalization
+  claims.
+- Train and eval share the miniF2F distribution; transfer beyond miniF2F
+  is out of scope for G1.
+- Single 24GB GPU: no seed replicates; seed variance is unquantified and
+  acknowledged (one seed, fixed in advance: 0).
+- The feedback loop inside evaluation means T's gains can include better
+  ERROR-RESPONSE behavior, not just better first proposals; the per-attempt
+  solve curve (attempt index of first solve) is reported to expose this.
