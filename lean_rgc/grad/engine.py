@@ -523,6 +523,7 @@ def run_grad_loop(
     n_waves: int = 4,
     success_statuses: tuple[str, ...] = DEFAULT_SUCCESS_STATUSES,
     difficulty: dict[str, float] | None = None,
+    online_difficulty: bool = False,
     train: bool = True,
     samples_per_task: int | None = None,
     save_checkpoints: bool = False,
@@ -558,11 +559,26 @@ def run_grad_loop(
     feedback: dict[str, str] = {}
     update_rows: list[dict[str, Any]] = []
     all_traces: list[dict[str, Any]] = []
+    # Online difficulty (G1 prereg: recomputed from the run's OWN accumulated
+    # wave rows after each wave; wave 0 runs unstratified; no external
+    # history enters training).
+    diff_succ: dict[str, float] = {}
+    diff_tot: dict[str, float] = {}
 
     for wave in range(n_waves):
         live = [t for t in tasks if t.task_id not in solved]
         if not live:
             break
+        # Snapshot BEFORE this wave's rewards exist: a baseline computed from
+        # the current wave's own outcomes would correlate with the rewards it
+        # is subtracted from (biased control variate). Wave 0: unstratified.
+        wave_difficulty = difficulty
+        if wave_difficulty is None and online_difficulty and diff_tot:
+            total = sum(diff_tot.values())
+            p0 = sum(diff_succ.values()) / total
+            wave_difficulty = {
+                t: (diff_succ.get(t, 0.0) + 20.0 * p0) / (diff_tot[t] + 20.0) for t in diff_tot
+            }
         # Top up per-task samples so the wavefront never sinks below the
         # verified batch floor as tasks are solved (review major).
         if samples_per_task is not None:
@@ -619,6 +635,9 @@ def run_grad_loop(
             ok = status in success
             rewards[aid] = max(rewards.get(aid, 0.0), 1.0 if ok else 0.0)
             sample = by_action[aid]
+            diff_tot[sample["task_id"]] = diff_tot.get(sample["task_id"], 0.0) + 1.0
+            if ok:
+                diff_succ[sample["task_id"]] = diff_succ.get(sample["task_id"], 0.0) + 1.0
             if ok:
                 if sample["task_id"] not in solved:
                     first_solve_wave[sample["task_id"]] = wave
@@ -646,8 +665,8 @@ def run_grad_loop(
                 "reward": rewards.get(aid, 0.0),  # empty tactics: definitional 0
                 "sample": sample,
             })
-        if difficulty is not None:
-            grouped_recs = stratified_groups(records, group_size=inv.group_size, difficulty=difficulty)
+        if wave_difficulty is not None:
+            grouped_recs = stratified_groups(records, group_size=inv.group_size, difficulty=wave_difficulty)
         else:
             grouped_recs = {}
             for rec in records:
@@ -656,9 +675,9 @@ def run_grad_loop(
         groups = {k: [r["reward"] for r in v] for k, v in grouped_recs.items()}
         members = {k: [r["sample"] for r in v] for k, v in grouped_recs.items()}
         baselines = None
-        if difficulty is not None:
+        if wave_difficulty is not None:
             baselines = {
-                k: [float(difficulty.get(str(r["task_id"]), 0.5)) for r in v]
+                k: [float(wave_difficulty.get(str(r["task_id"]), 0.5)) for r in v]
                 for k, v in grouped_recs.items()
             }
         advantages, rloo_stats = grouped_rloo(groups, baselines=baselines)
@@ -732,7 +751,7 @@ def run_grad_loop(
                 "n_rft_cap_dropped": n_rft_cap_dropped,
                 "trace_concentration": concentration,
                 "train_enabled": train,
-                "rloo_grouping": "stratified" if difficulty is not None else "task",
+                "rloo_grouping": "stratified" if wave_difficulty is not None else "task",
                 "rloo": rloo_stats.to_dict(),
                 "rollout": getattr(eng, "_last_rollout", {}),
                 "update": update,

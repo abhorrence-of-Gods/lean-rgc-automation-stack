@@ -47,6 +47,7 @@ def cmd_grad_loop(args):
         invariants=inv,
         n_waves=args.n_waves,
         difficulty=difficulty,
+        online_difficulty=getattr(args, "online_difficulty", False),
         train=not getattr(args, "eval_mode", False),
         samples_per_task=getattr(args, "samples_per_task", None),
         save_checkpoints=getattr(args, "save_checkpoints", False),
@@ -109,6 +110,7 @@ def register_grad_commands(sub) -> None:
     glp.add_argument("--adapter", help="Load a trained LoRA adapter instead of fresh init")
     glp.add_argument("--temperature", type=float)
     glp.add_argument("--save-checkpoints", action="store_true")
+    glp.add_argument("--online-difficulty", action="store_true", help="Recompute the stratification table from this run's own accumulated wave rows (wave 0 unstratified)")
     glp.set_defaults(func=cmd_grad_loop, eval_mode=False, samples_per_task=None)
 
     gev = sub.add_parser("grad-eval", help="Budget-N feedback eval loop, NO training (G1 arms)")

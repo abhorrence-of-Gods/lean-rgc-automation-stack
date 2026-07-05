@@ -110,6 +110,24 @@ def test_eval_mode_skips_training_and_emits_episodes(tmp_path: Path):
     assert summary["n_solved"] == 1
 
 
+def test_online_difficulty_wave0_unstratified_then_stratified(tmp_path: Path):
+    inv = GradInvariants(group_size=8)
+    engine = _Engine(inv, winner_task=None)  # nobody solves: 2 full waves
+    tasks = [
+        LeanTask(task_id="t0", statement="True", imports=[]),
+        LeanTask(task_id="t1", statement="False", imports=[]),
+    ]
+    run_grad_loop(
+        tasks=tasks, out_dir=tmp_path, run_id="od", invariants=inv,
+        engine=engine, wave_audit_runner=_audit, n_waves=2,
+        online_difficulty=True,
+    )
+    rows = read_jsonl(tmp_path / "grad_run.jsonl")
+    # Wave 0 has no prior counts -> unstratified; wave 1 uses wave 0's rows.
+    assert rows[0]["rloo_grouping"] == "task"
+    assert rows[1]["rloo_grouping"] == "stratified"
+
+
 def test_train_mode_still_writes_episodes(tmp_path: Path):
     inv = GradInvariants(group_size=8)
     engine = _Engine(inv, winner_task=None)
