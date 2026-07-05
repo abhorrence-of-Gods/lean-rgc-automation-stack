@@ -130,7 +130,13 @@ def _render_bulk_file(pairs: list[tuple[LeanTask, TacticAction]], *, trace_state
     return "\n".join(lines) + "\n", blocks
 
 
-_ERROR_RE = re.compile(r"^(?P<file>.*?\.lean):(?P<line>\d+):(?P<col>\d+):\s*(?P<level>error|warning):\s*(?P<msg>.*)$")
+# The optional (?P<tag>...) group catches Lean's tagged diagnostics
+# ('error(lean.unknownIdentifier): ...'). Without it, tagged lines were
+# stored as continuations under the PREVIOUS plain error's line key —
+# and a block whose ONLY errors were tagged carried no messages at all
+# and was classified SUCCESS (false-positive labels; found by the S1
+# stepwise replay re-auditing claimed pilot successes).
+_ERROR_RE = re.compile(r"^(?P<file>.*?\.lean):(?P<line>\d+):(?P<col>\d+):\s*(?P<level>error|warning)(?P<tag>\([^)]*\))?:\s*(?P<msg>.*)$")
 
 
 def _errors_by_line(output: str) -> dict[int, list[str]]:

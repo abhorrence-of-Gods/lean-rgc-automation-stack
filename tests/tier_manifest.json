@@ -378,6 +378,9 @@
   "test_v98_kernel_rpc_mvar_substrate.py": [
     "unit"
   ],
+  "test_v99_label_audit.py": [
+    "unit"
+  ],
   "test_v99_minimal_support.py": [
     "unit"
   ],
