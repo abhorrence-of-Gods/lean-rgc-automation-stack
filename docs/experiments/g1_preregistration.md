@@ -104,7 +104,44 @@ the 95% CI excludes zero in favor of T. Detection floor at n=130 is
   mitigations (dedup cap tightening, entropy floor) become mandatory
   before any scale-up claim.
 
+## Results 2026-07-05 (registered execution)
+
+Training (113 disjoint tasks, 8 waves, online-stratified RLOO, all four
+collapse guards active): 90/113 solved during training; RFT-KL drift
+bounded (peak 3.77 nats/seq at wave 1, decaying); trace concentration
+flat (gini <= 0.17); 2,769 wave rows archived. Artifacts:
+runs/g1_prod_train/. Eval arms: in-process protocol, 8 attempts,
+raw-error feedback, temperature 0.2, seed-paired; T = wave_7 checkpoint.
+
+- PRIMARY: C = 35/130 (26.9%), T = 52/130 (40.0%).
+  Paired delta T - C = +13.1pt, 95% bootstrap CI [+6.2, +20.0]
+  (10,000 resamples, seed 0). The CI excludes zero in favor of T:
+  THE TRAINING THESIS IS SUPPORTED. The point estimate also clears the
+  7.7-10.8pt single-gate detection floor.
+- MECHANISM (stratum deltas, pilot7 pooled p labels): flaky +15.8pt
+  (n=57), p0 +12.5pt (n=32), reliable +5.7pt (n=35), no-history +33pt
+  (n=6). FLAKY-DOMINANT: the registered pass@k->pass@1 reweighting
+  mechanism is supported; the easy-sharpening signature (reliable-only
+  gains) did not appear. Note the p0 stratum also moved — under the
+  in-process protocol some pilot-p0 tasks are reachable, so the stratum
+  labels (measured under the old AWQ protocol) are noisy as
+  acknowledged.
+- First-solve curves (cumulative by attempt): C [11,22,26,28,30,32,33,
+  35] vs T [13,33,41,45,48,50,52,52]. T separates hardest at attempt 2
+  (33 vs 22) — the trained policy gains BOTH on first proposals and,
+  most strongly, on the first error-feedback response, consistent with
+  the registered threat note that eval gains can include error-response
+  behavior; reported, as promised, so readers can see the split.
+- Context: pilot7 a1 47.7% is not comparable (different serving stack
+  and prompt contract); the paired in-process design was registered for
+  exactly this reason.
+
+Decision per the frozen rules: supported branch. Next steps that this
+result licenses: scale-up planning may proceed, subject to the
+registered caveats (single seed, miniF2F-internal transfer only).
+
 ## Threats to validity acknowledged in advance
+
 
 - miniF2F is likely in the base model's training data; the paired design
   absorbs this for the delta, but absolute rates are not generalization
