@@ -216,6 +216,21 @@ amendment d still applies, PLUS a new gate: an isolated re-audit of a
 random sample of >= 30 claimed successes from the G1re2 run must agree
 with the stored labels at >= 95%.
 
+## Amendment 2026-07-06f: G1re2 canary FAILED (defect #5); G1re3 with source isolation
+
+G1re2 completed (8/113 claimed solves, 10 RFT traces) but its
+registered isolated-agreement canary FAILED at 6/16: defect #5 — an
+unterminated block comment in one script silently comments out the
+rest of its chunk, mass-producing diagnostic-free false successes that
+NO attribution rule can recover. G1re2 is discarded per the gate.
+Structural fix (commit dfc20c1): every bulk-claimed success is
+re-audited in isolation at source and the isolated verdict wins, so
+RFT traces and solve claims are isolation-confirmed by construction;
+residual chunk-poisoning false failures remain possible and are
+accepted as conservative. G1re3 relaunched under the same protocol;
+both canary gates remain in force (recount < 1%; isolated sample
+agreement >= 95%, which should now hold trivially).
+
 ## Threats to validity acknowledged in advance
 
 
