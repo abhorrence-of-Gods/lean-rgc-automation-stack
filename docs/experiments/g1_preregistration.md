@@ -231,6 +231,35 @@ accepted as conservative. G1re3 relaunched under the same protocol;
 both canary gates remain in force (recount < 1%; isolated sample
 agreement >= 95%, which should now hold trivially).
 
+## FINAL Results 2026-07-06 (G1re3 — first label-sound execution)
+
+Training: 5/113 solved across 8 waves, 5 RFT traces total (the honest
+supply at 7B on this split). Both training canary gates PASSED
+(recount 0 false; isolated agreement 5/5). Eval arms completed with
+source isolation confirmation; the eval canary passed 8/8.
+
+- PRIMARY: C = 6/130 (4.6%), T = 8/130 (6.2%).
+  Paired delta = +1.54pt, 95% CI [+0.00, +3.85] — does NOT exclude
+  zero. T's solve set is a strict superset of C's (6 shared, 2 only-T,
+  0 only-C): directionally positive, far below the detection floor.
+- First-solve curves: C [1,3,5,5,6,6,6,6], T [1,3,5,6,6,7,8,8].
+- APPLICABLE PRE-DECLARED BRANCH: point estimate < +2pt — the
+  RFT-primary mechanism is NOT SUPPORTED at 7B under this budget
+  (5 verified traces cannot move a 7B policy); per the registered
+  branch, marginal GPU budget pivots to the search side (twist-budgeted
+  eval, gated suffix repair/continuation arms) and any future training
+  claim requires a low-signal-regime redesign (more samples per task,
+  temperature/diversity, curriculum mixing easier tasks, or larger
+  budgets) under a fresh registration.
+
+Context for the record: the original corrupted-pipeline execution
+reported +13.1pt CI [+6.2,+20.0] "SUPPORTED"; five storage-time label
+defects later, the honest number is +1.54pt null at a ~5% baseline.
+The instrument protocol that produced this correction (isolated
+re-audit as sole label authority, source isolation confirmation,
+reproducibility checks, canary gates) is now structural in the
+pipeline.
+
 ## Threats to validity acknowledged in advance
 
 
