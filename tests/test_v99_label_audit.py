@@ -18,6 +18,35 @@ def test_error_re_catches_tagged_diagnostics():
     assert all("unknownIdentifier" not in x for x in out[10])
 
 
+def test_attribution_ownership_rule():
+    # Defects #3/#4: bleed errors on the NEXT block's set_option line
+    # belong to the offender; file-end errors belong to the LAST block;
+    # only pre-first-block lines stay global.
+    from lean_rgc.lean.bulk_executor import _attribute_lines, _render_bulk_file
+    from lean_rgc.schemas import LeanTask, TacticAction
+
+    task = LeanTask(task_id="t", statement="True", imports=[])
+    pairs = [
+        (task, TacticAction(action_id="a0", tactic="calc")),      # dangling
+        (task, TacticAction(action_id="a1", tactic="trivial")),   # innocent
+        (task, TacticAction(action_id="a2", tactic="calc")),      # dangling last
+    ]
+    _src, blocks = _render_bulk_file(pairs)
+    bleed_line = blocks[1].start_line          # next block's set_option line
+    eof_line = blocks[2].end_line + 40         # far past the last block
+    global_line = 1                            # import failure territory
+    line_errors = {
+        bleed_line: ["err: bleed from block0"],
+        eof_line: ["err: dangling at EOF"],
+        global_line: ["err: unknown module"],
+    }
+    per_block, global_msgs = _attribute_lines(blocks, line_errors)
+    assert per_block[0] == ["err: bleed from block0"]   # offender pays
+    assert per_block[1] == []                            # neighbor unpoisoned
+    assert per_block[2] == ["err: dangling at EOF"]      # last owns EOF
+    assert global_msgs == ["err: unknown module"]
+
+
 def _row(task, status, msgs, bs, be, lf="/tmp/x/rgc_bulk_0001.lean", tactic="t"):
     return {
         "task_id": task, "status": status, "messages": msgs, "lean_file": lf,

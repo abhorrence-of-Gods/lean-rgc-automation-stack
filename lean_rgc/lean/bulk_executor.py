@@ -155,6 +155,42 @@ def _errors_by_line(output: str) -> dict[int, list[str]]:
     return out
 
 
+def _attribute_lines(blocks: list[BulkBlock], line_errors: dict[int, list[str]]) -> tuple[list[list[str]], list[str]]:
+    """Ownership-based attribution (defects #3/#4, 2026-07-05).
+
+    A block whose script ends in an incomplete construct (e.g. a bare
+    `calc`) absorbs the FOLLOWING block's source until the parser stops —
+    the parse error then lands on the next block's set_option line, and
+    the offender itself carries no error (false success) while the
+    neighbor is poisoned (false failure). Similarly a dangling construct
+    in the LAST block errors past every block range and became a global
+    message that failed the whole chunk.
+
+    Rule: block k owns [start_k, start_{k+1}] INCLUSIVE of the next
+    block's set_option line (which cannot error on its own), and the
+    last block owns through EOF. Only lines before the first block
+    (imports/environment) remain global.
+    """
+    per_block: list[list[str]] = [[] for _ in blocks]
+    global_msgs: list[str] = []
+    if not blocks:
+        return per_block, [x for xs in line_errors.values() for x in xs]
+    starts = [b.start_line for b in blocks]
+    for line in sorted(line_errors):
+        xs = line_errors[line]
+        if line < starts[0]:
+            global_msgs.extend(xs)
+            continue
+        owner = 0
+        for k in range(len(blocks)):
+            upper = starts[k + 1] if k + 1 < len(blocks) else float("inf")
+            if starts[k] <= line <= upper:
+                owner = k
+                break
+        per_block[owner].extend(xs)
+    return [msgs[-80:] for msgs in per_block], global_msgs
+
+
 def _block_messages(block: BulkBlock, line_errors: dict[int, list[str]]) -> list[str]:
     msgs: list[str] = []
     # Lean sometimes reports theorem-level errors on any line inside the block.
@@ -237,7 +273,11 @@ class LeanBulkAuditor:
             elapsed = (time.time() - t0) * 1000.0
             combined = stdout + "\n" + stderr
             line_errors = _errors_by_line(combined)
-            global_msgs = _global_messages(blocks, line_errors, combined, returncode)
+            per_block_msgs, global_msgs = _attribute_lines(blocks, line_errors)
+            if not global_msgs and not line_errors and returncode != 0:
+                # Legacy env-failure detection: nonzero exit without any
+                # parseable location fails the whole chunk (e.g. crash).
+                global_msgs = _global_messages([], {}, combined, returncode)
             keep_path = None
             if self.config.keep_files:
                 out_dir = Path(self.config.workdir or os.getcwd()) / ".lean_rgc_bulk_files"
@@ -245,9 +285,9 @@ class LeanBulkAuditor:
                 keep_path = out_dir / lean_file.name
                 keep_path.write_text(lean_src, encoding="utf-8")
             records: list[AuditRecord] = []
-            for block in blocks:
+            for bi, block in enumerate(blocks):
                 state = ProofState.from_task(block.task)
-                msgs = global_msgs + _block_messages(block, line_errors)
+                msgs = global_msgs + per_block_msgs[bi]
                 if timed_out:
                     status = "timeout"
                     if not msgs:
