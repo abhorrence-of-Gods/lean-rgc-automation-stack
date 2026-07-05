@@ -219,14 +219,21 @@ def run_retro_fpr(
     n_boot: int = 1000,
     fn_budget: float = 0.05,
     savings_floor: float = 0.20,
+    false_pairs: "set[tuple[str, str]] | None" = None,
 ) -> dict[str, Any]:
     rows = load_candidate_rows(waves_root)
+    n_demoted = 0
+    if false_pairs:
+        from .label_audit import apply_corrected_labels
+
+        n_demoted = apply_corrected_labels(rows, false_pairs)
     y = np.array([1.0 if r["status"] == "success" else 0.0 for r in rows])
     report: dict[str, Any] = {
         "schema_version": SCHEMA_RETRO_FPR,
         "prereg": "docs/experiments/d1_twist_gate.md",
         "n_rows": len(rows),
         "n_success": int(y.sum()),
+        "n_labels_demoted": n_demoted,
         "seed": seed,
         "n_folds": n_folds,
         "shrinkage": shrinkage,
@@ -287,8 +294,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--false-pairs", help="label_audit JSON with false (task, tactic) pairs")
     args = ap.parse_args(argv)
-    report = run_retro_fpr(args.waves_root, n_boot=args.n_boot, seed=args.seed)
+    fp = None
+    if args.false_pairs:
+        from .label_audit import load_false_pairs
+
+        fp = load_false_pairs(args.false_pairs)
+    report = run_retro_fpr(args.waves_root, n_boot=args.n_boot, seed=args.seed, false_pairs=fp)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     print(json.dumps({k: report[k] for k in ("n_rows", "n_success", "arms", "c2_best_tau", "set_level_fn", "ece_F", "gates")}, indent=2, ensure_ascii=False))

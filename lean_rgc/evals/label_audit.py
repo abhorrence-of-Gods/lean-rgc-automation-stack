@@ -89,12 +89,92 @@ def recount_run(run_dir: str | Path) -> dict[str, Any]:
     return out
 
 
+def recount_pilot_layout(waves_root: str | Path) -> dict[str, Any]:
+    """Recount pilot-era rows (no stored block offsets) by reconstructing
+    block ranges with the D3 chunk machinery (lean_file grouping + file
+    order + 'by'-column anchor). Same lower-bound caveat applies.
+
+    The true verdict of a (task_id, tactic) pair is deterministic, so the
+    output false set is keyed by (task_id, tactic) and applies to every
+    replica (cache hits copy the fresh row's result)."""
+    from .prefix_salvage import _load_rows, _n_block_lines, _reconstruct_chunks
+
+    rows = _load_rows(Path(waves_root))
+    chunk_off, chunk_h, _agree = _reconstruct_chunks(rows)
+    pool: dict[str, set[int]] = defaultdict(set)
+    for r in rows:
+        for m in r["messages"]:
+            mm = _ANYLOC_RE.match(str(m).strip())
+            if mm and mm.group(4) == "error":
+                pool[r["lean_file"]].add(int(mm.group(2)))
+    n_success = n_false = n_unrangeable = 0
+    false_pairs: set[tuple[str, str]] = set()
+    examples: list[dict[str, Any]] = []
+    for r in rows:
+        if r["status"] != "success":
+            continue
+        n_success += 1
+        off = chunk_off[r["lean_file"]].get((r["task_id"], r["action_id"]))
+        if off is None:
+            n_unrangeable += 1
+            continue
+        t_line = chunk_h[r["lean_file"]] + off + 3
+        lo, hi = t_line - 1, t_line + _n_block_lines(r)
+        bad = sorted(L for L in pool[r["lean_file"]] if lo <= L <= hi)
+        if bad:
+            n_false += 1
+            pair = (r["task_id"], r["tactic"])
+            if pair not in false_pairs and len(examples) < 10:
+                examples.append({"task_id": r["task_id"], "tactic": r["tactic"][:120], "error_lines": bad[:4]})
+            false_pairs.add(pair)
+    return {
+        "schema_version": SCHEMA_LABEL_AUDIT,
+        "layout": "pilot",
+        "n_success_rows": n_success,
+        "n_false_success_rows": n_false,
+        "n_unrangeable_rows": n_unrangeable,
+        "n_false_pairs": len(false_pairs),
+        "false_pairs": sorted(false_pairs),
+        "examples": examples,
+        "caveat": "lower_bound_dropped_tagged_errors_unrecoverable",
+    }
+
+
+def load_false_pairs(path: str | Path) -> set[tuple[str, str]]:
+    """Accepts a single recount report or a {name: report} bundle."""
+    d = json.loads(Path(path).read_text(encoding="utf-8"))
+    out: set[tuple[str, str]] = set()
+    reports = [d] if "false_pairs" in d or "schema_version" in d else list(d.values())
+    for rep in reports:
+        if isinstance(rep, dict):
+            for t, s in rep.get("false_pairs", []):
+                out.add((str(t), str(s)))
+    if not out:
+        raise ValueError(f"no false_pairs found in {path} — refusing to silently no-op")
+    return out
+
+
+def apply_corrected_labels(rows: list[dict[str, Any]], false_pairs: set[tuple[str, str]]) -> int:
+    """In-place: demote false successes to elab_error. Returns count."""
+    n = 0
+    for r in rows:
+        if r.get("status") == "success" and (str(r.get("task_id")), str(r.get("tactic"))) in false_pairs:
+            r["status"] = "elab_error"
+            n += 1
+    return n
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--run-dirs", nargs="+", required=True)
+    ap.add_argument("--run-dirs", nargs="+")
+    ap.add_argument("--pilot-waves-root")
     ap.add_argument("--out")
     args = ap.parse_args(argv)
-    reports = {str(d): recount_run(d) for d in args.run_dirs}
+    reports: dict[str, Any] = {}
+    if args.pilot_waves_root:
+        reports["pilot"] = recount_pilot_layout(args.pilot_waves_root)
+    for d in (args.run_dirs or []):
+        reports[str(d)] = recount_run(d)
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).write_text(json.dumps(reports, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
@@ -102,13 +182,22 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({
             "run": d, "success_rows": rep["n_success_rows"],
             "false_rows": rep["n_false_success_rows"],
-            "claimed_tasks": len(rep["claimed_tasks"]),
-            "true_tasks": len(rep["true_tasks"]),
+            "unrangeable": rep.get("n_unrangeable_rows"),
+            "claimed_tasks": len(rep.get("claimed_tasks", [])) or None,
+            "true_tasks": len(rep.get("true_tasks", [])) or None,
+            "false_pairs": rep.get("n_false_pairs"),
         }))
     return 0
 
 
-__all__ = ["SCHEMA_LABEL_AUDIT", "recount_rows", "recount_run"]
+__all__ = [
+    "SCHEMA_LABEL_AUDIT",
+    "apply_corrected_labels",
+    "load_false_pairs",
+    "recount_pilot_layout",
+    "recount_rows",
+    "recount_run",
+]
 
 if __name__ == "__main__":
     raise SystemExit(main())

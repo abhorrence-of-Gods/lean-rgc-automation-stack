@@ -44,6 +44,39 @@ def test_recount_flags_false_success_via_neighbor_stored_error():
     assert rep["true_tasks"] == ["tC"]
 
 
+def test_load_false_pairs_refuses_empty_and_reads_bundles(tmp_path):
+    import json
+
+    import pytest
+
+    from lean_rgc.evals.label_audit import load_false_pairs
+
+    p = tmp_path / "bundle.json"
+    p.write_text(json.dumps({"pilot": {"false_pairs": [["t1", "rw [h]"]]}}), encoding="utf-8")
+    assert load_false_pairs(p) == {("t1", "rw [h]")}
+    # Loader must fail loudly rather than silently no-op (the empty-set
+    # join invalidated a whole analysis pass before this guard existed).
+    p2 = tmp_path / "empty.json"
+    p2.write_text(json.dumps({"pilot": {"false_pairs": []}}), encoding="utf-8")
+    with pytest.raises(ValueError):
+        load_false_pairs(p2)
+
+
+def test_apply_corrected_labels_demotes_only_matches():
+    from lean_rgc.evals.label_audit import apply_corrected_labels
+
+    rows = [
+        {"task_id": "t1", "tactic": "bad", "status": "success"},
+        {"task_id": "t1", "tactic": "good", "status": "success"},
+        {"task_id": "t2", "tactic": "bad", "status": "fail"},
+    ]
+    n = apply_corrected_labels(rows, {("t1", "bad")})
+    assert n == 1
+    assert rows[0]["status"] == "elab_error"
+    assert rows[1]["status"] == "success"
+    assert rows[2]["status"] == "fail"
+
+
 def test_recount_leaves_unrangeable_rows_as_claimed():
     rows = [{"task_id": "old", "status": "success", "messages": [], "lean_file": "x", "action": {}, "audit_flags": {}}]
     rep = recount_rows(rows)
