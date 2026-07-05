@@ -35,6 +35,14 @@ Q3, Q5, E-Comm).
   goal. Litmus: a proof using one hypothesis among garbage reports
   exactly that hypothesis's closure. Unblocks the exact M1 rung and the
   full lemma foundry.
+  LANDED 2026-07-05 (payload v3, litmus live on Lean 4.31: rfl after
+  'intro a b h' -> ['b']; 'rw [h]' -> ['a','b','h'] via closure; plus
+  used_constants, proof_hash_raw, and the alpha-invariant support_key).
+  Granularity note from the parallel implementation: goals closed
+  INSIDE a compound tactic block never surface in a goal list, so their
+  closure attributes to the parent goal's support — the per-subgoal
+  certificate requires tactic-step granularity, which is exactly what
+  the S1 stepwise corpus provides. S1 therefore collects v3 payloads.
 
 - S3 G1 seed replication + P1 gauge-tax arm (GPU, ~$20-30). Two more
   seeds of train(113)+paired-eval(130); registered amendment to the G1
