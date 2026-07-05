@@ -81,6 +81,56 @@ Sensitivity (reported, non-decisional): undefined rows imputed f=0;
 replay-weighted instead of deduped; unsnapped char fraction as the upper
 bound.
 
+## Amendment 2026-07-05a: sibling-scan step restored
+
+The condensed registration text omitted a step present in the validated
+design recipe: recovering a row's first-error location from same-chunk
+sibling rows (tagged-format error lines were stored under the previous
+plain error's line key, i.e. possibly in a neighbor row's messages).
+First execution WITHOUT it: coverage 94.83% — G0b fails by 0.17pt. With
+the step restored per the original recipe: 16 rows recovered, coverage
+95.47% — G0b passes. Both numbers disclosed; outcome statistics are
+insensitive (median 0.185 -> 0.183, share f>=0.5 33.35% -> 33.29%).
+
+## Amendment 2026-07-05b: G0c criterion re-operationalized
+
+The registered proxy (probe status == "unsafe") was operationally broken
+for two reasons discovered by the probe itself: (a) this toolchain's
+sorry warning is emitted in the tagged format that the storage-time
+regex misses, so a compiling single-goal probe lands as "success";
+(b) `sorry` closes only the FIRST goal, so a compiling multi-goal prefix
+lands as "partial" via the residual unsolved-goals error. Result under
+the broken proxy: 0/60. The registered CONCEPT ("prefix compiles with
+zero errors before the cut") is re-operationalized position-based on the
+SAME probe artifacts: verified iff no error line falls within the
+prefix-occupied block lines (exact via the R0c block_start_line
+instrumentation, which the probe rows carry). No re-audit, no sample
+change.
+
+## Results 2026-07-05 (registered analysis + G0c calibration)
+
+Report: `runs/d3_phase1/report.json`; probe rows:
+`runs/d3_phase1/g0c_micro_audit.jsonl`. Deduped pool n=2,298.
+
+- G0a PASS: anchor agreement 1,544/1,545 (99.94%).
+- G0b PASS: coverage 95.47% (amendment a).
+- G0c PASS: 58/60 = 96.7% of frozen prefixes compile cleanly before the
+  cut (partial 20/20, elab_error 20/20, fail 18/20; both failures are
+  `simp made no progress` inside the prefix — a context-sensitivity edge
+  the splice must guard). Amendment b applies.
+- G1 FAIL (as dry-run predicted): deduped median f = 0.183 < 0.5.
+  Whole-script resampling is NOT replaced pool-wide.
+- G2 PASS: 33.3% of candidates carry f >= 0.5; median over nonzero
+  prefixes 0.63. The GATED suffix-repair arm is licensed.
+- G3 PASS: 21.1% are complete_unsolved (f = 1.0). The append-continuation
+  arm is licensed as a separate intervention.
+
+Decision per the frozen rules: D3 Phase 2 proceeds as TWO gated arms —
+suffix repair only where the estimator reports a majority prefix, and
+continuation for fully-elaborated partials — not as a pool-wide
+replacement. Design note carried forward: forcing multi-line scripts in
+the generation prompt simplifies both the estimator and the splice.
+
 ## Threats acknowledged in advance
 
 - f is an upper bound on usefulness: a compiling prefix can be
