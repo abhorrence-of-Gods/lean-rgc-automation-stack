@@ -38,7 +38,7 @@ def test_kernel_rpc_worker_is_packaged_and_selectable(tmp_path: Path):
     assert "lean_kernel_rpc_in_memory_v1" in text
 
     manifest = native_worker_manifest(tmp_path, exec_mode="kernel_rpc", force=True)
-    assert manifest["version"].startswith("lean-rgc-native-worker-v49")
+    assert manifest["version"].startswith("lean-rgc-native-worker-v50")
     assert manifest["exec_mode"] == "kernel_rpc"
     assert Path(manifest["worker_path"]).name == "RGCKernelRPC.lean"
 

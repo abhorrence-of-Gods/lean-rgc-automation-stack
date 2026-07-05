@@ -23,7 +23,7 @@ import shutil
 from ..schemas import stable_hash
 
 NATIVE_WORKER_VERSION = "lean-rgc-native-worker-v30-kernel-state-v1"
-KERNEL_RPC_WORKER_VERSION = "lean-rgc-native-worker-v49-kernel-rpc-v1"
+KERNEL_RPC_WORKER_VERSION = "lean-rgc-native-worker-v50-kernel-rpc-v2"
 _PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 
 

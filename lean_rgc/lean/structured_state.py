@@ -508,7 +508,7 @@ def _coerce_kernel_metavars(kernel: dict[str, Any], goals: list[GoalASTNode]) ->
             "type_head": md.get("type_head") or _kernel_expr_head(typ_obj, typ),
             "assigned": bool(md.get("assigned") or md.get("assignment")),
             "synthetic": bool(md.get("synthetic") or str(mid).startswith("?m")),
-            "depends_on": md.get("depends_on") or md.get("local_deps") or [],
+            "depends_on": md.get("depends_on") or md.get("dependencies_mvars") or md.get("local_deps") or [],
         })
     # Goals with mvar ids are also metavariables.
     for g in goals:

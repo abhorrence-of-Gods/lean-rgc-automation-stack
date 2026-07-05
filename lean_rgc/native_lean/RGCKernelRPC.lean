@@ -5,10 +5,13 @@ Lean-RGC in-memory kernel RPC worker.
 
 This worker keeps real Lean elaborator/metavariable state behind opaque
 process-local state ids and applies tactics directly to stored `MVarId`s using
-`Lean.Elab.runTactic`.  It returns the strict `lean-rgc-kernel-state-v1`
+`Lean.Elab.runTactic`.  It returns the strict `lean-rgc-kernel-state-v2`
 payload with Expr DAG, local declaration graph, metavariable graph, a
 typeclass-obligation readout over synthetic/class metavariables, and persistent
-branch/rollback state ids.
+branch/rollback state ids.  v2 adds, for every open metavariable, a bounded
+pretty-printed `type_text` and the `depends_on` list of metavariables occurring
+in its (instantiated) type, plus `target_text` on goals, and replays
+`task.prefix` tactics so the initial state is the post-prefix state.
 -/
 open Lean
 open Lean.Elab
@@ -17,7 +20,7 @@ open Lean.Meta
 namespace RGCLean
 namespace KernelRPC
 
-def schemaVersion : String := "lean-rgc-kernel-state-v1"
+def schemaVersion : String := "lean-rgc-kernel-state-v2"
 def transitionVersion : String := "lean-rgc-kernel-transition-v1"
 
 partial def jsonArr (xs : List Json) : Json := Json.arr xs.toArray
@@ -371,6 +374,28 @@ def serializeLocalContext (graphId : String) (lctx : LocalContext) (insts : Loca
 
 def mvarIdString (id : MVarId) : String := "?" ++ toString id.name
 
+def ppMaxLen : Nat := 512
+
+def truncateText (s : String) (maxLen : Nat := ppMaxLen) : String :=
+  if s.length ≤ maxLen then s
+  else (s.toList.take maxLen).foldl (fun acc c => acc.push c) "" ++ "…"
+
+/-- Bounded pretty-print of an mvar's instantiated type inside its own local
+context, together with the metavariables occurring in that type.  Assigned
+mvars carry no residual freedom, so callers skip them to bound payload size. -/
+def mvarTypeReadout (decl : MetavarDecl) : MetaM (String × List MVarId) := do
+  try
+    let type ← instantiateMVars decl.type
+    let text ←
+      try
+        withLCtx decl.lctx decl.localInstances do
+          pure (toString (← ppExpr type))
+      catch _ =>
+        pure (toString (repr type))
+    pure (truncateText text, (collectMVars type).toList)
+  catch _ =>
+    pure ("", [])
+
 def mvarDeclJson (id : MVarId) (decl : MetavarDecl) (ctx : NormCtx) : SerM Json := do
   let typeId ← serializeExpr ctx decl.type
   let assignment? ← getExprMVarAssignment? id
@@ -379,9 +404,14 @@ def mvarDeclJson (id : MVarId) (decl : MetavarDecl) (ctx : NormCtx) : SerM Json 
     | some a => do pure (some (← serializeExpr ctx a))
     | none => pure none
   let exprs := match assignment? with | some a => [decl.type, a] | none => [decl.type]
+  let (typeText, typeMVars) ←
+    if assignment?.isSome then pure ("", ([] : List MVarId))
+    else (mvarTypeReadout decl : MetaM (String × List MVarId))
   pure (obj [
     ("mvar_id", Json.str (mvarIdString id)),
     ("user_name", Json.str (toString decl.userName)),
+    ("type_text", Json.str typeText),
+    ("depends_on", jsonArr (typeMVars.map (fun m => Json.str (mvarIdString m)))),
     ("type_expr_id", Json.str typeId),
     ("local_context_fvars", jsonArr ((decl.lctx.foldl (fun xs d => Json.str (localDeclId d) :: xs) []).reverse)),
     ("assigned", Json.bool assignment?.isSome),
@@ -462,6 +492,46 @@ def coreCtx (_env : Environment) (opts : Options) (input : String := "") : Core.
 def termCtx : Term.Context := {}
 def metaCtx : Meta.Context := {}
 
+def prefixTacticLines (s : String) : List String :=
+  (s.splitOn "\n").map (fun l => toString l.trimAscii) |>.filter (fun l => !l.isEmpty)
+
+/-- Apply one tactic string to the first open goal of a stored state, threading
+Core/Meta/Term state.  Shared by prefix replay and `apply_tactic`. -/
+unsafe def stepTactic (base : KState) (tactic : String) (opts : Options) : IO KState := do
+  let goal := base.goals.head!
+  let tail := base.goals.tail!
+  let stx ←
+    match Parser.runParserCategory base.env `tactic tactic with
+    | .ok stx => pure stx
+    | .error e => throw <| IO.userError e
+  let run : MetaM (List MVarId × Term.State) := Lean.Elab.runTactic goal stx {} base.termState
+  let ((newGoalsHead, termState'), coreState', metaState') ←
+    run.toIO (coreCtx base.env opts tactic) {base.coreState with env := base.env} metaCtx {base.metaState with mctx := base.metaState.mctx}
+  let goals' := newGoalsHead ++ tail
+  pure {base with
+    env := coreState'.env,
+    opts := opts,
+    coreState := coreState',
+    metaState := metaState',
+    termState := termState',
+    goals := goals',
+    status := if goals'.isEmpty then "closed" else "open"}
+
+/-- Replay `task.prefix` tactic lines so the stored initial state is the
+post-prefix state (mirrors how the persistent worker audits
+`state.prefix + tactic`). -/
+unsafe def replayPrefix (ks : KState) (proofPrefix : String) : IO KState := do
+  let mut cur := ks
+  for line in prefixTacticLines proofPrefix do
+    if cur.goals.isEmpty then
+      throw <| IO.userError ("prefix replay: no open goals before tactic '" ++ line ++ "'")
+    cur ←
+      try
+        stepTactic cur line cur.opts
+      catch e =>
+        throw <| IO.userError ("prefix replay failed on '" ++ line ++ "': " ++ toString e)
+  pure {cur with proofPrefix := proofPrefix}
+
 unsafe def initGoalState (id : String) (task : Json) (env : Environment) (opts : Options) : IO KState := do
   let statement := jsonGetStr? task "statement" |>.getD "True"
   let cctx := coreCtx env opts statement
@@ -478,8 +548,8 @@ unsafe def initGoalState (id : String) (task : Json) (env : Environment) (opts :
     pure (ty, mv.mvarId!)
   let ((_ty, mvarId), cstate', mstate', tstate') ←
     make.toIO cctx cstate metaCtx mstate termCtx tstate
-  let _proofPrefix := jsonGetStr? task "prefix" |>.getD ""
-  pure ({
+  let proofPrefix := jsonGetStr? task "prefix" |>.getD ""
+  let base : KState := {
     id := id,
     env := cstate'.env,
     opts := opts,
@@ -490,7 +560,11 @@ unsafe def initGoalState (id : String) (task : Json) (env : Environment) (opts :
     task := task,
     proofPrefix := "",
     status := "open"
-  } : KState)
+  }
+  if (prefixTacticLines proofPrefix).isEmpty then
+    pure base
+  else
+    replayPrefix base proofPrefix
 
 unsafe def serializeKernelState (ks : KState) : IO Json := do
   let serialize : MetaM Json := do
@@ -521,9 +595,11 @@ unsafe def serializeKernelState (ks : KState) : IO Json := do
         lctxObjs := lctxObjs.push lctxJson
         let targetSyms := collectFVars decl.type |>.toList.map (fun id => Json.str (toString id.name))
         let raw := toString (repr decl.type)
+        let (targetText, _) ← mvarTypeReadout decl
         goalObjs := goalObjs.push (obj [
           ("goal_id", Json.str ("g" ++ toString idx)),
           ("mvar_id", Json.str (mvarIdString gid)),
+          ("target_text", Json.str targetText),
           ("target_expr_id", Json.str targetId),
           ("target_head", Json.str (exprHeadString decl.type)),
           ("relation", Json.str (relationOf decl.type)),
@@ -627,39 +703,22 @@ unsafe def applyTacticCore (base : KState) (action : Json) (newId : String) : IO
       ("new_mvars", jsonArr [])
     ], replay)
   else
-    let goal := base.goals.head!
-    let tail := base.goals.tail!
     let opts :=
       match jsonGetNat? action "max_heartbeats" with
       | some hb => base.opts.set `maxHeartbeats hb
       | none => base.opts
-    let stx ←
-      match Parser.runParserCategory base.env `tactic tactic with
-      | .ok stx => pure stx
-      | .error e => throw <| IO.userError e
-    let run : MetaM (List MVarId × Term.State) := Lean.Elab.runTactic goal stx {} base.termState
     let beforeMvars := base.metaState.mctx.decls.toList.map Prod.fst
-    let ((newGoalsHead, termState'), coreState', metaState') ←
-      run.toIO (coreCtx base.env opts tactic) {base.coreState with env := base.env} metaCtx {base.metaState with mctx := base.metaState.mctx}
-    let goals' := newGoalsHead ++ tail
-    let status := if goals'.isEmpty then "closed" else "open"
-    let child : KState := {
+    let stepped ← stepTactic base tactic opts
+    let goals' := stepped.goals
+    let child : KState := {stepped with
       id := newId,
-      env := coreState'.env,
-      opts := opts,
-      coreState := coreState',
-      metaState := metaState',
-      termState := termState',
-      goals := goals',
-      task := base.task,
       proofPrefix := if base.proofPrefix.trimAscii.isEmpty then tactic else base.proofPrefix ++ "\n" ++ tactic,
-      parent? := some base.id,
-      status := status
+      parent? := some base.id
     }
-    let afterMvars := metaState'.mctx.decls.toList.map Prod.fst
+    let afterMvars := stepped.metaState.mctx.decls.toList.map Prod.fst
     let closedGoals := base.goals.filter fun g => !(goals'.contains g)
     let newMvars := afterMvars.filter fun m => !(beforeMvars.contains m)
-    let assigned := beforeMvars.filter fun m => metaState'.mctx.eAssignment.contains m
+    let assigned := beforeMvars.filter fun m => stepped.metaState.mctx.eAssignment.contains m
     let delta := obj [
       ("closed_goals", jsonArr (closedGoals.map (fun m => Json.str (mvarIdString m)))),
       ("new_goals", jsonArr (goals'.filter (fun m => !(base.goals.contains m)) |>.map (fun m => Json.str (mvarIdString m)))),
