@@ -27,7 +27,14 @@ def cmd_grad_loop(args):
     from ..lean.executor import LeanExecutorConfig
 
     tasks = [LeanTask.from_dict(r) for r in read_jsonl(args.tasks) if isinstance(r, dict)]
-    inv = GradInvariants(model_name=args.model) if args.model else GradInvariants()
+    inv_kwargs = {}
+    if args.model:
+        inv_kwargs["model_name"] = args.model
+    if getattr(args, "adapter", None):
+        inv_kwargs["adapter_path"] = args.adapter
+    if getattr(args, "temperature", None) is not None:
+        inv_kwargs["temperature"] = args.temperature
+    inv = GradInvariants(**inv_kwargs)
     difficulty = None
     if getattr(args, "difficulty", None):
         from ..grad.difficulty import load_difficulty_table
@@ -40,6 +47,9 @@ def cmd_grad_loop(args):
         invariants=inv,
         n_waves=args.n_waves,
         difficulty=difficulty,
+        train=not getattr(args, "eval_mode", False),
+        samples_per_task=getattr(args, "samples_per_task", None),
+        save_checkpoints=getattr(args, "save_checkpoints", False),
         executor_config=LeanExecutorConfig(
             lean_cmd=args.lean_cmd, workdir=args.workdir, timeout_s=args.task_timeout_s
         ),
@@ -96,7 +106,28 @@ def register_grad_commands(sub) -> None:
     glp.add_argument("--workers", type=int, default=4)
     glp.add_argument("--job-timeout-s", type=float, default=300.0)
     glp.add_argument("--difficulty", help="JSON difficulty table (grad-difficulty output or {task_id: p})")
-    glp.set_defaults(func=cmd_grad_loop)
+    glp.add_argument("--adapter", help="Load a trained LoRA adapter instead of fresh init")
+    glp.add_argument("--temperature", type=float)
+    glp.add_argument("--save-checkpoints", action="store_true")
+    glp.set_defaults(func=cmd_grad_loop, eval_mode=False, samples_per_task=None)
+
+    gev = sub.add_parser("grad-eval", help="Budget-N feedback eval loop, NO training (G1 arms)")
+    gev.add_argument("--tasks", required=True)
+    gev.add_argument("--out-dir", required=True)
+    gev.add_argument("--run-id", required=True)
+    gev.add_argument("--model")
+    gev.add_argument("--adapter", help="Trained LoRA for the T arm; omit for the control arm")
+    gev.add_argument("--n-waves", type=int, default=8, help="Attempts per theorem")
+    gev.add_argument("--samples-per-task", type=int, default=1)
+    gev.add_argument("--temperature", type=float, default=0.2)
+    gev.add_argument("--lean-cmd", default="lake env lean")
+    gev.add_argument("--workdir")
+    gev.add_argument("--task-timeout-s", type=float, default=240.0)
+    gev.add_argument("--backend", default="source_check_bulk")
+    gev.add_argument("--import-mode", choices=["preserve", "auto", "core", "mathlib"], default="preserve")
+    gev.add_argument("--workers", type=int, default=4)
+    gev.add_argument("--job-timeout-s", type=float, default=300.0)
+    gev.set_defaults(func=cmd_grad_loop, eval_mode=True, difficulty=None, save_checkpoints=False)
 
     gdf = sub.add_parser("grad-difficulty")
     gdf.add_argument("--waves-root", required=True)

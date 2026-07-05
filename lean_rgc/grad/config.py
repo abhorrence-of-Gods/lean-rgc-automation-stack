@@ -44,6 +44,12 @@ class GradInvariants:
     kl_beta: float = 0.05
     kl_target_per_token: tuple[float, float] = (0.01, 0.02)
     kl_hard_cap_per_seq: float = 0.5
+    # G1 launch blockers (preregistered prerequisites):
+    rft_kl_beta: float = 0.05            # drift guard on the MAIN gradient path
+                                         # (penalty, not gate: verified traces are
+                                         # never skipped, only bounded)
+    rft_max_traces_per_task: int = 2     # per-wave cap; empirical duplication 3.2x
+    adapter_path: str | None = None      # load a trained LoRA instead of fresh init
     # gates (S3-verified cadence)
     gate_every_steps: int = 10
     # memory budget (measured against, not assumed)
@@ -103,6 +109,9 @@ class GradInvariants:
             "kl_beta": self.kl_beta,
             "kl_target_per_token": list(self.kl_target_per_token),
             "kl_hard_cap_per_seq": self.kl_hard_cap_per_seq,
+            "rft_kl_beta": self.rft_kl_beta,
+            "rft_max_traces_per_task": self.rft_max_traces_per_task,
+            "adapter_path": self.adapter_path,
             "gate_every_steps": self.gate_every_steps,
             "gpu_budget_gb": self.gpu_budget_gb,
             "seed": self.seed,

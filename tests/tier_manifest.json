@@ -366,6 +366,9 @@
   "test_v97_stratified_rloo.py": [
     "unit"
   ],
+  "test_v98_g1_blockers.py": [
+    "unit"
+  ],
   "test_v98_kernel_rpc_mvar_substrate.py": [
     "unit"
   ],

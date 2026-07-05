@@ -164,13 +164,27 @@ class RolloutEngine:
             target_modules="all-linear",
             task_type="CAUSAL_LM",
         )
-        model = get_peft_model(model, lora)
+        if self.inv.adapter_path:
+            from peft import PeftModel
+
+            model = PeftModel.from_pretrained(model, self.inv.adapter_path, is_trainable=True)
+        else:
+            model = get_peft_model(model, lora)
         if self.inv.gradient_checkpointing:
             model.gradient_checkpointing_enable()
             model.enable_input_require_grads()
         self._model = model
         params = [p for p in model.parameters() if p.requires_grad]
         self._optimizer = torch.optim.AdamW(params, lr=self.inv.learning_rate)
+
+    def save_adapter(self, path: str | Path) -> str:
+        """Persist the LoRA adapter (per-wave checkpoints; prereg: the
+        evaluated model is the LAST checkpoint, no post-hoc selection)."""
+        self._ensure_loaded()
+        out = Path(path)
+        out.mkdir(parents=True, exist_ok=True)
+        self._model.save_pretrained(str(out))
+        return str(out)
 
     def _chat_ids(self, system: str, user: str) -> list[int]:
         # return_dict=False keeps the flat list[int] contract on both
@@ -330,7 +344,7 @@ class RolloutEngine:
         rloo_active = [(s, a) for s, a in rloo_samples if abs(a) >= 1e-12]
         n_total_terms = max(1, len(rft_active) + len(rloo_active))
 
-        losses = {"rft": 0.0, "rloo": 0.0, "kl_per_seq": 0.0}
+        losses = {"rft": 0.0, "rloo": 0.0, "kl_per_seq": 0.0, "rft_kl_per_seq": 0.0}
         n_processed = 0
         n_kl_gated = 0
         for sample in rft_active:
@@ -338,6 +352,16 @@ class RolloutEngine:
             if logprobs is None:
                 continue
             loss = -logprobs.mean()
+            if self.inv.rft_kl_beta > 0:
+                # Drift guard on the MAIN gradient path (G1 prerequisite):
+                # a penalty, not a gate — a Lean-verified trace is never
+                # skipped, only bounded toward the base policy. Without
+                # this the RFT path had NO drift constraint at all.
+                with self._model.disable_adapter(), torch.no_grad():
+                    ref_logprobs = self._completion_logprobs(sample)
+                rft_kl_seq = (logprobs - ref_logprobs).sum()
+                losses["rft_kl_per_seq"] += float(rft_kl_seq)
+                loss = loss + self.inv.rft_kl_beta * rft_kl_seq
             (loss / n_total_terms).backward()
             losses["rft"] += float(loss)
             n_processed += 1
@@ -473,6 +497,21 @@ def _run_positive_control(
         )
 
 
+def _gini(counts: list[int]) -> float:
+    """Gini coefficient of the per-task trace distribution (0 = even)."""
+    if not counts:
+        return 0.0
+    xs = sorted(counts)
+    n = len(xs)
+    total = sum(xs)
+    if total == 0 or n == 1:
+        return 0.0
+    cum = 0.0
+    for i, x in enumerate(xs, start=1):
+        cum += i * x
+    return float((2.0 * cum) / (n * total) - (n + 1.0) / n)
+
+
 def run_grad_loop(
     *,
     tasks: list[LeanTask],
@@ -484,6 +523,9 @@ def run_grad_loop(
     n_waves: int = 4,
     success_statuses: tuple[str, ...] = DEFAULT_SUCCESS_STATUSES,
     difficulty: dict[str, float] | None = None,
+    train: bool = True,
+    samples_per_task: int | None = None,
+    save_checkpoints: bool = False,
     **runner_kwargs: Any,
 ) -> dict[str, Any]:
     """Alternating wavefront: rollout -> Lean audit -> RFT+RLOO update.
@@ -512,6 +554,7 @@ def run_grad_loop(
     )
 
     solved: set[str] = set()
+    first_solve_wave: dict[str, int] = {}
     feedback: dict[str, str] = {}
     update_rows: list[dict[str, Any]] = []
     all_traces: list[dict[str, Any]] = []
@@ -522,9 +565,18 @@ def run_grad_loop(
             break
         # Top up per-task samples so the wavefront never sinks below the
         # verified batch floor as tasks are solved (review major).
-        n_samples = max(inv.group_size, math.ceil(inv.min_rollout_batch / len(live)))
+        if samples_per_task is not None:
+            # Eval-mode attempt semantics: a fixed number of sequential
+            # attempts per theorem; late small batches are allowed (RLOO
+            # never runs there, so the batch floor is throughput-only).
+            n_samples = samples_per_task
+        else:
+            n_samples = max(inv.group_size, math.ceil(inv.min_rollout_batch / len(live)))
         prompts = eng.render_prompts(live, feedback, wave)
-        samples = eng.generate(prompts, n_samples=n_samples, seed=inv.seed + wave)
+        samples = eng.generate(
+            prompts, n_samples=n_samples, seed=inv.seed + wave,
+            allow_small_batch=samples_per_task is not None,
+        )
         actions_by_task: dict[str, list[dict[str, Any]]] = {}
         by_action: dict[str, dict[str, Any]] = {}
         n_empty_tactic = 0
@@ -568,6 +620,8 @@ def run_grad_loop(
             rewards[aid] = max(rewards.get(aid, 0.0), 1.0 if ok else 0.0)
             sample = by_action[aid]
             if ok:
+                if sample["task_id"] not in solved:
+                    first_solve_wave[sample["task_id"]] = wave
                 solved.add(sample["task_id"])
             else:
                 msgs = row.get("messages") or []
@@ -612,7 +666,28 @@ def run_grad_loop(
         for key, advs in advantages.items():
             for sample, adv in zip(members[key], advs):
                 rloo_batch.append((sample, float(adv)))
-        trace_samples = [by_action[aid] for aid in audited if rewards.get(aid, 0.0) > 0.5]
+        raw_traces = [by_action[aid] for aid in sorted(audited) if rewards.get(aid, 0.0) > 0.5]
+        # G1 prerequisite: dedup identical (task, tactic) within the wave and
+        # cap traces per task — empirical duplication is 3.2x and gradient
+        # mass proportional to success frequency is rich-get-richer by
+        # construction (unguarded expert-iteration collapse mode).
+        trace_samples = []
+        seen_tt: set[tuple[str, str]] = set()
+        per_task_traces: dict[str, int] = {}
+        n_rft_dedup_dropped = 0
+        n_rft_cap_dropped = 0
+        for s in raw_traces:
+            tt = (s["task_id"], s["tactic"])
+            if tt in seen_tt:
+                n_rft_dedup_dropped += 1
+                continue
+            seen_tt.add(tt)  # before the cap check: a capped tactic's
+            # duplicates are duplicates, not additional cap victims.
+            if per_task_traces.get(s["task_id"], 0) >= inv.rft_max_traces_per_task:
+                n_rft_cap_dropped += 1
+                continue
+            per_task_traces[s["task_id"]] = per_task_traces.get(s["task_id"], 0) + 1
+            trace_samples.append(s)
         for s in trace_samples:
             all_traces.append(
                 {
@@ -626,7 +701,20 @@ def run_grad_loop(
                     "canonical_status": "rft_trace_is_lean_verified_witness",
                 }
             )
-        update = eng.train_step(rft_samples=trace_samples, rloo_samples=rloo_batch)
+        if train:
+            update = eng.train_step(rft_samples=trace_samples, rloo_samples=rloo_batch)
+            if save_checkpoints and hasattr(eng, "save_adapter"):
+                update["checkpoint"] = eng.save_adapter(out / "checkpoints" / f"wave_{wave}")
+        else:
+            update = {"skipped": "eval_mode"}
+        # Collapse early-warning gauge (G1 prerequisite): trace concentration.
+        trace_counts = sorted(per_task_traces.values(), reverse=True)
+        n_tr = sum(trace_counts)
+        concentration = {
+            "n_tasks_with_traces": len(trace_counts),
+            "top1_share": (trace_counts[0] / n_tr) if n_tr else 0.0,
+            "gini": _gini(trace_counts),
+        }
         update_rows.append(
             {
                 "schema_version": SCHEMA_GRAD_UPDATE,
@@ -640,6 +728,10 @@ def run_grad_loop(
                 "n_infra_failures": n_infra_failures,
                 "audit_anomaly": audit_anomaly,
                 "n_rft_traces": len(trace_samples),
+                "n_rft_dedup_dropped": n_rft_dedup_dropped,
+                "n_rft_cap_dropped": n_rft_cap_dropped,
+                "trace_concentration": concentration,
+                "train_enabled": train,
                 "rloo_grouping": "stratified" if difficulty is not None else "task",
                 "rloo": rloo_stats.to_dict(),
                 "rollout": getattr(eng, "_last_rollout", {}),
@@ -651,6 +743,21 @@ def run_grad_loop(
         # Crash safety: both artifacts are rewritten every wave (review minor).
         write_jsonl(out / "grad_run.jsonl", update_rows)
         write_jsonl(out / "rft_traces.jsonl", all_traces)
+    # Episode rows (paired-bootstrap compatible; the G1 eval-mode contract).
+    episodes = [
+        {
+            "schema_version": "lean-rgc-grad-episode-v97.0",
+            "run_id": run_id,
+            "arm": run_id,
+            "task_id": t.task_id,
+            "solved": t.task_id in solved,
+            "first_solve_wave": first_solve_wave.get(t.task_id),
+            "n_waves": len(update_rows),
+            "train_enabled": train,
+        }
+        for t in tasks
+    ]
+    write_jsonl(out / "episodes.jsonl", episodes)
     summary = {
         "schema_version": SCHEMA_GRAD_UPDATE,
         "run_id": run_id,
