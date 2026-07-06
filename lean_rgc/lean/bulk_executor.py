@@ -154,6 +154,12 @@ def _errors_by_line(output: str) -> dict[int, list[str]]:
             current_line = int(m.group("line"))
             if m.group("level") == "error":
                 out.setdefault(current_line, []).append(raw.strip())
+            elif "declaration uses 'sorry'" in raw.lower():
+                # Defect #6 (2026-07-06): the sorry hole ships as a WARNING at
+                # exit code 0. Collecting it here routes the owning block
+                # through _classify_block_failure -> "unsafe" instead of the
+                # msgs-empty "success" branch.
+                out.setdefault(current_line, []).append(raw.strip())
         elif current_line is not None:
             # Attach continuation lines to previous error. Lean messages are multi-line.
             if raw.strip():

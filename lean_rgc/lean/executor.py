@@ -129,7 +129,7 @@ class LeanExecutor:
                 elapsed = (time.time() - t0) * 1000.0
                 stdout = proc.stdout or ""
                 stderr = proc.stderr or ""
-                status = "success" if proc.returncode == 0 else self._classify_failure(stdout + "\n" + stderr)
+                status = self._classify_success(stdout + "\n" + stderr) if proc.returncode == 0 else self._classify_failure(stdout + "\n" + stderr)
             except subprocess.TimeoutExpired as e:
                 elapsed = (time.time() - t0) * 1000.0
                 stdout = e.stdout if isinstance(e.stdout, str) else ""
@@ -231,6 +231,16 @@ class LeanExecutor:
             if arrow in s:
                 s = s.split(arrow)[-1].strip()
         return s or statement
+
+    @staticmethod
+    def _classify_success(text: str) -> str:
+        # Defect #6 (2026-07-06): `sorry` (and sorryAx-based macros) elaborate
+        # at exit code 0 with only a warning, so a returncode check alone
+        # certifies proof holes as successes. Lean 4 emits exactly
+        # "declaration uses 'sorry'" for every such hole.
+        if "declaration uses 'sorry'" in text.lower():
+            return "unsafe"
+        return "success"
 
     @staticmethod
     def _classify_failure(text: str) -> str:
