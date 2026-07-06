@@ -1,9 +1,7 @@
 # S'1 Pre-Registration: middle-layer rebuild + coker go/no-go
 
-Status: DRAFT for freeze (2026-07-06). Written against roadmap Revision
-3's frozen gate re-registration; the single [FREEZE] placeholder is
-computed and filled at commit time. Amendments after freeze require a
-new dated section with a reason.
+Status: FROZEN 2026-07-06, before execution. All thresholds below are
+registered; amendments require a new dated section with a reason.
 
 ## Question
 
@@ -133,3 +131,36 @@ S'2 (training redesign) and all foundry use of phi (S'4).
 - g1_prod_train generation policy was corrupted-era; labels are
   corrected but the row distribution is biased toward that policy's
   proposals.
+
+## Amendment a (2026-07-06): signed-race gate defect; corrected verdict
+
+Reason: first execution of the registered gate exposed a specification
+defect. The race statistic rho_phi - rho_baseline is SIGNED, and the
+baseline turned out strongly ANTI-correlated with the outcome
+(rho_base ~= -0.52: larger initial defects show larger fractional
+partial progress, plausibly because token-count dims are the most
+reducible), so the difference clears +0.10 while phi itself predicts
+nothing. Formal registered result, recorded: PASS in all three
+weightings (std/raw/log; diff +0.59/+0.54/+0.54, CIs excluding zero;
+n=103 tasks, 1,394 fit rows; runs/s_prime_1/gate_report.json).
+
+Corrected gate (registered by this amendment, applied prospectively
+and to this execution): PASS additionally requires rho_phi >= 0.10
+with phi's OWN bootstrap 95% CI excluding zero. Measured: rho_phi =
++0.07 (std), +0.07 (raw), +0.015 (log); own CI [-0.14, +0.28] includes
+zero. CORRECTED VERDICT: FAIL, invariant across weightings.
+
+Attribution ladder status:
+(a) UNITS: cleared — the (corrected) verdict is invariant across all
+    three weightings; the failure is not a scaling artifact.
+(b) MODEL ERROR: NEXT — the sequential-payment fraction on the S1
+    stepwise corpus (rerun on corrected labels, 736-script inventory,
+    gate >= 1,141 transitions) decides whether the one-shot additive
+    cone is the binding error before extend-M_J may fire.
+(c) READER BLINDNESS: barred until (b) completes.
+
+Interim consequence (per Rev 3 and the frozen prereg): phi does not
+certify as a foundry conditioning signal; S'4's phi_true-conditioned
+proposal bundles remain BLOCKED on this gate. The S'2 launch gate is
+unaffected (it never depended on phi passing — training stays shelved
+on supply grounds regardless).
