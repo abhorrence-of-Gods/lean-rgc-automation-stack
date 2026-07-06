@@ -224,3 +224,47 @@ here before any pod time is spent.
    work is lost on a later startup failure), chain records carry
    script_index (the analysis join no longer assumes enumeration
    alignment), and a missing kernel goal count counts as NOT closed.
+
+## Amendment c (2026-07-06): stepwise rerun executed; branch (b) verdict
+## NOT-BINDING (razor-edge); D3 pool empirically collapses; lane
+## divergence disclosed
+
+Execution record. Rerun 1 (recycle_every=40) OOM-killed its worker in
+every chunk (~14 Environments exhaust the container cgroup; exit 137;
+archived runs/s_prime_1/rerun1_summary_oom137.json). Rerun 2
+(recycle_every=8): 734 scripts, 91 recycles, 2.75 h, register_failed
+18 (9 statement-parse, 9 residual), 692 strict v3 transitions.
+
+1. VOLUME GATE: FAIL (692 < 1,139) — and the gate is declared
+   UNSATISFIABLE AS FROZEN: 187 of the 200 broken chains are
+   corrupt-era D3 prefixes rejected at step 0 (170 were never
+   re-audited pairs — their only "verification" was the corrupt-era
+   probe — and 17 are S'0-adjudicated fail). The 1,424-transition
+   ceiling was therefore built on the un-re-derived D3 pool; the
+   adversarial review's D3 finding is now EMPIRICALLY CONFIRMED by
+   kernel replay. Consequence: S'3's D3 arms stay blocked pending pool
+   re-derivation from S'0 output; the corpus gate is re-based to the
+   achieved sound corpus.
+2. LANE DIVERGENCE (new standing threat): 13/29 (45%) of file-lane
+   TRUE successes fail at kernel step 0 (ring/linarith/simp on
+   numeral goals), and of 16 success chains completing all steps only
+   2 CLOSE in kernel semantics. The kernel corpus under-accepts
+   relative to the adjudication lane: every kernel-corpus measurement
+   (S5, E-Comm) carries tactic-selection bias, and cross-lane label
+   transfer is barred without a divergence study.
+3. BRANCH (b) VERDICT — additivity test (Amendment b instrument):
+   n=163 covered chains (381 skipped below 80% tactic coverage; 39
+   tactics hold a global mean), median relative error 0.4956,
+   bootstrap CI95 [0.406, 0.545], P(median > 0.50) = 0.148.
+   NOT-BINDING per the frozen 0.50 rule; the razor-edge margin and the
+   straddling CI are disclosed. Secondary (descriptive): per-tactic
+   response dispersion is severe exactly for the payment-relevant
+   closers (1-R^2: congr 0.94, norm_num 0.88, ring 0.76) — the
+   state-marginalized chart is marginal even where not formally
+   binding. Descriptive sequential fraction: 0/2 (kernel closure
+   semantics shrank the denominator; ceiling already disclosed).
+4. LADDER STATE: (a) units cleared; (b) not binding => branch (c) MAY
+   fire: ONE reader extension (raw-text/identifier features in M_J)
+   followed by a single phi-gate re-run under the Amendment-a
+   corrected rule; a second failure returns the region to top-layer
+   proposal per theory section 10.
