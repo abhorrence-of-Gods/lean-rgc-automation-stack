@@ -103,6 +103,7 @@ def replay_scripts(
     timeout_s: float = 60.0,
     flush_every: int = 50,
     max_scripts: int | None = None,
+    recycle_every: int = 40,
 ) -> dict[str, Any]:
     from ..lean.server import LeanServerAdapter, LeanServerConfig
 
@@ -118,84 +119,127 @@ def replay_scripts(
     )
     transitions: list[dict[str, Any]] = []
     chains: list[dict[str, Any]] = []
-    counts = {"scripts": 0, "no_taskdef": 0, "register_failed": 0, "transitions": 0, "broken_chains": 0}
+    counts = {"scripts": 0, "no_taskdef": 0, "register_failed": 0, "transitions": 0, "broken_chains": 0, "worker_recycles": 0}
 
     def flush() -> None:
         write_jsonl(out / "stepwise_transitions.jsonl", transitions)
         write_jsonl(out / "chains.jsonl", chains)
 
     t0 = time.time()
-    with LeanServerAdapter(cfg) as server:
-        server.load_project()
-        for si, item in enumerate(scripts if max_scripts is None else scripts[:max_scripts]):
-            td = task_defs.get(str(item["task_id"]))
-            if td is None:
-                counts["no_taskdef"] += 1
-                continue
-            counts["scripts"] += 1
-            task = LeanTask.from_dict(td)
-            steps = split_script(item["script"])
-            chain: dict[str, Any] = {
-                "schema_version": SCHEMA_STEPWISE,
-                "task_id": task.task_id,
-                "source": item.get("source"),
-                "n_steps": len(steps),
-                "completed_steps": 0,
-                "broken": False,
-            }
-            try:
-                init = server.register_task(task)
-                state = init.get("state") if isinstance(init, dict) else None
-                sid = str((state or {}).get("state_id") or "")
-                if not sid:
-                    raise RuntimeError(f"register_task returned no state_id: {init}")
-            except Exception as e:
-                counts["register_failed"] += 1
-                chain["broken"] = True
-                chain["error"] = f"register: {e}"
-                chains.append(chain)
-                continue
-            for k, step in enumerate(steps):
-                action = TacticAction(action_id=f"replay_s{k}", tactic=step)
-                try:
-                    rec = server.apply_tactic_to_state_id(task, action, sid, create_state=True)
-                except Exception as e:
-                    chain["broken"] = True
-                    chain["error"] = f"step {k}: {e}"
-                    counts["broken_chains"] += 1
-                    break
-                ks = _kernel_state_of(rec)
-                after_sid = str((ks or {}).get("state_id") or (rec.after_state.state_id if rec.after_state else ""))
-                transitions.append({
+    items = list(enumerate(scripts if max_scripts is None else scripts[:max_scripts]))
+    # The kernel_rpc worker retains every KState (each pinning a full
+    # Environment) with no eviction op in the protocol, so a whole-corpus
+    # run OOMs. Chains never span scripts, so recycling the worker at
+    # script boundaries is behavior-preserving (S'1 rider, 2026-07-06).
+    for chunk_start in range(0, len(items), max(1, recycle_every)):
+        chunk = items[chunk_start:chunk_start + max(1, recycle_every)]
+        if chunk_start:
+            counts["worker_recycles"] += 1
+        try:
+            server_cm = LeanServerAdapter(cfg)
+            server_cm.__enter__()
+        except Exception as e:
+            # Startup failure at a chunk boundary must not lose completed
+            # work: persist, record, and stop honestly.
+            counts["startup_failed_chunk"] = chunk_start // max(1, recycle_every)
+            counts["startup_error"] = str(e)[:200]
+            flush()
+            break
+        try:
+            server = server_cm
+            server.load_project()
+            for si, item in chunk:
+                td = task_defs.get(str(item["task_id"]))
+                if td is None:
+                    counts["no_taskdef"] += 1
+                    continue
+                counts["scripts"] += 1
+                task = LeanTask.from_dict(td)
+                steps = split_script(item["script"])
+                if any("sorry" in s or "admit" in s for s in steps):
+                    # Defect #6: sorryAx closes goals, so the kernel lane
+                    # would report success on a hole. Never execute these.
+                    counts["skipped_unsafe"] = counts.get("skipped_unsafe", 0) + 1
+                    chains.append({
+                        "schema_version": SCHEMA_STEPWISE,
+                        "task_id": task.task_id,
+                        "source": item.get("source"),
+                        "script_index": si,
+                        "n_steps": len(steps),
+                        "completed_steps": 0,
+                        "broken": True,
+                        "error": "skipped_unsafe: sorry/admit step",
+                    })
+                    continue
+                chain: dict[str, Any] = {
                     "schema_version": SCHEMA_STEPWISE,
                     "task_id": task.task_id,
                     "source": item.get("source"),
                     "script_index": si,
-                    "step_index": k,
-                    "tactic": step,
-                    "status": rec.status,
-                    "before_state_id": sid,
-                    "after_state_id": after_sid,
-                    "elapsed_ms": rec.elapsed_ms,
-                    "messages": (rec.messages or [])[:10],
-                    "kernel_state_after": ks,
-                    "audit_flags": {
-                        kk: vv for kk, vv in (rec.audit_flags or {}).items()
-                        if kk in ("kernel_state_hash", "structured_state_backend", "server_backend")
-                    },
-                })
-                counts["transitions"] += 1
-                if rec.status in ("fail", "elab_error", "timeout", "unsafe") or not after_sid:
-                    # Verified scripts should not break; record honestly.
+                    "n_steps": len(steps),
+                    "completed_steps": 0,
+                    "broken": False,
+                }
+                try:
+                    init = server.register_task(task)
+                    state = init.get("state") if isinstance(init, dict) else None
+                    sid = str((state or {}).get("state_id") or "")
+                    if not sid:
+                        raise RuntimeError(f"register_task returned no state_id: {init}")
+                except Exception as e:
+                    counts["register_failed"] += 1
                     chain["broken"] = True
-                    chain["error"] = f"step {k}: status={rec.status}"
-                    counts["broken_chains"] += 1
-                    break
-                chain["completed_steps"] = k + 1
-                sid = after_sid
-            chains.append(chain)
-            if counts["scripts"] % flush_every == 0:
-                flush()
+                    chain["error"] = f"register: {e}"
+                    chains.append(chain)
+                    continue
+                for k, step in enumerate(steps):
+                    action = TacticAction(action_id=f"replay_s{k}", tactic=step)
+                    try:
+                        rec = server.apply_tactic_to_state_id(task, action, sid, create_state=True)
+                    except Exception as e:
+                        chain["broken"] = True
+                        chain["error"] = f"step {k}: {e}"
+                        counts["broken_chains"] += 1
+                        break
+                    ks = _kernel_state_of(rec)
+                    after_sid = str((ks or {}).get("state_id") or (rec.after_state.state_id if rec.after_state else ""))
+                    transitions.append({
+                        "schema_version": SCHEMA_STEPWISE,
+                        "task_id": task.task_id,
+                        "source": item.get("source"),
+                        "script_index": si,
+                        "step_index": k,
+                        "tactic": step,
+                        "status": rec.status,
+                        "before_state_id": sid,
+                        "after_state_id": after_sid,
+                        "elapsed_ms": rec.elapsed_ms,
+                        "messages": (rec.messages or [])[:10],
+                        "kernel_state_after": ks,
+                        "audit_flags": {
+                            kk: vv for kk, vv in (rec.audit_flags or {}).items()
+                            if kk in ("kernel_state_hash", "structured_state_backend", "server_backend")
+                        },
+                    })
+                    counts["transitions"] += 1
+                    if rec.status in ("success", "partial") and isinstance(ks, dict) and str(ks.get("schema_version", "")).endswith("v3"):
+                        # Strict gate currency (S'1 amendment b): failure
+                        # payloads clone the before-state and must not count.
+                        counts["v3_success_transitions"] = counts.get("v3_success_transitions", 0) + 1
+                    if rec.status in ("fail", "elab_error", "timeout", "unsafe") or not after_sid:
+                        # Verified scripts should not break; record honestly.
+                        chain["broken"] = True
+                        chain["error"] = f"step {k}: status={rec.status}"
+                        counts["broken_chains"] += 1
+                        break
+                    chain["completed_steps"] = k + 1
+                    sid = after_sid
+                chains.append(chain)
+                if counts["scripts"] % flush_every == 0:
+                    flush()
+        finally:
+            server_cm.__exit__(None, None, None)
+            flush()  # chunk-boundary durability: no chunk's work is ever lost
     flush()
     summary = {
         "schema_version": SCHEMA_STEPWISE,
@@ -224,6 +268,7 @@ def main(argv: list[str] | None = None) -> int:
     rep.add_argument("--workdir")
     rep.add_argument("--timeout-s", type=float, default=60.0)
     rep.add_argument("--max-scripts", type=int)
+    rep.add_argument("--recycle-every", type=int, default=40)
     args = ap.parse_args(argv)
     if args.cmd == "inventory":
         items = build_script_inventory(
@@ -241,6 +286,7 @@ def main(argv: list[str] | None = None) -> int:
     summary = replay_scripts(
         scripts, task_defs, out_dir=args.out_dir, lean_cmd=args.lean_cmd,
         workdir=args.workdir, timeout_s=args.timeout_s, max_scripts=args.max_scripts,
+        recycle_every=args.recycle_every,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

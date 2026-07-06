@@ -164,3 +164,63 @@ certify as a foundry conditioning signal; S'4's phi_true-conditioned
 proposal bundles remain BLOCKED on this gate. The S'2 launch gate is
 unaffected (it never depended on phi passing — training stays shelved
 on supply grounds regardless).
+
+## Amendment b (2026-07-06): rider corrections registered BEFORE the
+## stepwise rerun launch (pre-launch adversarial verification findings)
+
+Reason: a pre-launch adversarial verification of the recycled driver
+and rider design found one blocker and three majors; all are corrected
+here before any pod time is spent.
+
+1. BRANCH (b) THRESHOLD UNREACHABLE (blocker). The registered >30%
+   sequential-payment fraction has an arithmetic ceiling of 3/28 =
+   10.7%: the honest success-side inventory is 25 one-step + 3
+   two-step scripts (the corrected corpus simply contains no deep
+   verified proofs at 7B supply). The original fraction is
+   RE-REGISTERED AS DESCRIPTIVE ONLY. The BINDING instrument for
+   linear-payability model error becomes the ADDITIVITY TEST, which
+   the same planned corpus powers at n~700:
+   - Realized payment per chain: P = defect(S_0) - defect(S_last), at
+     kernel-goal granularity (extractor run on kernel-provided goal
+     text; NO message text), both sources, partial payment included
+     for d3 chains.
+   - Predicted payment: P_hat = sum_k Rbar(tactic_k), where Rbar is
+     the corpus-wide mean step response of the normalized tactic —
+     exactly the cone's state-marginalized additive assumption.
+     Tactics with < 3 occurrences are excluded; chains with < 80% step
+     coverage are skipped (coverage reported).
+   - REGISTERED RULE: linear payability is BINDING if the median
+     relative error ||P - P_hat|| / max(||P||, 1e-6) over covered
+     chains exceeds 0.50. Secondary descriptive: per-tactic response
+     dispersion (1 - R^2 vs the global mean) for tactics with >= 5
+     occurrences.
+2. STRICT GATE CURRENCY (major). Failure payloads clone the
+   before-state, so "v3-payload transitions" is redefined: status in
+   {success, partial} AND kernel_state_after non-null AND kernel
+   schema v3. The driver now reports v3_success_transitions; the gate
+   reads THIS counter.
+3. DEFECT #6 RECURRENCE GUARD (major). The kernel_rpc lane has no
+   sorryAx detection (sorry CLOSES goals there); Lean-side detection
+   is out of S'1 scope. Mitigations: 3 bare-sorry d3 prefixes dropped
+   from the inventory, and the driver refuses to execute any script
+   whose steps contain sorry/admit (skipped_unsafe, chain recorded
+   broken).
+4. INVENTORY RE-FROZEN: +1 recovered true-success pair
+   (mathd_numbertheory_85, norm_num — a false-failure recovered by
+   S'0, absent from the pre-fix inventory), -3 sorry prefixes:
+   734 scripts, 1,424 expected transitions. GATE: >= 1,139 strict
+   v3 transitions (80%).
+5. BREAKAGE-ADJUSTED VOLUME RULE (major). 4 long d3 chains
+   (39/75/90/170 steps) hold 374 expected transitions (26% of
+   ceiling), so honest replay breakage can fail the volume gate alone.
+   chains.jsonl records n_steps vs completed_steps, making the
+   break-attributable shortfall exact. RULE: if the strict count is
+   below gate but >= 80% of the shortfall is attributable to chain
+   breaks concentrated in <= 5 identified scripts, rung (b) PROCEEDS
+   on the achieved corpus with a disclosed volume note; otherwise the
+   broken chains are re-attempted (larger --timeout-s) before any
+   verdict is read.
+6. Durability/join hardening (recorded): per-chunk flush (no chunk's
+   work is lost on a later startup failure), chain records carry
+   script_index (the analysis join no longer assumes enumeration
+   alignment), and a missing kernel goal count counts as NOT closed.
