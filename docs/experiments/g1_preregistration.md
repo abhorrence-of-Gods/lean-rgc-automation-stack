@@ -273,3 +273,58 @@ pipeline.
 - The feedback loop inside evaluation means T's gains can include better
   ERROR-RESPONSE behavior, not just better first proposals; the per-attempt
   solve curve (attempt index of first solve) is reported to expose this.
+
+## Amendment g (2026-07-06): defect #6 — sorry-holed scripts classified
+## as success; G1re3 corrected (verdict unchanged)
+
+Reason: the S'0 full-corpus isolated re-audit (roadmap Rev 3) ran its
+registered adjudicator-acceptance test (Rev 3 correction (f)): an
+82-item stratified golden sample re-verified through the independent
+single-audit lane, plus manual inspection of every surviving success.
+Cross-lane agreement was 82/82 — but manual inspection found 6 of the
+35 surviving "successes" were the bare script `sorry`.
+
+Mechanism. `sorry` elaborates at exit code 0 with only the warning
+"declaration uses 'sorry'". The single lane set success on returncode
+alone (executor.py; the sorry->unsafe rule sat unreachable inside
+_classify_failure), and the bulk lane collects only level=error lines,
+so the warning vanished and the msgs-empty branch returned success.
+BOTH lanes shared the hole, which is why every prior cross-lane
+instrument passed over it: the G1re3 training canary "isolated
+agreement 5/5" was agreement between two identically blind lanes, and
+the 2026-07-05 394-pair authoritative isolated re-audit reproduced it
+(394/394 agreement with the S'0 shards, sorry-successes included).
+Detection required an instrument that does not share the classifier:
+human inspection of the scripts. Structural addition: the golden-sample
+acceptance test with mandatory success inspection is now part of every
+label release.
+
+Corrections to the record:
+- G1re3 training supply: 5 -> 2 verified traces. 3 of the 5 "verified"
+  RFT traces are bare `sorry` (numbertheory_2pownm1prime_nprime,
+  imo_1959_p1, aime_1995_p7); the raw model text of two of them
+  literally announces "This is a placeholder". The honest supply at 7B
+  on this split is 2 traces across 8 waves; the applicable <+2pt branch
+  is REINFORCED, and the low-signal-regime bar for any future training
+  registration rises accordingly.
+- G1re3 PRIMARY: C = 5/130 (3.8%), T = 7/130 (5.4%) after demoting
+  mathd_algebra_289 (solved by `sorry` in BOTH arms — a concordant
+  pair). Discordant pairs are unchanged (2 only-T, 0 only-C), so the
+  paired delta remains +1.54pt with the registered CI and the NOT
+  SUPPORTED verdict UNCHANGED.
+- Amendment-e-era authoritative counts are re-issued by the S'0
+  re-audit (4,912 unique pairs, 4 shards, batch=1, 2026-07-06) plus
+  defect-#6 demotions: pilot 27 true success pairs (25 prior + 2
+  recovered false-failures; zero sorry), g1_prod_train 6 -> 1,
+  g1_eval_C -> 1, g1_eval_T -> 0. Corrected labels:
+  runs/s0_reaudit/corrected_labels.jsonl (15,576+ rows, demotions in
+  runs/s0_reaudit/defect6_demotions.json with per-pair Lean warning
+  evidence).
+
+Fix (landed with this amendment): executor.py gains _classify_success
+(returncode 0 + "declaration uses 'sorry'" -> unsafe); bulk_executor's
+_errors_by_line now collects sorry warnings so the owning block routes
+through _classify_block_failure -> unsafe. Regression test:
+tests/test_v100_sorry_success_hole.py. All future runs must include the
+fix; historical rows are corrected via the demotion file, not by
+re-running.
