@@ -380,3 +380,14 @@ runs/s0_reaudit/). Acceptance per (f):
   large (elab_error<->fail ~1.8k rows), confirming (g): failure-side
   response vectors need the message-parse amendment before S'1 trusts
   them.
+- Top-up (same day): 228 unique pilot pairs were absent from the
+  original manifest (157 non-ASCII scripts dropped at extraction, 71
+  other); re-audited with the FIXED classifier (4 shards, ~8 min):
+  0 successes, 1 sorry-holed script correctly classified unsafe in
+  production. Pilot store coverage is now 11,189/11,189 rows; total
+  corpus 5,140 verdict pairs across 8 shards. Final release stands at
+  29 true success pairs.
+- S'1 prereg drafted for freeze: docs/experiments/
+  s_prime_1_middle_layer.md (gate, units, attribution ladder, and the
+  re-registered stepwise transition gate >= 1,141 of the measured
+  1,427 ceiling).
