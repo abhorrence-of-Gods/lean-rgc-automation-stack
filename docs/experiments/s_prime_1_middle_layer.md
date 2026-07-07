@@ -295,3 +295,24 @@ touch THIS document's frozen ladder:
    changed: kernel-granularity chart); a memory win licenses only a
    Gamma-chart-memory investigation under a fresh prereg, not the
    killed loop-level memory module.
+
+## Amendment e (2026-07-07): middle-layer closure on this region
+
+The licensed memory-Gamma prereg (S'1m) was TERMINATED BEFORE FREEZE:
+its pre-freeze verification proved by counterfactual probe that the
+tau-amplified cone cannot reach the gate threshold at any admissible
+alpha (rho_phi max 0.083 vs required 0.10, rank-rescale not
+re-ranking), and that the verification itself constituted a peek at
+counterfactual gate outcomes on the reused score side. The preserved
+branch-(c) gate shot is RETIRED FOR THIS SCORE SIDE. The ladder's
+terminal state: (a) units cleared, (b) additivity not binding at the
+razor edge / memory real but unconvertible, (c) reader extension
+Schur-blocked at 10.6% — ALL registered middle-layer paths on this
+region are now closed, and the region passes to TOP-LAYER PROPOSAL.
+Surviving registered facts: the corrected corpus and metrology stack
+(S'0, defect #6, golden protocol), the leakage spectrum
+(runs/s_prime_1c/leakage_spectrum.json) as top-layer design evidence,
+and the S'3 search-side items that never depended on phi (twist
+rerank with the eval-disjoint S'1b artifact; D3 pool re-derivation).
+Any future middle-layer payability claim requires fresh unexposed
+score data and a fresh registration.
