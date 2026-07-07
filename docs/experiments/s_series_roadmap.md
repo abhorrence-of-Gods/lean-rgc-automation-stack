@@ -391,3 +391,46 @@ runs/s0_reaudit/). Acceptance per (f):
   s_prime_1_middle_layer.md (gate, units, attribution ladder, and the
   re-registered stepwise transition gate >= 1,141 of the measured
   1,427 ceiling).
+
+## Revision 4 (2026-07-07): leakage reframing after the linear failure
+
+S'1's ladder outcome (phi null under the one-shot cone; additivity at
+the razor edge; closer responses dominated by state-dependence) is
+re-based on the formal frame of the NS response-quotient program
+(mathematical formulation survey v0.9 + research memo v0.10,
+2026-07-07), whose central object — the leakage form
+D_t = (Q P_t J)*(Q P_t J), the Gram operator of what one step of the
+dynamics pushes outside the chart-measurable algebra — is exactly what
+S'1 measured empirically. Under this dictionary: the additivity error
+is chain-scale leakage; per-tactic dispersion is the leakage Gram
+diagonal; the -0.52 baseline artifact was sweeping (bulk size-flow, the
+Galilean-gauge analog); and the Borel self-encoding obstruction is the
+formal ground for the fingerprint bars.
+
+Consequence for the middle layer: the program is henceforth the
+QUANTITATIVE INTERTWINING-DEFECT program — measure the leakage
+geometry, extend the reader along its top eigendirections inside a
+frozen capacity ball, race that against an equal-capacity memory model
+(Mori-Zwanzig attribution), and accept ONLY on walk-forward predictive
+value (the entropy-aware floor: a reader must retain the progress
+current, not merely self-predict). Branch (c) is executed under
+docs/experiments/s_prime_1c_reader_extension.md (drafted this
+revision): sweeping normalization -> leakage Gram -> capacity-bounded
+Schur extension -> memory control -> single-shot corrected phi gate;
+a second gate failure returns the region to top-layer proposal with
+the leakage spectrum published as candidate design evidence for the
+S6/S'4 amendment this roadmap already obligates.
+
+Scope and supersession (Rev 4): corrections (a)-(e), the three-ledger
+governance, and every Rev 3 struck-text clause REMAIN IN FORCE; Rev 4
+adds the leakage frame and, jointly with S'1 Amendment d, extends the
+Amendment-c branch-(c) license to the S'1c five-instrument pipeline
+(gate frame unchanged; license preserved if the Schur criterion is
+unmet). The "memory module (killed by E-MZ)" line in the deferred list
+is scoped, not voided: the kill covers the loop-level memory cell;
+S'1c instrument 4 is registered as the re-test that emz_memory.md's
+own resurrection clause requires (reader coordinates changed), and a
+memory win licenses only a fresh Gamma-chart-memory prereg. External
+NS documents (survey v0.9 / memo v0.10) are vendored with pinned
+hashes at docs/external/; all load-bearing definitions are restated
+inline in the S'1c prereg.

@@ -268,3 +268,30 @@ archived runs/s_prime_1/rerun1_summary_oom137.json). Rerun 2
    followed by a single phi-gate re-run under the Amendment-a
    corrected rule; a second failure returns the region to top-layer
    proposal per theory section 10.
+
+## Amendment d (2026-07-07): branch-(c) license extended to the S'1c
+## pipeline; gate frame pinned; branch-(b) reopening registered
+
+Reason: branch (c) is executed under the S'1c prereg
+(docs/experiments/s_prime_1c_reader_extension.md), whose v1 draft
+failed pre-freeze adversarial verification (18 findings, 6 blockers);
+v2 embeds the fixes. This amendment registers the three points that
+touch THIS document's frozen ladder:
+1. GATE FRAME PINNED: the single licensed phi-gate re-run fires in the
+   Amendment-a frame exactly (raw whitened norms, task-disjoint,
+   ||D|| race, corrected conjunct). The S'1c sweeping/co-moving frame
+   is estimation-side only and never gate-bearing — a gate-substrate
+   change is not licensed by branch (c).
+2. LICENSE PRESERVATION RULE: the one gate shot is spent only when
+   S'1c instrument 5 actually fires. If the capacity-bounded Schur
+   criterion is not met, no extension is tested, the license is
+   preserved, and the leakage spectrum is still published.
+3. BRANCH-(b) REOPENING: S'1c instrument 4 (equal-capacity memory
+   race on the 148 linked pairs, verdict-bearing only at n >= 120) is
+   a registered reopening of the sequential-structure question under a
+   new same-corpus instrument, superseding the Amendment-b additivity
+   rule for this purpose only. It is also registered as the re-test
+   required by emz_memory.md's resurrection clause (reader coordinates
+   changed: kernel-granularity chart); a memory win licenses only a
+   Gamma-chart-memory investigation under a fresh prereg, not the
+   killed loop-level memory module.
