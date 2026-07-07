@@ -1,8 +1,8 @@
 # S'1c Pre-Registration: leakage-geometry reader extension (ladder branch (c))
 
-Status: DRAFT v2 for freeze (2026-07-07). v1 failed a pre-freeze
-adversarial verification (18 findings, 6 blockers); this version
-incorporates every fix. Amendments after freeze require a new dated
+Status: FROZEN 2026-07-07, before execution. v1 failed a pre-freeze
+adversarial verification (18 findings, 6 blockers); v2 incorporates
+every fix and is the frozen text. Amendments require a new dated
 section with a reason. Companion registration: S'1 Amendment d
 (s_prime_1_middle_layer.md) extends the branch-(c) license to this
 pipeline.
@@ -196,3 +196,58 @@ clause excludes them rather than shipping zero residuals.
 - Capacity constants (n_min = 8, f_min = 20, r_add = 16, lambda = 1.0,
   30%, >= 3 directions, 50% cap, 120 pairs, 80% collinear retention)
   are design bounds frozen pre-outcome, not tuned values.
+
+## Amendment a (2026-07-07): execution record — Schur NOT-MET, license
+## preserved; memory verdict NON-MARKOV-COMPRESSION
+
+LITMUS (all four variants PASS before any real number was read):
+trace rel. bias 0.049 (<0.10); top-3 principal angle 6.6 deg (<=15);
+collinearity retention 1.17 (>=0.80); degeneracy variant excluded
+47.8% of rows with ZERO zero-residual rows shipped; Schur ground-truth
+rel. bias 0.091 (<0.10). One litmus-side correction: eigendirection
+recovery is only well-posed above the eigenvalue separation margin, so
+variant A plants separated shared structure (6/4/2 over a ~1 noise
+floor); and the fiber-size distribution is resampled at the FROZEN
+granularity (coarse classes: 14 classes over the corpus, max 239),
+correcting the drafting slip that quoted raw-string counts (395).
+
+INSTRUMENTS 1-3 (real corpus: 692 rows, 32 dedup dims, 8 accepted
+fibers, 11.6% of rows in degeneracy-excluded fibers):
+- Leakage geometry is RANK-1: 96.9% of gate-dim leakage lies in one
+  direction — goal-text SIZE MOTION (total_goal_size_log +
+  proof_size_risk + target_symbol_count_log). Fold stability beyond
+  eig1 is nil (angle 90 deg), i.e. there is exactly one identifiable
+  leakage direction. Intro-stratum trace 5.08 vs non-intro 9.20
+  (binder artifact disclosed).
+- Schur selection: best 6 features (head:opaque, head:Prime, head:Eq,
+  head:mem, head:le, const:Finset.Icc) reach 10.6% reduction with
+  97.8% concentrated in eig1 — CRITERION NOT-MET (30%, >=3 dirs,
+  <=50% cap). Per the frozen rule, INSTRUMENT 5 DOES NOT FIRE and the
+  branch-(c) gate license is PRESERVED. Artifact:
+  runs/s_prime_1c/leakage_spectrum.json.
+- Interpretation: the current defect chart is a size-o-meter; its
+  blind spot is size-motion VARIANCE, which symbolic head/vocabulary
+  features cannot absorb — no amount of feature shopping inside the
+  frozen family reaches 30%.
+
+INSTRUMENT 4 (verdict-bearing: 148 linked pairs >= 120): base trace
+3.083; reader arm (+6 dims, the Schur-selected features) reduction
+19.1%; memory arm (+6 dims: prev fiber-class onehot top-5 + prev
+co-moving response on eig1) reduction 36.1%. MEMORY WINS —
+VERDICT: NON-MARKOV-COMPRESSION. The size-flow has momentum across
+steps; the leakage is substantially memory, not reader coarseness.
+Artifact: runs/s_prime_1c/memory_control.json.
+
+DISPOSITION (per the frozen failure branch and S'1 Amendment d):
+- The reader-extension path is measured out within the registered
+  family; the single gate shot remains UNSPENT.
+- The memory win satisfies emz_memory.md's resurrection re-test
+  (reader coordinates changed) and licenses ONE thing: a fresh prereg
+  for memory-bearing Gamma charts on the rank-1 size mode (a
+  heteroscedastic/momentum model of size motion — one bath mode with a
+  memory kernel, the leakage form's own reading), NOT the killed
+  loop-level memory module and NOT a phi-gate attempt.
+- The leakage spectrum is published as candidate design evidence for
+  the S6/S'4 amendment (top-layer proposal design should target
+  size-agnostic structure, since size motion is the one thing the
+  middle layer can now model itself).
