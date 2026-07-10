@@ -5,6 +5,12 @@
   "test_qgen.py": [
     "unit"
   ],
+  "test_v100_sorry_success_hole.py": [
+    "unit"
+  ],
+  "test_v101_stepwise_recycle.py": [
+    "unit"
+  ],
   "test_v10_cli_integrity.py": [
     "legacy"
   ],
