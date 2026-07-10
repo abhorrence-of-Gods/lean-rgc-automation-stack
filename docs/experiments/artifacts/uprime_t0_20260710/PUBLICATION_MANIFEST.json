@@ -1,0 +1,28 @@
+{
+  "schema_version": "lean-rgc-uprime-t0-publication-v1.0",
+  "anchor_commit": "638d0329af4991caa23b4e527bece7bb567900d4",
+  "anchor_upstream": "origin/codex/uprime-odlrq-plan",
+  "anchor_was_pushed_before_execution": true,
+  "artifact": {
+    "raw_location": "runs/uprime_t0_20260710/theory_errata_638d0329af49.json (gitignored, investigator-local)",
+    "raw_sha256": "35ED33AC4E3F246EFBF53A0532F836937C8C5768CAF78D4A3DCCFFF05CFF4A1B",
+    "public_path": "docs/experiments/artifacts/uprime_t0_20260710/theory_errata_638d0329af49.json",
+    "public_sha256": "09B515E757D25F5E127CF2FB8DFD2DBBC0862A2C9C462BB2EED1F31E682B3DE5",
+    "transformation": "JSON parse and two-space/LF serialization; no fields redacted"
+  },
+  "anchored_inputs": {
+    "docs/experiments/uprime_odlrq_theory_errata_2026-07-10.md": "B3F138CD183C4C5BC168749AC1BA1D38CFCC6A1C06E19F99BBF71FE9D3AD1328",
+    "docs/experiments/uprime_odlrq_t0_extension_preregistration.md": "248F08677D453A577378119B71F3897CB9D1558133D58659DE07FEE98EBC2A0E",
+    "docs/experiments/fixtures/uprime_t0_model_bound_fixture.json": "28D6FE491365C2E7AD11A496374839B5398B61EA3BD0832F119B37A8BA27FFA9",
+    "lean_rgc/evals/uprime_t0.py": "131907275DB2C38A60FA51B946EC0AE410D0A7D448611D1BB0B4B38CE7D6F7EE",
+    "tests/test_uprime_t0_errata.py": "99396A9EEF0D9681E6DF5173221AA33B8DA44D2A5C298FCE4625E772AA44ECF0"
+  },
+  "execution": {
+    "platform": "Windows CPU",
+    "canonical_verdict": "T0_PASS",
+    "canonical_failures": 0,
+    "post_artifact_pytest": "7 passed in 8.59s",
+    "licenses_next_repair_stage": true,
+    "licenses_later_stage": false
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "anchor_commit": "638d0329af4991caa23b4e527bece7bb567900d4",
+  "anchor_upstream": "origin/codex/uprime-odlrq-plan",
+  "errata": {
+    "path": "docs/experiments/uprime_odlrq_theory_errata_2026-07-10.md",
+    "sha256": "B3F138CD183C4C5BC168749AC1BA1D38CFCC6A1C06E19F99BBF71FE9D3AD1328"
+  },
+  "failures": [],
+  "float_tolerance": 1e-12,
+  "licenses_later_stage": false,
+  "licenses_next_repair_stage": true,
+  "preregistration": {
+    "path": "docs/experiments/uprime_odlrq_t0_extension_preregistration.md",
+    "sha256": "248F08677D453A577378119B71F3897CB9D1558133D58659DE07FEE98EBC2A0E"
+  },
+  "probes": {
+    "T0-C": {
+      "amended_negative_handled": true,
+      "amended_positive_fixture_passed": true,
+      "correlated_full_variance": {
+        "denominator": 1,
+        "float": 4,
+        "numerator": 4
+      },
+      "cross_contribution": {
+        "denominator": 1,
+        "float": 2,
+        "numerator": 2
+      },
+      "diagonal_only_variance": {
+        "denominator": 1,
+        "float": 2,
+        "numerator": 2
+      },
+      "legacy_counterexample_detected": true,
+      "probe_id": "T0-C"
+    },
+    "T0-H": {
+      "absolute_tolerance": 1e-12,
+      "actual_error_at_T1": 0.5430806348152437,
+      "amended_negative_handled": true,
+      "amended_positive_fixture_passed": true,
+      "finite_horizon_bound_at_T1": 0.7715403174076219,
+      "legacy_counterexample_detected": true,
+      "nilpotent_shift_dimension": 5,
+      "nilpotent_shift_edges": 4,
+      "nilpotent_shift_spectral_radius": 0,
+      "nilpotent_shift_transient_gain": 16,
+      "nilpotent_verified": true,
+      "positive_decay_available": false,
+      "probe_id": "T0-H"
+    },
+    "T0-J": {
+      "amended_negative_handled": true,
+      "amended_positive_fixture_passed": true,
+      "composite_error": {
+        "denominator": 1,
+        "float": 10,
+        "numerator": 10
+      },
+      "legacy_counterexample_detected": true,
+      "missing_model_provenance_rejected": true,
+      "positive_telescoping_bound": {
+        "denominator": 1,
+        "float": 4,
+        "numerator": 4
+      },
+      "positive_telescoping_lhs": {
+        "denominator": 1,
+        "float": 2,
+        "numerator": 2
+      },
+      "positive_telescoping_rhs": {
+        "denominator": 1,
+        "float": 2,
+        "numerator": 2
+      },
+      "probe_id": "T0-J",
+      "typed_telescoping_bound": {
+        "denominator": 1,
+        "float": 10,
+        "numerator": 10
+      },
+      "untransported_stage_sum": {
+        "denominator": 1,
+        "float": 1,
+        "numerator": 1
+      },
+      "valid_model_artifact": "docs/experiments/fixtures/uprime_t0_model_bound_fixture.json",
+      "valid_model_artifact_sha256": "28D6FE491365C2E7AD11A496374839B5398B61EA3BD0832F119B37A8BA27FFA9",
+      "valid_model_provenance_accepted": true
+    },
+    "T0-ME": {
+      "amended_negative_handled": true,
+      "amended_positive_fixture_passed": true,
+      "boundary_finite_parameter_rejected": true,
+      "constant_statistic_moment_gap": {
+        "denominator": 1,
+        "float": 0,
+        "numerator": 0
+      },
+      "duplicate_hessian_singularity_detected": true,
+      "legacy_counterexample_detected": true,
+      "operator_gap": {
+        "denominator": 1,
+        "float": 1,
+        "numerator": 1
+      },
+      "outside_hull_rejected": true,
+      "positive_indicator_moment_gap": {
+        "denominator": 1,
+        "float": 0,
+        "numerator": 0
+      },
+      "positive_operator_gap": {
+        "denominator": 1,
+        "float": 0,
+        "numerator": 0
+      },
+      "positive_span_residual": {
+        "denominator": 1,
+        "float": 0,
+        "numerator": 0
+      },
+      "probe_id": "T0-ME",
+      "residual_span_bound": {
+        "denominator": 1,
+        "float": 1,
+        "numerator": 1
+      }
+    },
+    "T0-P": {
+      "amended_negative_handled": true,
+      "amended_positive_fixture_passed": true,
+      "factorization_gap": {
+        "denominator": 1,
+        "float": 1,
+        "numerator": 1
+      },
+      "legacy_counterexample_detected": true,
+      "negative_markov_hypothesis_holds": false,
+      "nested_positive_gap": {
+        "denominator": 1,
+        "float": 0,
+        "numerator": 0
+      },
+      "probe_id": "T0-P",
+      "written_contextual_gap": {
+        "denominator": 1,
+        "float": 1,
+        "numerator": 1
+      }
+    },
+    "T0-S": {
+      "amended_negative_handled": true,
+      "amended_positive_fixture_passed": true,
+      "legacy_counterexample_detected": true,
+      "probe_id": "T0-S",
+      "projected_distance": {
+        "denominator": 1,
+        "float": 0,
+        "numerator": 0
+      },
+      "transported_bound": {
+        "denominator": 1,
+        "float": 2,
+        "numerator": 2
+      },
+      "true_gap": {
+        "denominator": 1,
+        "float": 2,
+        "numerator": 2
+      }
+    },
+    "T0-W": {
+      "amended_gain": {
+        "denominator": 10,
+        "float": 0.1,
+        "numerator": 1
+      },
+      "amended_negative_handled": true,
+      "amended_positive_fixture_passed": true,
+      "legacy_counterexample_detected": true,
+      "legacy_envelope": {
+        "denominator": 10,
+        "float": 0.1,
+        "numerator": 1
+      },
+      "legacy_gain": {
+        "denominator": 1,
+        "float": 10,
+        "numerator": 10
+      },
+      "probe_id": "T0-W"
+    }
+  },
+  "schema_version": "lean-rgc-uprime-t0-errata-v1.0",
+  "source": {
+    "model_bound_fixture_path": "docs/experiments/fixtures/uprime_t0_model_bound_fixture.json",
+    "model_bound_fixture_sha256": "28D6FE491365C2E7AD11A496374839B5398B61EA3BD0832F119B37A8BA27FFA9",
+    "path": "lean_rgc/evals/uprime_t0.py",
+    "sha256": "131907275DB2C38A60FA51B946EC0AE410D0A7D448611D1BB0B4B38CE7D6F7EE",
+    "test_path": "tests/test_uprime_t0_errata.py",
+    "test_sha256": "99396A9EEF0D9681E6DF5173221AA33B8DA44D2A5C298FCE4625E772AA44ECF0"
+  },
+  "verdict": "T0_PASS"
+}
