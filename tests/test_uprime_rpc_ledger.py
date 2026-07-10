@@ -15,6 +15,7 @@ from lean_rgc.evals import uprime_rpc_ledger as ledger
 from uprime_rpc_ledger_semantics_cases import *  # noqa: F403
 from uprime_rpc_contract_oracle_cases import *  # noqa: F403
 from uprime_rpc_bundle_reservation_cases import *  # noqa: F403
+from uprime_rpc_attempt_manifest_cases import *  # noqa: F403
 
 
 HEADER_BODY = {"phase": "synthetic", "wire_exact": False}

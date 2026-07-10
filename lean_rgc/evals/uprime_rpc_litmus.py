@@ -99,6 +99,12 @@ BUNDLE_RESERVATION_SOURCE_PATH = Path(
 BUNDLE_RESERVATION_TEST_SUPPORT_PATH = Path(
     "tests/uprime_rpc_bundle_reservation_cases.py"
 )
+ATTEMPT_MANIFEST_SOURCE_PATH = Path(
+    "lean_rgc/evals/uprime_rpc_attempt_manifest.py"
+)
+ATTEMPT_MANIFEST_TEST_SUPPORT_PATH = Path(
+    "tests/uprime_rpc_attempt_manifest_cases.py"
+)
 PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
 EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
@@ -138,6 +144,8 @@ ANCHOR_PATHS = (
     CONTRACT_ORACLE_TEST_SUPPORT_PATH,
     BUNDLE_RESERVATION_SOURCE_PATH,
     BUNDLE_RESERVATION_TEST_SUPPORT_PATH,
+    ATTEMPT_MANIFEST_SOURCE_PATH,
+    ATTEMPT_MANIFEST_TEST_SUPPORT_PATH,
     PACKAGE_INIT_PATH,
     EVALS_PACKAGE_INIT_PATH,
     SOURCE_PATH,
