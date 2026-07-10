@@ -802,34 +802,47 @@ def test_lexical_path_variants_are_rejected_even_if_windows_resolves_them(
 ) -> None:
     path, _ = _write(tmp_path)
     raw = str(path)
+    separator = os.sep if os.sep in raw else ("\\" if "\\" in raw else "/")
+    run_marker = f"{separator}runs{separator}"
+    registered_marker = f"uprime_u1_rpc_20260710{separator}"
+    assert run_marker in raw
+    assert registered_marker in raw
     if variant == "dot":
-        candidate = str(path.parent) + "\\.\\" + path.name
+        candidate = f"{path.parent}{separator}.{separator}{path.name}"
     elif variant == "traversal":
         junk = path.parent.parent / "junk"
         junk.mkdir()
         candidate = (
-            str(junk)
-            + "\\..\\uprime_u1_rpc_20260710\\"
-            + path.name
+            f"{junk}{separator}..{separator}"
+            f"uprime_u1_rpc_20260710{separator}{path.name}"
         )
     elif variant == "duplicate-separator":
-        candidate = raw.replace("\\runs\\", "\\runs\\\\")
+        candidate = raw.replace(
+            run_marker,
+            f"{separator}runs{separator}{separator}",
+        )
     elif variant == "trailing-separator":
-        candidate = raw + "\\"
+        candidate = raw + separator
     elif variant == "run-dir-case":
-        candidate = raw.replace("\\runs\\", "\\Runs\\")
+        candidate = raw.replace(
+            run_marker,
+            f"{separator}Runs{separator}",
+        )
     elif variant == "registered-dir-case":
         candidate = raw.replace("uprime_u1_rpc_20260710", "UPRIME_U1_RPC_20260710")
     elif variant == "trailing-dot-normalization":
         candidate = raw.replace(
-            "uprime_u1_rpc_20260710\\", "uprime_u1_rpc_20260710.\\"
+            registered_marker,
+            f"uprime_u1_rpc_20260710.{separator}",
         )
     elif variant == "trailing-space-normalization":
         candidate = raw.replace(
-            "uprime_u1_rpc_20260710\\", "uprime_u1_rpc_20260710 \\"
+            registered_marker,
+            f"uprime_u1_rpc_20260710 {separator}",
         )
     else:
         candidate = raw[:-1] + raw[-1].upper()
+    assert candidate != raw
     with pytest.raises(bundle.StandaloneBundleReservationV11Error):
         bundle.inspect_standalone_bundle_reservation_v1_1(candidate)
 
