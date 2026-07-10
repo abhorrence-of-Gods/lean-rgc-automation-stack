@@ -26,6 +26,9 @@ SCHEMA_UPRIME_RPC_RESERVATION = "lean-rgc-uprime-rpc-reservation-v1.0"
 PREREG_PATH = Path(
     "docs/experiments/uprime_odlrq_u1_rpc_diagnostic_preregistration.md"
 )
+AMENDMENT_PATH = Path(
+    "docs/experiments/uprime_odlrq_u1_rpc_diagnostic_amendment_1.md"
+)
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
 TEST_PATH = Path("tests/test_uprime_rpc_litmus.py")
 TIER_PATH = Path("tests/tier_manifest.json")
@@ -34,6 +37,7 @@ CACHE_PATH = Path("lean_rgc/audit_result_cache.py")
 SUPERVISOR_PATH = Path("lean_rgc/lean/worker_supervisor.py")
 ANCHOR_PATHS = (
     PREREG_PATH,
+    AMENDMENT_PATH,
     SOURCE_PATH,
     TEST_PATH,
     TIER_PATH,
@@ -780,6 +784,29 @@ def _goal_ids(response: dict[str, Any], which: str = "current") -> list[str]:
     return list(state_view(_kernel(response, which))["goals"])
 
 
+def select_side_effect_target(kernel_state: Any) -> str:
+    goals = (
+        kernel_state.get("goals")
+        if isinstance(kernel_state, dict) and isinstance(kernel_state.get("goals"), list)
+        else None
+    )
+    if not (
+        isinstance(goals, list)
+        and len(goals) == 2
+        and all(
+            isinstance(row, dict)
+            and isinstance(row.get("mvar_id"), str)
+            and bool(row.get("mvar_id"))
+            for row in goals
+        )
+        and goals[0]["mvar_id"] != goals[1]["mvar_id"]
+    ):
+        raise RuntimeError(
+            "side-effect fixture must expose exactly two distinct ordered goal rows"
+        )
+    return goals[1]["mvar_id"]
+
+
 def _response_summary(response: dict[str, Any]) -> dict[str, Any]:
     kernel = _kernel(response, "after") or _kernel(response, "current")
     flags = _audit_flags(response)
@@ -941,21 +968,12 @@ def _run_sequence(
         },
     )
     side_kernel = _kernel(side_init)
-    side_rows = side_kernel.get("goals") if isinstance(side_kernel.get("goals"), list) else []
-    equality_goals = [
-        row.get("mvar_id")
-        for row in side_rows
-        if isinstance(row, dict)
-        and row.get("relation") == "="
-        and isinstance(row.get("mvar_id"), str)
-    ]
     side_goals = _goal_ids(side_init)
-    if len(side_goals) != 2 or len(equality_goals) != 1:
-        raise RuntimeError("side-effect fixture did not expose witness and equality goals")
+    side_equality_goal = select_side_effect_target(side_kernel)
     send_action(
         "side_effect_close",
         state_id=_state_id(side_init),
-        target_mvar_id=equality_goals[0],
+        target_mvar_id=side_equality_goal,
         action={"action_id": "side_effect_rfl", "tactic": "rfl"},
     )
 
@@ -1000,7 +1018,8 @@ def _run_sequence(
         "primary_tail": primary_tail,
         "zero_goals": zero_goals,
         "side_goals": side_goals,
-        "side_equality_goal": equality_goals[0],
+        "side_equality_goal": side_equality_goal,
+        "side_target_selector": "refine_tuple_position_1",
         "requested_state_ids": requested_state_ids,
         "replay_specs": replay_specs,
     }
@@ -1347,6 +1366,11 @@ def evaluate_contracts(
     )
     side_goal_set = set(context.get("side_goals", []))
     side_checks = {
+        "selector_frozen": context.get("side_target_selector")
+        == "refine_tuple_position_1",
+        "selected_second_goal": isinstance(context.get("side_goals"), list)
+        and len(context["side_goals"]) == 2
+        and context.get("side_equality_goal") == context["side_goals"][1],
         "action_succeeded": _status_ok(side_response),
         "delta_valid": delta_rows.get("side_effect_close", {}).get("passed") is True,
         "after_goals_empty": side_after["goals"] == [],

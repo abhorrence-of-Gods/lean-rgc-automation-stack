@@ -11,6 +11,7 @@ from lean_rgc.evals.uprime_rpc_litmus import (
     delta_evidence,
     independent_delta,
     replay_evidence,
+    select_side_effect_target,
     state_view,
 )
 from lean_rgc.lean.worker_supervisor import audit_cache_eligibility
@@ -101,6 +102,33 @@ def test_delta_oracle_rejects_missing_kernel_states():
         },
     }
     assert delta_evidence(response)["passed"] is False
+
+
+def test_side_effect_selector_uses_frozen_second_refine_goal_not_relation_marker():
+    kernel = _kernel(
+        ["?witness", "?proof"],
+        [("?witness", False), ("?proof", False)],
+        "side",
+    )
+    kernel["goals"][0]["relation"] = ""
+    kernel["goals"][1]["relation"] = ""
+    assert select_side_effect_target(kernel) == "?proof"
+
+    kernel["goals"] = kernel["goals"][:1]
+    with pytest.raises(RuntimeError, match="exactly two distinct ordered goal rows"):
+        select_side_effect_target(kernel)
+
+    kernel["goals"] = [
+        {"bad": "filtered-by-state-view"},
+        {"mvar_id": "?witness"},
+        {"mvar_id": "?proof"},
+    ]
+    with pytest.raises(RuntimeError, match="exactly two distinct ordered goal rows"):
+        select_side_effect_target(kernel)
+
+    kernel["goals"] = [{"mvar_id": "?witness"}, {"bad": "missing-id"}]
+    with pytest.raises(RuntimeError, match="exactly two distinct ordered goal rows"):
+        select_side_effect_target(kernel)
 
 
 def _budget_response(
@@ -532,6 +560,7 @@ def test_all_contracts_have_a_reachable_clear_fixture(monkeypatch):
         "zero_goals": ["?zh", "?zt"],
         "side_goals": ["?sw", "?se"],
         "side_equality_goal": "?se",
+        "side_target_selector": "refine_tuple_position_1",
         "requested_state_ids": {
             label: responses[label]["before_state_id"]
             for label in (
