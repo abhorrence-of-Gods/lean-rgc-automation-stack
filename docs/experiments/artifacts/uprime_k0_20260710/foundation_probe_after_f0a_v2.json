@@ -1,0 +1,141 @@
+{
+  "current_blockers": [
+    "T0_weighted_lifting_formula_unamended",
+    "T0_projection_identities_unamended",
+    "T0_diagonal_covariance_formula_unamended",
+    "replay_verified_non_stub",
+    "heartbeat_consumption_reported",
+    "assigned_mvars_is_before_after_difference",
+    "tail_goals_swept_for_assignments",
+    "budget_cache_runtime_semantics_aligned"
+  ],
+  "git": {
+    "commit": "b4b81be91166ee3dcc7161c55730ac377174eb24",
+    "dirty": true,
+    "status_lines": [
+      "M docs/external/SHA256SUMS",
+      " M lean_rgc/audit_result_cache.py",
+      " M tests/test_v92_audit_cache_build_state_fingerprint.py",
+      " M tests/tier_manifest.json",
+      "?? docs/experiments/uprime_odlrq_adversarial_review_2026-07-10.md",
+      "?? docs/experiments/uprime_odlrq_execution_log_2026-07-10.md",
+      "?? docs/experiments/uprime_odlrq_repair_preregistration.md",
+      "?? docs/external/response_quotient_common_theory_autoproving_phases_v0_1_jp.docx",
+      "?? docs/external/uprime_odlrq_adversarial_review_2026-07-10/",
+      "?? fake_lean_smoke.py",
+      "?? lean_rgc/evals/uprime_k0.py",
+      "?? llm_local.json",
+      "?? pilot_tasks.json",
+      "?? smoke_tasks_local.jsonl",
+      "?? tests/test_uprime_k0_foundations.py"
+    ]
+  },
+  "legacy_math_counterexamples_detected": true,
+  "licenses_later_stage": false,
+  "probes": {
+    "covariance": {
+      "diagonal_covariance_claim_holds": false,
+      "diagonal_only_variance": {
+        "denominator": 1,
+        "float": 2,
+        "numerator": 2
+      },
+      "full_variance": {
+        "denominator": 1,
+        "float": 4,
+        "numerator": 4
+      },
+      "legacy_counterexample_detected": true,
+      "missing_cross_covariance": {
+        "denominator": 1,
+        "float": 2,
+        "numerator": 2
+      },
+      "probe_id": "K0-C"
+    },
+    "environment_fingerprint": {
+      "content_sensitive": true,
+      "fingerprint_after": "e2d472d4e0f793f42d8cd5ad1f44cfdee38eb1503c85c5d6bec0191672ee669a",
+      "fingerprint_before": "61a88bca996445f571802f97b84c508a7943ce87347e1db9053751a8f5022c0a",
+      "gate_F0a_cache_content_pass": true,
+      "mutation": "same path and module name, changed .olean bytes",
+      "probe_id": "K0-E",
+      "scope": "audit_result_cache local-build content litmus only; not full U'0/F0"
+    },
+    "projection": {
+      "adjacent_product_identity_holds": false,
+      "contextual_commutativity_holds": false,
+      "contextual_order_max_gap": {
+        "denominator": 1,
+        "float": 1,
+        "numerator": 1
+      },
+      "direct_vs_adjacent_max_gap": {
+        "denominator": 1,
+        "float": 1,
+        "numerator": 1
+      },
+      "legacy_counterexample_detected": true,
+      "probe_id": "K0-P",
+      "state_count": 4
+    },
+    "rpc_contract": {
+      "assigned_mvars_is_before_after_difference": false,
+      "budget_cache_runtime_semantics_aligned": false,
+      "cache_sha256": "DDBF871E1AD02DE11070F3BCB24A9B3E1610F2A26D3D716DBB42DD2D7D6B48BA",
+      "heartbeat_consumption_reported": false,
+      "probe_id": "K0-R",
+      "replay_verified_non_stub": false,
+      "rpc_sha256": "A925EBB4203C9EAD09E54D6DF6B93BCB689FAE78C0A156F801028B687A10635F",
+      "tail_goals_swept_for_assignments": false
+    },
+    "weighted_lifting": {
+      "corrected_claim_holds": true,
+      "corrected_reduced_gain": {
+        "denominator": 10,
+        "float": 0.1,
+        "numerator": 1
+      },
+      "inputs": {
+        "amplitude": {
+          "denominator": 1,
+          "float": 10,
+          "numerator": 10
+        },
+        "lifting_probability": 1,
+        "omega_source": {
+          "denominator": 1,
+          "float": 100,
+          "numerator": 100
+        },
+        "omega_target": {
+          "denominator": 1,
+          "float": 1,
+          "numerator": 1
+        }
+      },
+      "legacy_claim_holds": false,
+      "legacy_counterexample_detected": true,
+      "legacy_reduced_gain": {
+        "denominator": 1,
+        "float": 10,
+        "numerator": 10
+      },
+      "probe_id": "K0-W",
+      "weighted_envelope": {
+        "denominator": 10,
+        "float": 0.1,
+        "numerator": 1
+      }
+    }
+  },
+  "registration": "docs/experiments/uprime_odlrq_repair_preregistration.md",
+  "repo_root": "<REPO_ROOT>",
+  "schema_version": "lean-rgc-uprime-k0-foundation-v1.1",
+  "scope_limitations": [
+    "K0-R is a source-pattern smoke check, not a live RPC behavioral litmus.",
+    "F1-F3 and M3-M4 are not covered by this executable.",
+    "F0a covers the audit-result-cache local build only, not the shared environment/import closure."
+  ],
+  "verdict": "BLOCKED_AS_WRITTEN"
+}

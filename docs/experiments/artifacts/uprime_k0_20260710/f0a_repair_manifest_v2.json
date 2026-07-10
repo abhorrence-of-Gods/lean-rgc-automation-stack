@@ -1,0 +1,38 @@
+{
+  "schema_version": "lean-rgc-uprime-k0-repair-manifest-v1.0",
+  "recorded_at_utc": "2026-07-10T11:18:16.8996331Z",
+  "parent_manifest_sha256": "7291179428EBBC2FD2FE742D5C3853208FBE3D705E2C8E8313154A3A6B1018AD",
+  "repair_id": "F0a_full_fingerprint_and_unreadable_fail_closed",
+  "scope": "hardening of the F0a audit-cache local-build content digest",
+  "changes": [
+    "expanded the exposed workdir fingerprint from a 24-hex truncation to the full 64-hex SHA-256",
+    "salted the no-workdir identity as well as project identities",
+    "made unreadable manifest, toolchain, or .olean content generate a fresh cache-bypass nonce instead of a reusable unreadable identity",
+    "added an unreadable-artifact fail-closed regression"
+  ],
+  "tests": {
+    "command": "python -m pytest -q tests/test_uprime_k0_foundations.py tests/test_v92_audit_cache_build_state_fingerprint.py tests/test_v65_audit_cache_pruning.py tests/test_v85_cache_lane_and_coverage.py tests/test_v74_test_tier_manifest.py",
+    "outcome": "27 passed",
+    "elapsed_seconds": 15.88
+  },
+  "post_repair_run": {
+    "command": "python -m lean_rgc.evals.uprime_k0 --repo-root . --out runs/uprime_k0_20260710/foundation_probe_after_f0a_v2.json --environment-out runs/uprime_k0_20260710/environment_fingerprint_after_f0a_v2.json",
+    "verdict": "BLOCKED_AS_WRITTEN",
+    "f0a_cache_content_pass": true,
+    "licenses_later_stage": false
+  },
+  "sha256": {
+    "lean_rgc/audit_result_cache.py": "DDBF871E1AD02DE11070F3BCB24A9B3E1610F2A26D3D716DBB42DD2D7D6B48BA",
+    "lean_rgc/evals/uprime_k0.py": "4494638224B7E5DA854ACCBD039DF4BB79B3F054D6BB7B8749D9CDD74C20F0AF",
+    "tests/test_v92_audit_cache_build_state_fingerprint.py": "1393DFA25D0258E713D3B5FE0FCB3BD7BF85F64A7D1DB44361BDE81F59605BDF",
+    "tests/test_uprime_k0_foundations.py": "75692BED4DFFE7AEC9BF7DF73789B769BA0B3E32D2B1822938A6922EEBD23ABE",
+    "tests/tier_manifest.json": "7C7B0858DD0772A30D315D41E67E31AAE83A02EF8501092E4FB52A89D00ECA58",
+    "runs/uprime_k0_20260710/foundation_probe_after_f0a_v2.json": "CC7944D902ECE351251BB653477D36E24A79630D7892EC74000F1226751C63E4",
+    "runs/uprime_k0_20260710/environment_fingerprint_after_f0a_v2.json": "1FB65D5A253246A20C9CCED510ACDDE87BA731BBB2B995780AB7E062D0BB5809"
+  },
+  "non_claims": [
+    "full F0 remains blocked",
+    "TOCTOU between fingerprint acquisition and Lean execution remains unclosed",
+    "no later empirical or GPU stage is licensed"
+  ]
+}

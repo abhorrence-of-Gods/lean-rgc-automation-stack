@@ -1,0 +1,3224 @@
+進めます。S'1m（memory-Γ chart）preregの起草 → 敵対的検証 → freeze → litmus拡張 → 実行（α前提ゲート → 温存していたφゲートの一発を消費）の順です。
+
+検証workflowの完了を待ちます。frame不整合（e1は32次元co-moving kernel系、ゲートconeは34次元raw file-lane系）が最大の懸念点で、レビュアーに数値検証を指示してあります。
+
+検証が決定打を出しました — technicalレビュアーは仕様チェックを超えて**実ゲートの反実仮想プローブ**を実行し、**τ増幅coneは許容される全αでG1を通過できない**ことを実証しました（ρ 0.070→最大0.083、u_hatの順位相関0.94-0.997 = 順位を変えずスケールだけ変える；max_mass=Noneのconeは生成元スケールに不変）。さらに: 総leakageの57%はcarrier次元にありサイズモデルは原理的に触れない、成功行は残余tailゼロ、partial生成元の84%はe1沿いに**反支払い**方向、αはfiber粘着性との交絡の疑い。
+
+そして重大な副作用: **この検証自体が反実仮想のゲート結果を覗いてしまった**。以後この score側でどんな再設計をしても第4の視認として汚染されます。正直な処置は一つです — **S'1mはfreezeせず終了、中層のこの領域は登録上closeして上層へ**。記録します。
+
+S'1mは**freeze前に終了**しました。コミット: `b4b81be`。結果として、温存していた最後のゲート一発は**無駄撃ちされずに済みました** — 凍結前検証がまたも本質的な仕事をしました。
+
+## 何が起きたか
+
+検証workflowのtechnicalレビュアーが仕様チェックを超えて、**実ゲートパイプラインの反実仮想プローブ**を実行しました。結果は決定的です:
+
+1. **介入は原理的に効かない。** `max_mass=None`のconeは生成元ごとのスケールに不変なので、τ増幅は**順位を変えずスケールだけ変える**。実測: 許容される全α範囲でρ_φは0.070→最大0.083（閾値0.10に届かない）、u_hatの順位相関は0.94-0.997。G1は撃つ前から敗北が確定していました。
+
+2. **サイズモードは盲点の全体ではなかった。** 96.9%という数字はgate次元内のシェアで、**総leakageの57%はcarrier次元** — サイズモデルでは原理的に触れない。
+
+3. **frame/粒度の不整合。** αはkernel-step・co-moving系、増幅対象はfile-lane・attempt粒度・raw系 — 物理的に別の量。成功行の残余tailはゼロ、partial生成元の**84%はe1沿いに反支払い方向**（tailは反支払いを増幅していた）。
+
+4. **α自体が交絡の疑い。** ライセンスの根拠だったメモリ勝利(36.1%)は6次元中5次元がprev-fiber onehot — 「サイズ慣性」ではなく「tactic系列の粘着性」かもしれず、分解されていなかった。
+
+5. **統治**: そもそもAmendment dの条文はこのpreregにshot消費を認可していませんでした。
+
+## 覗きの開示と帰結
+
+この検証は必然的に、再利用score側での反実仮想ゲート結果を**観測してしまいました**。以後この103タスクでのφモデル再設計は第4の視認であり証拠価値ゼロ。よって**ゲートshotはこのscore側について退役** — 将来の中層支払い可能性主張には、未曝露の新データと新規登録の両方が必要、と登録しました。
+
+## ladder終局状態（S'1 Amendment e）
+
+- (a) 単位: 消去済み
+
+- (b) 加法性: not binding（紙一重）／メモリ構造は実在するが**支払い予測には変換不能**
+
+- (c) reader拡張: Schur 10.6%でブロック
+
+**登録済みの中層経路は全て尽き、この領域は上層proposalへ移管。** 残る資産: 補正済みコーパスと計測スタック（S'0・defect #6・golden protocol）、[leakageスペクトル](runs/s_prime_1c/leakage_spectrum.json)（上層設計の証拠）、φに依存しないS'3項目（eval-disjoint twistのrerank、D3プール再導出）。
+
+## この結末の意味
+
+response-algebra再中心化の弧は、「中層は死んだ」ではなく「**中層が自分の限界を定量的な地図として測り切った**」で閉じました。3日間で: 裁定者の欠陥2件を修正し、5,140ペアの健全ラベルを鋳造し、leakage幾何がrank-1+carrier質量であることを同定し、メモリの実在と変換不能性を区別し、終端の一発を温存したまま честに撤退した。全て登録済み・再現可能です。
+## 結論
+**可能です。しかも、今回の S'1m 終了を覆すのではなく、その帰結を正しく上層化する設計として筋が通っています。**
+ただし、これは汚染済みの 103 タスク上で φ や α を再設計して復活させる案ではありません。現在の score-side は開発用・反例用として退役させ、**未曝露データ、新しい frame 契約、新規 preregistration** の下で始める別プログラムです。
+添付文書が提示する順序も、まさにこの用途に適しています。
+[
+\text{exact generator}
+;\to;
+\text{positive worst-case envelope}
+;\to;
+\text{probability lifting / maximum entropy}
+;\to;
+\text{global similarity}
+;\to;
+\text{finite-depth certificate}
+]
+特に重要なのは、**maximum entropy が安定性を作るのではない**という点です。先に signed operator を positive envelope で一様支配し、その安全領域の内部でのみ maximum-entropy lifting を使う。さらに node/edge 分布、bisimulation metric、finite-depth certificate vector で近似誤差を監視する、という役割分担です。文書の第9–10章、第14–20章はこの順序を明示しています。
+ここでいう「常に制御する」は、**どんな状態でも必ず証明を進められる**という意味ではありません。certificate が成立しない状態では action を拒否し、rollback・budgeted fallback・abstention に移る、という **fail-closed control** を意味します。
+---
+## 1. 今回の失敗に対して、この方式が何を直すか
+| 今回判明した問題                                       | 新設計での処置                                                                                 |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------- |
+| τ 増幅が cone の ray をスケールするだけで、方向・順位を変えない         | α や memory は generator の係数倍率に使わず、**profile split、support変更、action admissibility** にのみ使う |
+| leakage の 57% が carrier 次元                     | envelope を gate 次元だけで作らず、**goal・carrier・resource・audit の typed block 全体**で作る            |
+| 32次元 co-moving kernel と34次元 raw file-lane の不整合 | dimension 数ではなく **FrameId と明示的な frame morphism** を要求する。padding、先頭次元の切り詰めは禁止             |
+| prev-fiber onehot が α の大部分を説明                  | previous tactic/fiber を nuisance variable として明示し、memory はその条件付き残差としてのみ評価                |
+| technical review が反実仮想 gate を観測                | 現データは development-only。最終 gate は別 runner・別データ・一回限り                                      |
+| partial generator の84%が e1 反支払い方向              | signed cancellation を許さない positive envelope では、反支払いも絶対 load として表面化する                    |
+| 成功行は residual tail がゼロ                         | closed state を正しい absorbing state として generator に含める                                    |
+したがって、現在の φ は今後の safety operator ではなく、せいぜい**退役済み diagnostic covector**です。新しい未曝露 φ が将来得られた場合も、envelope を定義するのではなく、backward reward や refinement priority に限定すべきです。
+---
+## 2. まず frame を operator より先に型付けする
+今回の最大の教訓は、作用素以前に **どの空間上の量か**を型として固定しなければならないことです。
+例えば各観測ベクトルに次を持たせます。
+```text
+FrameId =
+  environment_hash
+  × source_lane          -- kernel_rpc / file / bulk / attempt
+  × granularity          -- term-rewrite / tactic-step / script-attempt
+  × coordinate_schema_hash
+  × normalization_id     -- raw / alpha / co-moving
+  × exposure_class       -- train / validation / sealed-eval / contaminated
+```
+32次元 kernel chart と34次元 raw chart は、同じベクトル空間の異なる表現とは仮定しません。共通の exact microstate (\omega) から
+[
+E_{\rm kernel}:\Omega\to\mathbb R^{32},
+\qquad
+E_{\rm raw}:\Omega\to\mathbb R^{34}
+]
+という別々の observation map が出ている、と扱います。
+両者を結ぶ必要がある場合だけ、明示的な transport
+[
+J:\mathbb R^{32}\to\mathbb R^{34}
+]
+を登録し、
+[
+\varepsilon_{\rm frame}
+=======================
+\sup_{\omega}
+\left|
+E_{\rm raw}(\omega)-J E_{\rm kernel}(\omega)
+\right|
+]
+だけでなく、generator との整合性
+[
+\varepsilon_{\rm nat}
+=====================
+\left|
+J G_{\rm kernel}-G_{\rm raw}J
+\right|
+]
+も certificate に入れます。順位相関が高いだけでは transport の証明にはなりません。
+添付スタックでは、`lean_rgc/qgen.py::_align_rows` が最初の row の key を採用し、`min(rv.size, dv.size, len(keys))` で先頭共通次元へ切り詰めています。この挙動は廃止し、次のいずれかにすべきです。
+1. `FrameId` と coordinate key が完全一致する。
+2. 登録済みの `FrameMorphism` がある。
+3. それ以外は hard error。
+今回の frame 問題を再発させないためには、ここが最初の修正点です。
+---
+## 3. worst-case envelope を safety governor にする
+exact または kernel-audited な signed transition operator を (A_n)、profile map を (q_n) とします。profile (Q) 内の microstate 全体に対する positive envelope を
+[
+M_n(Q',Q)
+=========
+\sup_{\omega:q_n(\omega)=Q}
+\sum_{\substack{\omega'\leftarrow\omega\q_{n+1}(\omega')=Q'}}
+|A_n(\omega',\omega)|
+\frac{\varpi(\omega')}{\varpi(\omega)}
+]
+と置きます。
+すると必要な中心不変量は
+[
+m_{n+1}(A_n z)\le M_n m_n(z)
+]
+と、
+[
+M_n^{\mathsf T} w_{n+1}\le \theta_n w_n,
+\qquad
+0\le\theta_n<1
+]
+です。これにより
+[
+|A_{m-1}\cdots A_nz|*{w_m}
+\le
+\left(\prod*{j=n}^{m-1}\theta_j\right)
+|z|_{w_n}
+]
+が得られます。
+### Lean 側での envelope の中身
+Lean proof search には Navier–Stokes の粘性に相当する自然法則はありません。したがって「damping」は比喩で済ませず、次の operational quantities として明示的に設計します。
+* closed goal による吸収
+* open goal / metavariable / carrier debt の増減
+* branching 数
+* heartbeat・wall-clock・memory budget
+* timeout・elaboration failure への遷移
+* hidden-state return risk
+* proof-term support の増大
+* scheduler による pruning / beam cap
+つまり Lean の positive envelope は、**証明能力の物理法則**ではなく、**探索系の停止性・資源安定性・未解決量伝播に関する制御作用素**です。
+また、goal block と carrier block を同じ microstate から導出した typed direct sum 上で保持します。
+[
+M_n=
+\begin{pmatrix}
+M_{gg}&M_{gc}\
+M_{cg}&M_{cc}
+\end{pmatrix}.
+]
+carrier leakage を utility score の小さな penalty として扱うのではなく、carrier block が contractive でなければ action は通しません。
+### 現在の soft score から hard gate へ
+`action_geometry.py` は概ね
+[
+\text{score}
+============
+\text{response}
++\text{carrier}
+-\lambda_{\rm tail}\text{risk}
+-\cdots
+]
+という scalar score です。この形では、大きな予測 utility が safety risk を相殺できます。新設計では lexicographic にします。
+```text
+frame certificate      fail -> reject
+hard envelope           fail -> reject / prune / rollback
+support or KL risk      fail -> MaxEnt fallback or reject
+finite-depth certificate fail -> stop refinement
+-----------------------------------------------
+ここを全て通った候補だけ utility で順位付け
+```
+---
+## 4. maximum entropy は envelope の内側でのみ使う
+profile fiber
+[
+\Omega_Q={\omega:q(\omega)=Q}
+]
+に対し、reference law (m_Q)、sufficient statistics (C_Q)、target moments (c(Q)) を固定し、
+[
+\mu_Q^{\rm ME}
+==============
+\arg\min_\mu
+D_{\rm KL}(\mu|m_Q)
+\quad
+\text{s.t.}\quad
+\mathbb E_\mu C_Q=c(Q)
+]
+を解きます。
+ただし safety は既に
+[
+|K_{\mu,n}z|\le M_n|z|
+]
+によって、lifting (\mu) に一様でなければなりません。hard envelope が過度に保守的な場合だけ、KL ball に対する robust load
+[
+R_Q^\varepsilon(w)
+==================
+\sup_{D_{\rm KL}(\mu|\mu_Q^{\rm ME})\le\varepsilon}
+\mathbb E_\mu G_{Q,w}
+]
+を使い、
+[
+R_Q^\varepsilon(w)\le\theta w_Q
+]
+を要求します。
+ここでも三つの certificate を混同しません。
+* **hard**: fiber 内の全 microstate に安全
+* **robust**: 登録された KL law class 内で安全
+* **nominal**: ME 平均では安全
+nominal mean が 1 未満でも pointwise safety にはなりません。out-of-support では similarity の平均外挿を止め、risk-constrained ME または essential-supremum bound に切り替えます。
+今回の α については、新データ上でも generator ray の倍率には使いません。使える候補は二つだけです。
+1. tactic/fiber stickiness を条件付けた後の **profile split statistic**
+2. ME law の **sufficient statistic / prior feature**
+「memory が大きいから generator を増幅する」という構造には戻さない方がよいです。
+reference measure も重要です。Lean では同じ意味の transition が、tactic spelling、alpha-renaming、goal order、premise enumeration により何度も表現されます。したがって一様 counting measure ではなく、canonical transition orbit と automorphism multiplicity を補正した measure が必要です。これは添付文書の tree automorphism に関する注意と同型です。
+---
+## 5. 大域 similarity は固定ベクトルではなく node/edge measure にする
+global representation は単一 embedding へ潰さず、
+[
+\mathcal R_R(T)
+===============
+\left(
+M_1,\rho_{T,R}^{(1)},
+M_2,\rho_{T,R}^{(2)}
+\right)
+]
+とします。
+* (M_1): total node mass
+* (\rho^{(1)}): radius-(R) local state の node distribution
+* (M_2): total edge mass
+* (\rho^{(2)}): parent-action-child arrangement の edge distribution
+**正規化分布だけでは total mass を捨てる**ため、今回の「gate 次元内では96.9%だが総 leakage では carrier が57%」という錯覚を再現しかねません。(M_1,M_2) を別座標として必ず保持します。
+Lean 用の local label には、少なくとも次を exact coordinate として含めます。
+```text
+FrameId
+environment / options hash
+goal mvar id と normalized target hash
+Expr/MVar/local-context dependency neighborhood
+action target site と occurrence path
+branch role
+open-goal / carrier / resource clocks
+previous tactic/fiber nuisance label
+proof-term support summary
+```
+類似度で近似してよいのは、その先の return、memory、future success value です。frame、carrier、resource clock を similarity で曖昧にしてはいけません。
+また metric は二つに分けます。
+[
+d_{\rm pred}
+\quad\text{予測精度用},
+\qquad
+d_+
+\quad\text{safety upper-bound 用}.
+]
+learned metric が (d_{\rm pred}) を改善しても、(d_+) を縮める根拠にはなりません。安全側では
+[
+U_+(z)
+======
+\inf_i{U_i+L_+d_+(z,z_i)}
+]
+を用い、
+[
+U_+(z)<1
+]
+のときだけ similarity extension を許可します。
+添付文書が node measure だけでなく edge measure を要求し、prediction metric と safety metric を分離している理由がここです。
+---
+## 6. finite-depth stability は一つの spectral radius に潰さない
+depth-cap された探索 DAG の adjacency は nilpotent なので、全体 spectral radius は自動的に 0 になり得ます。これは安定性の証拠ではありません。
+Lean 用 certificate vector は、文書のものに frame と replay を加えて、
+[
+\mathcal C^{\rm Lean}_{N,R}(T)
+==============================
+\bigl(
+p_1,p_2,\lambda_1,\lambda_2,
+\iota_N,\mu_N(T),g_N,
+|C_{N,R}|,
+\varepsilon_{\rm frame},
+\varepsilon_{\rm replay},
+\text{support status}
+\bigr)
+]
+とするのがよいです。
+* (p_1<0): branching を含む worst-case load の収縮
+* (p_2<0): conditional orthogonality を利用した RMS 誤差の収縮
+* (\lambda_1,\lambda_2<0): 初期の危険層を超えた eventual contraction
+* (\iota_N): 深い tactic history が追加で持つ情報
+* (\mu_N(T)): 捨てた kernel/term state が将来戻ってくる memory mass
+* (g_N): unseen boundary に対する上限・下限 message gap
+* (C_{N,R}): generator depth と similarity radius refinement の非可換性
+* (\varepsilon_{\rm frame}): kernel/file frame transport error
+* (\varepsilon_{\rm replay}): serialized transition と kernel replay の差
+(p_1\ge0) でも (p_2<0) なら、statistical prediction は可能な場合があります。しかしその状態を「robustly safe」とは呼ばず、外部 budget cap の下でのみ使います。文書の二閾値原理をそのまま採用できます。
+---
+## 7. Navier–Stokes generator の「二項定理的」具体構成
+これは有限 Fourier–Galerkin ではかなり厳密に実装できます。
+非線形項を
+[
+N_{k,\mu}(u)
+============
+\sum_{\substack{r+s=k\\alpha,\beta}}
+B^\mu_{k;r,s;\alpha\beta}
+u_{r,\alpha}u_{s,\beta}
+]
+とし、多項式 observable
+[
+M_a(u)=\prod_{k,\mu}u_{k,\mu}^{a_{k,\mu}}
+]
+に対する Lie derivative を取ると、
+[
+L_N M_a
+ =======
+\sum_{k,\mu}
+a_{k,\mu}
+\sum_{\substack{r+s=k\\alpha,\beta}}
+B^\mu_{k;r,s;\alpha\beta}
+M_{a-e_{k,\mu}+e_{r,\alpha}+e_{s,\beta}}.
+]
+ここに現れる (a_{k,\mu}) が、通常の微分における指数係数です。実装上は指数を直接操作するより、
+1. monomial の leaf occurrence を一つ選ぶ
+2. その leaf の波数 (k) に対し (r+s=k) を全列挙する
+3. leaf (k) を children (r,s) に置換する
+4. Leray symbol (B_{k;r,s}) を係数へ掛ける
+5. viscous clock を
+   [
+   \delta\Lambda=-|k|^2+|r|^2+|s|^2=-2r\cdot s
+   ]
+   で更新する
+6. tree / monomial を canonicalize する
+7. 同じ canonical term の係数を加算する
+という grafting recursion にする方が堅牢です。
+各 leaf occurrence を区別して展開すれば、最初は係数 1 で済みます。同じ canonical monomial に複数 history が到達した時点で集約すると、指数係数・binomial coefficient・automorphism multiplicity が自動的に出ます。
+反復 generator は
+[
+c_{n+1}(T')
+===========
+\sum_T c_n(T)
+\sum_{T\to T'} B(T,T')
+]
+として構成できます。最終係数は、その canonical tree に至る全 graft history の symbol product の和です。
+より代数的には divided-power derivative
+[
+L_N^{[n]}=\frac{1}{n!}L_N^n
+]
+を使えば、
+[
+L_N^{[n]}(PQ)
+=============
+\sum_{i+j=n}
+L_N^{[i]}P,L_N^{[j]}Q
+]
+という Hasse–Schmidt 型の binomial recursion が得られます。普通の (L_N^n) の binomial/multinomial 係数は最後に (n!) を戻せばよいです。
+ただし、full generator
+[
+L=L_N+L_\nu+L_F
+]
+について単純な二項展開をしてはいけません。(L_N) と (L_\nu) は graft 後の clock を変えるため一般に可換ではありません。full generator では operator word を保持するか、
+```text
+N ν N N F ...
+```
+という非可換 history recursion を使います。
+有限 cutoff なら coefficient ring は、Cartesian Fourier basis を使えば多くの場合 Gaussian rationals (\mathbb Q(i)) として管理できます。helical basis の平方根を最初から入れるより、初期 formalization では Cartesian divergence-free coordinates と rational norm upper bounds を使う方が現実的です。
+---
+## 8. Lean generator も同じ原理で具体管理できる
+Lean 側では proof state の basis elementを ([s]) とし、
+[
+G[s]
+====
+\sum_{\sigma\in\mathrm{Site}(s)}
+\sum_{a\in\mathrm{Action}(s,\sigma)}
+m(s,\sigma,a)
+,[\operatorname{canon}(\operatorname{step}(s,\sigma,a))]
+]
+と定義できます。
+* (\sigma): goal、mvar、Expr occurrence などの作用 site
+* (a): primitive action とその明示的引数
+* (m): exact multiplicity
+* `step`: kernel-backed transition
+* `canon`: alpha、goal permutation、syntactic alias を扱う conservative canonicalizer
+係数は分離して保持します。
+```text
+multiplicity      : Nat        -- exact combinatorial count
+signed_amplitude  : Rat        -- response/prediction chart
+positive_upper    : Rat≥0      -- envelope 用
+proposal_prob     : probability -- MaxEnt 後
+```
+この四つを一つの float score に混ぜないことが重要です。
+### proof forest に対する Leibniz rule
+複数の独立 goal が
+[
+F=F_1\otimes\cdots\otimes F_m
+]
+として表せるなら、
+[
+G(F)
+====
+\sum_i
+F_1\otimes\cdots\otimes G(F_i)\otimes\cdots\otimes F_m.
+]
+さらに、goal 間に共有 metavariable や共有 local-state effect がなく、site-targeted actions が可換なら、
+[
+G^nF
+====
+\sum_{n_1+\cdots+n_m=n}
+\binom{n}{n_1,\ldots,n_m}
+\bigotimes_i G^{n_i}F_i.
+]
+これが Lean generator における正確な multinomial algorithm です。
+共有 metavariable がある場合、または action order によって elaboration state が変わる場合は可換性が壊れます。その場合は係数へ潰さず、dependency DAG に整合する **ordered shuffle history** を保持します。最終 kernel state が同一であると確認できたものだけ集約します。
+### 現在の RPC に必要な拡張
+添付スタックの `RGCKernelRPC.lean` はすでに、
+* real `Core.State / Meta.State / Term.State`
+* Expr DAG
+* local context graph
+* metavariable graph
+* proof-term minimal support
+* branch / rollback
+* transition delta
+を持っています。これは exact generator の substrate として非常に良いです。
+ただし現在の `stepTactic` は first open goal に tactic を適用します。厳密な site generator にするには、
+```text
+apply_tactic_at
+  state_id
+  target_mvar_id
+  tactic_ast
+  occurrence_spec
+  explicit_premises
+```
+のような API が必要です。goal queue の順番に依存した暗黙選択を残すと、独立 goal に対する multinomial theorem が成立しません。
+また、`simp`、`aesop`、`omega` のような macro tactic は内部で多数の操作を行います。最初は二層に分けるべきです。
+* `intro`、明示的 `apply`、occurrence 指定 `rw`、`constructor`、`exact` などは decomposed primitive generator
+* macro tactic は一つの kernel-audited opaque hyperedge
+内部 trace が得られたものから順に primitive expansion へ降ろします。
+`lean_rgc/nonlinear_generator.py` は現状、optimizer への thin wrapper であり、term-level generator ではありません。新しい実装は別モジュール、例えば `lean_rgc.lean.generator` として切り離した方が安全です。
+---
+## 9. Lean 内で検証すべき定理
+有限 generator については、少なくとも次を Lean 側で証明できます。
+1. `Triad k` 型の値は必ず (r+s=k) を満たす。
+2. generator の support は有限。
+3. graft 後も momentum closure が保たれる。
+4. (\delta\Lambda=-2r\cdot s)。
+5. canonicalization は idempotent。
+6. canonicalization 前後で observable / proof-state semantics が保存される。
+7. depth-(n) coefficient は admissible history の総和に等しい。
+8. independent sites では multinomial formula が成立する。
+9. dependent sites では history DAG が全順序を過不足なく列挙する。
+10. positive envelope が signed generator を componentwise に支配する。
+11. 提出された (M,w,\theta) が
+    [
+    M^{\mathsf T}w\le\theta w
+    ]
+    を満たす。
+12. similarity の finite iteration と remainder bound が safety upper を与える。
+MaxEnt optimizer の「最適性」まで Lean の trusted core に入れる必要はありません。Python 側で解を求め、Lean 側では
+* probability simplex
+* moment residual
+* risk constraint
+* KL robust upper の rational/interval bound
+だけを検証すれば、統計最適化が多少不正確でも safety は壊れません。
+同様に similarity の学習自体は外部で行い、Lean checker は Lipschitz upper、contraction factor、有限反復 remainder を検証します。
+---
+## 10. 新しい preregistration の順序
+これは S'1 の amendment ではなく、上層の新しい series として分けるべきです。
+| 段階                    | freeze するもの                                                  | gate                                            |
+| --------------------- | ------------------------------------------------------------ | ----------------------------------------------- |
+| U'0 Frame contract    | FrameId、全 coordinate key、frame morphism、exposure ledger      | silent truncation 0、未登録 morphism 0              |
+| U'1 Exact generator   | primitive action set、site API、canonicalizer、coefficient ring | replay 一致、history/coefficient litmus 全通過        |
+| U'2 Envelope          | profile map、(M_n)、weight、budget clock                        | hard / robust / statistical-only の tier を確定     |
+| U'3 MaxEnt            | reference law、statistics、moment targets、KL radius            | held-out moment・risk・support test               |
+| U'4 Similarity        | nested (H^{(R)})、node/edge measure、(d_{\rm pred},d_+)        | finite-radius remainder、upper-bound violation 0 |
+| U'5 Sealed evaluation | 新規未曝露 tasks、one-shot runner、停止規則                             | certificate を通った action のみ評価                    |
+現在の 103 タスクと現 φ/α は U'0–U'4 の adversarial development には使えますが、U'5 の証拠には使えません。
+また、technical reviewer が sealed gate を計算できないように、validation runner と evaluation runner を分離し、freeze commit と schema hash を照合してから一度だけ実行する構造が必要です。
+---
+## 最終判断
+この方針は、次の範囲では十分に実現可能です。
+* **有限 Fourier–Galerkin・有限 depth の Navier–Stokes generator**: exact combinatorial construction が可能
+* **有限 action set・有限 search depth の Lean generator**: kernel-backed exact transition sum と coefficient accounting が可能
+* **worst-case envelope**: rational upper matrix と Lyapunov certificate として検証可能
+* **maximum entropy**: safety envelope 内の law completion として使用可能
+* **global similarity**: node/edge measure と certified upper extension により有限近似を制御可能
+一方で、無限次元 Navier–Stokes へ移すには文書が述べるとおり uniform tail norm、tightness、domain control が別途必要です。また Lean の無制限 proof search 全体を一様 contractive にすることは前提にせず、certificate が失敗したら停止する設計にします。
+最初に実装すべきなのは MaxEnt ではなく、**typed frame contract、site-targeted exact generator、positive envelope checker** の三点です。その三点が固定されて初めて、MaxEnt と similarity が安全に上へ載ります。
+はい。この方向が、Lean 側では最も自然です。
+
+ただし、正確には「局所類似度が使えるまで、ひたすら粗く quotient する」ではありません。
+
+> **外部依存を境界変数として露出し、厳密な nuisance symmetry を quotient し、残った非 Markov 性が消えるまで必要な変数だけ戻す。**
+
+つまり **quotient–refinement fixed point** です。粗くしすぎると generator が閉じるどころか、捨てた情報が memory として戻ってきます。したがって Lean では、厳密性の置き場所を「全域 generator の明示式」から、次の三点へ移すのがよいです。
+
+[
+\boxed{
+\text{exact local transition events}
+;+;
+\text{behaviorally certified quotient}
+;+;
+\text{worst-case quotient envelope}
+}
+]
+
+添付文書の第13–15章は nested local representation、bisimulation、prediction metric と safety metric の分離を、第20章は closure depth (N) と representation radius (R) の二軸化を既に与えています。Lean では、この similarity 層を generator の後段ではなく、**局所 event calculus と大域 generator の間**へ移すのが本質的な変更です。
+
+---
+
+# 1. quotient すべき対象は action そのものではない
+
+現在の action quotient の自然な拡張は、
+
+[
+\text{action}
+\quad\longrightarrow\quad
+\text{pointed local transition germ}
+]
+
+です。
+
+Lean の局所状態を、単なる goal text ではなく
+
+[
+u=
+\bigl(
+N_R(v),,
+\partial N_R(v),,
+E|_{N_R(v)},,
+\mathrm{EnvIface},,
+\mathrm{FrameId}
+\bigr)
+]
+
+として表します。
+
+* (v): target metavariable、goal、または Expr occurrence
+* (N_R(v)): kernel dependency graph 上の半径 (R) 近傍
+* (\partial N_R(v)): 外部との接続ポート
+* (E): exact な局所 proof-energy / debt valuation
+* `EnvIface`: explicit premises、simp set、typeclass database、options、resource cap
+* `FrameId`: Lean/mathlib commit、schema、normalization、lane、exposure class
+
+そして quotient の対象を
+
+[
+u \xrightarrow{,a,s,} u'
+]
+
+という **site-targeted transition germ** にします。
+
+ここで重要なのは、`simp`、typeclass search、premise retrieval などの「大域依存」を局所性の失敗として隠さないことです。それらを action input または boundary interface に昇格させれば、
+
+[
+(\text{local state},\text{explicit input})
+\longmapsto
+\text{exact Lean transition}
+]
+
+という controlled input–output system にできます。
+
+したがって、Lean の局所性は「syntax の近さ」ではなく、
+
+> **kernel dependency graph 上の read/write support と、その境界 interface に関する局所性**
+
+として定義すべきです。
+
+---
+
+# 2. generator の厳密性は rule algebra に置く
+
+Navier–Stokes では、leaf (k) を (p+q=k) で置換し、微分で現れる指数係数、Leray symbol、viscous clock を正確に追えました。
+
+Lean では、その対応物を **局所 rewrite rule と match の列挙**に置けます。
+
+primitive rule (r) に対し、microstate (x) 上の適用箇所を
+
+[
+\operatorname{Match}(r,x)
+]
+
+とし、各 match (m) による kernel-verified transition を
+
+[
+\tau_{r,m}(x)
+]
+
+とします。自由加群上の exact rule operator を
+
+[
+\rho(r)\lvert x\rangle
+======================
+
+\sum_{m\in\operatorname{Match}(r,x)}
+\lvert \tau_{r,m}(x)\rangle
+]
+
+と置きます。
+
+ここでは係数は学習されていません。係数は、
+
+* occurrence 数
+* admissible match 数
+* 同一 canonical target へ到達する history 数
+* local automorphism / orbit multiplicity
+
+から**正確に決まります**。
+
+さらに
+
+[
+\rho(r_n)\cdots \rho(r_1)\lvert x\rangle
+========================================
+
+\sum_y
+#\operatorname{Hist}_{r_1,\dots,r_n}(x,y)
+\lvert y\rangle
+]
+
+です。右辺の係数は、compatible match history の厳密な個数です。
+
+これは Navier–Stokes において、微分のたびに leaf replacement を行い、同じ monomial に至る経路を集約して binomial / multinomial coefficient を得る構成の、Lean における直接の対応物です。
+
+グラフ書換えの rule algebra では、rule の表現が全 match を足し上げ、rule algebra の積が全ての可能な rule composition を符号化するため、rewrite history の係数を代数的に追えます。([arXiv][1])
+
+Lean の native object は連続時間微分 generator というより、まずこの **rewrite transfer algebra** です。必要なら policy rate (\lambda_\theta) を与えて Poissonize し、
+
+[
+(\mathcal L_\theta f)(x)
+========================
+
+\sum_{r}
+\sum_{m\in\operatorname{Match}(r,x)}
+\lambda_\theta(r,m\mid q_R(x))
+\bigl[
+f(\tau_{r,m}x)-f(x)
+\bigr]
+]
+
+とします。
+
+ここで厳密部分と学習部分を分離します。
+
+[
+\underbrace{\operatorname{Match}(r,x),\ \tau_{r,m}(x)}*{\text{Lean/kernel により exact}}
+\qquad
+\underbrace{\lambda*\theta(r,m\mid q_R(x))}_{\text{learner}}
+]
+
+学習器に generator の組合せ係数を発明させないことが重要です。学習器は、どの exact event をどの強度・確率で選ぶかだけを担当します。
+
+---
+
+# 3. 「局所化」という作用を厳密に与える理論はある
+
+一つの理論ですべてを処理するというより、五つの理論が自然に接続します。
+
+## 3.1 sheaf / presheaf：restriction と gluing
+
+proof-state dependency graph の領域 (U) ごとに local state space (\mathscr S(U)) を置き、(U\subset V) に対して restriction
+
+[
+r^V_U:\mathscr S(V)\to\mathscr S(U)
+]
+
+を持たせます。
+
+局所 dynamics (K_U^a) が厳密に局所的であることを、
+
+[
+(r^V_U)_#K_V^a(x,\cdot)
+=======================
+
+K_U^a(r^V_Ux,\cdot)
+]
+
+と定義できます。deterministic transition なら、
+
+[
+r^V_U\circ\tau^V_a
+==================
+
+\tau^U_a\circ r^V_U
+]
+
+です。
+
+これは「大きい状態で実行してから局所化する」ことと、「局所化してから局所実行する」ことが可換、という意味です。
+
+現実には完全には可換しないので、
+
+[
+\varepsilon_{\mathrm{loc}}(U,V,a)
+=================================
+
+W!\left(
+(r^V_U)_#K_V^a,,
+K_U^a r^V_U
+\right)
+]
+
+を **locality / naturality defect** とします。
+
+sheaf は local data、restriction、overlap compatibility、global section を正確に記述する枠組みです。global section は、局所データが overlap 上で整合する大域状態に対応します。([arXiv][2])
+
+ただし proof-state graph は tactic により形を変えます。そのため実装では、sheaf 単独よりも、boundary port を持つ open graph と DPO/SqPO 型 rewrite を組み合わせる方が自然です。
+
+## 3.2 DPO/SqPO graph rewriting：interface を保った局所変更
+
+局所 rule を
+
+[
+L \leftarrow I \rightarrow R
+]
+
+という span で表し、(I) を外部との interface とします。
+
+これにより、
+
+* どこを読むか
+* どこを書き換えるか
+* 何を境界として保存するか
+* 二つの局所変更が独立か、overlap するか
+
+を厳密に管理できます。
+
+Lean では (I) に、共有 metavariable、local declaration、typeclass obligation、explicit premise reference を置くのが自然です。
+
+## 3.3 coalgebra / bisimulation / lumpability：dynamics を保存する quotient
+
+local state (u,v) を同一視してよい条件は、embedding cosine が近いことではなく、
+
+[
+q(u)=q(v)
+\implies
+q_#K^a(u,\cdot)
+===============
+
+q_#K^a(v,\cdot)
+\qquad
+(\forall a)
+]
+
+です。
+
+このとき quotient kernel
+
+[
+\bar K^a(z,\cdot)
+]
+
+が well-defined で、
+
+[
+K^aJ=J\bar K^a,
+\qquad
+(J\varphi)(u)=\varphi(q(u))
+]
+
+が成立します。これは exact lumpability / probabilistic bisimulation の条件です。
+
+近似版では、
+
+[
+\delta_{\mathrm{lump}}(q)
+=========================
+
+\sup_a
+\sup_{q(u)=q(v)}
+W_d!\left(
+q_#K^a(u,\cdot),
+q_#K^a(v,\cdot)
+\right)
+]
+
+を測ります。
+
+coalgebraic behavioral metric は、状態の将来挙動の差を fixed-point pseudometric として構成できます。MDP の bisimulation metric は、状態 aggregation と value approximation の誤差制御にも使われます。([arXiv][3])
+
+## 3.4 causal states / ε-transducer：学習される最小の局所状態
+
+局所 restriction (H_R(x)) だけでは Markov でないことがあります。その場合、半径を無限に増やす代わりに、局所 history を predictive equivalence で quotient します。
+
+action sequence を入力、energy response や boundary flux を出力として、
+
+[
+h\sim h'
+]
+
+を
+
+[
+\mathbb P
+\left(
+Y_{0:T}
+\mid
+A_{0:T-1},h
+\right)
+ =======
+
+\mathbb P
+\left(
+Y_{0:T}
+\mid
+A_{0:T-1},h'
+\right)
+]
+
+が、許容される全 input word に対して成立すること、と定義します。
+
+この equivalence class が controlled local causal state です。
+
+[
+z=\epsilon_R(h)
+]
+
+とすれば、学習器が作るべきなのは scalar score ではなく、
+
+[
+\mathbb P(Y_t,z_{t+1}\mid z_t,a_t)
+]
+
+という local ε-transducer です。
+
+computational mechanics の causal state は「同じ未来分布を与える過去」を quotient した最小 predictive state であり、ε-transducer はそれを input–output process に拡張します。local causal state は、この考えを局所時空構造へ拡張したものです。([arXiv][4])
+
+これはユーザーの提案に最も近い既存理論です。
+
+## 3.5 abstract interpretation / CEGAR：学習 quotient を sound にする
+
+learned quotient (q_\theta) をそのまま真理とせず、
+
+* learner が merge / split を提案
+* Lean の exact local probe が反例を返す
+* lumpability、locality、memory の反例で class を split
+* envelope が成立するまで繰り返す
+
+という CEGAR 型にします。
+
+abstract interpretation の言葉では、quotient が abstraction (\alpha)、fiber が concretization (\gamma)、positive envelope が sound abstract transformer です。
+
+[
+\alpha L
+;\le;
+L^#\alpha
+]
+
+を満たす (L^#) を使い、learned mean operator はその内部の nominal model とします。abstract interpretation は concrete transformer の sound over-approximation を Galois connection / fixpoint の枠組みで与え、CEGAR は粗い abstraction を反例で精密化します。([ACM Digital Library][5])
+
+---
+
+# 4. energy から response quotient へ進む、最も自然な構成
+
+Lean には Navier–Stokes の物理 energy と同じ意味で一意な scalar energy はありません。したがって最初は scalar に潰さず、exact な formal valuation とします。
+
+例えば
+
+[
+E(x)=
+\bigl(
+E_{\mathrm{goal}},
+E_{\mathrm{mvar}},
+E_{\mathrm{tc}},
+E_{\mathrm{carrier}},
+E_{\mathrm{support}},
+E_{\mathrm{resource}}
+\bigr)
+]
+
+とします。
+
+さらに各成分を、typed graph 上の additive valuation として
+
+[
+E(x)
+====
+
+\sum_{v\in V(x)}e_V(\operatorname{type}v)
++
+\sum_{e\in E(x)}e_E(\operatorname{type}e)
+]
+
+と定めれば、局所 rewrite に対する
+
+[
+\Delta_{r,m}E(x)
+================
+
+E(\tau_{r,m}x)-E(x)
+]
+
+は exact に計算できます。
+
+## 4.1 初期 quotient
+
+最初の partition を
+
+[
+\Pi_0
+=====
+
+\operatorname{Part}
+\left(
+E,,
+\partial U,,
+\mathrm{FrameId},,
+\text{exact symmetry orbit}
+\right)
+]
+
+とします。
+
+exact symmetry には、
+
+* α-renaming
+* raw mvar ID の変更
+* 独立 goal の permutation
+* kernel-verified definitional equality
+* local graph automorphism
+
+を含められます。
+
+e-graph は expression の congruence relation を効率よく保持する道具として使えますが、これは structural quotient に限定し、behavioral quotient とは分けます。([ACM Digital Library][6])
+
+## 4.2 generator closure による partition refinement
+
+partition (\Pi_n) があるとき、局所 state (u) の rule signature を
+
+[
+S_n(u)
+======
+
+\left(
+E(u),
+\partial u,
+\left{
+\Delta_{r,m}E(u),
+N^{(n)}*{r,C}(u)
+\right}*{r,C}
+\right)
+]
+
+とします。ここで
+
+[
+N^{(n)}_{r,C}(u)
+================
+
+#\left{
+m\in\operatorname{Match}(r,u):
+[\tau_{r,m}u]_{\Pi_n}=C
+\right}.
+]
+
+つまり、
+
+* rule (r) が何箇所に作用できるか
+* どの quotient class へ何本遷移するか
+* energy response が何か
+
+を exact に数えます。
+
+次を
+
+[
+\Pi_{n+1}
+=========
+
+\operatorname{Refine}(\Pi_n,S_n)
+]
+
+とします。
+
+有限 local state set 上で fixed point
+
+[
+\Pi_{n+1}=\Pi_n
+]
+
+に達したとき、その partition は rule operators に対する congruence です。
+
+quotient map を (Q) とすると、各 primitive rule について
+
+[
+\boxed{
+Q\rho(r)=\bar\rho(r)Q
+}
+]
+
+が成立します。
+
+これが Lean 版の
+
+[
+E
+\to
+LE
+\to
+L^2E
+\to
+\cdots
+]
+
+です。
+
+Navier–Stokes では (L^nE) が shell、flux、memory tree を強制生成しました。Lean では exact local rule signature が、必要な quotient coordinate を強制生成します。
+
+response は先に選ぶ feature ではなく、
+
+> **energy partition を局所 rule algebra の下で安定化した fixed-point class の座標**
+
+になります。
+
+---
+
+# 5. 全列挙できない部分を learner に任せる
+
+上記の exact refinement は、有限 local chart なら可能ですが、Lean 全体では state 数が大きすぎます。
+
+そこで learner の役割を次に限定します。
+
+## learner が行うこと
+
+1. local open graph (u) の representation を学ぶ
+2. behavioral metric (d_\theta(u,v)) を学ぶ
+3. merge / split 候補を提案する
+4. quotient transition law
+   [
+   \widehat K_\theta(z',y\mid z,a)
+   ]
+   を推定する
+5. hidden local memory state を推定する
+6. support / uncertainty を出す
+
+## learner が行わないこと
+
+* kernel transition の正しさを決めない
+* match multiplicity を決めない
+* FrameId transport を推測しない
+* worst-case safety を平均 prediction で置き換えない
+* representative action を quotient class 全体の代用にしない
+
+local metric は例えば、
+
+[
+(\mathcal Bd)(u,v)
+==================
+
+d_E(u,v)
++
+\gamma
+\sup_a
+W_d!\left(
+K^a(u,\cdot),
+K^a(v,\cdot)
+\right)
+]
+
+の fixed point を近似するように学習できます。
+
+quotient class は単に
+
+[
+d_\theta(u,v)<\varepsilon
+]
+
+の連結成分にしてはいけません。連鎖によって class diameter が大きくなり得るため、
+
+[
+\operatorname{diam}*{d*+}(C)\le\varepsilon
+]
+
+を満たす bounded-diameter partition にします。
+
+形式数学で局所・階層グラフ表現が有効であることは、Coq 上の Graph2Tac の online hierarchical representation でも示されています。LeanDojo は Lean proof environment から細粒度情報を抽出し、プログラム的に interaction する基盤を提供しています。したがって「Lean を exact transition oracle とし、その上で local representation を学習する」という構成自体は現実的です。([arXiv][7])
+
+---
+
+# 6. learned quotient が妥当かを判定する四つの defect
+
+学習器が作った class (C) に対し、少なくとも次を別々に測ります。
+
+## 6.1 locality / naturality defect
+
+外部 context を変えても、内部 action の local result が変わらないか。
+
+[
+\varepsilon_{\mathrm{loc}}
+==========================
+
+\sup
+W!\left(
+\operatorname{Res}\tau_{\mathrm{global}},
+\tau_{\mathrm{local}}\operatorname{Res}
+\right).
+]
+
+大きければ radius を広げるか、boundary input を追加します。
+
+## 6.2 lumpability defect
+
+同一 class 内の microstate が、同じ quotient transition law を持つか。
+
+[
+\delta_{\mathrm{lump}}
+======================
+
+\sup_{u,v\in C,a}
+W!\left(
+q_#K^a(u),
+q_#K^a(v)
+\right).
+]
+
+大きければ class を split します。
+
+## 6.3 return-memory mass
+
+quotient 後に捨てた情報が将来戻るか。
+
+[
+\mu_{R,N}(T)
+============
+
+\int_0^T
+|PLQ,e^{tQLQ}QLP|
+,dt.
+]
+
+Lean が discrete-time なら対応する kernel sum を使います。
+
+大きければ、局所 history state を追加するか、radius / jet depth を増やします。
+
+## 6.4 conditional information tail
+
+[
+\iota_{R,N}
+===========
+
+I(
+\text{future local response};
+\text{outside/tail}
+\mid
+q_{R,N}
+).
+]
+
+これが小さくなれば、local causal state が十分な predictive statistic になっています。
+
+したがって「local similarity が使える」とは、
+
+[
+\varepsilon_{\mathrm{loc}},
+\delta_{\mathrm{lump}},
+\mu_{R,N}(T),
+\iota_{R,N}
+]
+
+が登録閾値以下であることです。
+
+---
+
+# 7. quotient generator は exact / robust / nominal の三層にする
+
+## exact 層
+
+class 内で match-count signature が完全一致する場合、
+
+[
+\bar\rho(r)\lvert C\rangle
+==========================
+
+\sum_{C'}
+N_r(C',C)\lvert C'\rangle
+]
+
+が exact に定義できます。
+
+## robust 層
+
+class 内で係数が揺れる場合、
+
+[
+\underline N_r(C',C)
+\le
+N_r(C',u)
+\le
+\overline N_r(C',C)
+]
+
+を保持します。
+
+positive envelope は上限
+
+[
+M_r(C',C)=\overline N_r(C',C),b_r(C',C)
+]
+
+から作ります。
+
+## nominal 層
+
+学習器または maximum entropy lifting によって、
+
+[
+\widehat N_r(C',C)
+==================
+
+\mathbb E_{\mu_C}N_r(C',u)
+]
+
+を置きます。
+
+ここで順序は、
+
+[
+\boxed{
+\text{robust envelope}
+\quad\supset\quad
+\text{learned / ME nominal generator}
+}
+]
+
+です。
+
+learned quotient が多少ずれても、
+
+[
+M^\mathsf Tw\le\theta w,
+\qquad
+\theta<1
+]
+
+が class fiber 全体について成立すれば、nominal lifting の選択に依存せず安全です。
+
+また prediction quotient と safety quotient は同じでなくて構いません。
+
+[
+q_{\mathrm{safe}}
+\preceq
+q_{\mathrm{pred}}
+]
+
+つまり safety partition を細かく保ち、その複数 class を prediction embedding で pooling する設計が安全です。
+
+---
+
+# 8. Navier–Stokes と Lean の対応
+
+| Navier–Stokes              | Lean                                                    |
+| -------------------------- | ------------------------------------------------------- |
+| Fourier mode / triad-tree  | typed proof-state dependency hypergraph                 |
+| leaf (k)                   | target mvar / Expr occurrence                           |
+| (k\to(p,q)), (p+q=k)       | primitive tactic rule at explicit site                  |
+| derivative multiplicity    | admissible match / occurrence / history count           |
+| Leray symbol               | exact rule/interface metadata                           |
+| (\Delta\Lambda=-2p\cdot q) | exact (\Delta E)、boundary flux、resource delta           |
+| tree automorphism          | local graph automorphism / independent-goal permutation |
+| triad local neighborhood   | boundary-decorated proof-state neighborhood             |
+| profile quotient           | local causal / bisimulation quotient                    |
+| signed generator           | learned nominal quotient transition                     |
+| positive envelope          | within-fiber worst-case transition bound                |
+| viscous absorption         | proof-debt/resource contraction、closed-state absorption |
+| memory tree                | hidden outside-context return / tactic-history memory   |
+
+最も重要な対応は、
+
+[
+\text{NS の exact triad event}
+\quad\leftrightarrow\quad
+\text{Lean の exact kernel transition germ}
+]
+
+です。
+
+Lean には triad のような解析的 local interaction formula がない代わりに、kernel が exact event evaluator になります。
+
+---
+
+# 9. 大域 generator は局所 quotient の後で組み立てる
+
+local quotient class を (z_v) とし、各 site (v) の local generator を (\bar L_v) とします。
+
+独立 component については
+
+[
+L_{\mathrm{global}}
+===================
+
+\sum_v \bar L_v
+]
+
+とできます。
+
+二つの component が完全に独立なら、
+
+[
+(\bar L_1+\bar L_2)^n
+=====================
+
+\sum_{i=0}^n
+\binom ni
+\bar L_1^i\bar L_2^{n-i}
+]
+
+が exact に成立し、binomial coefficient が現れます。
+
+共有 metavariable、typeclass obligation、local declaration がある場合は (\bar L_v) 同士が可換しないため、
+
+[
+[\bar L_v,\bar L_w]\ne0
+]
+
+です。この場合は単純な二項展開をせず、
+
+* overlap rule
+* ordered action word
+* pair/edge transition class
+* commutator correction
+
+を保持します。
+
+つまり Lean における「二項定理チックな algorithm」は、
+
+* independent component では exact multinomial
+* overlap component では rule-algebra composition / ordered histories
+
+と分岐させるのが正しいです。
+
+global similarity は、その後で quotient class の node/edge empirical measure
+
+[
+(M_1,\rho^{(1)},M_2,\rho^{(2)})
+]
+
+として作れます。radius (R) ごとの quotient を独立に学習せず、
+
+[
+Z_{R+1}\longrightarrow Z_R
+]
+
+という nested tower にし、
+
+[
+\pi_{R+1,R}\bar K_{R+1}
+\approx
+\bar K_R\pi_{R+1,R}
+]
+
+を検査すれば、有限近似に対する安定性も直接管理できます。
+
+---
+
+# 10. 添付スタックへの具体的な変更点
+
+現在のスタックは、この構成への下地をかなり持っています。
+
+[`goal_state_dynamics.py`](sandbox:/mnt/data/lean_rgc_stack/lean-rgc-automation-stack-main/lean_rgc/lean/goal_state_dynamics.py) は Expr、local declarations、metavariables、typeclass obligations の graph と before/after transition delta を既に作っています。ここへ次を追加するのが第一段階です。
+
+* target mvar / occurrence
+* exact read set / write set
+* boundary ports
+* explicit premise / simp / typeclass input
+* environment and frame hash
+* replay certificate
+* local region radius
+
+[`contextual_congruence.py`](sandbox:/mnt/data/lean_rgc_stack/lean-rgc-automation-stack-main/lean_rgc/contextual_congruence.py) は現在、有限 context 上の response fingerprint を cosine / (L^2) で clustering しています。また実装自身が noncanonical finite proxy であることを記録しています。ここは、
+
+[
+\text{response fingerprint cosine}
+]
+
+から
+
+[
+\text{controlled transition-kernel distance}
++
+\text{lumpability defect}
++
+\text{memory defect}
+]
+
+へ置き換えるべきです。
+
+[`response_quotient.py`](sandbox:/mnt/data/lean_rgc_stack/lean-rgc-automation-stack-main/lean_rgc/response_quotient.py) は action class を representative action へ射影しています。新設計では representative に置き換えず、class ごとに
+
+* actual member transitions
+* exact match-count table
+* nominal kernel
+* ambiguity set
+* worst-case envelope
+* support domain
+
+を保持します。
+
+[`gamma_transition_learner.py`](sandbox:/mnt/data/lean_rgc_stack/lean-rgc-automation-stack-main/lean_rgc/gamma_transition_learner.py) は現在、
+
+[
+\text{next defect}
+\approx
+\Gamma(a)(\text{defect-response})+b
+]
+
+という action-conditioned affine mean を学習しています。これを、
+
+[
+\widehat K
+\left(
+z',\Delta E,\Delta\partial
+\mid
+z,a
+\right)
+]
+
+という distributional local transducer learner に変更するのが自然です。平均だけでなく、rare branch、failure、timeout、new mvar、carrier expansion を保持します。
+
+新規モジュールとしては、次の分割がよいです。
+
+```text
+local_region.py
+    boundary-decorated dependency neighborhoods
+
+primitive_events.py
+    exact site-targeted Lean transition events
+
+rule_algebra.py
+    match counts, history coefficients, overlap composition
+
+behavioral_quotient.py
+    partition refinement, bisimulation/lumpability checks
+
+local_causal_learner.py
+    learned predictive metric and transducer state
+
+quotient_generator.py
+    exact / interval / nominal reduced operators
+
+locality_memory_certificate.py
+    naturality defect, CMI, return-memory, support
+```
+
+---
+
+# 11. 最初の実験は小さい primitive fragment で行う
+
+最初から `aesop` や unrestricted `simp` を対象にせず、read/write support を明示しやすい fragment に限定します。
+
+* `intro`
+* `constructor`
+* explicit `exact`
+* explicit `apply`
+* occurrence-specified `rw`
+* frozen simp set を使う `simp only`
+* explicit target mvar
+
+固定するものは、
+
+* Lean / mathlib environment
+* action grammar
+* resource cap
+* normalization
+* FrameId
+* local radius (R)
+* exact symmetry quotient
+
+です。
+
+各 (R,N) について、
+
+[
+\mathcal C_{R,N}
+================
+
+\bigl(
+\varepsilon_{\mathrm{frame}},
+\varepsilon_{\mathrm{loc}},
+\delta_{\mathrm{lump}},
+\varepsilon_{\mathrm{learn}},
+\mu_{R,N}(T),
+\iota_{R,N},
+p_1,p_2,
+\varepsilon_{\mathrm{support}}
+\bigr)
+]
+
+を報告します。
+
+停止条件は、
+
+[
+\varepsilon_{\mathrm{loc}}\le\epsilon_{\mathrm{loc}},
+\quad
+\delta_{\mathrm{lump}}\le\epsilon_{\mathrm{lump}},
+\quad
+\mu_{R,N}(T)\le\epsilon_{\mathrm{mem}},
+\quad
+\iota_{R,N}\le\epsilon_{\mathrm{info}}
+]
+
+を満たす最小の ((R,N)) です。
+
+---
+
+## 最終的な方向性
+
+最も自然な上層設計は、次の順序です。
+
+[
+\boxed{
+\begin{aligned}
+&\text{kernel-exact local transition germs}\
+&\to\text{ exact symmetry / interface quotient}\
+&\to\text{ energy-anchored rule-signature refinement}\
+&\to\text{ learned local causal quotient}\
+&\to\text{ lumpability / locality / memory verification}\
+&\to\text{ exact or interval quotient generator}\
+&\to\text{ positive envelope}\
+&\to\text{ maximum-entropy nominal lifting}\
+&\to\text{ global node/edge assembly}
+\end{aligned}
+}
+]
+
+要約すると、
+
+> **Navier–Stokes の厳密性は微分と triad grafting に置く。Lean の厳密性は kernel transition germ と rule-algebra match count に置く。両者の局所性は behavioral quotient で統一し、学習器は quotient と conditional law の発見だけに使う。**
+
+これなら「energy から generator closure が必要な response coordinate を強制生成する」という思想を保ったまま、Lean では global generator を無理に明示せず、**局所 exactness と学習された predictive locality の間に、検証可能な commuting diagram を置く**ことができます。
+
+[1]: https://arxiv.org/pdf/2102.02364 "https://arxiv.org/pdf/2102.02364"
+[2]: https://arxiv.org/pdf/1308.4621 "https://arxiv.org/pdf/1308.4621"
+[3]: https://arxiv.org/pdf/1712.07511 "https://arxiv.org/pdf/1712.07511"
+[4]: https://arxiv.org/abs/1412.2690 "https://arxiv.org/abs/1412.2690"
+[5]: https://dl.acm.org/doi/10.1145/512950.512973 "https://dl.acm.org/doi/10.1145/512950.512973"
+[6]: https://dl.acm.org/doi/10.1145/3434304 "https://dl.acm.org/doi/10.1145/3434304"
+[7]: https://arxiv.org/abs/2401.02949 "https://arxiv.org/abs/2401.02949"
+# オラクル駆動局所応答商理論
+
+理論上の決定的な前進は、次の一点です。
+
+[
+\boxed{
+\text{Lean では generator が存在しないのではなく、閉形式で展開できないだけである}
+}
+]
+
+Lean が各状態・各 action に対して厳密な遷移を返すなら、action (a) の Koopman 作用素
+
+[
+U_a f := f\circ \tau_a
+]
+
+と差分 generator
+
+[
+\Delta_a:=U_a-I
+]
+
+は、内部実装を知らなくても厳密に定義できます。
+
+したがって Navier–Stokes の
+
+[
+E,\ LE,\ L^2E,\ldots
+]
+
+に対応する Lean 側の基本系列は、
+
+[
+E,\quad
+\Delta_a E,\quad
+\Delta_b\Delta_a E,\quad
+\Delta_c\Delta_b\Delta_a E,\ldots
+]
+
+です。
+
+未知なのは generator 自体ではなく、
+
+[
+\boxed{
+\text{この非可換差分代数の下で閉じる最小の、低複雑度な局所 fiber が存在するか}
+}
+]
+
+です。
+
+これは添付文書の exact fiber closure
+
+[
+\Phi(\mathcal F)
+================
+
+\sigma!\left(
+\mathcal F,{Lf:f\in\mathcal F}
+\right)
+]
+
+を、Lean の action-word semantics に置き換えた理論になります。positive envelope、maximum-entropy lifting、(N/R) 二軸 closure はそのまま後段に接続できます。
+
+以下、この理論を **Oracle-Driven Local Response Quotient、ODLRQ** と呼びます。
+
+---
+
+## 1. Lean 実験系の正確な定義
+
+状態空間を
+
+[
+X=
+\left(
+\begin{array}{c}
+\text{Lean Core/Meta/Term state}\
+\text{environment / rule set / simp set}\
+\text{resource budget / heartbeat}\
+\text{scheduler seed / options}\
+\text{FrameId}
+\end{array}
+\right)
+]
+
+とします。
+
+failure、timeout、closed proof も吸収状態として (X) に加えます。これにより各 action は全域写像
+
+[
+\tau_a:X\to X
+]
+
+になります。
+
+`aesop` が乱択的、または探索スケジュールによって非決定的に見える場合には、seed と scheduler state を (X) に含めた拡張状態
+
+[
+\widetilde X=X\times \Xi
+]
+
+上では決定論的にします。観測者が (\Xi) を平均消去したときだけ、
+
+[
+K_a(x,\mathrm dy)
+]
+
+という遷移核が現れます。
+
+この分離は重要です。
+
+* **厳密な組合せ係数**は deterministic lift 上で扱う。
+* **平均的な挙動**は seed law を積分して扱う。
+* **worst-case safety**は seed も含めて supremum を取る。
+
+---
+
+# 2. Lean の exact response closure
+
+初期 energy / observable を
+
+[
+E=(E_1,\ldots,E_d):X\to\mathbb R^d
+]
+
+とします。
+
+ここで energy は必ずしも scalar である必要はなく、
+
+[
+E(x)=
+\left(
+E_{\mathrm{goal}},
+E_{\mathrm{mvar}},
+E_{\mathrm{tc}},
+E_{\mathrm{carrier}},
+E_{\mathrm{support}},
+E_{\mathrm{resource}}
+\right)
+]
+
+のような typed valuation で構いません。
+
+初期 fiber algebra を
+
+[
+\mathcal F_0=\sigma(E)
+]
+
+とし、
+
+[
+\boxed{
+\mathcal F_{n+1}
+================
+
+\sigma\left(
+\mathcal F_n,,
+{U_af:
+a\in A,\ f\in L^\infty(\mathcal F_n)}
+\right)
+}
+]
+
+と定義します。
+
+すると帰納的に、
+
+[
+\boxed{
+\mathcal F_N
+============
+
+\sigma\left(
+E_j\circ\tau_w:
+j=1,\ldots,d,\ |w|\le N
+\right)
+}
+]
+
+です。ここで (w=a_1\cdots a_k) は action word です。
+
+極限を
+
+[
+\mathcal F_*=\bigvee_{N\ge0}\mathcal F_N
+]
+
+とします。
+
+これは、
+
+> energy から開始し、あらゆる許容 action の将来 response によって区別可能なものをすべて戻した最小 fiber
+
+です。
+
+元の文章で点ごとの数値 (\Delta_af(x)) を (\sigma)-algebraへ追加していましたが、厳密には追加すべきなのは数値ではなく、関数
+
+[
+x\longmapsto \Delta_af(x)
+]
+
+全体です。この修正により closure map が完全に数学的対象になります。
+
+---
+
+## 定理 1：最小 action-invariant response algebra
+
+(\mathcal F_*) は次の二条件を満たす最小の部分 (\sigma)-代数です。
+
+[
+\sigma(E)\subseteq\mathcal F_*,
+]
+
+および
+
+[
+f\in L^\infty(\mathcal F_*)
+\quad\Longrightarrow\quad
+U_af\in L^\infty(\mathcal F_*)
+\qquad(\forall a\in A).
+]
+
+したがって response map は人が先に選ぶ feature ではなく、(\mathcal F_*) の有限または近似座標として後から現れます。
+
+これは添付文書の「generator の下で閉じようとする最小 fiber」の、離散 action 系に対する直接の対応物です。
+
+---
+
+# 3. 二項定理的な exact Lean generator
+
+差分作用素
+
+[
+\Delta_a=U_a-I
+]
+
+は通常の微分ではありませんが、厳密な有限差分積公式を持ちます。
+
+任意の observable (f_1,\ldots,f_m) に対して、
+
+[
+U_a\left(\prod_{i=1}^m f_i\right)
+=================================
+
+\prod_{i=1}^m
+\left(f_i+\Delta_af_i\right).
+]
+
+したがって、
+
+[
+\boxed{
+\Delta_a\left(\prod_{i=1}^m f_i\right)
+======================================
+
+\sum_{\varnothing\neq S\subseteq{1,\ldots,m}}
+\left(
+\prod_{i\in S}\Delta_af_i
+\right)
+\left(
+\prod_{j\notin S}f_j
+\right)
+}
+]
+
+です。
+
+特に、
+
+[
+\boxed{
+\Delta_a(f^m)
+=============
+
+\sum_{j=1}^m
+\binom mj
+f^{m-j}(\Delta_af)^j
+}
+]
+
+となります。
+
+これは Navier–Stokes で monomial を微分したときに指数係数・二項係数が現れる構造の、Lean action に対する厳密な離散版です。
+
+複数 action については、
+
+[
+U_{a_n}\cdots U_{a_1}
+=====================
+
+(I+\Delta_{a_n})\cdots(I+\Delta_{a_1})
+]
+
+という**順序付き非可換展開**になります。
+
+* 独立な goal/site に作用して可換なら、binomial / multinomial coefficient に集約できる。
+* metavariable や typeclass obligation を共有して非可換なら、ordered action word を保持する。
+* 同じ canonical target に到達する word は最後に係数を合算する。
+
+したがって Lean における generator coefficient は、学習器が推測する量ではなく、
+
+[
+\boxed{
+\text{action-site-word history の正確な重複数}
+}
+]
+
+として管理できます。
+
+---
+
+## Poisson 化した連続時間 generator
+
+action (a) を rate (\lambda_a(x)) で発火させると、
+
+[
+Lf(x)
+=====
+
+\sum_a
+\lambda_a(x)
+\left[
+f(\tau_a x)-f(x)
+\right]
+ =======
+
+\sum_a\lambda_a(x)\Delta_af(x)
+]
+
+という純 jump generator が得られます。
+
+その carré du champ は、
+
+[
+\boxed{
+\Gamma(f,g)(x)
+==============
+
+# L(fg)-fLg-gLf
+
+\sum_a
+\lambda_a(x)
+\Delta_af(x)\Delta_ag(x)
+}
+]
+
+です。
+
+したがって添付文書の stochastic fiber closure にある
+
+[
+L
+\quad+\quad
+\Gamma
+]
+
+も Lean 上で厳密に構成できます。
+
+学習器が担当するのは、
+
+[
+\lambda_a(x)
+\quad\text{または}\quad
+\lambda_a(q(x))
+]
+
+という action-selection law であって、(\Delta_a) そのものではありません。
+
+---
+
+# 4. exact response quotient
+
+決定論的な場合、有限深さ (N) の同値関係を
+
+[
+x\sim_N y
+]
+
+iff
+
+[
+E(\tau_wx)=E(\tau_wy)
+\qquad
+\forall w,\ |w|\le N
+]
+
+と定義します。
+
+極限を
+
+[
+x\sim_*y
+\iff
+E(\tau_wx)=E(\tau_wy)
+\quad
+\forall w\in A^*
+]
+
+とします。
+
+## 定理 2：Lean–Nerode 応答商
+
+(\sim_*) は、
+
+1. (E(x)=E(y)) を要求し、
+2. 全 action に対して安定な、
+
+最粗の同値関係です。
+
+すなわち、
+
+[
+x\sim_*y
+\quad\Longrightarrow\quad
+\tau_a x\sim_*\tau_a y
+\qquad(\forall a).
+]
+
+従って quotient
+
+[
+Z_*=X/{\sim_*}
+]
+
+上に、
+
+[
+\bar\tau_a([x])=[\tau_a x]
+]
+
+が一意に定まります。
+
+この (\bar\tau_a) が exact quotient generator の基礎です。
+
+有限状態の場合、この構成は Myhill–Nerode 型の最小状態構成と同じ構造を持ちます。query と counterexample によって有限 automaton を同定する Angluin の枠組みは、最小状態数と counterexample 長に関して多項式 query complexity を持ちます。Lean oracle は membership/transition teacher に相当します。([サイエンスダイレクト][1])
+
+---
+
+## 確率核版
+
+(K_a) を Markov kernel とし、
+
+[
+P_af(x)=\int f(y)K_a(x,\mathrm dy)
+]
+
+とします。
+
+有限 partition (\Pi) に対して refinement を
+
+[
+x\equiv_{\operatorname{Ref}(\Pi)}y
+]
+
+iff
+
+[
+x\equiv_\Pi y
+]
+
+かつ、すべての action (a) と block (B\in\Pi) について、
+
+[
+K_a(x,B)=K_a(y,B)
+]
+
+と定義します。
+
+fixed point に達した partition は exact lumpable で、quotient kernel
+
+[
+\bar K_a(z,B)
+]
+
+が well-defined です。
+
+これは probabilistic bisimulation と同じ構造であり、deterministic automata、Markov chain、weighted system を統一した coalgebraic partition refinement として扱えます。([サイエンスダイレクト][2])
+
+---
+
+# 5. 局所化は「外部を捨てる」操作ではない
+
+Lean の局所状態は、それ単独では有効な状態でないことが多いため、**open state** として扱う必要があります。
+
+境界型 (b) を持つ局所 germ の空間を
+
+[
+\mathcal U_b
+]
+
+とし、局所 germ (u\in\mathcal U_b) を完全な Lean state に埋め込む closing context を
+
+[
+c[-]\in\mathcal C_b
+]
+
+とします。
+
+一つの実験 test は、
+
+[
+t=(c,w,h)
+]
+
+です。
+
+* (c): closing context
+* (w): action word
+* (h): energy、failure、resource、goal shape などの観測
+
+response を
+
+[
+\mathscr R_t(u)
+===============
+
+h!\left(
+\tau_w(c[u])
+\right)
+]
+
+とします。確率系なら右辺を law または期待値に置き換えます。
+
+## 定義：contextual response equivalence
+
+[
+\boxed{
+u\equiv_{\mathrm{ctx}}v
+\iff
+\mathscr R_t(u)=\mathscr R_t(v)
+\quad
+\forall t=(c,w,h)
+}
+]
+
+これが局所応答商の正確な定義です。
+
+「同じ局所 graph embedding を持つ」ではなく、
+
+> どの許容境界へ埋め込み、どの action word を適用しても、観測 response が区別不能
+
+という関係です。
+
+## 定理 3：最小十分局所表現
+
+response signature map
+
+[
+\mathscr R:
+u\longmapsto
+\left(
+\mathscr R_t(u)
+\right)_{t\in\mathcal T}
+]
+
+の像を (Z_{\mathrm{ctx}}) とします。
+
+任意の representation
+
+[
+r:\mathcal U_b\to Y
+]
+
+が全 response を保存する、すなわち各 (t) について
+
+[
+\mathscr R_t=\bar{\mathscr R}_t\circ r
+]
+
+と書けるなら、一意な写像 (F) が存在して、
+
+[
+\mathscr R=F\circ r
+]
+
+となります。
+
+したがって (Z_{\mathrm{ctx}}) は、全許容実験に対する**最粗の十分局所表現**です。
+
+---
+
+# 6. Lean における locality の本当の意味
+
+大域状態を
+
+[
+x=(u,o)
+]
+
+と分けます。
+
+* (u): radius-(R) 内部 germ
+* (o): 外部状態
+
+外部状態 (o,o') を、
+
+[
+o\sim_u o'
+]
+
+iff
+
+[
+\mathscr R_t(u,o)
+=================
+
+\mathscr R_t(u,o')
+\qquad
+\forall t
+]
+
+で同一視します。
+
+この class
+
+[
+b_u^*(o)=[o]_{\sim_u}
+]
+
+を **最小 response boundary statistic** と呼べます。
+
+すると、
+
+[
+\boxed{
+z=(u,b_u^*(o))
+}
+]
+
+は外部全体を保持せずに response を閉じる、最小の boundary-completed local state です。
+
+したがって Lean に locality があるとは、
+
+[
+\text{外部が影響しない}
+]
+
+ことではありません。
+
+正確には、
+
+[
+\boxed{
+\text{外部の影響が低複雑度な boundary statistic を通してのみ伝わる}
+}
+]
+
+ことです。
+
+PDE において局所方程式が boundary condition を必要とすることと同じです。
+
+候補 boundary map (\beta(u,o)) の locality defect は、
+
+[
+\varepsilon_{\mathrm{loc}}(\beta)
+=================================
+
+\sup_{\substack{u,o,o'\
+\beta(u,o)=\beta(u,o')}}
+d_+\bigl((u,o),(u,o')\bigr)
+]
+
+と定義できます。
+
+これが大きければ、
+
+* radius を増やす、
+* typeclass interface を追加する、
+* shared metavariable graph を追加する、
+* rule/simp environment を追加する、
+* action history を追加する、
+
+のいずれかが必要です。
+
+---
+
+# 7. prediction metric と safety metric の厳密な分離
+
+test family (\mathcal T) に対して、
+
+[
+d_+(u,v)
+========
+
+\sup_{t\in\mathcal T}
+\beta^{|w(t)|}
+d_Y\bigl(
+\mathscr R_t(u),\mathscr R_t(v)
+\bigr)
+]
+
+とします。
+
+これは worst-case behavioral metric です。
+
+一方、test distribution (\nu) の下で、
+
+[
+d_{\mathrm{pred}}^2(u,v)
+========================
+
+\mathbb E_{t\sim\nu}
+\left[
+d_Y\bigl(
+\mathscr R_t(u),\mathscr R_t(v)
+\bigr)^2
+\right]
+]
+
+とすれば、平均予測用 metric になります。
+
+[
+d_{\mathrm{pred}}(u,v)\ll1
+]
+
+でも、稀な context で大きく異なれば、
+
+[
+d_+(u,v)
+]
+
+は大きいままです。
+
+したがって、
+
+[
+\boxed{
+q_{\mathrm{safe}}
+\text{ は }d_+\text{ による細かい partition},
+\qquad
+q_{\mathrm{pred}}
+\text{ は }d_{\mathrm{pred}}\text{ による pooling}
+}
+]
+
+とするべきです。
+
+添付文書の prediction metric と safety metric、mean と essential supremum の分離が、そのまま contextual test space 上で定式化されます。
+
+---
+
+# 8. response Hankel 行列と「十分な実験」の正体
+
+local state または history を row、将来 test を column として、
+
+[
+H(u,t)=\mathscr R_t(u)
+]
+
+という無限 response table を作ります。
+
+このとき二種類の effective complexity があります。
+
+## 8.1 exact quotient index
+
+異なる row の個数
+
+[
+m=
+\left|
+{H(u,\cdot):u\in\mathcal U}
+\right|
+]
+
+が有限なら、exact response quotient は (m) 状態です。
+
+## 8.2 linear predictive rank
+
+実数値 response table の rank
+
+[
+r=\operatorname{rank}H
+]
+
+が有限なら、離散的な class 数が無限でも、(r) 次元の linear predictive representation が存在し得ます。
+
+Predictive State Representation は、将来 test の予測値を state とし、system-dynamics matrix の rank を実効状態次元として扱います。weighted automata でも Hankel rank は最小線形 realization の次元を特徴づけます。([EECS Department][3])
+
+従って Lean には二つの成功形があります。
+
+[
+\boxed{
+\begin{array}{ll}
+\text{有限 index} &\Rightarrow\text{ exact discrete quotient},[2mm]
+\text{有限 rank}  &\Rightarrow\text{ exact/approximate linear predictive state}.
+\end{array}
+}
+]
+
+---
+
+## Persistent excitation の厳密な形
+
+有限 row set (P)、test set (S) を選び、
+
+[
+H_{P,S}
+]
+
+を作ります。
+
+識別可能性には、
+
+[
+\operatorname{rank}H_{P,S}=r
+]
+
+だけでなく、
+
+[
+\boxed{
+\sigma_{\min}(H_{P,S})\ge\kappa>0
+}
+]
+
+という conditioning が必要です。
+
+したがって active generator は単に未観測 class を探すだけでなく、
+
+[
+\arg\max_t
+\log\det
+\left(
+G_n+
+\phi(t)\phi(t)^{\mathsf T}
+\right)
+]
+
+や、
+
+[
+\arg\max_t
+\sigma_{\min}
+\left(
+H_{P,S\cup{t}}
+\right)
+]
+
+を使って、response basis をよく条件付ける必要があります。
+
+これは system identification における persistent excitation を response-table language に移したものです。persistent excitation は、観測した応答から入力–出力写像全体を一意に決められるだけの入力 richness として定式化されます。([サイエンスダイレクト][4])
+
+---
+
+# 9. active fiber closure
+
+現在の hypothesis を
+
+[
+S_n=
+\left(
+q_n,\widehat K_n,M_n,
+\mathcal T_n,\mathfrak G_n,
+U_n
+\right)
+]
+
+とします。
+
+次の問い合わせは一種類でなく、四種類に分けるのが自然です。
+
+### Congruence query
+
+[
+(x^*,y^*,t^*)
+\approx
+\arg\max_{\substack{q_n(x)=q_n(y)\t\in\mathcal T}}
+d_Y(
+\mathscr R_t(x),
+\mathscr R_t(y)
+).
+]
+
+同じ class の内部で最大の behavioral discrepancy を探します。
+
+### Identification query
+
+Hankel block の rank または condition number を最大に改善する test を選びます。
+
+### Memory query
+
+現在捨てている history / outside state と future response の依存を最大化する test を選びます。
+
+[
+\arg\max
+I(
+\text{future response};
+\text{discarded state}
+\mid q_n
+).
+]
+
+### Safety query
+
+[
+\arg\max_x
+\left[
+U_+(x,a)-\widehat m(x,a)
+\right].
+]
+
+nominal prediction と certified upper の差が最大の状態を生成します。
+
+Lean oracle の応答後、
+
+[
+S_{n+1}=R(S_n,\text{query},\text{response})
+]
+
+と更新します。
+
+---
+
+## witness-complete query language
+
+test 集合 (\mathcal T) が ((\varepsilon,c))-separating であるとは、
+
+[
+d_+(u,v)>\varepsilon
+]
+
+なら必ず、ある (t\in\mathcal T) が存在して、
+
+[
+d_Y(
+\mathscr R_t(u),
+\mathscr R_t(v)
+)
+\ge c\varepsilon
+]
+
+となることとします。
+
+adversarial query solver が true maximum の (\eta) 以内を見つけられるなら、反例が見つからなかったことから、
+
+[
+\delta_{\mathrm{lump}}
+\le
+\frac{\varepsilon+\eta}{c}
+]
+
+を導けます。
+
+これは「大量に探したが見つからなかった」ではなく、
+
+[
+\boxed{
+\text{separating test language 上で maximum discrepancy が小さい}
+}
+]
+
+という証明可能な主張です。
+
+有限 response index と完全 counterexample teacher がある場合、各 counterexample は少なくとも一つの誤った merge を分割するので、有限回で最小 quotient に到達します。これは active automata learning の observation-table / counterexample refinement と同じ原理です。([サイエンスダイレクト][1])
+
+---
+
+# 10. locality・lumpability・return-memory の統一定理
+
+これが現在の中心命題です。
+
+大域作用素を (K)、local restriction を (R)、候補 local operator を (K_R)、quotient lift を (J)、compression を (C)、quotient operator を (\bar K) とします。
+
+図式は、
+
+[
+\begin{array}{ccc}
+X&\xrightarrow{K}&X\
+\downarrow R&&\downarrow R\
+U_R&\xrightarrow{K_R}&U_R\
+\downarrow C&&\downarrow C\
+Z&\xrightarrow{\bar K}&Z
+\end{array}
+]
+
+です。
+
+## 10.1 locality defect
+
+[
+\boxed{
+\varepsilon_{\mathrm{loc}}
+==========================
+
+|RK-K_RR|
+}
+]
+
+大域実行してから局所化することと、局所化してから local operator を適用することの非可換性です。
+
+## 10.2 lumpability defect
+
+[
+\boxed{
+\delta_{\mathrm{lump}}
+======================
+
+|K_RJ-J\bar K|
+}
+]
+
+同じ quotient class 内で successor law が一致しない量です。
+
+## 10.3 return-memory
+
+[
+P=JC,\qquad Q=I-P
+]
+
+として、
+
+[
+A=PK_RP,\quad
+B=PK_RQ,\quad
+C_0=QK_RP,\quad
+D=QK_RQ.
+]
+
+resolved 初期状態 (q_0=0) に対する exact recursion は、
+
+[
+\boxed{
+p_{n+1}
+ =======
+
+Ap_n+
+\sum_{j=0}^{n-1}
+BD^jC_0,p_{n-1-j}
+}
+]
+
+です。
+
+従って discrete return-memory kernel は、
+
+[
+\mathcal K_j=BD^jC_0
+]
+
+であり、
+
+[
+\boxed{
+\mu_N(T)
+========
+
+\sum_{j=0}^{T-1}
+|BD^jC_0|
+}
+]
+
+を integrated return-memory mass とできます。
+
+これは添付文書の
+
+[
+B e^{tD}C
+]
+
+の完全な離散版です。
+
+---
+
+## 定理 4：三欠陥誤差分解
+
+quotient model を
+
+[
+\widehat p_{n+1}=\bar A\widehat p_n
+]
+
+とし、resolved dynamics が weighted norm で (\theta<1) により contractive であるとします。
+
+適切な lift/compression norm の下で、有限時間誤差は概略、
+
+[
+\boxed{
+\operatorname{Err}*T
+\le
+C_T^{\mathrm{loc}}\varepsilon*{\mathrm{loc}}
++
+C_T^{\mathrm{lump}}\delta_{\mathrm{lump}}
++
+C_T^{\mathrm{mem}}\mu_N(T)
+}
+]
+
+と分解されます。
+
+contractive case では各係数は、
+
+[
+C_T^\bullet
+\lesssim
+\frac{1-\theta^T}{1-\theta}
+]
+
+で制御できます。
+
+より直接には、誤差は
+
+[
+\sum_{s=0}^{t-1}
+\theta^{t-1-s}
+(\varepsilon_{\mathrm{loc}}+\delta_{\mathrm{lump}})
+]
+
+と、
+
+[
+\sum_{s=0}^{t-2}
+\theta^{t-2-s}
+\sum_{j=0}^{s}
+|BD^jC_0|,
+|p_{s-j}|
+]
+
+の和で評価されます。
+
+### 帰結
+
+[
+\varepsilon_{\mathrm{loc}}
+==========================
+
+# \delta_{\mathrm{lump}}
+
+# \mu_N(T)
+
+0
+]
+
+なら、quotient dynamics は全有限時間で exact です。
+
+さらに exact action-invariant response algebra (\mathcal F_*) では、
+
+[
+QK P=0
+]
+
+となるため、
+
+[
+C_0=0
+\quad\Longrightarrow\quad
+BD^jC_0=0.
+]
+
+すなわち、
+
+[
+\boxed{
+\text{exact response quotient では return-memory は自動的に消える}
+}
+]
+
+ことになります。
+
+従って return-memory は独立した謎の量ではなく、
+
+> 現在の有限 radius・有限 word depth・有限 boundary が、まだ action-invariant fiber に達していないことの動的証拠
+
+です。
+
+---
+
+# 11. causal-state completion
+
+有限 radius の現在状態だけで Markov 化できない場合、単に radius を増やし続ける必要はありません。
+
+局所 history (h,h') を、
+
+[
+h\sim_{\mathrm{causal}}h'
+]
+
+iff、全将来 action word (w) について、
+
+[
+\mathbb P(
+Y_{\mathrm{future}}
+\mid
+h,w
+)
+=
+
+\mathbb P(
+Y_{\mathrm{future}}
+\mid
+h',w
+)
+]
+
+で同一視します。
+
+この class
+
+[
+s=\epsilon(h)
+]
+
+を局所 causal state とします。
+
+すると state は、
+
+[
+z=(\text{current local germ},\text{boundary state},\text{causal memory state})
+]
+
+になります。
+
+input–output process の過去を、将来分布が同じもの同士で quotient する (\epsilon)-transducer は、この構成の既存の理論的対応物です。([arXiv][5])
+
+重要なのは、
+
+[
+\boxed{
+\text{radius を増やす spatial completion}
+\quad\text{と}\quad
+\text{causal state を増やす temporal completion}
+}
+]
+
+を分離することです。
+
+---
+
+# 12. positive envelope は quotient の sound abstract transformer
+
+concrete positive load operator を (G) とし、quotient (q:X\to Z) 上の envelope を
+
+[
+M_q(z',z)
+=========
+
+\sup_{x:q(x)=z}
+\sum_{\substack{y:q(y)=z'}}
+g(x,y)
+\frac{\omega(y)}{\omega(x)}
+]
+
+とします。
+
+すると compression (C) に対して、
+
+[
+\boxed{
+C|G|
+\le
+M_q C
+}
+]
+
+が成立します。
+
+これは選んだ quotient 上の sound abstract transformer です。
+
+学習された (\widehat K) は、
+
+[
+|\widehat K|
+\le M_q
+]
+
+の内側に置きます。
+
+[
+M_q^{\mathsf T}w\le\theta w,
+\qquad
+\theta<1
+]
+
+なら、fiber 内でどの lifting law を選んでも contractive です。
+
+この意味で、
+
+* quotient learner は abstraction を提案する。
+* Lean oracle は反例を返す。
+* positive envelope は全称 safety を担う。
+* refinement は envelope の fiber supremum を狭める。
+
+という CEGAR 構造になります。
+
+これは abstract interpretation の「concrete semantics を sound な abstract transformer で上から近似し、必要に応じて domain を refinement する」という lattice/fixed-point 構造と整合します。([École Normale Supérieure][6])
+
+maximum entropy は、その後に
+
+[
+\widehat K(z',z)
+================
+
+\mathbb E_{\mu_z}
+K(x,z')
+]
+
+を選ぶ nominal lifting です。安全性の根拠ではありません。この役割分離は添付文書第9–11章と同じです。
+
+---
+
+# 13. Lean 固有の三軸 closure
+
+添付文書では、
+
+[
+(N,R)
+=====
+
+(\text{generator closure depth},\text{local radius})
+]
+
+の二軸でした。
+
+Lean ではさらに action granularity (G) が必要です。
+
+[
+\boxed{
+q_{R,N,G}
+}
+]
+
+とします。
+
+## (R)：空間・依存 graph radius
+
+* Expr dependency
+* local declaration dependency
+* metavariable graph
+* typeclass graph
+* premise/simp interface
+
+## (N)：action-word / memory depth
+
+* 一段 action response
+* 複数 action の区別証人
+* hidden tactic-history memory
+
+## (G)：action trace granularity
+
+[
+\begin{array}{ll}
+G=0 &: \texttt{aesop} を一つの macro action として扱う,\
+G=1 &: \text{rule application 単位の trace},\
+G=2 &: \text{goal/site-targeted primitive event},\
+G=3 &: \text{kernel/meta-state mutation 単位}.
+\end{array}
+]
+
+macro action のままでは alphabet は小さい一方、hidden memory と boundary complexity が大きくなります。
+
+trace を露出すると alphabet と state は増えますが、
+
+[
+\delta_{\mathrm{lump}},
+\quad
+\mu_N(T)
+]
+
+が小さくなる可能性があります。
+
+したがって action granularity は、
+
+[
+\min_G
+\left[
+\operatorname{Complexity}(q_{R,N,G})
++
+\lambda_{\mathrm{mem}}\mu_{R,N,G}(T)
++
+\lambda_{\mathrm{lump}}\delta_{R,N,G}
+\right]
+]
+
+によって選ぶべきです。
+
+---
+
+# 14. 統合 certificate
+
+新しい certificate vector は、
+
+[
+\boxed{
+\mathcal C_{R,N,G,M}(T)
+=======================
+
+\left(
+\begin{array}{c}
+\varepsilon_{\mathrm{frame}}\
+\varepsilon_{\mathrm{loc}}\
+\delta_{\mathrm{lump}}\
+\mu_{R,N,G}(T)\
+\iota_{R,N,G}\
+\sigma_{\min}(H_{P,S})\
+\varepsilon_{\mathrm{support}}\
+p_1,p_2\
+\theta_{\mathrm{env}}\
+\varepsilon_{\mathrm{sealed}}
+\end{array}
+\right)
+}
+]
+
+とするのが自然です。
+
+* (\varepsilon_{\mathrm{frame}}): kernel/file/interface transport
+* (\varepsilon_{\mathrm{loc}}): restriction naturality
+* (\delta_{\mathrm{lump}}): class 内 transition variation
+* (\mu(T)): hidden state の return
+* (\iota): discarded information の追加予測力
+* (\sigma_{\min}): experiment identifiability
+* (\varepsilon_{\mathrm{support}}): grammar coverage
+* (p_1): worst-case boundary contraction
+* (p_2): mean-square approximation
+* (\theta_{\mathrm{env}}): positive envelope contraction
+* (\varepsilon_{\mathrm{sealed}}): 未使用 query language 上の反例
+
+停止条件はデータ件数 (M) ではなく、
+
+[
+\mathcal C_{R,N,G,M}
+]
+
+が閾値内に入り、さらに ((R,N,G)) を増やしても quotient と envelope が安定することです。
+
+---
+
+# 15. finite Lean–Galerkin program
+
+理論を最初から無限 Lean 状態空間で検証する必要はありません。
+
+cutoff vector を
+
+[
+\Lambda=
+\left(
+\begin{array}{c}
+\text{symbol vocabulary}\
+\text{term/type depth}\
+\text{context size}\
+\text{mvar graph size}\
+\text{typeclass depth}\
+\text{action grammar depth}\
+\text{heartbeat/resource bound}
+\end{array}
+\right)
+]
+
+とします。
+
+(\Lambda) を固定し、α-renaming 等の exact symmetry で割れば、
+
+[
+X_\Lambda
+]
+
+は有限または有限生成にできます。
+
+この領域では、
+
+1. 全 valid local germ を生成する。
+2. Lean oracle で全 primitive/macro transition を評価する。
+3. exact partition refinement を行う。
+4. exact quotient (q_\Lambda^*) を得る。
+5. exact/interval envelope を計算する。
+6. (\Lambda) を増加させて quotient stability を測る。
+
+ことができます。
+
+これは Lean における Fourier–Galerkin program です。
+
+[
+X_{\Lambda_0}
+\subset
+X_{\Lambda_1}
+\subset
+\cdots
+]
+
+に対し、
+
+[
+q_{\Lambda_{n+1}}^*
+\longrightarrow
+q_{\Lambda_n}^*
+]
+
+の restriction consistency、boundary forgetting、return-memory decay を測ります。
+
+この有限 fragment が、active learner と adversarial generator を検証するための ground truth になります。
+
+---
+
+# 16. 証明すべき定理群
+
+## すでに一般論として証明できるもの
+
+### T1. Discrete fiber closure theorem
+
+[
+\mathcal F_N
+============
+
+\sigma{
+E\circ\tau_w:|w|\le N
+}.
+]
+
+### T2. Difference-jet theorem
+
+[
+\sigma{
+E\circ\tau_w:|w|\le N
+}
+=
+
+\sigma{
+\Delta_{a_k}\cdots\Delta_{a_1}E:k\le N
+}.
+]
+
+### T3. Minimal response congruence theorem
+
+(\sim_*) は energy observation を保つ最粗の action congruence。
+
+### T4. Contextual quotient universal property
+
+全 closing context と action test を保存する最小 local quotient の存在。
+
+### T5. Finite partition termination
+
+有限 (X_\Lambda) 上で partition refinement は有限回で停止し、exact behavioral quotient を返す。
+
+### T6. Three-defect closure bound
+
+有限時間誤差は locality、lumpability、return-memory の和で上から評価される。
+
+### T7. Envelope transfer theorem
+
+[
+C|G|\le M C,\quad M^{\mathsf T}w\le\theta w
+]
+
+なら、全 probability lifting と全 nominal learner が安全。
+
+---
+
+## Lean 固有の実証命題
+
+### C1. Finite local response index/rank
+
+固定 environment、bounded grammar、bounded resource の `aesop` が、低 index または低 Hankel rank の local response system を持つか。
+
+### C2. Finite boundary sufficiency
+
+有限 radius (R)、有限 boundary statistic、有限 causal memory (N) で、
+
+[
+\varepsilon_{\mathrm{loc}},
+\delta_{\mathrm{lump}},
+\mu_N(T)
+]
+
+が同時に小さくなるか。
+
+### C3. Compression window
+
+quotient complexity を減らしながら、
+
+[
+\delta_{\mathrm{lump}}
+]
+
+を許容範囲に保てる非自明な window が存在するか。
+
+### C4. Safe envelope domain
+
+ある nontrivial domain で、
+
+[
+M^{\mathsf T}w\le\theta w,
+\qquad
+\theta<1
+]
+
+が成立するか。
+
+この四つのうち C1–C3 が通れば「局所性が使えるまで quotient する」という構想が実証され、C4 が通れば pipeline control まで完成します。
+
+---
+
+# 17. 現在の実装への翻訳
+
+現スタックはすでに「有限 chart であり canonical ではない」と自己申告しているため、理論との接続は明確です。
+
+* [`contextual_congruence.py`](sandbox:/mnt/data/lean_rgc_stack/lean-rgc-automation-stack-main/lean_rgc/contextual_congruence.py)
+  現在の cosine fingerprint clustering を、response Hankel observation table と counterexample test 管理へ置き換える。
+
+* [`response_quotient.py`](sandbox:/mnt/data/lean_rgc_stack/lean-rgc-automation-stack-main/lean_rgc/response_quotient.py)
+  representative action へ潰さず、class 内の actual transition set、interval kernel、support、witness を保持する。
+
+* [`gamma_transition_learner.py`](sandbox:/mnt/data/lean_rgc_stack/lean-rgc-automation-stack-main/lean_rgc/gamma_transition_learner.py)
+  affine mean map ではなく、nominal quotient kernel または低 rank predictive-state model にする。
+
+* [`goal_state_dynamics.py`](sandbox:/mnt/data/lean_rgc_stack/lean-rgc-automation-stack-main/lean_rgc/lean/goal_state_dynamics.py)
+  target site、read/write support、boundary ports、environment hash、resource state、replay certificate を追加する。
+
+特に action representative への置換は止めるべきです。同一 quotient class に見える action でも、safety envelope では class 内全 member の supremum が必要です。
+
+---
+
+# 中心命題
+
+最終的な理論は、次の一文にまとめられます。
+
+[
+\boxed{
+\begin{minipage}{0.88\linewidth}
+Lean 応答商とは、学習器が似た proof state を埋め込み空間でまとめる理論ではない。
+Lean exact oracle が生成する非可換差分 response jet を、全 closing context と action word に関して閉じる最小の局所 behavioral quotient を、反例問い合わせによって構成する理論である。
+\end{minipage}
+}
+]
+
+Navier–Stokes では、
+
+[
+L^nE
+]
+
+を symbolically 展開して closure coordinate を得ます。
+
+Lean では、
+
+[
+\Delta_{a_n}\cdots\Delta_{a_1}E
+]
+
+を oracle query で評価し、区別証人を返した action word と boundary context だけを closure coordinate として追加します。
+
+その結果、
+
+[
+\boxed{
+\begin{aligned}
+&\text{NS の厳密性}
+&&=
+\text{triad grafting と微分係数},\
+&\text{Lean の厳密性}
+&&=
+\text{kernel transition と差分作用素},\
+&\text{両者の圧縮}
+&&=
+\text{最小 response-invariant fiber},\
+&\text{学習器の役割}
+&&=
+\text{その fiber の低複雑度座標と query の発見},\
+&\text{safety の役割}
+&&=
+\text{fiber 全体を支配する positive envelope}
+\end{aligned}
+}
+]
+
+となります。
+
+
+[1]: https://www.sciencedirect.com/science/article/pii/0890540187900526?utm_source=chatgpt.com "Learning regular sets from queries and counterexamples"
+[2]: https://www.sciencedirect.com/science/article/pii/0890540191900306?utm_source=chatgpt.com "Bisimulation through probabilistic testing"
+[3]: https://web.eecs.umich.edu/~baveja/Papers/uai2004psr.pdf?utm_source=chatgpt.com "Predictive State Representations: A New Theory for Modeling ..."
+[4]: https://www.sciencedirect.com/science/article/abs/pii/S1751570X22001030?utm_source=chatgpt.com "On the notion of persistence of excitation for linear ..."
+[5]: https://arxiv.org/abs/1412.2690?utm_source=chatgpt.com "Computational Mechanics of Input-Output Processes ..."
+[6]: https://www.di.ens.fr/~cousot/publications.www/CousotCousot-POPL-77-ACM-p238--252-1977.pdf?utm_source=chatgpt.com "Abstract interpretation: a unified lattice"
+
+
+
+
+前回の失敗に対する解決策として、添付の文書を読んだ上で、この、ワーストケース作用素で安定化してから最大エントロピーを取って、かつその上で有限近似に安定な大域類似度表現によって、パイプラインの安定性を常に制御する方針、leanoracleからgeneratorの局所性を学習設計する方針についてコードベースを精査しマルチエージェントで敵対的レビューしてください

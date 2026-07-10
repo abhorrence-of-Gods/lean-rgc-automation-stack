@@ -1,0 +1,40 @@
+{
+  "schema_version": "lean-rgc-uprime-k0-repair-manifest-v1.0",
+  "recorded_at_utc": "2026-07-10T12:05:13.2402919Z",
+  "parent_manifest_sha256": "9C277A05ED3936A05CABB7F83BA000FDC5D9A2345B572064718E2780BC8DE60B",
+  "repair_id": "F0a_raw_metadata_bytes_and_stat_fail_closed",
+  "scope": "final pre-commit hardening of the audit-cache local-build content digest",
+  "changes": [
+    "hash lake-manifest.json and lean-toolchain as raw bytes instead of replacement-decoded text",
+    "distinguish FileNotFoundError from permission/stat failures for metadata and build directories",
+    "replace suppressing exists/is_dir/is_file probes by explicit stat checks",
+    "assign a fresh cache-bypass nonce after unreadable metadata, artifact, or stat failures",
+    "retain the stable unspecified-workdir legacy lane but exclude it from hard U' ObservationFrameId use"
+  ],
+  "tests": {
+    "command": "python -m pytest -q tests/test_uprime_k0_foundations.py tests/test_v92_audit_cache_build_state_fingerprint.py tests/test_v65_audit_cache_pruning.py tests/test_v85_cache_lane_and_coverage.py tests/test_v74_test_tier_manifest.py",
+    "outcome": "30 passed",
+    "elapsed_seconds": 129.53
+  },
+  "post_repair_run": {
+    "command": "python -m lean_rgc.evals.uprime_k0 --repo-root . --out runs/uprime_k0_20260710/foundation_probe_after_f0a_v3.json --environment-out runs/uprime_k0_20260710/environment_fingerprint_after_f0a_v3.json",
+    "verdict": "BLOCKED_AS_WRITTEN",
+    "f0a_cache_content_pass": true,
+    "licenses_later_stage": false
+  },
+  "sha256": {
+    "lean_rgc/audit_result_cache.py": "B326A5CD2CA79C713E8C084225EA169E54195AA6AA8626895B56B1872AD1919D",
+    "lean_rgc/evals/uprime_k0.py": "4494638224B7E5DA854ACCBD039DF4BB79B3F054D6BB7B8749D9CDD74C20F0AF",
+    "tests/test_v92_audit_cache_build_state_fingerprint.py": "A61A957B6CC28AAC54EF46BC65065E37921A843C030A5E5DCC6E9AF683EDC83D",
+    "tests/test_uprime_k0_foundations.py": "75692BED4DFFE7AEC9BF7DF73789B769BA0B3E32D2B1822938A6922EEBD23ABE",
+    "tests/tier_manifest.json": "7C7B0858DD0772A30D315D41E67E31AAE83A02EF8501092E4FB52A89D00ECA58",
+    "runs/uprime_k0_20260710/foundation_probe_after_f0a_v3.json": "77B5CC99B3218A71134D9093B9EE8D6EF105DBB070EF96B1DEF0E93554D19382",
+    "runs/uprime_k0_20260710/environment_fingerprint_after_f0a_v3.json": "EC3934E960850ABE7D1D730F09295097FB074EFBFB9D623FDAD7085F99E66B6E"
+  },
+  "non_claims": [
+    "full F0 remains blocked",
+    "the stable unspecified-workdir lane is legacy-only and not a hard U' frame",
+    "TOCTOU between fingerprint acquisition and Lean execution remains unclosed",
+    "no later empirical or GPU stage is licensed"
+  ]
+}

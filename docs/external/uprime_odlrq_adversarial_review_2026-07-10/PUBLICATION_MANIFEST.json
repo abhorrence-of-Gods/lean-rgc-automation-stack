@@ -1,0 +1,31 @@
+{
+  "schema_version": "lean-rgc-external-review-publication-v1.0",
+  "status": "public_derivatives_with_raw_hashes",
+  "inputs": {
+    "fiber_closure_fixed_point_integrated_jp.tex": {
+      "raw_sha256": "7E24F7D444A263792A3A717B1C26807D0A15626C2A11D8F38A1DCCB7DE69CD87",
+      "repository_utf8_normalized_sha256": "7E24F7D444A263792A3A717B1C26807D0A15626C2A11D8F38A1DCCB7DE69CD87"
+    },
+    "proposal_transcript.public.txt": {
+      "raw_sha256": "855F49956CABAE786FA221B4D7D38E95630147687A79941FB17F0C0D1137E9AB",
+      "public_utf8_normalized_sha256": "D407AF185EAEFF4E9339814DAD35B30CA7B8225E17260EDA340CB9F87770D9A7",
+      "redaction": "investigator home/repository paths replaced by placeholders"
+    }
+  },
+  "external_review": {
+    "parsed_review.public.json": {
+      "raw_sha256": "BC16EBA1502BFB8DB98FC22C0191BA55DBD6043C28A521E7C23B3C264A2894BB",
+      "public_sha256": "059EF044B963DB3DD10AC9745D389D11188191C5F4E44F87C3A8124E271FEEB7",
+      "redaction": "investigator home/repository paths replaced by placeholders"
+    },
+    "review_brief.public.md": {
+      "raw_sha256": "2281479B63A4760D564DC59A3ACF12EB931084E2CE8A4D11FA03BB147A18B753",
+      "public_sha256": "602F8BA25825320E40A9C5DF7744E7C565AE08810BDFB8D84DC88A07CC2DD266",
+      "redaction": "investigator home/repository paths replaced by placeholders"
+    },
+    "workflow_raw_output.json": {
+      "raw_sha256": "75F64E783FF280E8C6EFC8E5BE6B9C2805E120D093C1896C1D3FD8F4A73DE9E5",
+      "publication": "withheld because the raw journal embeds workstation paths"
+    }
+  }
+}

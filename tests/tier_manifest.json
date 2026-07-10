@@ -333,6 +333,9 @@
   "test_v8_harvest_shard.py": [
     "legacy"
   ],
+  "test_uprime_k0_foundations.py": [
+    "unit"
+  ],
   "test_v8_iterate_corebench.py": [
     "legacy"
   ],

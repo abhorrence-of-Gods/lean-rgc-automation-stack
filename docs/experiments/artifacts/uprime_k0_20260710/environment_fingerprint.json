@@ -1,0 +1,8 @@
+{
+  "content_sensitive": false,
+  "fingerprint_after": "a6896d9bbd59c3ecb2ff985d",
+  "fingerprint_before": "a6896d9bbd59c3ecb2ff985d",
+  "gate_F0_pass": false,
+  "mutation": "same path and module name, changed .olean bytes",
+  "probe_id": "K0-E"
+}

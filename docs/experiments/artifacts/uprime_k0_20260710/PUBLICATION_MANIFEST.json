@@ -1,0 +1,78 @@
+{
+  "schema_version": "lean-rgc-public-artifact-derivatives-v1.0",
+  "status": "public_redacted_derivatives",
+  "raw_location": "runs/uprime_k0_20260710 (gitignored, investigator-local)",
+  "transformation": {
+    "ordinary_json": [
+      "parse the raw JSON",
+      "recursively replace the investigator repository root by <REPO_ROOT>",
+      "replace the original TeX absolute path by its repository archive path",
+      "replace any residual investigator home prefix by <USER_HOME>",
+      "serialize with two-space indentation and LF newline"
+    ],
+    "remote_gpu_fingerprint.public.json": [
+      "remove user, IP address, SSH port, hostname, host-key value, process identifiers, and listener coordinates",
+      "retain only the execution-capacity and no-mutation facts needed by the preregistration"
+    ]
+  },
+  "interpretation": [
+    "Derivative hashes do not authenticate the raw artifacts; the recorded raw SHA-256 values do.",
+    "The initial and intermediate raw outputs are preserved evidence but their historical producer revisions were never committed and are not reproducible from this milestone.",
+    "The v3 raw output is the reproducible milestone anchor: its manifest hashes the source and tests committed with it.",
+    "The preregistration and first result enter the first public Git commit together, so K0 is an unanchored development pilot, not an externally timestamped confirmatory shot."
+  ],
+  "artifacts": {
+    "environment_fingerprint.json": {
+      "raw_sha256": "5EA713BECE662B7A6E08C6B0953A68A5F266B13C2CF5631DCD853A27062DEA29",
+      "public_sha256": "490C7B18D51EE4FFD912EAFF28F55D90AB4F03290B6B0F6A0F24DA11B72E1845"
+    },
+    "environment_fingerprint_after_f0a.json": {
+      "raw_sha256": "4F2306EC344B3A324D09461805937C6C15799B8239ADAEFE275F94DEF17044F6",
+      "public_sha256": "31471481E124F1F0A403D6F38482D1BE4578348848C0A4E386210FCB521D2DAE"
+    },
+    "environment_fingerprint_after_f0a_v2.json": {
+      "raw_sha256": "1FB65D5A253246A20C9CCED510ACDDE87BA731BBB2B995780AB7E062D0BB5809",
+      "public_sha256": "BF6C9A82AC97600AF388A8F10109E8335CCA5E3B192878AF031BC4A6409D0C38"
+    },
+    "environment_fingerprint_after_f0a_v3.json": {
+      "raw_sha256": "EC3934E960850ABE7D1D730F09295097FB074EFBFB9D623FDAD7085F99E66B6E",
+      "public_sha256": "83B74ED94248CA4616A9B5C84A937EDC09759FBDE50C752F644481475E42FAE0"
+    },
+    "f0a_repair_manifest.json": {
+      "raw_sha256": "7291179428EBBC2FD2FE742D5C3853208FBE3D705E2C8E8313154A3A6B1018AD",
+      "public_sha256": "7291179428EBBC2FD2FE742D5C3853208FBE3D705E2C8E8313154A3A6B1018AD"
+    },
+    "f0a_repair_manifest_v2.json": {
+      "raw_sha256": "9C277A05ED3936A05CABB7F83BA000FDC5D9A2345B572064718E2780BC8DE60B",
+      "public_sha256": "9C277A05ED3936A05CABB7F83BA000FDC5D9A2345B572064718E2780BC8DE60B"
+    },
+    "f0a_repair_manifest_v3.json": {
+      "raw_sha256": "B2E3E1807C2204274E1FCD89C4A7F882802AE3AAE6BBEFEEA48100F98B99AF66",
+      "public_sha256": "B2E3E1807C2204274E1FCD89C4A7F882802AE3AAE6BBEFEEA48100F98B99AF66"
+    },
+    "foundation_probe.json": {
+      "raw_sha256": "F84E0E05067E5889B8146A5B6BB5273BF471B7C68A7CF750104857AA1BF4ECBA",
+      "public_sha256": "C50AF1C9882C27779AFED227949B0A272ABAACE2DAB0728C916B362ADBFCDD43"
+    },
+    "foundation_probe_after_f0a.json": {
+      "raw_sha256": "238C8C0D5AB2FABEC00213E5A4B34D5D6F3EEB0C8EA5D48C985DE3343A69B148",
+      "public_sha256": "DBB4B39352E45E2B431026EACD95402937FC7FBE6FC2B82D6861CF09EC52C9E5"
+    },
+    "foundation_probe_after_f0a_v2.json": {
+      "raw_sha256": "CC7944D902ECE351251BB653477D36E24A79630D7892EC74000F1226751C63E4",
+      "public_sha256": "5A20039FA78C6D271CA3E60C2EE0125E340D11187A9706AB691102C6F66E81F2"
+    },
+    "foundation_probe_after_f0a_v3.json": {
+      "raw_sha256": "77B5CC99B3218A71134D9093B9EE8D6EF105DBB070EF96B1DEF0E93554D19382",
+      "public_sha256": "E18688298DB30A3C1BD29789CECB04B9A8A4DC967E68F513DBB8B16D88BB7A49"
+    },
+    "initial_artifact_manifest.json": {
+      "raw_sha256": "52CDE9E961AF14869D8CF71B0E714693FA59D01551A4E4BA1844578A592AB48A",
+      "public_sha256": "C54A664480BB7B75FAB9F3C3CE78D800207A3F3F8060CF857C2B46BFBB5100DC"
+    },
+    "remote_gpu_fingerprint.public.json": {
+      "raw_sha256": "2FB728972FA87DB234553AAC5AEFC667A1AA3F4889C0E353B3E779C9143E8B71",
+      "public_sha256": "E8FACC2A91D2E4C8E67F28377015D4655723B77558F144DD46A78DF2FE96E182"
+    }
+  }
+}

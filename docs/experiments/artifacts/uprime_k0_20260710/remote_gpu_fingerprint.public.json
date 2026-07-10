@@ -1,0 +1,78 @@
+{
+  "schema": "remote_execution_fingerprint.public.v1",
+  "observed_at_utc": "2026-07-10T11:09:44Z",
+  "target": {
+    "alias": "UPRIME_GPU_HOST",
+    "connection_details": "stored outside the public repository",
+    "host_key_status": "observed but not independently verified; value withheld"
+  },
+  "system": {
+    "os_pretty_name": "Ubuntu 24.04.4 LTS",
+    "kernel": "Linux 5.15.0-185-generic x86_64 GNU/Linux",
+    "architecture": "x86_64",
+    "cpu": {
+      "model": "Intel(R) Xeon(R) Gold 6133 CPU @ 2.50GHz",
+      "logical_cpus": 80,
+      "sockets": 2,
+      "cores_per_socket": 20,
+      "threads_per_core": 2,
+      "numa_nodes": 2
+    },
+    "memory_bytes": {
+      "total": 270080569344,
+      "available": 242306641920
+    },
+    "swap_bytes": {
+      "total": 8589930496,
+      "free": 8538025984
+    }
+  },
+  "workspace_filesystem": {
+    "path": "/workspace",
+    "type": "overlay",
+    "size_bytes": 36507222016,
+    "available_bytes": 25308983296,
+    "shares_root_overlay": true
+  },
+  "gpu": [
+    {
+      "index": 0,
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_total_mib": 24564,
+      "memory_free_mib": 24080,
+      "utilization_percent": 0,
+      "driver_version": "580.159.04",
+      "nvidia_smi_cuda_version": "13.0",
+      "nvcc_version": "V13.0.88"
+    }
+  ],
+  "tools": {
+    "python3": {
+      "path": "/usr/bin/python3",
+      "version": "3.12.3"
+    },
+    "python_alias_present": false,
+    "git": {
+      "path": "/usr/bin/git",
+      "version": "2.43.0"
+    }
+  },
+  "workspace": {
+    "visible_entries": [
+      "AGENTS.md",
+      "CLAUDE.md"
+    ],
+    "project_repo_present": false
+  },
+  "services": {
+    "reserved_tunnel_target_present": true,
+    "new_uprime_service_may_not_reuse_reserved_listener": true,
+    "network_coordinates_withheld": true
+  },
+  "acquisition": {
+    "remote_mutation": false,
+    "known_hosts_written": false,
+    "environment_dumped": false,
+    "endpoint_redacted_for_publication": true
+  }
+}

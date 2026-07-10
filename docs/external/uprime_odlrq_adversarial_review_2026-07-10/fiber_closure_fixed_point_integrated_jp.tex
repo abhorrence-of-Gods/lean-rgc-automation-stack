@@ -1,0 +1,1989 @@
+\documentclass[11pt,a4paper,openany]{book}
+\usepackage[a4paper,inner=23mm,outer=20mm,top=22mm,bottom=23mm,headheight=15pt]{geometry}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\setmainfont{Liberation Serif}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}
+\setCJKmainfont{Noto Serif CJK JP}[ItalicFont={Noto Serif CJK JP}]
+\setCJKsansfont{Noto Sans CJK JP}
+\setCJKmonofont{Noto Sans Mono CJK JP}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{amsthm}
+\usepackage{booktabs,array,longtable,multirow}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,matrix,shapes.geometric}
+\usepackage{graphicx}
+\graphicspath{{unified_figures/}}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{titlesec}
+
+\definecolor{deepblue}{RGB}{28,63,110}
+\definecolor{deepgreen}{RGB}{28,91,72}
+\definecolor{deepred}{RGB}{125,53,47}
+\definecolor{deepgold}{RGB}{139,101,24}
+\definecolor{softblue}{RGB}{237,244,252}
+\definecolor{softgreen}{RGB}{238,248,243}
+\definecolor{softred}{RGB}{252,241,240}
+\definecolor{softgold}{RGB}{253,248,232}
+\definecolor{softgray}{RGB}{246,246,246}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=deepblue,
+  citecolor=deepblue,
+  urlcolor=deepblue,
+  pdftitle={ファイバー閉包固定点としての Navier-Stokes 応答商理論 統合版},
+  pdfauthor={Fiber Closure Fixed Point Program}
+}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\thepage\quad Fiber Closure Fixed Point Program}
+\fancyhead[RO]{統合版\quad\thepage}
+\fancyhead[LO]{\nouppercase{\leftmark}}
+\fancyhead[RE]{\nouppercase{\rightmark}}
+\renewcommand{\headrulewidth}{0.3pt}
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0.34em}
+\setlength{\emergencystretch}{3em}
+\setlist[itemize]{leftmargin=2em,itemsep=0.22em,topsep=0.28em}
+\setlist[enumerate]{leftmargin=2.2em,itemsep=0.22em,topsep=0.28em}
+\captionsetup{font=small,labelfont=bf}
+\titleformat{\chapter}[display]
+  {\sffamily\bfseries\Huge}
+  {\filleft\color{deepblue}\Large 第\thechapter 章}
+  {1ex}{\titlerule\vspace{1ex}\filright}
+\titleformat{\section}{\sffamily\bfseries\Large}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\sffamily\bfseries\large}{\thesubsection}{0.8em}{}
+
+\newtheorem{definition}{定義}[chapter]
+\newtheorem{proposition}[definition]{命題}
+\newtheorem{theorem}[definition]{定理}
+\newtheorem{lemma}[definition]{補題}
+\newtheorem{corollary}[definition]{系}
+\newtheorem{hypothesis}[definition]{仮説}
+\newtheorem{remark}[definition]{注意}
+\newtheorem{program}[definition]{計算プログラム}
+\renewcommand{\proofname}{証明}
+\numberwithin{equation}{chapter}
+
+\newcommand{\E}{\mathbb E}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\KL}{D_{\mathrm{KL}}}
+\newcommand{\TV}{d_{\mathrm{TV}}}
+\newcommand{\esssup}{\operatorname*{ess\,sup}}
+\newcommand{\cA}{\mathcal A}
+\newcommand{\cB}{\mathcal B}
+\newcommand{\cC}{\mathcal C}
+\newcommand{\cE}{\mathcal E}
+\newcommand{\cF}{\mathcal F}
+\newcommand{\cG}{\mathcal G}
+\newcommand{\cH}{\mathcal H}
+\newcommand{\cK}{\mathcal K}
+\newcommand{\cL}{\mathcal L}
+\newcommand{\cM}{\mathcal M}
+\newcommand{\cN}{\mathcal N}
+\newcommand{\cP}{\mathcal P}
+\newcommand{\cQ}{\mathcal Q}
+\newcommand{\cR}{\mathcal R}
+\newcommand{\cS}{\mathcal S}
+\newcommand{\cT}{\mathcal T}
+\newcommand{\cU}{\mathcal U}
+\newcommand{\cY}{\mathcal Y}
+\newcommand{\cZ}{\mathcal Z}
+\newcommand{\R}{\mathbb R}
+\newcommand{\C}{\mathbb C}
+\newcommand{\Id}{\mathrm I}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\osc}{\operatorname{osc}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\Law}{\operatorname{Law}}
+\newcommand{\MMD}{\operatorname{MMD}}
+\newcommand{\Wass}{\mathsf W_1}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1\right\rvert}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\e}{\mathrm e}
+
+\begin{document}
+\frontmatter
+\begin{titlepage}
+\centering
+\vspace*{13mm}
+{\sffamily\bfseries\Huge ファイバー閉包固定点としての\par}
+\vspace{3mm}
+{\sffamily\bfseries\Huge Navier--Stokes 応答商理論\par}
+\vspace{6mm}
+{\sffamily\bfseries\LARGE 統合版\par}
+\vspace{9mm}
+{\Large energy, shell spectrum, triad-tree, local projection,\par}
+{\Large positive envelope, similarity, finite-depth closure\par}
+\vspace{13mm}
+\begin{tcolorbox}[width=0.91\textwidth,colback=softblue,colframe=deepblue,boxrule=0.7pt,arc=1mm]
+本書は、2026 年 7 月 9 日の基礎研究ノートと、その後に展開した四つの補遺を一つの理論体系へ再構成した統合版である。出発点は response map の選択ではなく、Navier--Stokes generator が energy fiber から強制生成する closure jet である。
+
+統合後の中心系列は
+\[
+\boxed{
+\begin{aligned}
+\text{constraint / energy}
+&\Rightarrow\text{shell / flux / triad-tree / regularity},\\
+\text{local projection}
+&\Rightarrow\text{loss martingale / drift--diffusion},\\
+\text{positive envelope}
+&\Rightarrow\text{maximum entropy / forward--backward messages},\\
+\text{hierarchical similarity}
+&\Rightarrow\text{effective damping / finite-depth certificate}.
+\end{aligned}}
+\]
+である。射影、loss、memory、安全性、類似度、有限 depth を別々の道具としてではなく、同じ triad-tree geometry 上の異なる conditional channels として扱う。
+\end{tcolorbox}
+\vfill
+{\large Fiber Closure Fixed Point Program\par}
+\vspace{3mm}
+{\large 2026 年 7 月 10 日\par}
+\end{titlepage}
+
+\chapter*{統合版への序}
+\addcontentsline{toc}{chapter}{統合版への序}
+基礎研究ノートの主張は、Navier--Stokes 応答商を ``response feature を選ぶ理論'' から、``物理法則が閉じようとする最小 fiber を求める理論'' へ反転することだった。本統合版では、その原理を維持したまま、後続研究で得られた以下の進展を本文へ組み込む。
+
+\begin{enumerate}
+\item conditional expectation を tree の局所構造に沿う contextual projection chain として構成する。
+\item finite-depth loss tensor を pruning martingale innovation の predictable quadratic variation として解釈する。
+\item raw residual covariance と実効 diffusion tensor を Green--Kubo / Poisson corrector により区別する。
+\item signed grafting を positive profile envelope で支配し、maximum-entropy lifting を安全域の内部に置く。
+\item forward--backward messages により、root reachability と subtree amplification を同時に評価する。
+\item 局所 subtree representation と global node/edge distributions から effective damping similarity を構成する。
+\item finite depth 近似を first-moment pressure、second-moment pressure、tail Lyapunov exponent、return-memory mass に分解する。
+\end{enumerate}
+
+本書の定理の多くは、有限 Galerkin／有限 profile／有限 tree 上では厳密である。一方、無限次元 Navier--Stokes 正則性へ移すには、一様な tail norm、tightness、domain control、reference measure の選択が別途必要である。したがって本書は正則性証明そのものではなく、正則性評価を fiber closure の言葉で可計算化する研究プログラムである。
+
+\begin{tcolorbox}[colback=softgold,colframe=deepgold,boxrule=0.55pt,arc=1mm,title={読み方}]
+第 I 部は基礎 closure jet、第 II 部は局所射影と diffusion、第 III 部は positive envelope と maximum entropy、第 IV 部は大域類似度と effective viscosity、第 V 部は有限 depth 近似可能性、第 VI 部は統合 certificate と計算計画を扱う。各部は単独で読めるが、regularity safety と statistical accuracy を混同しないことが全体を通じた最重要原則である。
+\end{tcolorbox}
+
+\tableofcontents
+\mainmatter
+\part{Fiber closure jet の基礎}
+
+\chapter{応答商から fiber fixed point へ}
+\section{問題意識}
+従来の応答商プログラムは概念的に
+\[
+R\longrightarrow \Pi=JJ^*\longrightarrow T_t=J^*P_tJ\longrightarrow\text{loss}
+\]
+という順序で進む。response map $R$ を先に選び、その後で compressed dynamics と loss を評価する。しかし、この順序では feature の選択、保存すべき operator、seed observable が研究者の規約に見えやすい。
+
+本書では順序を反転する。物理法則 $L$ と状態空間制約が与えられたとき、先に求めるのは
+\[
+\boxed{\text{generator の下で閉じようとする最小の fiber}}
+\]
+である。fiber が定まれば、$\Pi$ は $L^2$ conditional expectation として後から現れ、response $R$ は fiber label の座標表示にすぎない。
+
+Navier--Stokes の主系列は
+\[
+\text{Leray constraint}\mid\text{energy fiber}
+\Rightarrow\text{shell spectrum}
+\Rightarrow\text{triad flux}
+\Rightarrow\text{memory}
+\Rightarrow\text{regularity closure}
+\Rightarrow\Pi\Rightarrow R
+\]
+である。helicity や entropy production を追加 seed として採用することは可能だが、最小系列の自然性を評価するには、まず energy のみから開始する。
+
+\section{fiber algebra と closure map}
+有限 Galerkin 状態空間 $X_N$ 上の部分 $\sigma$-代数 $\cF\subset\mathcal B(X_N)$ を fiber algebra と呼ぶ。対応する conditional expectation と補射影を
+\[
+\Pi_{\cF}f=\E[f\mid\cF],
+\qquad
+Q_{\cF}=\Id-\Pi_{\cF}
+\]
+とする。$\cF=\sigma(R)$ なら、$R$ は fiber label の座標表示である。
+
+\begin{definition}[exact fiber closure map]
+決定論的 generator $L$ に対し
+\[
+\Phi(\cF)=\sigma\bigl(\cF,\{Lf:f\in\cF\}\bigr)
+\]
+と定める。stochastic forcing を含む場合には carré du champ $\Gamma(f,g)$ も加える。
+\end{definition}
+
+exact fixed point は $\cF_* = \Phi(\cF_*)$ を満たすが、非線形力学では full algebra まで膨張し得る。そこで近似固定点を leakage と情報量の競合として
+\[
+\cF_\beta
+=\arg\min_{\cF}
+\left\{
+\operatorname{Leak}(\cF)+\beta\operatorname{Info}(\cF)
+\right\}
+\]
+と考える。基本的な leakage は
+\[
+\operatorname{Leak}(\cF)
+=\norm{Q_{\cF}L\Pi_{\cF}}^2
+\]
+である。本書はこの変分問題を抽象的に解く代わりに、energy fiber からの closure recursion がどの物理量を必然的に生成するかを追跡する。
+
+\chapter{有限 Fourier--Galerkin Navier--Stokes}
+\section{状態空間と generator}
+周期箱上の非圧縮 Navier--Stokes を有限 Fourier--Galerkin 切断する。波数集合を
+\[
+\Lambda_N=\{k\in\mathbb Z^d:0<|k|\le N\}
+\]
+とし、状態空間を
+\[
+X_N
+=\{u=(u_k)_{k\in\Lambda_N}:k\cdot u_k=0,\ u_{-k}=\overline{u_k}\}
+\]
+とする。$P_k$ を $k^\perp$ への Leray projection とする。
+
+運動方程式は
+\begin{equation}
+\dot u_k=N_k(u)-\nu|k|^2u_k+F_k,
+\end{equation}
+\begin{equation}
+N_k(u)=\sum_{p+q=k}B_{k;p,q}(u_p,u_q),
+\qquad
+B_{k;p,q}(x,y)=-iP_k\bigl((q\cdot x)y\bigr).
+\end{equation}
+対応する deterministic generator を
+\[
+L=L_N+L_\nu+L_F
+\]
+と分ける。closure jet 上では
+\[
+L_N:\text{tree grafting},
+\quad
+L_\nu:\text{leaf-frequency damping},
+\quad
+L_F:\text{forcing leaf replacement}
+\]
+として現れる。
+
+\section{constraint は dynamic seed ではない}
+Leray projection は generator の一成分ではなく、状態空間を定義する制約である。すなわち
+\[
+u=Pu
+\]
+が最初の固定条件であり、圧力はその制約を満たす Lagrange multiplier とみなされる。したがって主系列は
+\[
+P\mid e_a\Rightarrow \Phi_a\Rightarrow Q_a^{(4)}\Rightarrow\cdots
+\]
+であり、$P$ は energy の前に置かれるが dynamic observable ではない。
+
+\chapter{energy から shell spectrum、triad flux へ}
+\section{total energy と spectral moments}
+総 energy を
+\[
+E_0(u)=\frac12\sum_{k\in\Lambda_N}|u_k|^2
+\]
+とし、seed fiber を $\cF_0=\sigma(E_0)$ とする。Euler 非線形は total energy を保存するので $L_NE_0=0$。粘性と forcing は
+\[
+L_\nu E_0=-\nu\sum_k|k|^2|u_k|^2,
+\qquad
+L_FE_0=\sum_k\Re(u_k\cdot F_k).
+\]
+したがって energy fiber の一段 closure は粘性散逸率
+\[
+D_0(u)=\sum_k|k|^2|u_k|^2
+\]
+を強制生成する。
+
+Laplacian eigenvalue ごとの shell を
+\[
+S_a=\{k\in\Lambda_N:|k|^2=\lambda_a\},
+\qquad a=1,\ldots,J
+\]
+とし、shell energy を
+\[
+e_a(u)=\frac12\sum_{k\in S_a}|u_k|^2
+\]
+とする。spectral moment
+\[
+M_m(u)=\sum_{a=1}^J\lambda_a^m e_a(u)
+\]
+は純粋粘性の下で
+\[
+L_\nu M_m=-2\nu M_{m+1}
+\]
+を満たす。
+
+\begin{lemma}[Vandermonde shell recovery]
+$\lambda_1,\ldots,\lambda_J$ が相異なれば、$M_0,\ldots,M_{J-1}$ から $e_1,\ldots,e_J$ は一意に復元される。
+\end{lemma}
+\begin{proof}
+係数行列 $(\lambda_a^m)_{0\le m\le J-1,1\le a\le J}$ は Vandermonde 行列であり可逆である。
+\end{proof}
+
+従って
+\[
+\boxed{\text{total energy}+\text{viscous closure}\Rightarrow\text{shell energy fiber}}
+\]
+である。
+
+\section{shell energy から triad flux へ}
+shell energy の generator 作用は
+\begin{equation}
+Le_a=\Phi_a-2\nu\lambda_a e_a+I_a,
+\end{equation}
+\begin{equation}
+\Phi_a=\sum_{k\in S_a}\Re\bigl(u_k\cdot N_k(u)\bigr),
+\qquad
+I_a=\sum_{k\in S_a}\Re(u_k\cdot F_k).
+\end{equation}
+ここで $\sum_a\Phi_a=0$。Euler 非線形は total energy を保存するが shell 間で energy を輸送する。
+
+\begin{proposition}[triad flux は closure output]
+shell energy fiber を full generator で一段閉じると、triad flux $\Phi_a$、viscous damping $-2\nu\lambda_ae_a$、forcing injection $I_a$ が生成される。triad flux は先に選んだ feature ではない。
+\end{proposition}
+
+\section{triad-shell flux と粘性対角化}
+triad atom を
+\[
+\varphi_{k;p,q}(u)
+=\Re\left[u_k\cdot B_{k;p,q}(u_p,u_q)\right],
+\qquad p+q=k
+\]
+とする。粘性は
+\[
+L_\nu\varphi_{k;p,q}
+=-\nu\bigl(|k|^2+|p|^2+|q|^2\bigr)\varphi_{k;p,q}
+\]
+として作用する。そこで
+\[
+\Phi_{a;bc}
+=\sum_{\substack{k\in S_a,p\in S_b,q\in S_c\\p+q=k}}
+\varphi_{k;p,q}
+\]
+と置けば
+\[
+L_\nu\Phi_{a;bc}
+=-\nu(\lambda_a+\lambda_b+\lambda_c)\Phi_{a;bc}.
+\]
+
+有限和 $F=\sum_\rho F_\rho$ が $L_\nu F_\rho=-\nu\Lambda_\rho F_\rho$ を満たすなら、distinct multiplier ごとの和は $F,L_\nu F,\ldots$ から Vandermonde recovery できる。したがって regularity closure は各階で viscous multiplier eigenspace への分解を強制する。
+
+\chapter{memory、hyper-memory、closed triad-tree}
+\section{quartic memory}
+triad flux を Euler generator で閉じると
+\[
+Q_a^{(4)}:=L_N\Phi_a
+\]
+が得られる。$L_N$ は triad atom の root、$p$-leaf、$q$-leaf のいずれかを非線形項で置換する。
+\begin{align}
+L_N\varphi_{k;p,q}
+&=R^{\mathrm{root}}_{k;p,q}+R^p_{k;p,q}+R^q_{k;p,q},\\
+R^{\mathrm{root}}_{k;p,q}
+&=\Re\left[N_k(u)\cdot B_{k;p,q}(u_p,u_q)\right],\\
+R^p_{k;p,q}
+&=\Re\left[u_k\cdot B_{k;p,q}(N_p(u),u_q)\right],\\
+R^q_{k;p,q}
+&=\Re\left[u_k\cdot B_{k;p,q}(u_p,N_q(u))\right].
+\end{align}
+これは二つの triad が一点で連結した closed two-triad tree の和である。
+
+各 quartic monomial の viscous multiplier は leaf 波数二乗和
+\[
+\Lambda(T)=\sum_{\ell\in\operatorname{Leaves}(T)}|k_\ell|^2
+\]
+であり、multiplier class ごとに
+\[
+Q_{a,\eta}^{(4)}
+=\sum_{\substack{T\to a\\\Lambda(T)=\eta}}c_TM_T,
+\qquad
+L_\nu Q_{a,\eta}^{(4)}=-\nu\eta Q_{a,\eta}^{(4)}
+\]
+と分解できる。
+
+\section{quintic hyper-memory と一般の tree jet}
+次に
+\[
+S_a^{(5)}:=L_NQ_a^{(4)}
+\]
+を取ると、closed three-triad trees の和が得られる。一般に root shell $a$、depth $n$ の closed triad-tree 集合を $\cT_n(a)$ とし、
+\[
+J_a^{(n)}=\sum_{T\in\cT_n(a)}Z_T,
+\qquad
+Z_T=c_TM_T
+\]
+と定義する。低階は
+\[
+J_a^{(0)}=e_a,
+\qquad
+J_a^{(1)}=\Phi_a,
+\qquad
+J_a^{(2)}=Q_a^{(4)},
+\qquad
+J_a^{(3)}=S_a^{(5)}
+\]
+である。
+
+\begin{definition}[closed triad-tree]
+closed triad-tree $T$ は、root shell、有限個の triad vertex、符号付き leaf 波数 $(\sigma_\ell,k_\ell)$ を持ち、
+\[
+\sum_\ell\sigma_\ell k_\ell=0
+\]
+を満たす tree monomial を定める組合せ構造である。
+\end{definition}
+
+closure jet 上で
+\[
+L_NZ_T=\sum_{T'\in\operatorname{Graft}(T)}Z_{T'},
+\qquad
+L_\nu Z_T=-\nu\Lambda(T)Z_T.
+\]
+forcing は leaf replacement、additive noise は leaf contraction として作用する。
+
+\section{grafting と viscous clock}
+leaf $k$ を $p+q=k$ で置換すると
+\[
+\Lambda(T')
+=\Lambda(T)-|k|^2+|p|^2+|q|^2
+=\Lambda(T)-2p\cdot q.
+\]
+従って
+\begin{itemize}
+\item $p\cdot q<0$ なら clock は増える。
+\item $p\cdot q>0$ なら clock は減る。
+\item $p\perp q$ なら clock は保存される。
+\end{itemize}
+regularity contribution は polynomial degree だけでなく、grafting geometry が damping clock を増減させるかで決まる。
+
+\section{sweeping invariance}
+constant boost の下で $u_k\mapsto e^{-ik\cdot Ut}u_k$。closed monomial は $\sum_\ell\sigma_\ell k_\ell=0$ を満たすので位相は相殺される。closure jet は全階で Galilean/sweeping invariant algebra の中に留まる。
+
+\chapter{regularity closure と finite-depth response quotient}
+\section{tree-wise absorption}
+tree basis では
+\[
+LZ_T
+=\sum_{T'\in\operatorname{Graft}(T)}Z_{T'}
+-\nu\Lambda(T)Z_T
++\text{forcing/noise}.
+\]
+局所 nonlinear rate を $\tau_T^{-1}$ とすれば、tree-wise regularity ratio は概略
+\[
+R_T\sim\frac{\tau_T^{-1}}{\nu\Lambda(T)}.
+\]
+$R_T<1$ ならその branch は局所的に粘性吸収される。
+
+\section{operator norm criterion}
+depth $n$ の高波数 tree spaceを $\cH_{n}^{s,A}$、grafting operator を
+\[
+G_n:\cH_n^{s,A}\to\cH_{n+1}^{s,A}
+\]
+とし、$D_nZ_T=\Lambda(T)Z_T$ とする。
+
+\begin{hypothesis}[regularity absorption]
+ある $n,s,A$ について
+\[
+\norm{(\nu D_{n+1})^{-1}G_n}_{\cH_n^{s,A}\to\cH_{n+1}^{s,A}}<1
+\]
+なら、depth $n$ 以降の high-frequency memory branch は粘性に吸収される。
+\end{hypothesis}
+
+index を $D_{n+1}$ としたのは、$G_n$ の target tree の damping を反転するためである。$D_n$ 表記を使う場合は target multiplier を source block へ pull back した規約が必要になる。
+
+\section{finite-depth fiber と response quotient}
+深さ $N$ までの multiplier-resolved fiber を
+\[
+\cF^{(N)}
+=\sigma\left(J_{a,\eta}^{(n)}:0\le n\le N\right),
+\qquad
+J_{a,\eta}^{(n)}
+=\sum_{\substack{T\in\cT_n(a)\\\Lambda(T)=\eta}}Z_T
+\]
+とする。対応する projection と response coordinate は
+\[
+\Pi_N=\E[\,\cdot\mid\cF^{(N)}],
+\qquad
+R_N(u)=\left(J_{a,\eta}^{(n)}(u)\right)_{0\le n\le N}.
+\]
+これは feature engineering ではなく、closure fixed point の有限 truncation の座標表示である。
+
+leading residual は
+\[
+Q_NL\Pi_N,
+\qquad Q_N=\Id-\Pi_N
+\]
+である。linear test class 上の loss tensor は
+\[
+V_N
+=\Cov(LR_N,LR_N\mid R_N)
+\]
+であり、最上段では未保持の $J^{(N+1)}$、viscous contribution、forcing/noise の conditional covariance を測る。
+
+semigroup $P_t$ に対し compressed dynamics を
+\[
+T_t^{(N)}=\Pi_NP_t\Pi_N
+\]
+とすると、CEC defect は
+\[
+T_{s+t}^{(N)}-T_s^{(N)}T_t^{(N)}
+=\Pi_NP_s(\Id-\Pi_N)P_t\Pi_N.
+\]
+従って loss と CEC defect は response の事後評価ではなく、finite-depth closure jet truncation の誤差評価である。
+
+\part{局所条件付き射影と drift--diffusion}
+
+\chapter{contextual projection chain}
+\section{大きな射影は局所 kernel に分解すべきである}
+$\Pi_N$ を一枚の大きな射影として扱う代わりに、tree の pruning／grafting context に沿って条件付き期待値を段階化する。ただし同じ $L^2(\mu)$ 上の nested projections を単純に積むと tower property により最後の射影へ潰れる。非自明なのは、異なる quotient coordinate spaces 間の conditional kernels である。
+
+情報変数を $R_j:X\to\cY_j$、law を $\nu_j=(R_j)_*\mu$ とし、isometric lifting
+\[
+(J_j\phi)(x)=\phi(R_j(x)),
+\qquad
+J_j:L^2(\nu_j)\to L^2(\mu)
+\]
+を取る。coordinate spaces 間の conditional kernel を
+\[
+C_{j+1\leftarrow j}=J_{j+1}^*J_j
+\]
+とする。すると
+\[
+C_{m\leftarrow0}
+=C_{m\leftarrow m-1}\cdots C_{1\leftarrow0}
+\]
+であり、最終 projection は
+\[
+P_mf=J_mC_{m\leftarrow0}J_0^*f
+\]
+と書ける。
+
+\section{context-dependent local projection}
+vertex $v$ の coarse label が生成する情報を $\cG_v$ とする。正確な局所射影は固定 $P_v$ ではなく、既に保持された context $S$ に依存する
+\[
+P_{v\mid S}f
+=\E[f\mid\cG_{S\cup\{v\}}]
+\]
+である。exact contextual system では
+\[
+P_{w\mid S\cup\{v\}}P_{v\mid S}
+=P_{v\mid S\cup\{w\}}P_{w\mid S}
+\]
+が tower property により成立する。非可換性は exact conditional expectation の必然ではなく、context-free surrogate や learned projection を使った近似 defect である。
+
+近似射影 $\widetilde P_v$ に対して
+\[
+\mathfrak C_{v,w}
+=\widetilde P_v\widetilde P_w-\widetilde P_w\widetilde P_v
+\]
+を projection curvature と呼ぶ。これは message order 依存性、hidden overlap、memory leakage を検出する。
+
+\chapter{pruning martingale と loss tensor}
+\section{reverse filtration}
+finite tree を leaf から root へ pruning する減少 filtration
+\[
+\cG_0\supset\cG_1\supset\cdots\supset\cG_m=\cF^{(N)}
+\]
+を取る。$Y=LR_N$ とし
+\[
+M_j=\E[Y\mid\cG_j],
+\qquad
+\zeta_j=M_j-M_{j+1}
+\]
+と定める。$\zeta_j$ は reverse martingale difference である。
+
+\begin{theorem}[local loss budget]
+\label{thm:local-loss-budget}
+\[
+\boxed{
+V_N
+=\E\left[
+\sum_{j=0}^{m-1}A_j
+\middle|\cF^{(N)}
+\right],
+\qquad
+A_j=\E[\zeta_j\zeta_j^{\mathsf T}\mid\cG_{j+1}].}
+\]
+\end{theorem}
+\begin{proof}
+$Y-\E[Y\mid\cF^{(N)}]=\sum_j\zeta_j$。$i<j$ なら $\zeta_j$ は $\cG_j$-可測で $\E[\zeta_i\mid\cG_{i+1}]=0$ なので、$\cF^{(N)}$ を条件とした cross covariance は消える。
+\end{proof}
+
+従って global loss tensor は局所 pruning innovation の predictable quadratic variation である。これは tree 全列挙を避け、message passing で drift/covariance を root へ送る根拠になる。
+
+\section{raw residual と canonical innovation}
+固定局所射影による $Q_vG_vZ$ は一般に martingale difference ではない。正準的な innovation は
+\[
+\zeta_{v\mid S}
+=\E[Y\mid\cG_S]-\E[Y\mid\cG_{S\cup\{v\}}]
+\]
+である。これなら conditional covariance がそのまま quadratic variation を作る。raw unresolved force を使う場合には、時間相関 correction が必要になる。
+
+\section{drift--covariance message recursion}
+vertex $v$ の subtree increment が
+\[
+\Delta_v=h_v+\sum_{c\in\operatorname{ch}(v)}\Delta_c,
+\qquad
+\Delta_c=b_c(S_c)+\varepsilon_c
+\]
+と分解され、$\varepsilon_c$ が局所 context $\cK_v$ を条件として centered、異なる child 間で conditional independent とする。このとき
+\[
+b_v(S_v)
+=\E\left[h_v+\sum_cb_c(S_c)\middle|S_v\right],
+\]
+\[
+\boxed{
+A_v(S_v)
+=\E\left[\sum_cA_c(S_c)\middle|S_v\right]
++\Cov\left(h_v+\sum_cb_c(S_c)\middle|S_v\right).}
+\]
+第一項は child subtrees 内部の martingale variance、第二項は child separator を消去した coarse uncertainty である。branch coupling が残る場合には cross covariance を追加する。
+
+\chapter{Mori--Zwanzig、Green--Kubo、Poisson corrector}
+\section{projected generator と memory}
+projection $P$、$Q=\Id-P$ に対する formal Mori--Zwanzig decomposition では
+\[
+L_{\mathrm{eff}}(\lambda)
+=PLP+PLQ(\lambda-QLQ)^{-1}QLP
+\]
+が現れる。第一項は projected drift、第二項は unresolved excursion の return correction である。time-domain では memory kernel
+\[
+K(t)=PLQe^{tQLQ}QLP
+\]
+として表される。
+
+短い correlation time と適切な scaling の下では、memory integral は drift correction と diffusion tensor へ縮約される。ここで diffusion は外から加える noise ではなく、局所射影で捨てた tree information の累積 fluctuation である。
+
+\section{zero-lag loss と effective diffusion}
+stationary residual process $\zeta(Y_n)$ の lag covariance を
+\[
+C_r=\E[\zeta(Y_0)\zeta(Y_r)^{\mathsf T}]
+\]
+とする。瞬間 loss は
+\[
+V=C_0
+\]
+だが、additive functional の diffusion tensor は一般に
+\begin{equation}
+\boxed{
+A_{\mathrm{GK}}
+=C_0+\sum_{r\ge1}(C_r+C_r^{\mathsf T}).}
+\label{eq:green-kubo}
+\end{equation}
+したがって $V$ をそのまま diffusion coefficient と置けるのは、innovation が既に white／martingale 化されている場合に限る。
+
+finite-state frozen kernel $K$ と centered observable $\zeta$ に対し Poisson equation
+\[
+(\Id-K)\chi=\zeta,
+\qquad
+\pi\chi=0
+\]
+を解くと、martingale increment
+\[
+m_{n+1}=\chi(Y_{n+1})-K\chi(Y_n)
+\]
+により
+\[
+A_{\mathrm{GK}}=\E[m_1m_1^{\mathsf T}]
+\]
+と書ける。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\textwidth]{diffusion_green_kubo.png}
+\caption{synthetic finite-state example。瞬間 loss $V$ と Green--Kubo/Poisson-corrected diffusion $A$ は大きく異なり得る。これは algebraic validation であり Navier--Stokes data ではない。}
+\end{figure}
+
+この例では
+\[
+V=\begin{pmatrix}0.6723&0.0225\\0.0225&0.1049\end{pmatrix},
+\qquad
+A=\begin{pmatrix}5.4507&0.1244\\0.1244&0.4771\end{pmatrix}
+\]
+であり、lag 200 までの Green--Kubo 和と Poisson martingale covariance の誤差は $4\times10^{-15}$ 以下だった。
+
+\section{random spine diffusion}
+coarse triad type の有限集合を $\cS$ とし、random spine state $X_n$ を Markov chain とする。各 graft の clock increment を $\delta(X_n,X_{n+1})$ とし、平均 $\bar\delta$ を引く。Poisson corrector $\chi$ により
+\[
+m(x,y)=\delta(x,y)-\bar\delta+\chi(y)-\chi(x)
+\]
+が martingale difference になる。適切な irreducibility と moment 条件の下で
+\[
+\frac{\Lambda_{\lfloor nt\rfloor}-\Lambda_0-\lfloor nt\rfloor\bar\delta}{\sqrt n}
+\Longrightarrow
+\Sigma^{1/2}W_t,
+\qquad
+\Sigma=\E[m(X_0,X_1)m(X_0,X_1)^{\mathsf T}].
+\]
+これは一本の branch の depth-scale diffusion である。whole-tree empirical law の leading order は一般に deterministic renormalization recursion であり、diffusion はその fluctuation として現れる。physical time の SDE へ移すには orthogonal dynamics の mixing と memory integrability が別途必要である。
+
+\section{regularity absorption と memory short-range 化}
+もし residual Markov operator が mean-zero space 上で
+\[
+\norm{K_x}\le\rho(x)<1
+\]
+を満たすなら、Poisson corrector は Neumann series で解ける。scalar observable について
+\[
+\abs{A_{\mathrm{GK}}-V}
+\le
+\frac{2\rho}{1-\rho}V
+\]
+となる。したがって regularity absorption は high-frequency tree tail の静的吸収だけでなく、memory correlation の短距離化でもある。
+
+\part{positive envelope、maximum entropy、順逆 message}
+
+\chapter{positive profile envelope}
+\section{signed grafting の majorant}
+normalized grafting を
+\[
+A_n=(\nu D_{n+1})^{-1}G_n:X_n\to X_{n+1}
+\]
+とする。tree coefficient block を profile map $q_n:\cT_n\to\cQ_n$ でまとめ、positive microstate weight $\omega(T)$ により
+\[
+\mathfrak m_n(z)_Q
+=\sum_{T:q_n(T)=Q}\omega(T)|z_T|
+\]
+を定義する。
+
+\begin{definition}[hard profile envelope]
+\[
+\mathsf M_n(Q',Q)
+=\sup_{T:q_n(T)=Q}
+\sum_{\substack{T'\in\operatorname{Graft}(T)\\q_{n+1}(T')=Q'}}
+\frac{|g_n(T,T')|\,\omega(T')}{\nu\Lambda(T')\omega(T)}.
+\]
+\end{definition}
+
+\begin{proposition}[block domination]
+任意の係数列 $z$ に対し
+\[
+\mathfrak m_{n+1}(A_nz)
+\le
+\mathsf M_n\mathfrak m_n(z)
+\]
+componentwise に成り立つ。
+\end{proposition}
+これは符号、位相、Leray projection 間の cancellation を一切使わない safety bound である。entrywise absolute value が粗い場合には polarization／helical orbit ごとの block operator norm に精密化する。
+
+\section{nonautonomous cocycle certificate}
+正 weight $w_n>0$ と $0\le\theta_n<1$ が
+\[
+\mathsf M_n^{\mathsf T}w_{n+1}\le\theta_nw_n
+\]
+を満たすなら
+\[
+\norm{A_{m-1}\cdots A_nz}_{w_m}
+\le
+\left(\prod_{j=n}^{m-1}\theta_j\right)
+\norm z_{w_n}.
+\]
+特に $\sup_j\theta_j<1$ なら infinite-depth tail は幾何級数的に吸収される。
+
+stationary profile operator $\mathsf M$ では
+\[
+\rho(\mathsf M)<1
+\Longleftrightarrow
+\exists w>0,\ \mathsf M^{\mathsf T}w\le\theta w,
+\quad \theta<1.
+\]
+constructive な weight は
+\[
+w=(\Id-\mathsf M^{\mathsf T})^{-1}\mathbf1
+\]
+である。
+
+\begin{remark}[finite-depth spectral radius trap]
+exact depth を state に含め、深さ $N$ で切った block shift は nilpotent なので、各 layer が増幅的でも global finite matrix の spectral radius は $0$ になる。従って有限 DAG の $\rho<1$ は regularity certificate ではない。必要なのは infinite-depth quotient、scale-stationary operator、または depth-uniform cocycle inequality である。
+\end{remark}
+
+\section{Navier--Stokes symbol bound}
+Leray triad symbolに対して
+\[
+\norm{B_{k;p,q}(x,y)}
+\le |q|\norm x\norm y.
+\]
+また $p\cdot x=0$ と $q=k-p$ から $q\cdot x=k\cdot x$ なので
+\[
+\norm{B_{k;p,q}(x,y)}
+\le \min(|q|,|k|)\norm x\norm y.
+\]
+従って leaf replacement edge の positive gain は概略
+\[
+\mathfrak a_\omega(T;k\to p,q)
+\lesssim
+\frac{m_k(T)\,b(k;p,q)}{\nu\Lambda(T')}
+\frac{\omega(T')}{\omega(T)}
+\]
+である。$\Lambda(T')=\Lambda(T)-2p\cdot q$ が denominator に入るため、clock-decreasing branch は自動的に重く評価される。
+
+\chapter{compression、lifting、maximum entropy}
+\section{compression と probability lifting}
+profile fiber $\Omega_Q=\{T:q(T)=Q\}$ を取り、compression と lifting を
+\[
+(Cx)_Q=\sum_{T\in\Omega_Q}x_T,
+\qquad
+(L_\mu z)_T=z_Q\mu_Q(T)
+\]
+で定める。$CL_\mu=\Id$。reduced signed transfer は
+\[
+K_\mu=CAL_\mu.
+\]
+
+\begin{theorem}[lifting-uniform safety]
+raw operator が positive envelope $\mathsf M$ で支配されるなら、任意の probability lifting $L_\mu$ に対し
+\[
+|K_\mu z|\le\mathsf M|z|.
+\]
+従って $\mathsf M^{\mathsf T}w\le\theta w$ なら
+\[
+\norm{K_\mu}_w\le\theta,
+\qquad
+\rho(K_\mu)<1.
+\]
+\end{theorem}
+
+重要なのは、maximum entropy だから安定なのではなく、probability lifting が hard envelope と compatible だから安定することである。maximum entropy は safety の source ではなく、未知 conditional law の model selection principle である。
+
+\section{maximum-entropy fiber law}
+reference measure $m_Q$、sufficient statistics $C_Q(T)$、target moments $c(Q)$ に対し
+\[
+\min_{\mu\in\cP(\Omega_Q)}\KL(\mu\Vert m_Q)
+\quad\text{s.t.}\quad
+\E_\mu C_Q=c(Q)
+\]
+を解く。有限 fiber で target が moment polytope の relative interior にあれば
+\[
+\mu_Q^{\mathrm{ME}}(T)
+=\exp\bigl(\lambda(Q)\cdot C_Q(T)-\psi_Q(\lambda(Q))\bigr)m_Q(T)
+\]
+が一意解である。dual Hessian は
+\[
+\nabla^2\psi_Q(\lambda)=\Cov_{\mu_{Q,\lambda}}(C_Q,C_Q)
+\]
+であり、moment geometry と identifiability を与える。
+
+reference law は規約ではなく model の一部である。ordered child multiplicity、tree automorphism、同一 monomial の重複表現を補正しない一様 counting measure は combinatorial bias を持ち得る。また signed/complex coefficient 自体を probability にせず、絶対値 proposal と phase weight を分離する。
+
+\section{Markov kernel と transfer operator}
+geometry だけを表す row-stochastic kernel $P$ は $P\mathbf1=\mathbf1$ なので $\rho(P)=1$。regularity を担うのは
+\[
+K(Q',Q)=P(Q'\mid Q)W(Q',Q)
+\]
+のように branching amplitude と viscous discount を含む Feynman--Kac transfer である。subcriticality は $P$ ではなく $K$ または positive envelope $\mathsf M$ に課す。
+
+\chapter{KL-robust envelope と forward--backward messages}
+\section{hard、nominal、robust の三層}
+profile $Q$ の microstate $T$ から destination $Q'$ への positive load を $g_{Q'Q}(T)$ とする。
+\begin{align}
+\mathsf M_{Q'Q}^{\mathrm{wc}}
+&=\sup_{T\in\Omega_Q}g_{Q'Q}(T),\\
+\mathsf M_{Q'Q}^{\mathrm{ME}}
+&=\E_{\mu_Q^{\mathrm{ME}}}g_{Q'Q}(T),\\
+K_{Q'Q}^{\mathrm{ME}}
+&=\E_{\mu_Q^{\mathrm{ME}}}a_{Q'Q}(T).
+\end{align}
+当然
+\[
+|K^{\mathrm{ME}}|
+\le\mathsf M^{\mathrm{ME}}
+\le\mathsf M^{\mathrm{wc}}.
+\]
+hard envelope が過度に保守的な場合、真の fiber law が
+\[
+\KL(\mu_Q^{\mathrm{true}}\Vert\mu_Q^{\mathrm{ME}})
+\le\varepsilon_Q
+\]
+にあるという law class を置く。
+
+正 weight $w$ に対し
+\[
+G_{Q,w}(T)=\sum_{Q'}g_{Q'Q}(T)w_{Q'}
+\]
+と置く。
+
+\begin{theorem}[entropy-robust Collatz certificate]
+\[
+\cR_Q^\varepsilon(w)
+:=\inf_{\eta>0}
+\frac{\varepsilon_Q+
+\log\E_{\mu_Q^{\mathrm{ME}}}e^{\eta G_{Q,w}}}{\eta}
+\]
+は KL ball 内の全 law に対する worst-case mean load である。ある $w>0$ と $\theta<1$ で
+\[
+\cR_Q^\varepsilon(w)\le\theta w_Q
+\quad(\forall Q)
+\]
+なら、law class 全体が weighted norm で contractive である。
+\end{theorem}
+
+small KL regime では
+\[
+\cR_Q^\varepsilon(w)
+=\E_{\mathrm{ME}}G_{Q,w}
++\sqrt{2\varepsilon_Q\Var_{\mathrm{ME}}(G_{Q,w})}
++O(\varepsilon_Q).
+\]
+したがって conditional variance は diffusion coefficient だけでなく robust safety margin にも現れる。
+
+\section{forward--backward resolvent messages}
+stationary positive transfer $\mathsf M$ で $\rho(\mathsf M)<1$ とし、source $b\ge0$、reward $r\ge0$ を取る。
+\[
+R=(\Id-\mathsf M)^{-1},
+\qquad
+\alpha=Rb,
+\qquad
+\beta=R^{\mathsf T}r.
+\]
+$\alpha_Q$ は root から $Q$ への cumulative reachability、$\beta_Q$ は $Q$ 以下の future tail value である。objective
+\[
+J=r^{\mathsf T}Rb
+\]
+の edge derivative は
+\[
+\boxed{
+\frac{\partial J}{\partial\mathsf M(Q',Q)}
+=\beta_{Q'}\alpha_Q.}
+\]
+edge budget は
+\[
+B_{Q\to Q'}
+=\alpha_Q\mathsf M(Q',Q)\beta_{Q'}.
+\]
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.72\textwidth]{forward_backward_budget.png}
+\caption{synthetic positive envelope の forward--backward edge budget。大きな局所係数ではなく、root reachability と future amplification を含む global importance を示す。}
+\end{figure}
+
+\section{profile refinement score}
+robust backward message $h$ に対し
+\[
+G_{Q,h}(T)=\sum_{Q'}g_{Q'Q}(T)h_{Q'}
+\]
+と置く。KL uncertainty margin
+\[
+\Delta_Q^{\mathrm{KL}}
+=\cR_Q^\varepsilon(h)-\E_{\mathrm{ME}}G_{Q,h}
+\]
+と forward reachability $\alpha_Q$ を組み合わせて
+\[
+\boxed{
+S_Q^{\mathrm{split}}
+=\alpha_Q\Delta_Q^{\mathrm{KL}}}
+\]
+を adaptive profile split score とする。これは reachability、future amplification、fiber uncertainty を同時に測る。
+
+\section{resolvent accuracy}
+true reduced operator と ME operator が同じ weighted norm で
+\[
+\norm{K_{\mathrm{true}}},\norm{K_{\mathrm{ME}}}\le\theta<1
+\]
+を満たし、$\delta=\norm{K_{\mathrm{true}}-K_{\mathrm{ME}}}$ とすると
+\[
+\norm{(\Id-K_{\mathrm{true}})^{-1}
+-(\Id-K_{\mathrm{ME}})^{-1}}
+\le
+\frac{\delta}{(1-\theta)^2}.
+\]
+安全性は denominator $1-\theta$、statistical closure accuracy は numerator $\delta$ を決める。
+
+\part{階層的類似度と effective viscosity}
+
+\chapter{有効粘性の二つの定義}
+\section{exact viscous clock と signed damping}
+物理定数 $\nu$ と tree multiplier $\Lambda(T)$ は tree が分かれば厳密に計算できる。類似度で近似すべき主対象は $\nu$ 自体ではなく、非線形再注入と memory を含む実効減衰である。
+
+係数状態 $f$ に対する signed effective damping の候補を
+\[
+\gamma_{\mathrm{sgn}}(f)
+=\frac{\nu\ip{f}{Df}-\Re\ip{f}{Gf}}{\norm f^2}
+\]
+とする。これは phase cancellation を含む統計的・物理的 damping である。
+
+\section{positive-envelope damping margin}
+positive envelope の Lyapunov weight $h>0$ に対し、一つの source tree $T$ の normalized gain を
+\[
+c_h(T)
+=\frac1{h(q(T))}
+\sum_{T'}|A_{T'T}|h(q(T')),
+\qquad A=(\nu D)^{-1}G
+\]
+とする。$c_h(T)<1$ は cancellation に依存しない local safety margin である。
+
+\begin{definition}[robust effective damping]
+\[
+\boxed{
+\gamma_h^+(T)
+=\nu\Lambda(T)(1-c_h(T)).}
+\]
+\end{definition}
+
+signed damping は予測精度の対象、positive damping margin は safety の対象である。local representation は $\Lambda$ と clock sign を exact coordinate として保持し、類似度は nonlinear return と memory correction を近似するために使う。
+
+\chapter{nested local representation と projection budget}
+\section{rooted decorated neighborhood}
+pointed tree $(T,v)$ の局所 label を
+\[
+z_v=
+\left(
+\log|k|,
+\log\frac{|p|}{|q|},
+\frac{p\cdot q}{|p||q|},
+\Lambda_v,\delta\Lambda_v,
+\text{helical/polarization orbit},
+\text{branch role}
+\right)
+\]
+とする。半径 $R$ の rooted decorated subtree の同型類を
+\[
+H_v^{(R)}=[\cN_R(v);z,e,\omega]\in\cZ_R
+\]
+と定義する。restriction map により
+\[
+\sigma(H^{(0)})
+\subset\sigma(H^{(1)})
+\subset\cdots
+\]
+が得られる。
+
+計算では permutation-invariant recursion
+\[
+h_v^{(0)}=\phi_0(z_v),
+\qquad
+h_v^{(r+1)}
+=\left(
+h_v^{(r)},
+\sum_{w\in\operatorname{child}(v)}
+\omega_{vw}\Phi_r(h_w^{(r)},e_{vw})
+\right)
+\]
+を使える。前段 representation を明示的に含めることで nestedness を保つ。
+
+\section{radius projection budget}
+$\cG_R=\sigma(H_v^{(R)})$、$P_RY=\E[Y\mid\cG_R]$ とする。
+
+\begin{theorem}[radius projection budget]
+\[
+\boxed{
+\E\norm{Y-P_RY}^2
+-
+\E\norm{Y-P_{R+1}Y}^2
+=
+\E\norm{P_{R+1}Y-P_RY}^2.}
+\]
+vector target に対して
+\[
+\E\Cov(Y\mid\cG_R)-\E\Cov(Y\mid\cG_{R+1})
+=
+\E\left[(P_{R+1}Y-P_RY)(P_{R+1}Y-P_RY)^{\mathsf T}\right]
+\succeq0.
+\]
+\end{theorem}
+
+従って半径を一段広げたことで説明された effective damping / residual variance が正確に分離される。
+
+\section{mean、entropic risk、essential supremum}
+positive gain $c=c_h(T)$ に対し、同じ filtration 上で
+\[
+m_R=\E[c\mid\cG_R],
+\qquad
+r_{R,\tau}=\frac1\tau\log\E[e^{\tau c}\mid\cG_R],
+\qquad
+u_R=\esssup(c\mid\cG_R)
+\]
+を持つ。nested representation の下で
+\[
+m_R\le r_{R,\tau}\le u_R,
+\qquad
+u_{R+1}\le u_R
+\]
+であり、$\E r_{R,\tau}$ は非増加である。したがって
+\[
+\epsilon_R^{\mathrm{pred}}=\E\Var(\gamma_{\mathrm{sgn}}\mid\cG_R),
+\quad
+\epsilon_R^{\mathrm{alias}}=\E(u_R-m_R),
+\quad
+\theta_R=\norm{u_R}_{L^\infty}
+\]
+を representation diagnostics とできる。variance は精度、essential supremum は safety を測る。
+
+\chapter{global node/edge measures と tree similarity}
+\section{forward--backward weighted empirical measures}
+node importance $a_v\propto\alpha_v\beta_v$ を用いて
+\[
+\rho_{T,R}^{(1)}
+=\frac1{M_1(T)}
+\sum_{v\in V(T)}a_v\delta_{H_v^{(R)}},
+\qquad
+M_1(T)=\sum_va_v
+\]
+を定義する。parent--child arrangement を保持するため
+\[
+\rho_{T,R}^{(2)}
+=\frac1{M_2(T)}
+\sum_{(v,w)\in E(T)}a_{vw}
+\delta_{(H_v^{(R)},e_{vw},H_w^{(R)})}
+\]
+も持つ。
+
+node measure は branch mixture を保持するが、どの parent と child が結ばれているかを捨てる。memory が edge correlation に依存する場合、最小 global representation は
+\[
+\boxed{
+\mathfrak R_R(T)
+=(M_1,\rho_{T,R}^{(1)},M_2,\rho_{T,R}^{(2)})}
+\]
+である。必要なら path length $r$ の empirical measure へ拡張する。
+
+\section{projection error の三分解}
+full tree target を $Y_T$ とする。radius-$R$ local states と配置を保持する $\sigma$-代数を $\cH_R$、node measure のみを $\cP_R^{(1)}$、node+edge measures を $\cP_R^{(1,2)}$ とすると
+\[
+\cP_R^{(1)}\subset\cP_R^{(1,2)}\subset\cH_R.
+\]
+$\widehat Y_R$ が $\cP_R^{(1,2)}$-可測なら
+\begin{align}
+\E\norm{Y_T-\widehat Y_R}^2
+={}&
+\E\norm{Y_T-\E[Y_T\mid\cH_R]}^2
+\notag\\
+&+\E\norm{\E[Y_T\mid\cH_R]-\E[Y_T\mid\cP_R^{(1,2)}]}^2
+\notag\\
+&+\E\norm{\E[Y_T\mid\cP_R^{(1,2)}]-\widehat Y_R}^2.
+\end{align}
+第一項は local radius truncation、第二項は pooling/arrangement aliasing、第三項は estimation/interpolation/ME error である。
+
+\section{Wasserstein と MMD bounds}
+global functional が
+\[
+\Gamma_R(T)
+=M_1(T)\int g_R\,d\rho_{T,R}^{(1)}
++M_2(T)\int m_R\,d\rho_{T,R}^{(2)}
++\varepsilon_R(T)
+\]
+と表され、$g_R,m_R$ が Lipschitz なら
+\begin{align}
+|\Gamma_R(T)-\Gamma_R(S)|
+\le{}&
+\overline M_1L_1\Wass(\rho_{T,R}^{(1)},\rho_{S,R}^{(1)})
++B_1|M_1(T)-M_1(S)|
+\notag\\
+&+\overline M_2L_2\Wass(\rho_{T,R}^{(2)},\rho_{S,R}^{(2)})
++B_2|M_2(T)-M_2(S)|
+\notag\\
+&+|\varepsilon_R(T)-\varepsilon_R(S)|.
+\end{align}
+
+kernel mean embedding $\Phi_k(\rho)=\int k(z,\cdot)\rho(dz)$ と MMD を使い、$g_R\in\cK$ なら
+\[
+\left|\int g_Rd\rho-\int g_Rd\sigma\right|
+\le\norm{g_R}_{\cK}\MMD_k(\rho,\sigma).
+\]
+Wasserstein は local geometry を明示し、MMD は distribution regression と conditional embedding に向く。
+
+\section{drift と diffusion の異なる重み}
+local pruning innovation $\zeta_v$ に対し
+\[
+b_R(z)=\E[\zeta_v\mid H_v^{(R)}=z],
+\qquad
+A_R(z)=\Cov(\zeta_v\mid H_v^{(R)}=z)
+\]
+とする。global increment $\Delta X_T=\sum_va_v\zeta_v$ では
+\[
+\E[\Delta X_T\mid\cH_R]
+=\sum_va_vb_R(H_v^{(R)}),
+\]
+\[
+\Cov(\Delta X_T\mid\cH_R)
+=\sum_va_v^2A_R(H_v^{(R)})
+\]
+となる。従って drift は一次重み measure、diffusion は二次重み measure で表すべきである。
+
+\chapter{viscous bisimulation と安全な similarity interpolation}
+\section{projected subtree dynamics の fixed-point metric}
+augmented profile states $x,y$ に projected damping observable $\ell$ と projected transition law $P_x$ が与えられたとする。距離 $d$ に対し
+\[
+(\mathfrak Bd)(x,y)
+=|\ell(x)-\ell(y)|+\theta W_d(P_x,P_y),
+\qquad 0<\theta<1
+\]
+と定める。有限状態では $\mathfrak B$ は sup norm で contraction なので、一意な fixed point $d_*$ がある。
+
+$d^{(0)}=0$ から反復すると
+\[
+\norm{d^{(R)}-d_*}_\infty
+\le
+\frac{\theta^R}{1-\theta}\osc(\ell).
+\]
+$d^{(1)}$ は瞬間 damping の差、$d^{(R)}$ は $R-1$ 世代先までの projected subtree law の差である。
+
+value function
+\[
+U=\ell+\theta PU
+\]
+に対し
+\[
+|U(x)-U(y)|\le d_*(x,y)
+\]
+なので、$d_*$ は将来の再注入を含む tail-aware damping similarity である。
+
+\section{similarity と projection の自己整合}
+projected law 自体が current metric に依存する場合、$d\mapsto(\ell_d,P_d)\mapsto\mathfrak B_d$ の fixed point を考える。もし
+\[
+\norm{\ell_d-\ell_{d'}}_\infty\le L_\ell\norm{d-d'}_\infty,
+\]
+\[
+\sup_x\TV(P_d(x,\cdot),P_{d'}(x,\cdot))
+\le L_P\norm{d-d'}_\infty
+\]
+で、metric diameter が $D$ なら、複合 map の contraction coefficient は概略
+\[
+\kappa=2L_\ell+\theta(1+2DL_P).
+\]
+$\kappa<1$ なら similarity と local conditional projection の自己整合 fixed point は一意である。near-critical $\theta\approx1$ では bandwidth sensitivity を小さく保つ必要がある。
+
+\section{kernel mean predictor と safety certificate}
+観測 representation $(z_i,y_i)$ に対し kernel mean predictor
+\[
+\widehat m(z)=\sum_iw_i(z)y_i,
+\qquad
+w_i(z)=\frac{\kappa(z,z_i)}{\sum_j\kappa(z,z_j)}
+\]
+を用いる。これは conditional mean の推定器であり upper bound ではない。
+
+safety function $u(z)$ が $L_+$-Lipschitz で、観測点に certified upper labels $U_i\ge u(z_i)$ があれば
+\[
+\boxed{
+U_+(z)=\inf_i\{U_i+L_+d_+(z,z_i)\}}
+\]
+は全域で $u(z)$ の majorant になる。従って
+\[
+U_+(z)<1
+\]
+は similarity-based safety certificate である。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\textwidth]{similarity_prediction_safety.png}
+\caption{synthetic example。kernel mean は平均予測には有効だが一部で true gain を下回る。解析的 Lipschitz majorant は violation なしで upper certificate を与える。}
+\end{figure}
+
+したがって metric も
+\[
+d_{\mathrm{pred}}:\text{予測精度用},
+\qquad
+d_+:\text{clock/symbol/tail を支配する safety 用}
+\]
+に分ける。learned metric は $d_{\mathrm{pred}}$ を改善できるが、$d_+$ を縮めるには別の証明が必要である。
+
+\section{out-of-support maximum entropy}
+観測 support から遠い representation では kernel 外挿を停止し、fiber candidate space $\Omega_z$ 上で
+\[
+\mu_z^{\mathrm{ME},+}
+=\arg\min_\mu\KL(\mu\Vert m_z)
+\]
+subject to
+\[
+\E_\mu C=c(z),
+\qquad
+\E_\mu c_h\le\theta
+\]
+を解く。解は
+\[
+\frac{d\mu_z^{\mathrm{ME},+}}{dm_z}(T)
+\propto
+\exp\bigl(\lambda(z)\cdot C(T)-\eta(z)c_h(T)\bigr),
+\quad\eta\ge0.
+\]
+さらに true law が KL ball 半径 $\delta$ にあるなら
+\[
+U_\delta(z)
+=\inf_{\tau>0}
+\frac{\delta+
+\log\E_{\mu_z^{\mathrm{ME},+}}e^{\tau c_h}}{\tau}
+\]
+が worst-case mean gain を与える。平均 subcriticality と pointwise safety は異なるため、後者には support 制限または essential supremum が必要である。
+
+\part{有限 depth 近似可能性}
+
+\chapter{projection tail、boundary forgetting、memory mass}
+\section{四つの有限 depth 誤差}
+$Y\in L^2(\mu;\R^d)$、有限時間 $T>0$ を固定する。
+\begin{align}
+\varepsilon_N^{\mathrm{proj}}(Y)
+&=\norm{(\Pi_\infty-\Pi_N)Y}_2,\\
+\varepsilon_N^{\mathrm{loss}}(Y)^2
+&=\E\tr\Cov(Y\mid\cF^{(N)})
+-\E\tr\Cov(Y\mid\cF^{(\infty)}),\\
+\varepsilon_N^{\mathrm{bdry}}
+&=\sup_{\xi,\xi'}d(m_{\mathrm{root}}^{(N,\xi)},m_{\mathrm{root}}^{(N,\xi')}),\\
+\varepsilon_N^{\mathrm{dyn}}(T)
+&=\sup_{0\le t\le T}
+\norm{\Pi_Ne^{tL}\Pi_N-e^{t\Pi_NL\Pi_N}\Pi_N}.
+\end{align}
+projection/loss は情報 truncation、boundary は worst-case tail dependence、dynamic は Markovian closure error である。
+
+\section{projection-tail identity}
+$\cF^{(0)}\subset\cF^{(1)}\subset\cdots$ とし
+\[
+\Delta_nY=(\Pi_{n+1}-\Pi_n)Y.
+\]
+
+\begin{theorem}[finite-depth projection-tail identity]
+\[
+\boxed{
+\norm{(\Pi_\infty-\Pi_N)Y}_2^2
+=\sum_{n=N}^{\infty}\norm{\Delta_nY}_2^2.}
+\]
+さらに
+\[
+\boxed{
+\varepsilon_N^{\mathrm{loss}}(Y)^2
+=\sum_{n=N}^{\infty}\norm{\Delta_nY}_2^2.}
+\]
+\end{theorem}
+
+したがって finite-depth statistical approximability は depth innovation の square summability に帰着する。$a_n=\norm{\Delta_nY}_2^2$ が $a_{n+1}\le ra_n$、$r<1$ を満たせば
+\[
+\varepsilon_N^{\mathrm{proj}}(Y)
+\le\sqrt{\frac{a_N}{1-r}}.
+\]
+
+\chapter{branching-adjusted pressure の二閾値}
+\section{local influence と tree pressure}
+vertex message recursion が
+\[
+d_v(\cR_v(m),\cR_v(m'))
+\le\sum_{w\in\operatorname{child}(v)}c_{vw}d_w(m_w,m'_w)
+\]
+を満たすとする。正 weight $h_v$ と $r\ge1$ に対し
+\[
+\Xi_{r,N}(v;h)
+=\frac1{h_v}
+\sum_{\pi:v=v_0\to\cdots\to v_N}
+ h_{v_N}\prod_{j=0}^{N-1}c_{v_jv_{j+1}}^r
+\]
+と置き
+\[
+\mathfrak p_r
+=\limsup_{N\to\infty}
+\frac1N\log\sup_v\Xi_{r,N}(v;h)
+\]
+を $r$-moment tree pressure と呼ぶ。
+
+\begin{theorem}[first-moment boundary forgetting]
+$\mathfrak p_1<0$ なら depth-$N$ boundary influence は root で指数的に消える。十分条件は
+\[
+\sum_wc_{vw}h_w\le\kappa_1h_v,
+\qquad \kappa_1<1.
+\]
+\end{theorem}
+
+局所的に $c_{vw}<1$ であるだけでは不十分で、branching path 数が減衰を上回り得る。必要なのは branching entropy を含む pressure gap である。
+
+\section{second-moment pressure}
+terminal branch innovation が conditional centered で pairwise orthogonal とする。root perturbationの variance は path coefficient の二乗和で評価されるので
+\[
+\E\norm{\delta m_o^{(N)}}^2
+\lesssim\Xi_{2,N}(o;h).
+\]
+
+\begin{theorem}[statistical finite-depth approximation]
+$\mathfrak p_2<0$ なら、$\mathfrak p_1$ の符号にかかわらず $L^2$ boundary effect は消える。branch correlation inflation
+\[
+\chi_N
+=\frac{\Var(\sum_{|v|=N}\zeta_v)}{\sum_{|v|=N}\Var(\zeta_v)}
+\]
+が $\log\chi_N=o(N)$ なら結論は保たれる。
+\end{theorem}
+
+homogeneous $b$-ary tree で edge influence が $c$ なら
+\[
+\mathfrak p_1=\log(bc),
+\qquad
+\mathfrak p_2=\log(bc^2).
+\]
+従って
+\[
+\boxed{
+\frac1b\le c<\frac1{\sqrt b}}
+\]
+では worst-case mass は減らなくても $L^2$ projection tail は減る。
+
+\begin{tcolorbox}[colback=softgold,colframe=deepgold,boxrule=0.55pt,arc=1mm,title={二閾値原理}]
+\[
+\begin{aligned}
+\mathfrak p_1<0
+&:\quad\text{cancellation に依存しない robust safety},\\
+\mathfrak p_2<0
+&:\quad\text{conditional orthogonality を使う statistical accuracy}.
+\end{aligned}
+\]
+positive envelope が収縮しないことは finite-depth conditional projection が失敗することを意味しない。
+\end{tcolorbox}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{finite_depth_two_thresholds.png}
+\caption{synthetic multitype branching example。中央 regime では first-moment mass が増える一方、second-moment RMS は減衰する。}
+\end{figure}
+
+この例では viscosity-like parameter の閾値が
+\[
+\nu_{\mathrm{safe}}=1.2875,
+\qquad
+\nu_{L^2}=0.7537
+\]
+となり、その間に statistical-only window が存在した。
+
+\chapter{eventual contraction と finite Markov depth}
+\section{tail Lyapunov exponent}
+depth-dependent contraction factor $\kappa_{r,n}$ が
+\[
+\sum_wc_{vw,n}^rh_{n+1,w}
+\le\kappa_{r,n}h_{n,v}
+\]
+を満たすとする。tail Lyapunov exponent を
+\[
+\lambda_r(N_0)
+=\limsup_{m\to\infty}
+\frac1m\sum_{n=N_0}^{N_0+m-1}\log\kappa_{r,n}
+\]
+と定める。
+
+\begin{theorem}[eventual finite-depth approximability]
+ある $N_0$ で $\lambda_r(N_0)<0$ なら、初期層で $\kappa_{r,n}>1$ であっても、$N_0$ より先の boundary influence は指数的に減る。従って初期 dangerous memory layers を有限個だけ明示的に保持すればよい。
+\end{theorem}
+
+Navier--Stokes edge influence が
+\[
+c_{vw,n}
+\lesssim\frac{s_{vw,n}}{\nu\Lambda_n(v)}
+\]
+で、branching-adjusted symbol factor $B_{r,n}$ に対し
+\[
+\kappa_{r,n}
+\lesssim
+\frac{B_{r,n}}{\nu^r\Lambda_{n,\min}^r}
+\]
+なら、depth 平均で clock growth が symbol/branch growth に勝てばよい。clock-decreasing excursion の tail control が重要になる。
+
+\section{conditional mutual information}
+root target $X$、depth-$N$ retained boundary $B_N$、その先の tail $T_{>N}$ に対し
+\[
+\iota_N=I(X;T_{>N}\mid B_N)
+\]
+を finite conditional information tail とする。$|f(X)|\le M$ なら conditional Pinsker により
+\[
+\E\left|
+\E[f(X)\mid B_N,T_{>N}]
+-
+\E[f(X)\mid B_N]
+\right|
+\le M\sqrt{2\iota_N}.
+\]
+従って
+\[
+N_{\mathrm{Markov}}(\varepsilon)
+=\min\left\{N:\iota_N\le\frac{\varepsilon^2}{2M^2}\right\}
+\]
+を data-driven finite Markov depth と定義できる。
+
+\chapter{return-memory mass と finite-time dynamics}
+\section{block generator と Volterra equation}
+$P_N=\Pi_N$、$Q_N=\Id-P_N$ とし
+\[
+A_N=P_NLP_N,
+\quad B_N=P_NLQ_N,
+\quad C_N=Q_NLP_N,
+\quad D_N=Q_NLQ_N.
+\]
+resolved initial state に対する exact projected evolution は
+\[
+\dot u_N(t)
+=A_Nu_N(t)+\int_0^tK_N(s)u_N(t-s)\,ds,
+\]
+\[
+K_N(s)=B_Ne^{sD_N}C_N.
+\]
+$C_N$ は leakage、$B_N$ は unresolved state の return coupling である。
+
+\begin{definition}[integrated return-memory mass]
+\[
+\mu_N(T)=\int_0^T\norm{K_N(s)}\,ds.
+\]
+\end{definition}
+
+semigroup bounds の下で
+\[
+\varepsilon_N^{\mathrm{dyn}}(T)
+\le C_TT\mu_N(T).
+\]
+さらに
+\[
+\norm{e^{tD_N}}\le M_De^{-\alpha_Nt}
+\]
+なら
+\[
+\mu_N(\infty)
+\le\frac{M_D\norm{B_N}\norm{C_N}}{\alpha_N}.
+\]
+従って finite-time Markov closure には小さい leakage だけでなく、速い orthogonal damping と小さい return coupling が必要である。
+
+small-time expansion は
+\[
+P_Ne^{tL}P_N-e^{tA_N}P_N
+=\frac{t^2}{2}B_NC_N+O(t^3)
+\]
+であり、CEC defect の leading mechanism は return coupling $\times$ leakage である。
+
+\section{computable boundary bracket}
+positive recursion が order-preserving なら、admissible boundary messages の下限・上限を深さ $N$ から root へ伝播して
+\[
+m_N^-\le m_N^{(\xi)}\le m_N^+
+\]
+を得る。gap
+\[
+g_N=d(m_N^+,m_N^-)
+\]
+は無限 tree を計算せずに得られる worst-case a posteriori bound である。first-moment pressure が負なら $g_N$ は幾何減衰する。
+
+\part{統合 certificate と研究プログラム}
+
+\chapter{二軸 closure と統合誤差予算}
+\section{closure depth と representation radius}
+closure order $N$ と hierarchical similarity radius $R$ を分け
+\[
+\cF_{N,R}=\cF^{(N)}\vee\sigma(H_R),
+\qquad
+P_{N,R}=\E[\,\cdot\mid\cF_{N,R}]
+\]
+とする。$N$ は generator closure の深さ、$R$ は subtree geometry の解像度である。さらに path-distribution order $r$ を加えれば、instantaneous、one-step memory、multi-step memory を分離できる。
+
+local refinement と global refinement の近似射影が交換しない場合
+\[
+\mathfrak C_{N,R}
+=P_{N+1,R}P_{N,R+1}-P_{N,R+1}P_{N+1,R}
+\]
+を local--global projection curvature とする。$\mathfrak C_{N,R}$ が大きい場合、depth と similarity radius を独立に選べない。
+
+\section{joint certificate}
+projection innovation ratio が $r_2<1$、positive boundary gap が $g_N$、memory mass が $\mu_N(T)$、global metric contraction が $\theta<1$ なら
+\begin{align}
+\operatorname{Err}_{N,R}(T)
+\le{}&
+C_{\mathrm{proj}}
+\sqrt{\frac{\norm{\Delta_NY}_2^2}{1-r_2}}
++C_{\mathrm{bdry}}g_N
++C_TT\mu_N(T)
+\notag\\
+&+C_{\mathrm{glob}}
+\frac{\theta^R}{1-\theta}\osc(\ell)
++\varepsilon_{\mathrm{model}}(N,R).
+\end{align}
+
+\begin{definition}[adaptive stopping depth]
+\[
+N_*(\varepsilon,T)
+=\min\left\{N:\exists R\text{ such that RHS}\le\varepsilon\right\}.
+\]
+\end{definition}
+
+深さを先に固定するのではなく、projection、boundary、memory、similarity、model error の budget を満たす最小計算量で止める。
+
+\section{certificate vector}
+有限 depth closure を一つの scalar へ潰さず
+\[
+\boxed{
+\cC_N(T)
+=\left(
+\mathfrak p_1,
+\mathfrak p_2,
+\lambda_1,
+\lambda_2,
+\iota_N,
+\mu_N(T),
+g_N,
+\norm{\mathfrak C_{N,R}}
+\right)}
+\]
+として報告する。
+
+\begin{longtable}{p{0.22\textwidth}p{0.27\textwidth}p{0.40\textwidth}}
+\toprule
+性質 & 診断量 & 意味 \\
+\midrule
+\endfirsthead
+\toprule
+性質 & 診断量 & 意味 \\
+\midrule
+\endhead
+robust contraction & $\mathfrak p_1,g_N$ & cancellation に依存しない worst-case safety \\
+statistical contraction & $\mathfrak p_2,\norm{\Delta_NY}_2^2$ & mean-square projection accuracy \\
+clock stabilization & $\lambda_1,\lambda_2$ & 初期 supercritical 層後の eventual closure \\
+finite Markov length & $\iota_N$ & tail が root prediction に持つ追加情報 \\
+return-memory decay & $\mu_N(T)$ & finite-time Markov approximation \\
+local--global flatness & $\norm{\mathfrak C_{N,R}}$ & depth と similarity refinement の整合性 \\
+ME accuracy & $\KL(\mu^{\mathrm{true}}\Vert\mu^{\mathrm{ME}})$ & unknown fiber law の model error \\
+\bottomrule
+\end{longtable}
+
+\chapter{統合アルゴリズム}
+\section{offline construction}
+\begin{enumerate}
+\item Fourier--Galerkin cutoff、reference ensemble、Sobolev/tree weights を固定する。
+\item $e_a,\Phi_{a;bc},Q_{a,\eta}^{(4)},S_{a,\eta}^{(5)}$ を symbolic／automatic differentiation で生成する。
+\item tree edge ごとに exact clock $\Lambda(T')$、Leray/polarization symbol norm、branch role を記録する。
+\item profile map $q(T)$ を $(n,a,\Lambda,\text{locality},\text{orbit},\text{branch role})$ から開始する。
+\item $\mathsf M_1$ と $\mathsf M_2$、Lyapunov weights、positive bracket を計算する。
+\item pruning filtration と local innovations を作り、drift、covariance、Green--Kubo correction を推定する。
+\item node／edge empirical measures、bisimulation metric、support score を構成する。
+\item profile fiber ごとに maximum-entropy lifting と KL budget を fit する。
+\end{enumerate}
+
+\section{online/adaptive evaluation}
+\begin{enumerate}
+\item current tree/profile state から forward message $\alpha$ と backward message $\beta$ を更新する。
+\item local conditional drift/covariance、positive gain、essential supremum を評価する。
+\item observed support 内では kernel／OT／conditional embedding で平均を補間する。
+\item support 外では safety-constrained maximum entropy と KL-robust upper risk へ切り替える。
+\item 各 depth で $\Delta_NY$、$g_N$、$\mu_N(T)$、$\iota_N$、$\mathfrak C_{N,R}$ を更新する。
+\item joint certificate が tolerance を満たした時点で停止する。
+\item 満たさない場合、edge budget と split score の大きい profile のみを精密化する。
+\end{enumerate}
+
+\section{最小の実計算順序}
+本理論を実 Navier--Stokes coefficients へ接続する最小順序を次とする。
+\begin{enumerate}
+\item \textbf{two-triad exact block}: $Q_a^{(4)}$ の root/$p$/$q$ replacement を完全列挙する。
+\item \textbf{$M_1/M_2$ separation}: positive envelope と second-moment propagation を同じ profile で比較する。
+\item \textbf{branch covariance}: pruning innovation の cross covariance inflation を測る。
+\item \textbf{clock Lyapunov}: $\delta\Lambda=-2p\cdot q$ と normalized gain の depth average を測る。
+\item \textbf{memory mass}: $B_Ne^{tD_N}C_N$ の積分 bound を計算する。
+\item \textbf{similarity/ME}: node/edge distributions、support score、ME completion を held-out data で評価する。
+\item \textbf{adaptive stop}: fixed depth 比較ではなく、同じ error tolerance を達成する計算量を比較する。
+\end{enumerate}
+
+\chapter{synthetic validation の統合結果}
+本章の数値は定理構造の有限モデル検証であり、Navier--Stokes 正則性の証拠ではない。
+
+\section{Green--Kubo correction}
+3-state Markov chain の例では瞬間 loss $V$ と effective diffusion $A$ が大きく異なり、Poisson corrector と lag-200 Green--Kubo sum は $10^{-14}$ 以下で一致した。これは raw conditional covariance をそのまま diffusion と解釈する危険を示す。
+
+\section{positive envelope と edge sensitivity}
+synthetic envelope では
+\[
+\rho(\mathsf M)=0.4376,
+\qquad
+\theta=0.4983,
+\qquad
+\norm{K}_w=0.2876.
+\]
+forward--backward budget は source profile $0$ から destination $0$ への edge を最大重要度として検出した。
+
+\section{finite-depth two thresholds}
+multitype branching example では
+\[
+\nu_{\mathrm{safe}}=1.2875,
+\qquad
+\nu_{L^2}=0.7537.
+\]
+$\nu=1$ では first-moment mass が増えたが second-moment RMS は減少した。finite-depth matrix 全体の spectral radius は nilpotency によりこの挙動を検出できない。
+
+\section{similarity predictor と safety upper}
+synthetic representation example では kernel mean predictor は observed support 内の一部で true gain を下回った。一方、解析的 Lipschitz majorant は violation なしで upper certificate を与えた。したがって interpolation と safety extension を分離する必要がある。
+
+\section{maximum-entropy safety constraint}
+有限 fiber example では unconstrained ME の mean risk が safety threshold を上回ったが、risk multiplier $\eta\ge0$ を持つ constrained exponential family により threshold まで下げられた。KL uncertainty を加えた robust upper risk は再び上昇するため、nominal threshold と uncertainty margin を別々に確保する必要がある。
+
+\chapter{中心命題と結論}
+\begin{tcolorbox}[colback=softblue,colframe=deepblue,boxrule=0.7pt,arc=1mm,title={統合中心命題}]
+有限 Fourier--Galerkin Navier--Stokes において、energy fiber の generator closure は shell energy、triad flux、closed triad-tree closure jet を強制生成し、粘性は各 tree monomial を leaf-frequency multiplier $\Lambda(T)$ で対角化する。finite-depth fiber $\cF^{(N)}$ の projection、loss tensor、CEC defect はこの jet の truncation residual である。
+
+局所 contextual conditional expectations により loss は pruning martingale covariance の和へ分解され、residual time correlation は Green--Kubo／Poisson corrector を通じて effective diffusion へ変換される。signed grafting は positive profile envelope で支配され、maximum-entropy lifting はその安全域内部で unknown fiber law を閉じる。forward--backward messages は root reachability と future amplification を結合し、profile refinement を局所化する。
+
+hierarchical subtree representations と node/edge empirical measuresは effective damping と memory の global similarity を構成する。finite-depth approximability は first-moment pressure、second-moment pressure、tail Lyapunov exponent、conditional information tail、integrated return-memory mass の組として判定される。従って regularity safety、statistical accuracy、dynamical closure は異なる certificate channel として同じ triad-tree geometry 上で統合される。
+\end{tcolorbox}
+
+本書の要点は次の一文に集約できる。
+\[
+\boxed{
+\begin{minipage}{0.86\textwidth}
+\centering
+Navier--Stokes 応答商とは response を先に選ぶ理論ではない。\\
+物理が生成する fiber closure jet を、証明可能な誤差でどこまで保持するかの理論である。
+\end{minipage}}
+\]
+
+regularity のためには worst-case envelope を、prediction のためには conditional projection を、未知 fiber law の補完には maximum entropy を、計算停止には finite-depth certificate vector を用いる。この役割分担を保つことで、解析的安全性と統計的柔軟性を同時に持つ研究プログラムが得られる。
+
+\appendix
+\chapter{記法一覧}
+\begin{longtable}{p{0.23\textwidth}p{0.68\textwidth}}
+\toprule
+記号 & 意味 \\
+\midrule
+\endfirsthead
+\toprule
+記号 & 意味 \\
+\midrule
+\endhead
+$X_N$ & 有限 Fourier--Galerkin 状態空間 \\
+$P_k$ & 波数 $k$ における Leray projection \\
+$S_a,\lambda_a$ & Laplacian shell と eigenvalue \\
+$e_a$ & shell energy \\
+$\Phi_{a;bc}$ & input shell $b,c$ を分解した triad-shell flux \\
+$Q_a^{(4)}$ & quartic memory $L_N\Phi_a$ \\
+$S_a^{(5)}$ & quintic hyper-memory $L_NQ_a^{(4)}$ \\
+$T,Z_T$ & closed triad-tree と対応 observable \\
+$\Lambda(T)$ & leaf-frequency 二乗和による viscous multiplier \\
+$G_n,D_n$ & depth grafting operator と viscous multiplier operator \\
+$\cF^{(N)}$ & depth $N$ までの multiplier-resolved fiber \\
+$\Pi_N,Q_N$ & conditional expectation と補射影 \\
+$V_N$ & finite-depth truncation の conditional covariance residual \\
+$\Delta_nY$ & depth martingale innovation \\
+$\mathsf M_1,\mathsf M_2$ & first-/second-moment profile influence matrices \\
+$w,h$ & Lyapunov/Perron profile weights \\
+$\alpha,\beta$ & forward reachability と backward tail message \\
+$\mu_Q^{\mathrm{ME}}$ & profile fiber の maximum-entropy law \\
+$\cR_Q^\varepsilon$ & KL-robust row load functional \\
+$H_v^{(R)}$ & radius-$R$ hierarchical local representation \\
+$\rho^{(1)},\rho^{(2)}$ & node と edge-pair empirical measures \\
+$\mathfrak p_1,\mathfrak p_2$ & first-/second-moment tree pressure \\
+$\mu_N(T)$ & integrated return-memory mass \\
+$\iota_N$ & conditional mutual information tail \\
+\bottomrule
+\end{longtable}
+
+\chapter{主要恒等式の証明補足}
+\section{conditional variance refinement}
+$\cA\subset\cB$ なら
+\[
+\Cov(Y\mid\cA)
+=\E[\Cov(Y\mid\cB)\mid\cA]
++\Cov(\E[Y\mid\cB]\mid\cA).
+\]
+この identity は local radius refinement、global representation refinement、finite-depth loss reduction の全てに共通する。各補遺で現れた variance budget はこの一式の異なる filtration への適用である。
+
+\section{resolvent derivative}
+$R=(\Id-M)^{-1}$ に対し
+\[
+dR=R(dM)R.
+\]
+$J=r^{\mathsf T}Rb$ なら
+\[
+dJ=(R^{\mathsf T}r)^{\mathsf T}(dM)(Rb)
+=\beta^{\mathsf T}(dM)\alpha.
+\]
+従って edge derivative は $\beta_i\alpha_j$ である。
+
+\section{Green--Kubo と Poisson equation}
+stationary Markov chain $Y_n$、centered observable $g$ に対して $(\Id-K)\chi=g$。additive functional は
+\[
+\sum_{n=0}^{N-1}g(Y_n)
+=M_N+\chi(Y_0)-\chi(Y_N)
+\]
+と martingale plus coboundary に分解される。boundary term は $N^{-1/2}$ scaling で消え、martingale quadratic variation が effective diffusion を与える。
+
+\section{KL robust duality}
+任意の probability laws $\mu\ll\nu$ と measurable $F$ に対し
+\[
+\E_\mu F
+\le\KL(\mu\Vert\nu)+\log\E_\nu e^F.
+\]
+$F=\eta G$ として $\KL\le\varepsilon$、$\eta>0$ で infimum を取ると entropy-robust row functional が得られる。
+
+\section{finite-depth nilpotency}
+depth を明示した有限直和上の one-step grafting matrix は strictly block upper/lower triangular なので、最大 depth $N$ なら $(N+1)$ 乗で零になる。従って有限 matrix の spectral radius は常に零であり、layer product growth の代わりにはならない。
+
+\chapter{統合版の章対応}
+\begin{longtable}{p{0.27\textwidth}p{0.63\textwidth}}
+\toprule
+出典 & 統合版での配置 \\
+\midrule
+\endfirsthead
+\toprule
+出典 & 統合版での配置 \\
+\midrule
+\endhead
+基礎研究ノート & 第 1--5 章: energy, shell, flux, memory, tree, regularity, finite-depth quotient \\
+補遺 I & 第 6--8 章: contextual projection, pruning martingale, Green--Kubo, diffusion \\
+補遺 II & 第 9--11 章: positive envelope, maximum entropy, KL robustness, forward--backward messages \\
+補遺 III & 第 12--14 章: effective viscosity, hierarchical representation, node/edge similarity, safe interpolation \\
+補遺 IV & 第 15--17 章: projection tail, two pressures, eventual contraction, memory mass \\
+統合新章 & 第 18--20 章: two-axis closure, joint certificate, unified algorithm and conclusions \\
+\bottomrule
+\end{longtable}
+
+\chapter{計算実装の仕様}
+\section{symbolic tree generator}
+必要な最小 data structure は次である。
+\begin{itemize}
+\item root shell、vertex triad $(k,p,q)$、replacement site。
+\item leaf modes、signs、polarization/helical orbit。
+\item coefficient product、automorphism multiplicity。
+\item viscous multiplier $\Lambda(T)$ と各 graft の $\delta\Lambda$。
+\item parent/child profile、positive symbol norm、signed amplitude。
+\end{itemize}
+同一 monomial の複数 tree representation は canonicalization と symmetry orbit reduction でまとめる。
+
+\section{測度と cross-fitting}
+conditional expectation、maximum entropy、loss covariance を同じ sample で fit/evaluate すると optimistic bias が生じる。trajectory blocks または independent ensembles を train/validation/test に分け、以下を held-out で報告する。
+\begin{itemize}
+\item conditional drift and covariance error。
+\item CEC/tower/idempotence defect。
+\item KL divergence と support distance。
+\item positive upper-bound violation count。
+\item projection-tail and memory-tail certificates。
+\end{itemize}
+
+\section{再現可能性の注意}
+本書の図は有限状態 synthetic validation から生成した。これらは algebraic identities と algorithm architecture の sanity check であり、実 Navier--Stokes regularity の証拠ではない。実計算では Fourier cutoff、dimension、forcing、reference law、Sobolev weight、profile map、sampling protocol を全て明示する必要がある。
+
+\backmatter
+\chapter*{参考文献}
+\addcontentsline{toc}{chapter}{参考文献}
+\begingroup
+\small
+\begin{thebibliography}{99}
+\setlength{\itemsep}{0.35em}
+\setlength{\parskip}{0pt}
+
+\bibitem{base-note}
+Fiber Closure Fixed Point Program,
+\emph{ファイバー閉包固定点としての Navier--Stokes 応答商理論},
+研究ノート, 2026.
+
+\bibitem{addendum-one}
+Fiber Closure Fixed Point Program,
+\emph{局所ファイバー射影連鎖と viscous-clock 拡散極限},
+補遺 I, 2026.
+
+\bibitem{addendum-two}
+Fiber Closure Fixed Point Program,
+\emph{正作用素包絡・最大エントロピー lifting・順逆正則性 certificate},
+補遺 II, 2026.
+
+\bibitem{addendum-three}
+Fiber Closure Fixed Point Program,
+\emph{局所条件付き射影と粘性 bisimulation 距離},
+補遺 III, 2026.
+
+\bibitem{addendum-four}
+Fiber Closure Fixed Point Program,
+\emph{有限 depth 近似可能性: 境界忘却・innovation tail・memory mass},
+補遺 IV, 2026.
+
+\bibitem{mori1965}
+H. Mori,
+``Transport, Collective Motion, and Brownian Motion,''
+\emph{Progress of Theoretical Physics}, 33, 423--455, 1965.
+
+\bibitem{chorin2000}
+A. J. Chorin, O. H. Hald, R. Kupferman,
+``Optimal Prediction and the Mori--Zwanzig Representation of Irreversible Processes,''
+\emph{Proceedings of the National Academy of Sciences USA}, 97, 2968--2973, 2000.
+
+\bibitem{kipnis-varadhan}
+C. Kipnis, S. R. S. Varadhan,
+``Central Limit Theorem for Additive Functionals of Reversible Markov Processes and Applications to Simple Exclusions,''
+\emph{Communications in Mathematical Physics}, 104, 1--19, 1986.
+
+\bibitem{kelly-melbourne}
+D. Kelly, I. Melbourne,
+``Deterministic Homogenization for Fast--Slow Systems with Chaotic Noise,''
+\emph{Journal of Functional Analysis}, 272, 4063--4102, 2017.
+
+\bibitem{lauritzen-spiegelhalter}
+S. L. Lauritzen, D. J. Spiegelhalter,
+``Local Computations with Probabilities on Graphical Structures and Their Application to Expert Systems,''
+\emph{Journal of the Royal Statistical Society B}, 50, 157--224, 1988.
+
+\bibitem{factor-graphs}
+F. R. Kschischang, B. J. Frey, H.-A. Loeliger,
+``Factor Graphs and the Sum--Product Algorithm,''
+\emph{IEEE Transactions on Information Theory}, 47, 498--519, 2001.
+
+\bibitem{levermore}
+C. D. Levermore,
+``Moment Closure Hierarchies for Kinetic Theories,''
+\emph{Journal of Statistical Physics}, 83, 1021--1065, 1996.
+
+\bibitem{donsker-varadhan}
+M. D. Donsker, S. R. S. Varadhan,
+``Asymptotic Evaluation of Certain Markov Process Expectations for Large Time, I,''
+\emph{Communications on Pure and Applied Mathematics}, 28, 1--47, 1975.
+
+\bibitem{seneta}
+E. Seneta,
+\emph{Non-negative Matrices and Markov Chains},
+Springer.
+
+\bibitem{waleffe}
+F. Waleffe,
+``The Nature of Triad Interactions in Homogeneous Turbulence,''
+\emph{Physics of Fluids A}, 4, 350--363, 1992.
+
+\bibitem{deep-sets}
+M. Zaheer et al.,
+``Deep Sets,''
+\emph{Advances in Neural Information Processing Systems 30}, 2017.
+
+\bibitem{wl-kernel}
+N. Shervashidze et al.,
+``Weisfeiler--Lehman Graph Kernels,''
+\emph{Journal of Machine Learning Research}, 12, 2539--2561, 2011.
+
+\bibitem{gretton}
+A. Gretton et al.,
+``A Kernel Two-Sample Test,''
+\emph{Journal of Machine Learning Research}, 13, 723--773, 2012.
+
+\bibitem{simon-gabriel}
+C.-J. Simon-Gabriel, B. Sch\"olkopf,
+``Kernel Distribution Embeddings: Universal Kernels, Characteristic Kernels and Kernel Metrics on Distributions,''
+\emph{Journal of Machine Learning Research}, 19, 1--29, 2018.
+
+\bibitem{song-conditional}
+L. Song, J. Huang, A. Smola, K. Fukumizu,
+``Hilbert Space Embeddings of Conditional Distributions with Applications to Dynamical Systems,''
+\emph{Proceedings of ICML}, 2009.
+
+\bibitem{peyre-cuturi}
+G. Peyr\'e, M. Cuturi,
+``Computational Optimal Transport,''
+\emph{Foundations and Trends in Machine Learning}, 11, 355--607, 2019.
+
+\bibitem{csiszar}
+I. Csisz\'ar,
+``I-Divergence Geometry of Probability Distributions and Minimization Problems,''
+\emph{The Annals of Probability}, 3, 146--158, 1975.
+
+\bibitem{kunsch}
+H. R. K\"unsch,
+``Decay of Correlations under Dobrushin's Uniqueness Condition and Its Applications,''
+\emph{Communications in Mathematical Physics}, 84, 207--222, 1982.
+
+\bibitem{evans}
+W. Evans, C. Kenyon, Y. Peres, L. J. Schulman,
+``Broadcasting on Trees and the Ising Model,''
+\emph{Annals of Applied Probability}, 10, 410--433, 2000.
+
+\bibitem{mooij-kappen}
+J. M. Mooij, H. J. Kappen,
+``Sufficient Conditions for Convergence of the Sum--Product Algorithm,''
+\emph{IEEE Transactions on Information Theory}, 53, 4422--4437, 2007.
+
+\bibitem{kotecky-preiss}
+R. Koteck\'y, D. Preiss,
+``Cluster Expansion for Abstract Polymer Models,''
+\emph{Communications in Mathematical Physics}, 103, 491--498, 1986.
+
+\end{thebibliography}
+\endgroup
+
+\end{document}

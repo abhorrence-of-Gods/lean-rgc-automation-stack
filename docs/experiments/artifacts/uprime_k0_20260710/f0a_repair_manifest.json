@@ -1,0 +1,58 @@
+{
+  "schema_version": "lean-rgc-uprime-k0-repair-manifest-v1.0",
+  "recorded_at_utc": "2026-07-10T11:15:49.8045541Z",
+  "parent_manifest_sha256": "52CDE9E961AF14869D8CF71B0E714693FA59D01551A4E4BA1844578A592AB48A",
+  "repair_id": "F0a_audit_cache_local_build_content_digest",
+  "scope": "audit_result_cache.workdir_fingerprint local build artifacts only",
+  "changes": [
+    "added an explicit workdir fingerprint algorithm salt",
+    "replaced top-level .olean name enumeration by sorted recursive relative-path plus streaming SHA-256 content hashing",
+    "orphaned pre-content-digest cache rows without destructive deletion",
+    "added byte-identical, changed-content, nested-artifact, creation-order, legacy-salt, and cache-miss regressions",
+    "prevented K0 from ever reporting a repaired foundation while T0 is unamended or untested gates remain"
+  ],
+  "tests": [
+    {
+      "command": "python -m pytest -q tests/test_uprime_k0_foundations.py tests/test_v92_audit_cache_build_state_fingerprint.py tests/test_v65_audit_cache_pruning.py tests/test_v85_cache_lane_and_coverage.py",
+      "outcome": "21 passed",
+      "elapsed_seconds": 4.33
+    },
+    {
+      "command": "python -m pytest -q tests/test_v74_test_tier_manifest.py tests/test_v100_sorry_success_hole.py tests/test_v101_stepwise_recycle.py",
+      "outcome": "11 passed",
+      "elapsed_seconds": 11.32
+    }
+  ],
+  "post_repair_run": {
+    "command": "python -m lean_rgc.evals.uprime_k0 --repo-root . --out runs/uprime_k0_20260710/foundation_probe_after_f0a.json --environment-out runs/uprime_k0_20260710/environment_fingerprint_after_f0a.json",
+    "verdict": "BLOCKED_AS_WRITTEN",
+    "f0a_cache_content_pass": true,
+    "licenses_later_stage": false,
+    "remaining_blockers": [
+      "T0_weighted_lifting_formula_unamended",
+      "T0_projection_identities_unamended",
+      "T0_diagonal_covariance_formula_unamended",
+      "replay_verified_non_stub",
+      "heartbeat_consumption_reported",
+      "assigned_mvars_is_before_after_difference",
+      "tail_goals_swept_for_assignments",
+      "budget_cache_runtime_semantics_aligned"
+    ]
+  },
+  "sha256": {
+    "lean_rgc/audit_result_cache.py": "3AEBCAB634C45A90C6F90B84EBA325AF072FBEA991965AF7BAF90DFA9523F37D",
+    "lean_rgc/evals/uprime_k0.py": "4494638224B7E5DA854ACCBD039DF4BB79B3F054D6BB7B8749D9CDD74C20F0AF",
+    "tests/test_v92_audit_cache_build_state_fingerprint.py": "2797CBD9ED3AA063DAEE0EDCAF2B43E8E5800BE25B4E56C66709E45569D5A59E",
+    "tests/test_uprime_k0_foundations.py": "75692BED4DFFE7AEC9BF7DF73789B769BA0B3E32D2B1822938A6922EEBD23ABE",
+    "tests/tier_manifest.json": "7C7B0858DD0772A30D315D41E67E31AAE83A02EF8501092E4FB52A89D00ECA58",
+    "runs/uprime_k0_20260710/foundation_probe_after_f0a.json": "238C8C0D5AB2FABEC00213E5A4B34D5D6F3EEB0C8EA5D48C985DE3343A69B148",
+    "runs/uprime_k0_20260710/environment_fingerprint_after_f0a.json": "4F2306EC344B3A324D09461805937C6C15799B8239ADAEFE275F94DEF17044F6"
+  },
+  "non_claims": [
+    "not a shared environment digest",
+    "not the actual import-closure digest",
+    "not F1-F3",
+    "not M0-M4",
+    "not a license for K1-K4, U'2-U'5, GPU build, or a performance claim"
+  ]
+}

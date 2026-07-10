@@ -1,0 +1,9 @@
+{
+  "content_sensitive": true,
+  "fingerprint_after": "e2d472d4e0f793f42d8cd5ad1f44cfdee38eb1503c85c5d6bec0191672ee669a",
+  "fingerprint_before": "61a88bca996445f571802f97b84c508a7943ce87347e1db9053751a8f5022c0a",
+  "gate_F0a_cache_content_pass": true,
+  "mutation": "same path and module name, changed .olean bytes",
+  "probe_id": "K0-E",
+  "scope": "audit_result_cache local-build content litmus only; not full U'0/F0"
+}

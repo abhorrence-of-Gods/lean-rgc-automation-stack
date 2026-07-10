@@ -3,9 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 import copy
+import hashlib
 import json
+import secrets
 import shlex
 import sqlite3
+import stat
 import subprocess
 import time
 
@@ -13,7 +16,8 @@ from .audit_job_queue import connect_queue, ensure_audit_queue_schema
 from .schemas import stable_hash
 
 
-SCHEMA_AUDIT_RESULT_CACHE = "lean-rgc-audit-result-cache-v92.0"
+SCHEMA_AUDIT_RESULT_CACHE = "lean-rgc-audit-result-cache-v102.0"
+WORKDIR_FINGERPRINT_SCHEMA = "lean-rgc-workdir-fingerprint-content-v1"
 
 DEFAULT_CACHE_LANE = "source_check"
 
@@ -148,45 +152,118 @@ def detect_lean_version(lean_cmd: str, *, workdir: str | None = None, timeout_s:
 _BUILD_LIB_DIRS = (".lake/build/lib/lean", ".lake/build/lib", "build/lib")
 
 
+def _cache_bypass_marker(*, location: str, exc: BaseException) -> dict[str, str]:
+    return {
+        "content_status": "unreadable",
+        "location": location,
+        "error_type": type(exc).__name__,
+        "cache_bypass_nonce": secrets.token_hex(16),
+    }
+
+
+def _sha256_file_bytes(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def _build_state_marker(root: Path) -> Any:
-    # Manifest and toolchain are identical before and after `lake build`, so
-    # they cannot distinguish a workdir whose audits all fail with "unknown
-    # module prefix" (no .olean files yet) from a healthy one. The set of
-    # top-level .olean names flips exactly when the built root modules change,
-    # without invalidating the cache on mere rebuilds of the same modules.
+    # Manifest and toolchain are identical before and after `lake build`, and
+    # module names alone do not distinguish two builds with different semantic
+    # content. Hash every local compiled artifact by relative path and bytes.
+    # This is deliberately conservative: a changed but unused local artifact
+    # causes a miss rather than risking a false cache hit.
     for rel in _BUILD_LIB_DIRS:
         lib = root.joinpath(*rel.split("/"))
-        if not lib.is_dir():
+        try:
+            lib_stat = lib.stat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            return {
+                "lib_dir": rel,
+                **_cache_bypass_marker(location=rel, exc=exc),
+            }
+        if not stat.S_ISDIR(lib_stat.st_mode):
             continue
         try:
-            oleans = sorted(p.name for p in lib.iterdir() if p.suffix == ".olean")
-        except Exception:
-            return {"lib_dir": rel, "oleans": "unreadable"}
-        return {"lib_dir": rel, "oleans": oleans}
+            candidates = list(lib.rglob("*.olean"))
+            oleans = []
+            for path in candidates:
+                if stat.S_ISREG(path.stat().st_mode):
+                    oleans.append(path)
+            oleans = sorted(
+                oleans,
+                key=lambda p: p.relative_to(lib).as_posix(),
+            )
+            tree_hash = hashlib.sha256()
+            for path in oleans:
+                relative = path.relative_to(lib).as_posix().encode("utf-8")
+                tree_hash.update(len(relative).to_bytes(8, "big"))
+                tree_hash.update(relative)
+                tree_hash.update(bytes.fromhex(_sha256_file_bytes(path)))
+        except OSError as exc:
+            # An unreadable or concurrently changing tree must never collapse
+            # to one reusable global identity. A fresh nonce makes every such
+            # fingerprint cache-ineligible while retaining diagnostic fields.
+            return {
+                "lib_dir": rel,
+                **_cache_bypass_marker(location=rel, exc=exc),
+            }
+        return {
+            "lib_dir": rel,
+            "olean_count": len(oleans),
+            "content_sha256": tree_hash.hexdigest(),
+        }
     return "missing"
 
 
 def workdir_fingerprint(workdir: str | None) -> str:
     if not workdir:
-        return stable_hash({"workdir": ""}, 24)
+        return stable_hash(
+            {
+                "fingerprint_schema": WORKDIR_FINGERPRINT_SCHEMA,
+                "workdir": "",
+                "content_status": "unspecified_workdir",
+            },
+            64,
+        )
     root = Path(workdir)
     lake = root / "lake-manifest.json"
     lean = root / "lean-toolchain"
-    payload: dict[str, Any] = {"workdir": str(root.resolve())}
+    payload: dict[str, Any] = {
+        "fingerprint_schema": WORKDIR_FINGERPRINT_SCHEMA,
+        "workdir": str(root.resolve()),
+    }
     for p in (lake, lean):
-        if p.exists():
-            try:
-                payload[p.name] = stable_hash(p.read_text(encoding="utf-8", errors="replace"), 24)
-            except Exception:
-                payload[p.name] = "unreadable"
-        else:
+        try:
+            p_stat = p.stat()
+        except FileNotFoundError:
             payload[p.name] = "missing"
-    # v92: adding this key changes every fingerprint, which orphans all pre-v92
-    # cache rows. Unlike the v85 lane migration they are not rekeyed: the build
-    # state at write time is unknowable, and rows written against an unbuilt
-    # workdir are exactly the ones that must never hit again.
+            continue
+        except OSError as exc:
+            payload[p.name] = _cache_bypass_marker(location=p.name, exc=exc)
+            continue
+        if not stat.S_ISREG(p_stat.st_mode):
+            payload[p.name] = {
+                "content_status": "not_regular_file",
+                "cache_bypass_nonce": secrets.token_hex(16),
+            }
+            continue
+        try:
+            payload[p.name] = {
+                "size_bytes": int(p_stat.st_size),
+                "content_sha256": _sha256_file_bytes(p),
+            }
+        except OSError as exc:
+            payload[p.name] = _cache_bypass_marker(location=p.name, exc=exc)
+    # The explicit algorithm salt orphans every pre-content-digest cache row,
+    # including rows recorded while the build directory was missing. They are
+    # intentionally not rekeyed because their build bytes are unknowable.
     payload["build_state"] = _build_state_marker(root)
-    return stable_hash(payload, 24)
+    return stable_hash(payload, 64)
 
 
 def _max_heartbeats(payload: dict[str, Any]) -> str:

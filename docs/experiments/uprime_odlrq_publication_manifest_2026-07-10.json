@@ -1,0 +1,41 @@
+{
+  "schema_version": "lean-rgc-uprime-publication-milestone-v1.0",
+  "status": "first_public_anchor_of_unanchored_development_pilot",
+  "branch": "codex/uprime-odlrq-plan",
+  "base_commit": "b4b81be91166ee3dcc7161c55730ac377174eb24",
+  "temporal_interpretation": "The local preregistration and first K0 result enter public Git together. They are development evidence only. Future amendments must be committed and pushed before execution.",
+  "documents": {
+    "uprime_odlrq_adversarial_review_2026-07-10.md": {
+      "pre_publication_sha256": "888F75C17E0937E03AF2E049F2180CD81C7A7D2ED7FA38CB3FE90DD9CE594D27",
+      "public_sha256": "C902F45049D2EB1571EF845BC19AC24CD09A5F525350BD5AD4E669594A831B39",
+      "change": "repository-relative/path-pseudonymized provenance and corrected R2 wording"
+    },
+    "uprime_odlrq_repair_preregistration.md": {
+      "local_frozen_v0_sha256": "888CE640A731A4D153C87C0E5F3EFD879C5073365B027902C73D465AA9CB98B2",
+      "public_redacted_sha256": "D9B264C45B6DCE25B124A844F8F972F7299E17FF70BB9D48F1CE250A1C366D41",
+      "change": "private GPU coordinates removed and lack of pre-result public anchoring disclosed"
+    },
+    "uprime_odlrq_execution_log_2026-07-10.md": {
+      "public_sha256": "82B3AE1ECB7AA1D972E02A60FC2565192B9C66A946181FFD5264E286580FBA96"
+    }
+  },
+  "artifact_manifests": {
+    "docs/experiments/artifacts/uprime_k0_20260710/PUBLICATION_MANIFEST.json": "C3A60A8B690FE3435205A1B7E56DD192FB7AEC07651B7729339DFDCE0884E484",
+    "docs/external/uprime_odlrq_adversarial_review_2026-07-10/PUBLICATION_MANIFEST.json": "6126F8078E13C73360CB09F933888BC735C8E9AED2345F8DCC557F30F5F77296"
+  },
+  "reproducible_v3_source": {
+    "lean_rgc/audit_result_cache.py": "B326A5CD2CA79C713E8C084225EA169E54195AA6AA8626895B56B1872AD1919D",
+    "lean_rgc/evals/uprime_k0.py": "4494638224B7E5DA854ACCBD039DF4BB79B3F054D6BB7B8749D9CDD74C20F0AF",
+    "tests/test_v92_audit_cache_build_state_fingerprint.py": "A61A957B6CC28AAC54EF46BC65065E37921A843C030A5E5DCC6E9AF683EDC83D",
+    "tests/test_uprime_k0_foundations.py": "75692BED4DFFE7AEC9BF7DF73789B769BA0B3E32D2B1822938A6922EEBD23ABE",
+    "tests/tier_manifest.json": "7C7B0858DD0772A30D315D41E67E31AAE83A02EF8501092E4FB52A89D00ECA58"
+  },
+  "gate_state": {
+    "verdict": "BLOCKED_AS_WRITTEN",
+    "F0a_audit_cache_local_content": "pass",
+    "full_F0": "blocked",
+    "T0": "blocked",
+    "M0_to_M4": "blocked",
+    "gpu_construction": "not_licensed"
+  }
+}

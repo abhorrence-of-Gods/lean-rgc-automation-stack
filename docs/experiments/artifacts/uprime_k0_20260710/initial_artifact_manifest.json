@@ -1,0 +1,39 @@
+{
+  "schema_version": "lean-rgc-uprime-k0-artifact-manifest-v1.0",
+  "recorded_at_utc": "2026-07-10T11:09:42.8180075Z",
+  "registration": "docs/experiments/uprime_odlrq_repair_preregistration.md",
+  "registered_command": "python -m lean_rgc.evals.uprime_k0 --repo-root . --out runs/uprime_k0_20260710/foundation_probe.json",
+  "command_attempts": [
+    {
+      "attempt": 0,
+      "outcome": "probe_implementation_error",
+      "error": "KeyError: legacy_counterexample_detected",
+      "artifacts_written": false,
+      "repair": "renamed the projection probe's plural key to the already-consumed frozen singular key and added an integrated regression test; no input, threshold, or verdict rule changed"
+    },
+    {
+      "attempt": 1,
+      "outcome": "completed",
+      "verdict": "BLOCKED_AS_WRITTEN",
+      "licenses_later_stage": false
+    }
+  ],
+  "runtime": {
+    "python": "Python 3.13.7",
+    "lean": "Lean 4.31.0 x86_64-w64-windows-gnu commit 68218e876d2a38b1985b8590fff244a83c321783 Release",
+    "git_commit": "b4b81be91166ee3dcc7161c55730ac377174eb24",
+    "git_worktree_dirty": true
+  },
+  "sha256": {
+    "docs/external/uprime_odlrq_adversarial_review_2026-07-10/fiber_closure_fixed_point_integrated_jp.tex": "7E24F7D444A263792A3A717B1C26807D0A15626C2A11D8F38A1DCCB7DE69CD87",
+    "docs/experiments/uprime_odlrq_adversarial_review_2026-07-10.md": "888F75C17E0937E03AF2E049F2180CD81C7A7D2ED7FA38CB3FE90DD9CE594D27",
+    "docs/experiments/uprime_odlrq_repair_preregistration.md": "888CE640A731A4D153C87C0E5F3EFD879C5073365B027902C73D465AA9CB98B2",
+    "lean_rgc/evals/uprime_k0.py": "A01DB4B26DBCECA2635773A9E81F589CB3F493CB9F3617AB2110F2002978265B",
+    "tests/test_uprime_k0_foundations.py": "DD440EC03AD75B49D52155A26E1360C49A556DC5AA783A86E33BAD842C13CB46",
+    "lean_rgc/native_lean/RGCKernelRPC.lean": "A925EBB4203C9EAD09E54D6DF6B93BCB689FAE78C0A156F801028B687A10635F",
+    "lean_rgc/audit_result_cache.py": "868C376A1396B2E157E74644505CFE2D15CFF1CA1A6109061AF9A7E53968A319",
+    "runs/uprime_k0_20260710/foundation_probe.json": "F84E0E05067E5889B8146A5B6BB5273BF471B7C68A7CF750104857AA1BF4ECBA",
+    "runs/uprime_k0_20260710/environment_fingerprint.json": "5EA713BECE662B7A6E08C6B0953A68A5F266B13C2CF5631DCD853A27062DEA29"
+  },
+  "interpretation_limit": "K0-R is a source-pattern smoke check, not a behavioral proof. F1-F3 and M3-M4 are not covered. Clearing the listed blockers cannot by itself license a later stage."
+}
