@@ -81,6 +81,12 @@ CONTRACT_ORACLE_SOURCE_PATH = Path(
 CONTRACT_ORACLE_TEST_SUPPORT_PATH = Path(
     "tests/uprime_rpc_contract_oracle_cases.py"
 )
+BUNDLE_RESERVATION_SOURCE_PATH = Path(
+    "lean_rgc/evals/uprime_rpc_bundle_reservation.py"
+)
+BUNDLE_RESERVATION_TEST_SUPPORT_PATH = Path(
+    "tests/uprime_rpc_bundle_reservation_cases.py"
+)
 PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
 EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
@@ -115,6 +121,8 @@ ANCHOR_PATHS = (
     LEDGER_SEMANTICS_TEST_SUPPORT_PATH,
     CONTRACT_ORACLE_SOURCE_PATH,
     CONTRACT_ORACLE_TEST_SUPPORT_PATH,
+    BUNDLE_RESERVATION_SOURCE_PATH,
+    BUNDLE_RESERVATION_TEST_SUPPORT_PATH,
     PACKAGE_INIT_PATH,
     EVALS_PACKAGE_INIT_PATH,
     SOURCE_PATH,
