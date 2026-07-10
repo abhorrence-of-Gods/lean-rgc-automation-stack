@@ -36,7 +36,27 @@ from ..schemas import AuditRecord, LeanTask, ProofState, ResponseRecord, TacticA
 from ..timeout_ledger import ensure_timeout_schema, record_timeout_event, record_worker_event, timeout_ledger_report
 
 
-SCHEMA_LEAN_WORKER_SUPERVISOR = "lean-rgc-lean-worker-supervisor-v63.0"
+SCHEMA_LEAN_WORKER_SUPERVISOR = "lean-rgc-lean-worker-supervisor-v63.1"
+
+
+def audit_cache_eligibility(*, backend: str, lane: str) -> dict[str, Any]:
+    backend_name = str(backend or "")
+    lane_name = str(lane or "")
+    stateful_kernel_rpc = (
+        lane_name == "kernel_rpc"
+        or backend_name == "kernel_rpc"
+        or backend_name.startswith("kernel_rpc_")
+    )
+    return {
+        "eligible": not stateful_kernel_rpc,
+        "reason": (
+            None
+            if not stateful_kernel_rpc
+            else "stateful_kernel_rpc_key_lacks_before_frame_target_and_protocol"
+        ),
+        "backend": backend_name,
+        "lane": lane_name,
+    }
 
 
 def _timeout_scope_for_run(*, import_wall_s: float | None, timeout_s: float, killed: bool = False, bulk: bool = False) -> str:
@@ -819,7 +839,9 @@ def enqueue_and_run_supervised_audit(
     cache_store: dict[str, Any] | None = None
     lean_version = audit_cache_lean_version
     workdir_fp = workdir_fingerprint(executor_config.workdir)
-    if audit_cache_db:
+    cache_policy = audit_cache_eligibility(backend=backend, lane=lane)
+    cache_enabled = bool(audit_cache_db) and cache_policy["eligible"] is True
+    if cache_enabled:
         if not lean_version:
             lean_version = detect_lean_version(executor_config.lean_cmd, workdir=executor_config.workdir)
         cache_apply = apply_cache_to_queue(
@@ -858,7 +880,7 @@ def enqueue_and_run_supervised_audit(
             lanes=[lane] if lane else None,
             import_wall_s=import_wall_s,
         )
-    if audit_cache_db:
+    if cache_enabled:
         cache_store = store_queue_results_in_cache(
             cache_db=audit_cache_db,
             queue_db=db_path,
@@ -886,9 +908,12 @@ def enqueue_and_run_supervised_audit(
                 summary[key] = run_summary[key]
     summary["audit_queue_backend"] = actual_queue_backend
     summary["enqueue"] = enqueue
-    if cache_apply or cache_store:
+    if audit_cache_db:
         summary["audit_cache"] = {
-            "enabled": True,
+            "requested": True,
+            "enabled": cache_enabled,
+            "cache_eligible": cache_policy["eligible"],
+            "ineligible_reason": cache_policy["reason"],
             "cache_db": str(audit_cache_db),
             "readonly": bool(audit_cache_readonly),
             "lean_version": lean_version,
@@ -896,7 +921,11 @@ def enqueue_and_run_supervised_audit(
             "apply": cache_apply,
             "store": cache_store,
         }
-        summary["n_cache_hit"] = int((cache_apply or {}).get("n_cache_hit", summary.get("n_cache_hit", 0)) or 0)
+        summary["n_cache_hit"] = (
+            int((cache_apply or {}).get("n_cache_hit", summary.get("n_cache_hit", 0)) or 0)
+            if cache_enabled
+            else 0
+        )
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     (out / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
@@ -906,6 +935,7 @@ def enqueue_and_run_supervised_audit(
 
 __all__ = [
     "SCHEMA_LEAN_WORKER_SUPERVISOR",
+    "audit_cache_eligibility",
     "enqueue_and_run_supervised_audit",
     "materialize_queue_results",
     "run_bulk_audit_queue",

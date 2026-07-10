@@ -339,6 +339,9 @@
   "test_uprime_t0_errata.py": [
     "unit"
   ],
+  "test_uprime_rpc_litmus.py": [
+    "unit"
+  ],
   "test_v8_iterate_corebench.py": [
     "legacy"
   ],
