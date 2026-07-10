@@ -67,6 +67,12 @@ LEDGER_SEMANTICS_SOURCE_PATH = Path(
 LEDGER_SEMANTICS_TEST_SUPPORT_PATH = Path(
     "tests/uprime_rpc_ledger_semantics_cases.py"
 )
+CONTRACT_ORACLE_SOURCE_PATH = Path(
+    "lean_rgc/evals/uprime_rpc_contract_oracle.py"
+)
+CONTRACT_ORACLE_TEST_SUPPORT_PATH = Path(
+    "tests/uprime_rpc_contract_oracle_cases.py"
+)
 PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
 EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
@@ -97,6 +103,8 @@ ANCHOR_PATHS = (
     LEDGER_TEST_PATH,
     LEDGER_SEMANTICS_SOURCE_PATH,
     LEDGER_SEMANTICS_TEST_SUPPORT_PATH,
+    CONTRACT_ORACLE_SOURCE_PATH,
+    CONTRACT_ORACLE_TEST_SUPPORT_PATH,
     PACKAGE_INIT_PATH,
     EVALS_PACKAGE_INIT_PATH,
     SOURCE_PATH,

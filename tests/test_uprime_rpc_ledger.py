@@ -13,6 +13,7 @@ from lean_rgc.evals import uprime_rpc_ledger as ledger
 # matrix in a non-collectable support module and import its marked test objects
 # here so both the registered profile and default collection execute them once.
 from uprime_rpc_ledger_semantics_cases import *  # noqa: F403
+from uprime_rpc_contract_oracle_cases import *  # noqa: F403
 
 
 HEADER_BODY = {"phase": "synthetic", "wire_exact": False}

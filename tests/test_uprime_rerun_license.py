@@ -232,6 +232,8 @@ def test_rerun_gate_and_executed_package_initializers_are_anchored():
         litmus.LEDGER_TEST_PATH,
         litmus.LEDGER_SEMANTICS_SOURCE_PATH,
         litmus.LEDGER_SEMANTICS_TEST_SUPPORT_PATH,
+        litmus.CONTRACT_ORACLE_SOURCE_PATH,
+        litmus.CONTRACT_ORACLE_TEST_SUPPORT_PATH,
         litmus.PACKAGE_INIT_PATH,
         litmus.EVALS_PACKAGE_INIT_PATH,
         litmus.TEST_PATH,

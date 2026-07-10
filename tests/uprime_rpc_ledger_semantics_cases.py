@@ -12,6 +12,7 @@ import pytest
 
 from lean_rgc.evals import uprime_rpc_ledger as chain
 from lean_rgc.evals import uprime_rpc_ledger_semantics as semantics
+from lean_rgc.evals import uprime_rpc_litmus as litmus
 
 
 LABELS = (
@@ -206,6 +207,338 @@ def _goal_rows(*mvar_ids: str) -> list[dict[str, Any]]:
     return [{"mvar_id": mvar_id} for mvar_id in mvar_ids]
 
 
+def _kernel_state(
+    *,
+    state_id: str,
+    goals: tuple[str, ...],
+    metavars: tuple[tuple[str, bool], ...],
+    norm_alias: str | None = None,
+) -> dict[str, Any]:
+    """Build a structurally complete synthetic kernel snapshot."""
+
+    return {
+        "schema_version": "synthetic-kernel-state-v1",
+        "state_id": state_id,
+        "state_hash_raw": f"raw-{state_id}",
+        "state_hash_norm": f"norm-{norm_alias or state_id}",
+        "options": {"maxHeartbeats": "731"},
+        "goals": _goal_rows(*goals),
+        "metavars": [
+            {"mvar_id": mvar_id, "assigned": assigned}
+            for mvar_id, assigned in metavars
+        ],
+    }
+
+
+def _budget_payload(
+    *,
+    option: int,
+    source: str,
+    consumed: int,
+    remaining: int,
+) -> dict[str, Any]:
+    """Build the top-level and audit-mirrored heartbeat telemetry."""
+
+    budget = {
+        "effective_max_heartbeats_option": option,
+        "effective_max_heartbeats_counter": (
+            None if option == 0 else option * 1000
+        ),
+        "unlimited": option == 0,
+        "source": source,
+        "consumed_heartbeats_counter": consumed,
+        "episode_max_heartbeats_counter": 1_000_000,
+        "episode_remaining_heartbeats_counter": remaining,
+        "episode_source": "task",
+        "measurement_scope": "action_corem_toio_counter",
+        "reset_scope": "per_corem_toio_call",
+    }
+    return {
+        "budget": budget,
+        "heartbeats": consumed,
+        "audit": {
+            "heartbeats": consumed,
+            "audit_flags": {"heartbeat_telemetry": copy.deepcopy(budget)},
+        },
+    }
+
+
+def _transition_payload(
+    before: dict[str, Any],
+    after: dict[str, Any],
+    *,
+    status: str,
+    option: int,
+    source: str,
+    consumed: int,
+    remaining: int,
+) -> dict[str, Any]:
+    """Build a production-oracle-compatible transition response payload."""
+
+    payload = _budget_payload(
+        option=option,
+        source=source,
+        consumed=consumed,
+        remaining=remaining,
+    )
+    payload.update(
+        {
+            "status": status,
+            "before_state_id": before["state_id"],
+            "after_state_id": after["state_id"],
+            "kernel_state_before": before,
+            "kernel_state_after": after,
+            "state_delta": litmus.independent_delta(before, after),
+        }
+    )
+    payload["audit"]["status"] = status
+    return payload
+
+
+def _replay_payload(
+    primary: dict[str, Any],
+    *,
+    action_id: str,
+    target_mvar_id: str | None,
+) -> dict[str, Any]:
+    """Build an independently reexecuted replay certificate payload."""
+
+    return {
+        "before_state_id": primary["before_state_id"],
+        "expected_after_state_id": primary["after_state_id"],
+        "action_id": action_id,
+        "target_mvar_id": target_mvar_id,
+        "n_states_before": 13,
+        "n_states_after": 13,
+        "reexecution_performed": True,
+        "reexecution_heartbeats_counter": 5,
+        "reexecution_scope": "fresh_from_immutable_before_state",
+        "kernel_state_before": primary["kernel_state_before"],
+        "kernel_state_expected": primary["kernel_state_after"],
+        "kernel_state_observed": primary["kernel_state_after"],
+        "state_delta_expected": primary["state_delta"],
+        "state_delta_observed": primary["state_delta"],
+        "replay_certificate": {
+            "schema_version": "lean-rgc-kernel-replay-certificate-v1",
+            "verification_method": "same_before_state_independent_reexecution",
+            "replay_status": "verified",
+            "state_match": True,
+            "delta_match": True,
+            "error": None,
+        },
+    }
+
+
+def _rich_response_payloads() -> dict[str, dict[str, Any]]:
+    """Return the full trajectory behind the frozen 23 response envelopes."""
+
+    p0 = _kernel_state(
+        state_id="state-primary-init",
+        goals=("primary-root",),
+        metavars=(("primary-root", False),),
+    )
+    p1 = _kernel_state(
+        state_id="state-primary-split",
+        goals=("primary-head", "primary-tail"),
+        metavars=(
+            ("primary-root", True),
+            ("primary-head", False),
+            ("primary-tail", False),
+        ),
+    )
+    p2 = _kernel_state(
+        state_id="state-primary-tail-closed",
+        goals=("primary-head",),
+        metavars=(
+            ("primary-root", True),
+            ("primary-head", False),
+            ("primary-tail", True),
+        ),
+    )
+    p3 = _kernel_state(
+        state_id="state-primary-closed",
+        goals=(),
+        metavars=(
+            ("primary-root", True),
+            ("primary-head", True),
+            ("primary-tail", True),
+        ),
+    )
+    z0 = _kernel_state(
+        state_id="state-zero-init",
+        goals=("zero-root",),
+        metavars=(("zero-root", False),),
+    )
+    z1 = _kernel_state(
+        state_id="state-zero-split",
+        goals=("zero-head", "zero-tail"),
+        metavars=(
+            ("zero-root", True),
+            ("zero-head", False),
+            ("zero-tail", False),
+        ),
+    )
+    z2 = _kernel_state(
+        state_id="state-zero-tail-closed",
+        goals=("zero-head",),
+        metavars=(
+            ("zero-root", True),
+            ("zero-head", False),
+            ("zero-tail", True),
+        ),
+    )
+    s0 = _kernel_state(
+        state_id="state-side-init",
+        goals=("side-witness", "side-equality"),
+        metavars=(
+            ("side-root", True),
+            ("side-witness", False),
+            ("side-equality", False),
+        ),
+    )
+    s1 = _kernel_state(
+        state_id="state-side-closed",
+        goals=(),
+        metavars=(
+            ("side-root", True),
+            ("side-witness", True),
+            ("side-equality", True),
+        ),
+    )
+    b0 = _kernel_state(
+        state_id="state-burn-init",
+        goals=("burn-goal",),
+        metavars=(("burn-goal", False),),
+    )
+    b1 = _kernel_state(
+        state_id="state-burn-timeout",
+        goals=("burn-goal",),
+        metavars=(("burn-goal", False),),
+        norm_alias="state-burn-init",
+    )
+    r0 = _kernel_state(
+        state_id="state-reset-init",
+        goals=("reset-goal",),
+        metavars=(("reset-goal", False),),
+    )
+    r1 = _kernel_state(
+        state_id="state-reset-closed",
+        goals=(),
+        metavars=(("reset-goal", True),),
+    )
+
+    payloads = {
+        "primary_init": {
+            "state": {"state_id": p0["state_id"]},
+            "kernel_state": p0,
+        },
+        "primary_split": _transition_payload(
+            p0,
+            p1,
+            status="partial",
+            option=123_456,
+            source="action",
+            consumed=10,
+            remaining=999_990,
+        ),
+        "primary_tail_close": _transition_payload(
+            p1,
+            p2,
+            status="partial",
+            option=731,
+            source="task",
+            consumed=11,
+            remaining=999_979,
+        ),
+        "primary_head_close": _transition_payload(
+            p2,
+            p3,
+            status="success",
+            option=731,
+            source="task",
+            consumed=12,
+            remaining=999_967,
+        ),
+        "zero_init": {
+            "state": {"state_id": z0["state_id"]},
+            "kernel_state": z0,
+        },
+        "zero_split": _transition_payload(
+            z0,
+            z1,
+            status="partial",
+            option=0,
+            source="action",
+            consumed=13,
+            remaining=999_987,
+        ),
+        "zero_child_close": _transition_payload(
+            z1,
+            z2,
+            status="partial",
+            option=731,
+            source="task",
+            consumed=14,
+            remaining=999_973,
+        ),
+        "side_init": {
+            "state": {"state_id": s0["state_id"]},
+            "kernel_state": s0,
+        },
+        "side_effect_close": _transition_payload(
+            s0,
+            s1,
+            status="success",
+            option=731,
+            source="task",
+            consumed=15,
+            remaining=999_985,
+        ),
+        "burn_init": {
+            "state": {"state_id": b0["state_id"]},
+            "kernel_state": b0,
+        },
+        "burn": _transition_payload(
+            b0,
+            b1,
+            status="timeout",
+            option=200_000,
+            source="action",
+            consumed=400_000_000,
+            remaining=0,
+        ),
+        "reset_init": {
+            "state": {"state_id": r0["state_id"]},
+            "kernel_state": r0,
+        },
+        "reset": _transition_payload(
+            r0,
+            r1,
+            status="success",
+            option=200_000,
+            source="action",
+            consumed=16,
+            remaining=999_984,
+        ),
+    }
+    replay_specs = {
+        "primary_split": ("primary_constructor", None),
+        "primary_tail_close": ("primary_tail_exact", "primary-tail"),
+        "primary_head_close": ("primary_head_exact", "primary-head"),
+        "zero_split": ("zero_constructor", None),
+        "zero_child_close": ("zero_child_exact", "zero-tail"),
+        "side_effect_close": ("side_effect_rfl", "side-equality"),
+        "reset": ("reset_trivial", None),
+    }
+    for label, (action_id, target_mvar_id) in replay_specs.items():
+        payloads[f"{label}_replay"] = _replay_payload(
+            payloads[label],
+            action_id=action_id,
+            target_mvar_id=target_mvar_id,
+        )
+    return payloads
+
+
 def _response(label: str, frame_index: int, **extra: Any) -> dict[str, Any]:
     return {
         "id": _request_id(frame_index, label),
@@ -217,11 +550,14 @@ def _response(label: str, frame_index: int, **extra: Any) -> dict[str, Any]:
 
 def _event_bodies() -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
+    rich_payloads = _rich_response_payloads()
 
     def pair(label: str, request: dict[str, Any], response: dict[str, Any]) -> None:
         frame_index = LABELS.index(label) + 1
         expected_id = _request_id(frame_index, label)
         assert request["id"] == expected_id
+        if label in rich_payloads:
+            response.update(copy.deepcopy(rich_payloads[label]))
         events.append(
             {
                 "record_type": "request_intent",
@@ -600,6 +936,98 @@ def _request_event(events: list[dict[str, Any]], label: str) -> dict[str, Any]:
     )
 
 
+def _production_contract_inputs(
+    events: list[dict[str, Any]],
+) -> tuple[dict[str, dict[str, Any]], dict[str, str], dict[str, Any]]:
+    """Reconstruct the recorded portion of the production-oracle inputs."""
+
+    request_events = {
+        event["body"]["frame_label"]: event["body"]
+        for event in events
+        if event["record_type"] == "request_intent"
+    }
+    response_events = {
+        event["body"]["frame_label"]: event["body"]
+        for event in events
+        if event["record_type"] == "parsed_response"
+    }
+    assert tuple(request_events) == LABELS
+    assert tuple(response_events) == LABELS
+    responses = {
+        label: response_events[label]["response"] for label in LABELS
+    }
+    request_ids = {
+        label: request_events[label]["request"]["id"] for label in LABELS
+    }
+
+    def goals(label: str, field: str) -> list[str]:
+        kernel = responses[label][field]
+        return [row["mvar_id"] for row in kernel["goals"]]
+
+    primary_goals = goals("primary_split", "kernel_state_after")
+    zero_goals = goals("zero_split", "kernel_state_after")
+    side_goals = goals("side_init", "kernel_state")
+    assert len(primary_goals) == len(zero_goals) == len(side_goals) == 2
+
+    action_labels = (
+        "primary_split",
+        "primary_tail_close",
+        "primary_head_close",
+        "zero_split",
+        "zero_child_close",
+        "side_effect_close",
+        "burn",
+        "reset",
+    )
+    requested_state_ids = {
+        label: request_events[label]["request"]["state_id"]
+        for label in action_labels
+    }
+    replay_specs: dict[str, dict[str, Any]] = {}
+    for label in (item for item in action_labels if item != "burn"):
+        replay_label = f"{label}_replay"
+        primary_request = request_events[label]["request"]
+        primary_response = responses[label]
+        replay_request = request_events[replay_label]["request"]
+        assert replay_request["before_state_id"] == primary_request["state_id"]
+        assert (
+            replay_request["expected_after_state_id"]
+            == primary_response["after_state_id"]
+        )
+        assert chain.canonical_json_bytes(replay_request["action"]) == (
+            chain.canonical_json_bytes(primary_request["action"])
+        )
+        assert ("target_mvar_id" in replay_request) == (
+            "target_mvar_id" in primary_request
+        )
+        if "target_mvar_id" in primary_request:
+            assert replay_request["target_mvar_id"] == primary_request[
+                "target_mvar_id"
+            ]
+        replay_specs[label] = {
+            "replay_label": replay_label,
+            "before_state_id": primary_request["state_id"],
+            "expected_after_state_id": primary_response["after_state_id"],
+            "action_id": primary_request["action"]["action_id"],
+            "target_mvar_id": primary_request.get("target_mvar_id"),
+        }
+
+    side_target = request_events["side_effect_close"]["request"][
+        "target_mvar_id"
+    ]
+    assert side_target == side_goals[1]
+    context = {
+        "primary_head": primary_goals[0],
+        "primary_tail": primary_goals[1],
+        "zero_goals": zero_goals,
+        "side_goals": side_goals,
+        "side_equality_goal": side_target,
+        "requested_state_ids": requested_state_ids,
+        "replay_specs": replay_specs,
+    }
+    return responses, request_ids, context
+
+
 def _shutdown_transport(shutdown_response: dict[str, Any]) -> dict[str, Any]:
     return {
         "stream_complete": True,
@@ -831,6 +1259,60 @@ def _must_reject(
     assert chain.attest_standalone_closed_chain(path).record_count == 49
     with pytest.raises(semantics.StandaloneLedgerSemanticError):
         _attest(path)
+
+
+def test_rich_exact_49_fixture_reaches_all_production_contracts(monkeypatch):
+    events = _event_bodies()
+    responses, request_ids, context = _production_contract_inputs(events)
+
+    # This is a reachability check for the legacy production evaluator, not an
+    # independent validation of its delta implementation: the fixture builder
+    # and evaluator intentionally share that production helper.  The transient
+    # selector name is also absent from the ledger, so make that compatibility
+    # injection explicit here.  The phase-1b2 oracle instead checks the recorded
+    # operational fact that the request targets the second side-init goal.
+    assert "side_target_selector" not in context
+    context = {
+        **context,
+        "side_target_selector": "refine_tuple_position_1",
+    }
+
+    # B4 is the other input outside RPC request/response rows.  Inject it from
+    # the exact local-probe record accompanying this synthetic ledger;
+    # production code and fixture responses stay intact.
+    recorded_probe = _local_probe_body()
+    recorded_b4_passed = bool(
+        recorded_probe["probe_id"] == "B4_cache_budget_semantics"
+        and recorded_probe["resolved"]
+        == {
+            "task_fallback": "731",
+            "explicit_zero": "0",
+            "explicit_nonzero": "123456",
+            "omitted_default": "200000",
+            "explicit_default": "200000",
+        }
+        and recorded_probe["omitted_key"] == recorded_probe["explicit_key"]
+        and recorded_probe["omitted_fields"].get("max_heartbeats") == "200000"
+        and recorded_probe["explicit_fields"].get("max_heartbeats") == "200000"
+    )
+    assert recorded_b4_passed is True
+    monkeypatch.setattr(
+        litmus,
+        "cache_budget_probe",
+        lambda: {
+            "passed": recorded_b4_passed,
+            "probe_id": recorded_probe["probe_id"],
+            "resolved": copy.deepcopy(recorded_probe["resolved"]),
+            "evidence_source": "exact_49_fixture_local_probe_record",
+        },
+    )
+
+    contracts = litmus.evaluate_contracts(responses, request_ids, context)
+
+    assert tuple(contracts) == litmus.CONTRACT_IDS
+    assert {name: row["passed"] for name, row in contracts.items()} == {
+        name: True for name in litmus.CONTRACT_IDS
+    }
 
 
 def test_nominal_49_semantics_is_valid_but_never_confers_authority(tmp_path):
