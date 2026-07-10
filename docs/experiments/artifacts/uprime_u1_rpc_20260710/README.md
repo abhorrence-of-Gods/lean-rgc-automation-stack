@@ -12,3 +12,8 @@ not a substrate verdict and must never be replaced by a repaired rerun.
 The amended `fc6b69ea14fb` run completed all 23 registered responses but is
 also retained as `HARNESS_ERROR`: the worker acknowledged shutdown, then did
 not finish process teardown inside the original ten-second grace period.
+
+The Amendment 2 run anchored at `4ba370f543c8` reached the frozen eleven-
+contract evaluator and is retained as `U1_DIAGNOSTIC_BLOCKED`. All eleven
+contracts and the separate transport clear gate failed; later stages remain
+unlicensed.

@@ -1,0 +1,42 @@
+{
+  "schema_version": "lean-rgc-uprime-u1-rpc-publication-v1.0",
+  "anchor_commit": "4ba370f543c82f4e8edef92b587645aec7674349",
+  "anchor_upstream": "origin/codex/uprime-odlrq-plan",
+  "anchor_was_pushed_before_execution": true,
+  "anchor_ci": {
+    "run_id": 29098472020,
+    "conclusion": "success"
+  },
+  "artifact": {
+    "raw_location": "runs/uprime_u1_rpc_20260710/rpc_diagnostic_4ba370f543c8.json (gitignored, investigator-local)",
+    "raw_sha256": "7E6FE9DC6101CA02A06C9D3A18EFC5FFA4C129F1FB6170126FAEC041F590D80F",
+    "raw_bytes": 91831,
+    "reservation_location": "runs/uprime_u1_rpc_20260710/rpc_diagnostic_4ba370f543c8.json.reservation (gitignored, contains a live token and must not be published)",
+    "reservation_sha256": "E0B4B556AA143CB7541B5B12B6E70363C2BF4776F094DB4CCDF9EBB33052BC42",
+    "public_path": "docs/experiments/artifacts/uprime_u1_rpc_20260710/rpc_diagnostic_4ba370f543c8.public.json",
+    "public_sha256": "7E6FE9DC6101CA02A06C9D3A18EFC5FFA4C129F1FB6170126FAEC041F590D80F",
+    "transformation": "exact byte copy; no fields redacted because the compact raw report contains no private path, raw reservation token, or endpoint"
+  },
+  "execution": {
+    "platform": "Windows CPU",
+    "verdict": "U1_DIAGNOSTIC_BLOCKED",
+    "response_count": 23,
+    "contract_count": 11,
+    "contract_failure_count": 11,
+    "transport_clear_gate": false,
+    "transport_exit_mode": "forced_kill",
+    "elapsed_seconds": 93.615763,
+    "post_response_elapsed_seconds": 7.0743966000154614,
+    "licenses_later_stage": false
+  },
+  "disposition": {
+    "substrate_verdict_available": true,
+    "diagnostic_verdict_available": true,
+    "all_registered_response_summaries_preserved": true,
+    "each_summary_binds_full_response_sha256": true,
+    "all_receipt_response_sha256_values_match": true,
+    "pre_and_post_anchor_snapshots_match": true,
+    "raw_artifact_is_immutable": true,
+    "repair_requires_new_pushed_anchor": true
+  }
+}
