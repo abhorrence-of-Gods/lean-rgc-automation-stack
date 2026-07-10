@@ -316,20 +316,36 @@ def test_stateful_kernel_rpc_supervisor_never_calls_cache(tmp_path, monkeypatch)
     assert not (tmp_path / "cache.sqlite").exists()
 
 
-def test_canonical_artifact_is_reserved_before_atomic_publication(tmp_path):
+def test_canonical_artifact_is_reserved_before_atomic_publication(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        litmus,
+        "reject_canonical_rerun_bootstrap",
+        lambda _root, _commit: None,
+    )
     path = tmp_path / "rpc_diagnostic_0123456789ab.json"
     reservation_path = path.with_name(f"{path.name}.reservation")
     commit = "0123456789abcdef0123456789abcdef01234567"
-    token = _reserve_output(path, anchor="0123456789ab", commit=commit)
+    token = _reserve_output(
+        path,
+        repo_root=tmp_path,
+        anchor="0123456789ab",
+        commit=commit,
+    )
     reservation = reservation_path.read_text(encoding="utf-8")
     assert "LIVE_EXECUTION_RESERVED" in reservation
     with pytest.raises(FileExistsError):
-        _reserve_output(path, anchor="0123456789ab", commit=commit)
+        _reserve_output(
+            path,
+            repo_root=tmp_path,
+            anchor="0123456789ab",
+            commit=commit,
+        )
 
     report = {"verdict": "U1_DIAGNOSTIC_BLOCKED", "licenses_later_stage": False}
     _publish_reserved_json(
         path,
         report,
+        repo_root=tmp_path,
         token=token,
         anchor="0123456789ab",
         commit=commit,

@@ -19,6 +19,10 @@ from pathlib import Path
 from typing import Any
 
 from lean_rgc.audit_result_cache import _max_heartbeats, make_audit_cache_key
+from lean_rgc.evals.uprime_rerun_license import (
+    RERUN_REGISTRY_PATH,
+    reject_canonical_rerun_bootstrap,
+)
 
 
 SCHEMA_UPRIME_RPC_LITMUS = "lean-rgc-uprime-rpc-diagnostic-v1.1"
@@ -35,6 +39,13 @@ AMENDMENT_2_PATH = Path(
 REPAIR_MILESTONE_1_PATH = Path(
     "docs/experiments/uprime_odlrq_u1_repair_milestone_1_2026-07-10.md"
 )
+EVIDENCE_MILESTONE_2A_PATH = Path(
+    "docs/experiments/uprime_odlrq_u1_evidence_milestone_2a_rerun_gate_2026-07-10.md"
+)
+RERUN_LICENSE_SOURCE_PATH = Path("lean_rgc/evals/uprime_rerun_license.py")
+RERUN_LICENSE_TEST_PATH = Path("tests/test_uprime_rerun_license.py")
+PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
+EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
 TEST_PATH = Path("tests/test_uprime_rpc_litmus.py")
 PROTOCOL_TEST_PATH = Path("tests/test_v49_kernel_rpc_worker.py")
@@ -51,6 +62,12 @@ ANCHOR_PATHS = (
     AMENDMENT_1_PATH,
     AMENDMENT_2_PATH,
     REPAIR_MILESTONE_1_PATH,
+    EVIDENCE_MILESTONE_2A_PATH,
+    RERUN_REGISTRY_PATH,
+    RERUN_LICENSE_SOURCE_PATH,
+    RERUN_LICENSE_TEST_PATH,
+    PACKAGE_INIT_PATH,
+    EVALS_PACKAGE_INIT_PATH,
     SOURCE_PATH,
     TEST_PATH,
     PROTOCOL_TEST_PATH,
@@ -252,6 +269,9 @@ def _assert_anchor_inputs_clean(repo_root: Path) -> None:
     )
     if proc.returncode != 0:
         raise RuntimeError("U'1 diagnostic anchor inputs differ from committed HEAD")
+    # Do not rely on index flags such as assume-unchanged/skip-worktree.  Compare
+    # each Git-clean-filtered working blob with HEAD before any license check.
+    _anchored_input_snapshot(repo_root)
 
 
 def _assert_anchor_pushed(repo_root: Path, commit: str) -> str:
@@ -1909,6 +1929,7 @@ def run_diagnostic(
         raise ValueError("--anchor must be the 12-character prefix of current HEAD")
     _assert_anchor_inputs_clean(root)
     upstream = _assert_anchor_pushed(root, commit)
+    reject_canonical_rerun_bootstrap(root, commit)
     if reservation_path is None or not reservation_token:
         raise RuntimeError("U'1 live diagnostic requires a preclaimed canonical artifact")
     canonical_reservation = (
@@ -2094,7 +2115,16 @@ def run_diagnostic(
     return report
 
 
-def _reserve_output(path: Path, *, anchor: str, commit: str) -> str:
+def _reserve_output(
+    path: Path,
+    *,
+    repo_root: Path,
+    anchor: str,
+    commit: str,
+) -> str:
+    # Defense in depth for import-level callers.  The bootstrap assertion always
+    # denies; activation must replace it with validation of one claimed receipt.
+    reject_canonical_rerun_bootstrap(repo_root, commit)
     path.parent.mkdir(parents=True, exist_ok=True)
     reservation_path = _reservation_file(path)
     token = secrets.token_hex(32)
@@ -2149,10 +2179,13 @@ def _publish_reserved_json(
     path: Path,
     value: dict[str, Any],
     *,
+    repo_root: Path,
     token: str,
     anchor: str,
     commit: str,
 ) -> None:
+    # A canonical path is not publication authority on its own.
+    reject_canonical_rerun_bootstrap(repo_root, commit)
     _verify_reservation(path, token=token, anchor=anchor, commit=commit)
     if path.exists():
         raise FileExistsError(f"refusing to replace canonical U'1 artifact: {path}")
@@ -2202,7 +2235,13 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("--anchor must be the 12-character prefix of current HEAD")
     _assert_anchor_inputs_clean(root)
     _assert_anchor_pushed(root, commit)
-    reservation_token = _reserve_output(out, anchor=clean_anchor, commit=commit)
+    reject_canonical_rerun_bootstrap(root, commit)
+    reservation_token = _reserve_output(
+        out,
+        repo_root=root,
+        anchor=clean_anchor,
+        commit=commit,
+    )
     try:
         report = run_diagnostic(
             args.repo_root,
@@ -2227,6 +2266,7 @@ def main(argv: list[str] | None = None) -> int:
     _publish_reserved_json(
         out,
         report,
+        repo_root=root,
         token=reservation_token,
         anchor=clean_anchor,
         commit=commit,
