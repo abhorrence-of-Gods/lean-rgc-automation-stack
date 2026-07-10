@@ -1,0 +1,32 @@
+{
+  "schema_version": "lean-rgc-uprime-u1-rpc-publication-v1.0",
+  "anchor_commit": "eb38b4b9c0cb2711c88bb9bea8f2e5646d851925",
+  "anchor_upstream": "origin/codex/uprime-odlrq-plan",
+  "anchor_was_pushed_before_execution": true,
+  "anchor_ci": {
+    "run_id": 29095539730,
+    "conclusion": "success"
+  },
+  "artifact": {
+    "raw_location": "runs/uprime_u1_rpc_20260710/rpc_diagnostic_eb38b4b9c0cb.json (gitignored, investigator-local)",
+    "raw_sha256": "B6636510C6D47CB370FBDFFFAB81BEB4D417915A6DD6CF67E8F95DBF5B13C5B1",
+    "reservation_location": "runs/uprime_u1_rpc_20260710/rpc_diagnostic_eb38b4b9c0cb.json.reservation (gitignored, investigator-local)",
+    "reservation_sha256": "E3639542834D87C3674AFC7AC05347CA96FE791C42F6224872A412470AAF8612",
+    "public_path": "docs/experiments/artifacts/uprime_u1_rpc_20260710/rpc_diagnostic_eb38b4b9c0cb.public.json",
+    "public_sha256": "B6636510C6D47CB370FBDFFFAB81BEB4D417915A6DD6CF67E8F95DBF5B13C5B1",
+    "transformation": "exact byte copy; no fields redacted because the compact raw report contains no private path or endpoint"
+  },
+  "execution": {
+    "platform": "Windows CPU",
+    "verdict": "HARNESS_ERROR",
+    "failed_at_request": "side_init (frame 14)",
+    "error_type": "RuntimeError",
+    "error_message": "side-effect fixture did not expose witness and equality goals",
+    "licenses_later_stage": false
+  },
+  "disposition": {
+    "substrate_verdict_available": false,
+    "raw_artifact_is_immutable": true,
+    "repair_requires_new_pushed_anchor": true
+  }
+}
