@@ -9,6 +9,11 @@ import pytest
 
 from lean_rgc.evals import uprime_rpc_ledger as ledger
 
+# The frozen M2b profile names this test module.  Keep the larger exact-49
+# matrix in a non-collectable support module and import its marked test objects
+# here so both the registered profile and default collection execute them once.
+from uprime_rpc_ledger_semantics_cases import *  # noqa: F403
+
 
 HEADER_BODY = {"phase": "synthetic", "wire_exact": False}
 EXPECTED_HEADER_CANONICAL = b'{"phase":"synthetic","wire_exact":false}'
@@ -500,6 +505,57 @@ def test_close_rejects_path_replacement_when_scan_handle_closes(
     assert swapped is True
 
 
+def test_same_handle_snapshot_retains_attested_bytes_without_authority(tmp_path):
+    path = tmp_path / "snapshot.jsonl"
+    _closed_fixture(path)
+
+    snapshot = ledger.load_standalone_closed_chain_snapshot(path)
+
+    assert snapshot.snapshot_scope == "standalone_same_handle_chain_snapshot_only"
+    assert len(snapshot.canonical_record_bytes) == snapshot.attestation.record_count
+    assert b"\n".join(snapshot.canonical_record_bytes) + b"\n" == path.read_bytes()
+    assert snapshot.authority_scope == "none"
+    assert snapshot.canonical_run_authority is False
+    assert snapshot.licenses_execution is False
+    assert snapshot.licenses_later_stage is False
+
+
+def test_snapshot_rejects_path_replacement_when_its_scan_handle_closes(
+    tmp_path, monkeypatch
+):
+    target = tmp_path / "snapshot-target.jsonl"
+    replacement = tmp_path / "snapshot-replacement.jsonl"
+    _closed_fixture(target)
+    replacement_writer = ledger.StandaloneChainWriter.create(
+        replacement, header_body={"phase": "replacement", "wire_exact": False}
+    )
+    replacement_writer.close_with_closure({"sequence_status": "aborted"})
+    real_fdopen = ledger.os.fdopen
+    swapped = False
+
+    class SwapOnClose:
+        def __init__(self, wrapped):
+            self.wrapped = wrapped
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
+
+        def close(self):
+            nonlocal swapped
+            self.wrapped.close()
+            if not swapped:
+                swapped = True
+                os.replace(replacement, target)
+
+    def swapping_fdopen(fd, *args, **kwargs):
+        return SwapOnClose(real_fdopen(fd, *args, **kwargs))
+
+    monkeypatch.setattr(ledger.os, "fdopen", swapping_fdopen)
+    with pytest.raises(ledger.StandaloneLedgerStructureError, match="not closed"):
+        ledger.load_standalone_closed_chain_snapshot(target)
+    assert swapped is True
+
+
 def test_same_size_mutation_during_scan_is_detected(tmp_path, monkeypatch):
     path = tmp_path / "ledger.jsonl"
     _closed_fixture(path)
@@ -526,6 +582,35 @@ def test_same_size_mutation_during_scan_is_detected(tmp_path, monkeypatch):
         ledger.attest_standalone_closed_chain(path)
     assert mutated is True
     assert ledger.inspect_standalone_chain_prefix(path).status == "corrupt"
+
+
+def test_snapshot_rejects_same_size_mutation_during_retained_scan(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / "snapshot-mutation.jsonl"
+    _closed_fixture(path)
+    real_parse = ledger.parse_canonical_json_bytes
+    mutated = False
+
+    def parse_then_mutate(raw):
+        nonlocal mutated
+        value = real_parse(raw)
+        if not mutated:
+            mutated = True
+            file_bytes = path.read_bytes()
+            marker = file_bytes.index(b"synthetic")
+            changed = file_bytes[:marker] + b"S" + file_bytes[marker + 1 :]
+            assert len(changed) == len(file_bytes)
+            with path.open("r+b", buffering=0) as handle:
+                handle.write(changed)
+                handle.flush()
+                os.fsync(handle.fileno())
+        return value
+
+    monkeypatch.setattr(ledger, "parse_canonical_json_bytes", parse_then_mutate)
+    with pytest.raises(ledger.StandaloneLedgerStructureError, match="not closed"):
+        ledger.load_standalone_closed_chain_snapshot(path)
+    assert mutated is True
 
 
 def test_unclosed_and_closed_prefix_inspection_never_grants_authority(tmp_path):

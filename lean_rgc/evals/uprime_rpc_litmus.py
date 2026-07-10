@@ -53,6 +53,12 @@ RERUN_LICENSE_SOURCE_PATH = Path("lean_rgc/evals/uprime_rerun_license.py")
 RERUN_LICENSE_TEST_PATH = Path("tests/test_uprime_rerun_license.py")
 LEDGER_SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_ledger.py")
 LEDGER_TEST_PATH = Path("tests/test_uprime_rpc_ledger.py")
+LEDGER_SEMANTICS_SOURCE_PATH = Path(
+    "lean_rgc/evals/uprime_rpc_ledger_semantics.py"
+)
+LEDGER_SEMANTICS_TEST_SUPPORT_PATH = Path(
+    "tests/uprime_rpc_ledger_semantics_cases.py"
+)
 PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
 EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
@@ -79,6 +85,8 @@ ANCHOR_PATHS = (
     RERUN_LICENSE_TEST_PATH,
     LEDGER_SOURCE_PATH,
     LEDGER_TEST_PATH,
+    LEDGER_SEMANTICS_SOURCE_PATH,
+    LEDGER_SEMANTICS_TEST_SUPPORT_PATH,
     PACKAGE_INIT_PATH,
     EVALS_PACKAGE_INIT_PATH,
     SOURCE_PATH,

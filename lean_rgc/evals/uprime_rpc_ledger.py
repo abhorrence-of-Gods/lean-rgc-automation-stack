@@ -351,6 +351,23 @@ class StandaloneChainInspection:
 
 
 @dataclass(frozen=True)
+class StandaloneChainSnapshot:
+    """Same-handle canonical record bytes plus their structural attestation.
+
+    The snapshot is an in-process parsing substrate only.  It does not bind a
+    reservation, authenticate an origin, or grant execution authority.
+    """
+
+    snapshot_scope: str
+    attestation: StandaloneChainAttestation
+    canonical_record_bytes: tuple[bytes, ...]
+    authority_scope: str = "none"
+    canonical_run_authority: bool = False
+    licenses_execution: bool = False
+    licenses_later_stage: bool = False
+
+
+@dataclass(frozen=True)
 class _ScanResult:
     status: str
     verified_prefix_bytes: int
@@ -363,6 +380,7 @@ class _ScanResult:
     input_sha256: str | None
     input_bytes: int
     error_code: str | None
+    canonical_record_bytes: tuple[bytes, ...] | None = None
 
 
 def _validate_record_envelope(
@@ -424,7 +442,12 @@ def _scan_error(code: str, *, input_bytes: int = 0) -> _ScanResult:
     )
 
 
-def _scan_open_handle(handle: BinaryIO, initial: os.stat_result) -> _ScanResult:
+def _scan_open_handle(
+    handle: BinaryIO,
+    initial: os.stat_result,
+    *,
+    retain_canonical_records: bool = False,
+) -> _ScanResult:
     if initial.st_size > MAX_LEDGER_BYTES:
         return _scan_error("FILE_SIZE_LIMIT", input_bytes=initial.st_size)
     digest = hashlib.sha256()
@@ -436,6 +459,7 @@ def _scan_open_handle(handle: BinaryIO, initial: os.stat_result) -> _ScanResult:
     closure_hash: str | None = None
     closure_index: int | None = None
     closure_seen = False
+    retained: list[bytes] | None = [] if retain_canonical_records else None
     while True:
         raw_line = handle.readline(MAX_EVENT_LINE_BYTES + 1)
         if not raw_line:
@@ -469,6 +493,8 @@ def _scan_open_handle(handle: BinaryIO, initial: os.stat_result) -> _ScanResult:
             closure_hash = record_hash
             closure_index = index
         digest.update(raw_line)
+        if retained is not None:
+            retained.append(raw_line[:-1])
         total += len(raw_line)
         head = record_hash
         index += 1
@@ -499,14 +525,41 @@ def _scan_open_handle(handle: BinaryIO, initial: os.stat_result) -> _ScanResult:
     ):
         return _ScanResult("corrupt", total, index, head, genesis, header_hash, closure_hash, closure_index, None, second_total, "FILE_CHANGED_DURING_SCAN")
     if index == 0 or not closure_seen:
-        return _ScanResult("unclosed", total, index, head, genesis, header_hash, closure_hash, closure_index, first_sha, total, None)
-    return _ScanResult("closed_chain", total, index, head, genesis, header_hash, closure_hash, closure_index, first_sha, total, None)
+        return _ScanResult(
+            "unclosed",
+            total,
+            index,
+            head,
+            genesis,
+            header_hash,
+            closure_hash,
+            closure_index,
+            first_sha,
+            total,
+            None,
+            tuple(retained) if retained is not None else None,
+        )
+    return _ScanResult(
+        "closed_chain",
+        total,
+        index,
+        head,
+        genesis,
+        header_hash,
+        closure_hash,
+        closure_index,
+        first_sha,
+        total,
+        None,
+        tuple(retained) if retained is not None else None,
+    )
 
 
 def _scan_chain(
     path: Path,
     *,
     expected_identity: tuple[int, int] | None = None,
+    retain_canonical_records: bool = False,
 ) -> _ScanResult:
     try:
         fd = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0))
@@ -522,7 +575,11 @@ def _scan_chain(
         else:
             handle = os.fdopen(fd, "rb", buffering=0)
             fd = -1
-            result = _scan_open_handle(handle, initial)
+            result = _scan_open_handle(
+                handle,
+                initial,
+                retain_canonical_records=retain_canonical_records,
+            )
     except BaseException as exc:
         result = _scan_error(f"SCAN_{type(exc).__name__}")
     close_error: BaseException | None = None
@@ -600,6 +657,24 @@ def attest_standalone_closed_chain(
     """Attest only canonical chain closure; no bundle or execution authority."""
 
     return _attestation_from_scan(_scan_chain(Path(path)))
+
+
+def load_standalone_closed_chain_snapshot(
+    path: str | Path,
+) -> StandaloneChainSnapshot:
+    """Load canonical records from the exact handle used for chain attestation."""
+
+    result = _scan_chain(Path(path), retain_canonical_records=True)
+    attestation = _attestation_from_scan(result)
+    if result.canonical_record_bytes is None:
+        raise AssertionError("closed-chain snapshot did not retain canonical records")
+    if len(result.canonical_record_bytes) != attestation.record_count:
+        raise AssertionError("closed-chain snapshot count drifted from attestation")
+    return StandaloneChainSnapshot(
+        snapshot_scope="standalone_same_handle_chain_snapshot_only",
+        attestation=attestation,
+        canonical_record_bytes=result.canonical_record_bytes,
+    )
 
 
 class StandaloneChainWriter:
@@ -851,6 +926,7 @@ __all__ = [
     "STRICT_JSON_CANONICALIZER_ID",
     "StandaloneChainAttestation",
     "StandaloneChainInspection",
+    "StandaloneChainSnapshot",
     "StandaloneLedgerStructureError",
     "StandaloneLedgerWriteError",
     "StandaloneChainWriter",
@@ -861,5 +937,6 @@ __all__ = [
     "compute_genesis_sha256",
     "compute_record_sha256",
     "inspect_standalone_chain_prefix",
+    "load_standalone_closed_chain_snapshot",
     "parse_canonical_json_bytes",
 ]
