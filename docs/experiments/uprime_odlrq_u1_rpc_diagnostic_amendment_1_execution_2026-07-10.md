@@ -34,9 +34,10 @@ The durable reservation sidecar SHA-256 is
 
 Amendment 1 worked: frame 14 passed, the side-effect action and its replay
 request ran, and the stream reached burn, reset, status, and shutdown. The
-worker returned a successful shutdown response, but the Lean process retained
-13 serialized KStates/Environments and did not finish post-response teardown
-inside the harness's original ten-second wait. The harness then terminated the
+worker returned a successful shutdown response and status reported 13
+persistent states, but the Lean process did not finish post-response teardown
+inside the harness's original ten-second wait. The artifact does not establish
+that the retained states caused the delay. The harness then terminated the
 process and, by its stricter-than-contract operational rule, discarded contract
 aggregation in favor of `HARNESS_ERROR`.
 

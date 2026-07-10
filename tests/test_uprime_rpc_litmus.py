@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 import pytest
 
 from lean_rgc.evals import uprime_rpc_litmus as litmus
@@ -330,6 +332,345 @@ def test_canonical_artifact_is_reserved_before_atomic_publication(tmp_path):
 def test_live_diagnostic_rejects_nonfrozen_timeout_before_preflight(timeout_s):
     with pytest.raises(ValueError, match="frozen value 900"):
         litmus.run_diagnostic(".", anchor="000000000000", timeout_s=timeout_s)
+
+
+class _FinishedReader:
+    def __init__(self, *, alive=False):
+        self.alive = alive
+        self.join_timeouts = []
+
+    def join(self, timeout=None):
+        self.join_timeouts.append(timeout)
+
+    def is_alive(self):
+        return self.alive
+
+
+class _ScriptedProcess:
+    def __init__(
+        self,
+        *,
+        natural_returncode=0,
+        require_terminate=False,
+        require_kill=False,
+        survive_kill=False,
+    ):
+        self.returncode = None
+        self.natural_returncode = natural_returncode
+        self.require_terminate = require_terminate
+        self.require_kill = require_kill
+        self.survive_kill = survive_kill
+        self.terminated = False
+        self.killed = False
+        self.wait_timeouts = []
+
+    def wait(self, timeout=None):
+        self.wait_timeouts.append(timeout)
+        if self.require_terminate:
+            may_exit = self.killed or (self.terminated and not self.require_kill)
+            if self.survive_kill or not may_exit:
+                raise litmus.subprocess.TimeoutExpired("fake-uprime-worker", timeout)
+        self.returncode = 1 if self.require_terminate else self.natural_returncode
+        return self.returncode
+
+    def poll(self):
+        return self.returncode
+
+    def terminate(self):
+        self.terminated = True
+
+    def kill(self):
+        self.killed = True
+
+
+def _rpc_finalize_shell(process, *, reader_alive=False):
+    rpc = object.__new__(litmus._RpcProcess)
+    rpc.process = process
+    rpc.stdout_queue = litmus.queue.Queue(maxsize=32)
+    rpc.stdout_queue.put_nowait(("eof", None, None))
+    rpc.non_json_stdout = litmus.deque(maxlen=20)
+    rpc.non_json_stdout_count = 0
+    rpc.stderr_lines = litmus.deque(maxlen=40)
+    rpc.stderr_count = 0
+    rpc.transport_overflow = False
+    rpc._cleanup_deadline = None
+    rpc._post_response_started = None
+    rpc._post_response_deadline = None
+    rpc.shutdown_lifecycle = litmus._new_shutdown_lifecycle()
+    rpc._stdout_thread = _FinishedReader(alive=reader_alive)
+    rpc._stderr_thread = _FinishedReader()
+    return rpc
+
+
+def _finalize(rpc, response, *, received_monotonic_s=None):
+    if received_monotonic_s is None:
+        received_monotonic_s = litmus.time.monotonic()
+    return rpc.finalize_after_shutdown(
+        response,
+        received_monotonic_s=received_monotonic_s,
+    )
+
+
+def test_shutdown_transport_graceful_exit_is_clear_eligible_and_auditable():
+    process = _ScriptedProcess()
+    rpc = _rpc_finalize_shell(process)
+    shutdown = {"id": "uprime-23-shutdown", "ok": True, "shutdown": True}
+    _finalize(rpc, shutdown)
+    transport = rpc.transport_summary()
+    gate = litmus.shutdown_transport_clear_gate(shutdown, transport)
+    assert gate["passed"] is True
+    assert len(process.wait_timeouts) == 1
+    assert 0 < process.wait_timeouts[0] <= litmus.NATURAL_EXIT_GRACE_S
+    assert transport["shutdown_lifecycle"]["transport_finalized"] is True
+    assert transport["shutdown_lifecycle"]["stdout_eof_count"] == 1
+    assert (
+        litmus.NATURAL_EXIT_GRACE_S
+        + litmus.FORCED_REAP_BUDGET_S
+        + litmus.READER_DRAIN_RESERVE_S
+        == litmus.POST_RESPONSE_TIMEOUT_S
+    )
+
+    status_summary = litmus._response_summary(
+        {"ok": True, "loaded": True, "n_states": 13, "n_requests": 22},
+        {
+            "frame_index": 22,
+            "received_at_utc": "2026-07-10T00:00:00+00:00",
+            "response_sha256": "deliberately-different",
+        },
+    )
+    shutdown_summary = litmus._response_summary(
+        shutdown,
+        {
+            "frame_index": 23,
+            "received_at_utc": "2026-07-10T00:00:01+00:00",
+            "response_sha256": litmus._stable_json_sha256(shutdown),
+        },
+    )
+    assert status_summary["loaded"] is True
+    assert status_summary["n_states"] == 13
+    assert status_summary["n_requests"] == 22
+    assert status_summary["frame_index"] == 22
+    assert status_summary["receipt_sha256_match"] is False
+    assert shutdown_summary["shutdown"] is True
+    assert shutdown_summary["frame_index"] == 23
+    assert shutdown_summary["receipt_sha256_match"] is True
+
+    transport["shutdown_lifecycle"]["post_response_elapsed_s"] = 10.1
+    late_gate = litmus.shutdown_transport_clear_gate(shutdown, transport)
+    assert late_gate["checks"]["post_response_elapsed_bounded"] is False
+    assert late_gate["passed"] is False
+
+
+def test_real_reader_queue_receipt_and_graceful_shutdown(tmp_path):
+    child = (
+        "import json,sys\n"
+        "request=json.loads(sys.stdin.readline())\n"
+        "reply={'id':request.get('id'),'ok':True,'shutdown':True}\n"
+        "sys.stdout.write(json.dumps(reply,separators=(',',':'))+'\\n')\n"
+        "sys.stdout.flush()\n"
+    )
+    rpc = litmus._RpcProcess(
+        [sys.executable, "-c", child],
+        cwd=tmp_path,
+        timeout_s=30.0,
+    )
+    try:
+        response, receipt = rpc.request({"id": "real-reader", "cmd": "shutdown"})
+        assert response == {"id": "real-reader", "ok": True, "shutdown": True}
+        assert receipt["received_monotonic_s"] <= litmus.time.monotonic()
+        assert receipt["received_at_utc"].endswith("+00:00")
+        rpc.finalize_after_shutdown(
+            response,
+            received_monotonic_s=receipt["received_monotonic_s"],
+        )
+        transport = rpc.transport_summary()
+        assert transport["shutdown_lifecycle"]["terminal_eof_exact"] is True
+        assert litmus.shutdown_transport_clear_gate(response, transport)["passed"] is True
+    finally:
+        if rpc.process.poll() is None:
+            rpc.abort()
+
+
+def test_forced_reap_allows_contract_aggregation_but_never_clear():
+    process = _ScriptedProcess(require_terminate=True)
+    rpc = _rpc_finalize_shell(process)
+    shutdown = {"ok": True, "shutdown": True, "error": None}
+    _finalize(rpc, shutdown)
+    transport = rpc.transport_summary()
+    lifecycle = transport["shutdown_lifecycle"]
+    assert lifecycle["forced_reap"] is True
+    assert lifecycle["forced_reap_succeeded"] is True
+    assert lifecycle["exit_mode"] == "forced_terminate"
+    assert transport["returncode"] == 1
+
+    gate = litmus.shutdown_transport_clear_gate(shutdown, transport)
+    assert gate["passed"] is False
+    contracts = {name: {"passed": True} for name in litmus.CONTRACT_IDS}
+    disposition = litmus.diagnostic_disposition(contracts, gate)
+    assert disposition["contract_failures"] == []
+    assert disposition["failures"] == [litmus.TRANSPORT_CLEAR_GATE_ID]
+    assert disposition["verdict"] == "U1_DIAGNOSTIC_BLOCKED"
+    lifecycle_before_abort = dict(lifecycle)
+    rpc.abort()
+    assert rpc.shutdown_lifecycle == lifecycle_before_abort
+
+
+def test_forced_reap_escalates_to_kill_inside_registered_budget():
+    process = _ScriptedProcess(require_terminate=True, require_kill=True)
+    rpc = _rpc_finalize_shell(process)
+    shutdown = {"ok": True, "shutdown": True}
+    _finalize(rpc, shutdown)
+    lifecycle = rpc.shutdown_lifecycle
+    assert lifecycle["termination_signal_attempted"] is True
+    assert lifecycle["kill_signal_attempted"] is True
+    assert lifecycle["exit_mode"] == "forced_kill"
+    assert lifecycle["forced_reap_succeeded"] is True
+
+
+def test_forced_reap_failure_is_harness_error():
+    process = _ScriptedProcess(
+        require_terminate=True,
+        require_kill=True,
+        survive_kill=True,
+    )
+    rpc = _rpc_finalize_shell(process)
+    with pytest.raises(TimeoutError, match="survived bounded"):
+        _finalize(rpc, {"ok": True, "shutdown": True})
+    assert rpc.shutdown_lifecycle["forced_reap"] is True
+    assert rpc.shutdown_lifecycle["forced_reap_succeeded"] is False
+    assert rpc.shutdown_lifecycle["transport_finalized"] is False
+
+
+def test_invalid_shutdown_that_requires_force_is_harness_error():
+    rpc = _rpc_finalize_shell(_ScriptedProcess(require_terminate=True))
+    with pytest.raises(RuntimeError, match="invalid shutdown response"):
+        _finalize(rpc, {"ok": True, "shutdown": False})
+    assert rpc.shutdown_lifecycle["forced_reap"] is True
+    assert rpc.shutdown_lifecycle["transport_finalized"] is False
+
+
+def test_invalid_shutdown_with_natural_exit_is_evaluated_but_cannot_clear():
+    rpc = _rpc_finalize_shell(_ScriptedProcess())
+    shutdown = {"ok": True, "shutdown": False}
+    _finalize(rpc, shutdown)
+    gate = litmus.shutdown_transport_clear_gate(shutdown, rpc.transport_summary())
+    assert gate["checks"]["shutdown_ack_ok"] is False
+    assert gate["passed"] is False
+
+
+def test_shutdown_transport_rejects_nonzero_natural_exit_after_drain():
+    rpc = _rpc_finalize_shell(_ScriptedProcess(natural_returncode=7))
+    with pytest.raises(RuntimeError, match="naturally with return code 7"):
+        _finalize(rpc, {"ok": True, "shutdown": True})
+    assert rpc.shutdown_lifecycle["terminal_eof_exact"] is True
+    assert rpc.shutdown_lifecycle["transport_finalized"] is False
+
+
+@pytest.mark.parametrize(
+    "pollution", ["extra_response", "duplicate_eof", "overflow", "non_json"]
+)
+def test_shutdown_transport_pollution_is_harness_error(pollution):
+    rpc = _rpc_finalize_shell(_ScriptedProcess())
+    if pollution == "extra_response":
+        rpc.stdout_queue.put_nowait(
+            ("response", {"unexpected": True}, {"received_monotonic_s": 0.0})
+        )
+    elif pollution == "duplicate_eof":
+        rpc.stdout_queue.put_nowait(("eof", None, None))
+    elif pollution == "overflow":
+        rpc.transport_overflow = True
+    else:
+        rpc.non_json_stdout_count += 1
+        rpc.non_json_stdout.append("pollution")
+    with pytest.raises(RuntimeError):
+        _finalize(rpc, {"ok": True, "shutdown": True})
+    assert rpc.shutdown_lifecycle["transport_finalized"] is False
+
+
+def test_shutdown_transport_reader_survival_is_harness_error():
+    rpc = _rpc_finalize_shell(_ScriptedProcess(), reader_alive=True)
+    with pytest.raises(RuntimeError, match="reader did not terminate"):
+        _finalize(rpc, {"ok": True, "shutdown": True})
+    assert rpc.shutdown_lifecycle["reader_threads_drained"] is False
+
+
+def test_shutdown_receipt_clock_prevents_late_natural_false_clear():
+    process = _ScriptedProcess()
+    process.returncode = 0
+    rpc = _rpc_finalize_shell(process)
+    shutdown = {"ok": True, "shutdown": True}
+    _finalize(
+        rpc,
+        shutdown,
+        received_monotonic_s=litmus.time.monotonic() - 6.0,
+    )
+    lifecycle = rpc.shutdown_lifecycle
+    assert lifecycle["exit_mode"] == "natural_after_grace"
+    assert lifecycle["graceful_exit"] is False
+    gate = litmus.shutdown_transport_clear_gate(shutdown, rpc.transport_summary())
+    assert gate["checks"]["natural_exit_within_grace"] is False
+    assert gate["passed"] is False
+
+
+def test_post_response_elapsed_is_measured_before_finalization(monkeypatch):
+    ticks = iter([0.0, 0.0, 0.0, 0.0, 0.0, 11.0])
+    monkeypatch.setattr(litmus.time, "monotonic", lambda: next(ticks))
+    rpc = _rpc_finalize_shell(_ScriptedProcess())
+    with pytest.raises(TimeoutError, match="post-response deadline expired"):
+        _finalize(
+            rpc,
+            {"ok": True, "shutdown": True},
+            received_monotonic_s=0.0,
+        )
+    assert rpc.shutdown_lifecycle["post_response_elapsed_s"] == 11.0
+    assert rpc.shutdown_lifecycle["transport_finalized"] is False
+
+
+@pytest.mark.parametrize("variant", ["empty", "missing", "extra", "reordered"])
+def test_diagnostic_disposition_rejects_contract_registry_drift(variant):
+    contracts = {name: {"passed": True} for name in litmus.CONTRACT_IDS}
+    if variant == "empty":
+        contracts = {}
+    elif variant == "missing":
+        contracts.pop(litmus.CONTRACT_IDS[-1])
+    elif variant == "extra":
+        contracts["unexpected"] = {"passed": True}
+    else:
+        contracts = dict(reversed(list(contracts.items())))
+    with pytest.raises(ValueError, match="contract registry"):
+        litmus.diagnostic_disposition(contracts, {"passed": True})
+
+
+def test_diagnostic_disposition_rejects_nonobject_contract_row():
+    contracts = {name: {"passed": True} for name in litmus.CONTRACT_IDS}
+    contracts[litmus.CONTRACT_IDS[0]] = True
+    with pytest.raises(TypeError, match="contract rows"):
+        litmus.diagnostic_disposition(contracts, {"passed": True})
+
+
+@pytest.mark.parametrize(
+    "variant", ["wrong_id", "missing", "extra", "reordered", "contradiction"]
+)
+def test_diagnostic_disposition_rejects_transport_gate_drift(variant):
+    contracts = {name: {"passed": True} for name in litmus.CONTRACT_IDS}
+    checks = {name: True for name in litmus.TRANSPORT_CLEAR_CHECK_IDS}
+    gate = {
+        "gate_id": litmus.TRANSPORT_CLEAR_GATE_ID,
+        "passed": True,
+        "checks": checks,
+    }
+    if variant == "wrong_id":
+        gate["gate_id"] = "wrong"
+    elif variant == "missing":
+        checks.pop(litmus.TRANSPORT_CLEAR_CHECK_IDS[-1])
+    elif variant == "extra":
+        checks["unexpected"] = True
+    elif variant == "reordered":
+        gate["checks"] = dict(reversed(list(checks.items())))
+    else:
+        checks[litmus.TRANSPORT_CLEAR_CHECK_IDS[0]] = False
+    with pytest.raises(ValueError, match="transport clear gate"):
+        litmus.diagnostic_disposition(contracts, gate)
 
 
 def test_all_contracts_have_a_reachable_clear_fixture(monkeypatch):

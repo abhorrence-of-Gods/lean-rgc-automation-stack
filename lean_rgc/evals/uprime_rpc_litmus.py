@@ -21,13 +21,16 @@ from typing import Any
 from lean_rgc.audit_result_cache import _max_heartbeats, make_audit_cache_key
 
 
-SCHEMA_UPRIME_RPC_LITMUS = "lean-rgc-uprime-rpc-diagnostic-v1.0"
+SCHEMA_UPRIME_RPC_LITMUS = "lean-rgc-uprime-rpc-diagnostic-v1.1"
 SCHEMA_UPRIME_RPC_RESERVATION = "lean-rgc-uprime-rpc-reservation-v1.0"
 PREREG_PATH = Path(
     "docs/experiments/uprime_odlrq_u1_rpc_diagnostic_preregistration.md"
 )
-AMENDMENT_PATH = Path(
+AMENDMENT_1_PATH = Path(
     "docs/experiments/uprime_odlrq_u1_rpc_diagnostic_amendment_1.md"
+)
+AMENDMENT_2_PATH = Path(
+    "docs/experiments/uprime_odlrq_u1_rpc_diagnostic_amendment_2.md"
 )
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
 TEST_PATH = Path("tests/test_uprime_rpc_litmus.py")
@@ -37,7 +40,8 @@ CACHE_PATH = Path("lean_rgc/audit_result_cache.py")
 SUPERVISOR_PATH = Path("lean_rgc/lean/worker_supervisor.py")
 ANCHOR_PATHS = (
     PREREG_PATH,
-    AMENDMENT_PATH,
+    AMENDMENT_1_PATH,
+    AMENDMENT_2_PATH,
     SOURCE_PATH,
     TEST_PATH,
     TIER_PATH,
@@ -61,8 +65,28 @@ REPLAY_CERTIFICATE_VERSION = "lean-rgc-kernel-replay-certificate-v1"
 REPLAY_VERIFICATION_METHOD = "same_before_state_independent_reexecution"
 REGISTERED_RUN_DIR = Path("runs/uprime_u1_rpc_20260710")
 FROZEN_TIMEOUT_S = 900.0
+POST_RESPONSE_TIMEOUT_S = 10.0
+NATURAL_EXIT_GRACE_S = 5.0
+FORCED_REAP_BUDGET_S = 4.0
+READER_DRAIN_RESERVE_S = 1.0
+TERMINATE_GRACE_S = 2.0
 EXPECTED_PERSISTENT_STATE_COUNT = 13
 EXPECTED_STATUS_REQUEST_COUNT = 22
+TRANSPORT_CLEAR_GATE_ID = "X0_shutdown_transport_clear"
+TRANSPORT_CLEAR_CHECK_IDS = (
+    "stream_complete",
+    "shutdown_ack_ok",
+    "response_sha256_bound",
+    "natural_exit_within_grace",
+    "no_forced_reap",
+    "returncode_zero",
+    "reader_threads_drained",
+    "terminal_eof_exact",
+    "no_transport_overflow",
+    "json_stdout_only",
+    "post_response_elapsed_bounded",
+    "transport_finalized",
+)
 
 CONTRACT_IDS = (
     "R0_request_id_echo",
@@ -510,6 +534,31 @@ def cache_budget_probe() -> dict[str, Any]:
     return {"passed": all(checks.values()), "resolved": resolved, "checks": checks}
 
 
+def _new_shutdown_lifecycle() -> dict[str, Any]:
+    return {
+        "stream_complete": False,
+        "shutdown_ack_ok": False,
+        "shutdown_response_sha256": None,
+        "post_response_timeout_s": POST_RESPONSE_TIMEOUT_S,
+        "natural_exit_grace_s": NATURAL_EXIT_GRACE_S,
+        "forced_reap_budget_s": FORCED_REAP_BUDGET_S,
+        "reader_drain_reserve_s": READER_DRAIN_RESERVE_S,
+        "exit_mode": None,
+        "graceful_exit": None,
+        "termination_signal_attempted": False,
+        "kill_signal_attempted": False,
+        "forced_reap": False,
+        "forced_reap_succeeded": None,
+        "reader_threads_drained": False,
+        "stdout_eof_count": 0,
+        "residual_response_count": 0,
+        "residual_frame_kinds": [],
+        "terminal_eof_exact": False,
+        "transport_finalized": False,
+        "post_response_elapsed_s": None,
+    }
+
+
 class _RpcProcess:
     def __init__(
         self,
@@ -535,11 +584,18 @@ class _RpcProcess:
             creationflags=creationflags,
         )
         self.deadline = time.monotonic() + max(1.0, float(timeout_s))
-        self.stdout_queue: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=32)
+        self.stdout_queue: queue.Queue[
+            tuple[str, Any, dict[str, Any] | None]
+        ] = queue.Queue(maxsize=32)
         self.non_json_stdout: deque[str] = deque(maxlen=20)
+        self.non_json_stdout_count = 0
         self.stderr_lines: deque[str] = deque(maxlen=40)
+        self.stderr_count = 0
         self.transport_overflow = False
         self._cleanup_deadline: float | None = None
+        self._post_response_started: float | None = None
+        self._post_response_deadline: float | None = None
+        self.shutdown_lifecycle = _new_shutdown_lifecycle()
         self._request_lock = threading.Lock()
         self._stdout_thread = threading.Thread(target=self._read_stdout, daemon=True)
         self._stderr_thread = threading.Thread(target=self._read_stderr, daemon=True)
@@ -549,7 +605,7 @@ class _RpcProcess:
     def _read_stdout(self) -> None:
         stream = self.process.stdout
         if stream is None:
-            self._queue_transport("eof", None)
+            self._queue_transport("eof", None, None)
             return
         for raw in iter(stream.readline, ""):
             line = raw.strip()
@@ -558,17 +614,29 @@ class _RpcProcess:
             try:
                 value = json.loads(line)
             except json.JSONDecodeError:
+                self.non_json_stdout_count += 1
                 self.non_json_stdout.append(line[-2000:])
                 continue
             if isinstance(value, dict):
-                self._queue_transport("response", value)
+                received_monotonic_s = time.monotonic()
+                self._queue_transport(
+                    "response",
+                    value,
+                    {
+                        "received_monotonic_s": received_monotonic_s,
+                        "received_at_utc": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
             else:
+                self.non_json_stdout_count += 1
                 self.non_json_stdout.append(line[-2000:])
-        self._queue_transport("eof", None)
+        self._queue_transport("eof", None, None)
 
-    def _queue_transport(self, kind: str, value: Any) -> None:
+    def _queue_transport(
+        self, kind: str, value: Any, receipt: dict[str, Any] | None
+    ) -> None:
         try:
-            self.stdout_queue.put_nowait((kind, value))
+            self.stdout_queue.put_nowait((kind, value, receipt))
         except queue.Full:
             self.transport_overflow = True
 
@@ -577,9 +645,12 @@ class _RpcProcess:
         if stream is None:
             return
         for raw in iter(stream.readline, ""):
+            self.stderr_count += 1
             self.stderr_lines.append(raw.rstrip("\r\n")[-2000:])
 
-    def request(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def request(
+        self, payload: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         with self._request_lock:
             remaining = self.deadline - time.monotonic()
             if remaining <= 0:
@@ -598,36 +669,167 @@ class _RpcProcess:
                 if remaining <= 0:
                     self._abort_for_timeout("U'1 RPC diagnostic request timeout")
                 try:
-                    kind, value = self.stdout_queue.get(timeout=remaining)
+                    kind, value, receipt = self.stdout_queue.get(timeout=remaining)
                 except queue.Empty as exc:
                     try:
                         self._abort_for_timeout("U'1 RPC diagnostic request timeout")
                     except TimeoutError as timeout_exc:
                         raise timeout_exc from exc
                 if kind == "response":
-                    return value
+                    if not isinstance(receipt, dict):
+                        raise RuntimeError("U'1 RPC response receipt metadata was missing")
+                    return value, receipt
                 if kind == "eof":
                     raise RuntimeError(
                         "U'1 RPC worker closed stdout before returning a response"
                     )
 
-    def wait_after_shutdown(self, timeout_s: float = 10.0) -> None:
-        remaining = self.deadline - time.monotonic()
-        if remaining <= 0:
-            self._abort_for_timeout("U'1 RPC worker exceeded the shutdown deadline")
+    def _force_reap_after_shutdown(self) -> None:
+        post_deadline = self._post_response_deadline
+        if post_deadline is None:
+            raise RuntimeError("U'1 post-response deadline was not initialized")
+        now = time.monotonic()
+        force_deadline = min(
+            now + FORCED_REAP_BUDGET_S,
+            post_deadline - READER_DRAIN_RESERVE_S,
+        )
+        if force_deadline <= now:
+            raise TimeoutError("U'1 RPC post-response forced-reap budget was exhausted")
+
+        lifecycle = self.shutdown_lifecycle
+        lifecycle["forced_reap"] = True
+        lifecycle["forced_reap_succeeded"] = False
+        lifecycle["termination_signal_attempted"] = True
         try:
-            returncode = self.process.wait(timeout=max(0.1, min(timeout_s, remaining)))
-        except subprocess.TimeoutExpired as exc:
+            self.process.terminate()
+        except OSError:
+            pass
+        terminate_wait = min(TERMINATE_GRACE_S, force_deadline - time.monotonic())
+        if terminate_wait > 0:
             try:
-                self._abort_for_timeout("U'1 RPC worker did not exit after shutdown")
-            except TimeoutError as timeout_exc:
-                raise timeout_exc from exc
-        self._stdout_thread.join(timeout=5)
-        self._stderr_thread.join(timeout=5)
-        if self._stdout_thread.is_alive() or self._stderr_thread.is_alive():
+                self.process.wait(timeout=terminate_wait)
+                lifecycle["exit_mode"] = "forced_terminate"
+            except subprocess.TimeoutExpired:
+                pass
+
+        if self.process.poll() is None:
+            lifecycle["kill_signal_attempted"] = True
+            try:
+                self.process.kill()
+            except OSError:
+                pass
+            remaining = force_deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("U'1 RPC post-response forced-reap deadline expired")
+            try:
+                self.process.wait(timeout=remaining)
+            except subprocess.TimeoutExpired as exc:
+                raise TimeoutError(
+                    "U'1 RPC worker survived bounded post-response forced reap"
+                ) from exc
+            lifecycle["exit_mode"] = "forced_kill"
+
+        if self.process.poll() is None:
+            raise TimeoutError("U'1 RPC worker remained alive after forced reap")
+        lifecycle["forced_reap_succeeded"] = True
+
+    def _join_transport_readers(self) -> None:
+        post_deadline = self._post_response_deadline
+        if post_deadline is None:
+            raise RuntimeError("U'1 post-response deadline was not initialized")
+        for thread in (self._stdout_thread, self._stderr_thread):
+            remaining = post_deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("U'1 RPC post-response reader deadline expired")
+            thread.join(timeout=remaining)
+        readers_drained = not (
+            self._stdout_thread.is_alive() or self._stderr_thread.is_alive()
+        )
+        self.shutdown_lifecycle["reader_threads_drained"] = readers_drained
+        if not readers_drained:
             raise RuntimeError("U'1 RPC transport reader did not terminate cleanly")
-        if returncode != 0:
-            raise RuntimeError(f"U'1 RPC worker exited with return code {returncode}")
+
+    def finalize_after_shutdown(
+        self, response: dict[str, Any], *, received_monotonic_s: float
+    ) -> None:
+        if self.shutdown_lifecycle["stream_complete"]:
+            raise RuntimeError("U'1 RPC shutdown lifecycle was finalized twice")
+        started = float(received_monotonic_s)
+        observed_now = time.monotonic()
+        if not math.isfinite(started) or started > observed_now:
+            raise RuntimeError("U'1 RPC shutdown receipt clock was invalid")
+        self._post_response_started = started
+        self._post_response_deadline = started + POST_RESPONSE_TIMEOUT_S
+        self._cleanup_deadline = self._post_response_deadline
+        lifecycle = self.shutdown_lifecycle
+        lifecycle["stream_complete"] = True
+        lifecycle["shutdown_ack_ok"] = bool(
+            response.get("ok") is True
+            and response.get("shutdown") is True
+            and response.get("error") is None
+        )
+        lifecycle["shutdown_response_sha256"] = _stable_json_sha256(response)
+
+        try:
+            natural_returncode_error: int | None = None
+            natural_deadline = started + NATURAL_EXIT_GRACE_S
+            natural_remaining = natural_deadline - time.monotonic()
+            if natural_remaining <= 0:
+                returncode = self.process.poll()
+                if returncode is None:
+                    self._force_reap_after_shutdown()
+                    returncode = self.process.poll()
+                else:
+                    lifecycle["exit_mode"] = "natural_after_grace"
+                    lifecycle["graceful_exit"] = False
+            else:
+                try:
+                    returncode = self.process.wait(timeout=natural_remaining)
+                except subprocess.TimeoutExpired:
+                    returncode = self.process.poll()
+                    if returncode is None:
+                        self._force_reap_after_shutdown()
+                        returncode = self.process.poll()
+                    else:
+                        lifecycle["exit_mode"] = "natural_after_grace"
+                        lifecycle["graceful_exit"] = False
+                else:
+                    if time.monotonic() <= natural_deadline:
+                        lifecycle["exit_mode"] = "natural"
+                        lifecycle["graceful_exit"] = True
+                    else:
+                        lifecycle["exit_mode"] = "natural_after_grace"
+                        lifecycle["graceful_exit"] = False
+
+            if lifecycle["forced_reap"] is not True and returncode != 0:
+                natural_returncode_error = returncode
+            if lifecycle["forced_reap"] is True:
+                lifecycle["graceful_exit"] = False
+
+            self._join_transport_readers()
+            self.assert_transport_drained()
+            if self.transport_overflow:
+                raise RuntimeError(
+                    "U'1 RPC transport produced unsolicited response overflow"
+                )
+            if self.non_json_stdout:
+                raise RuntimeError("U'1 RPC transport emitted non-JSON stdout")
+            if natural_returncode_error is not None:
+                raise RuntimeError(
+                    "U'1 RPC worker exited naturally with return code "
+                    f"{natural_returncode_error}"
+                )
+            if lifecycle["forced_reap"] is True and lifecycle["shutdown_ack_ok"] is not True:
+                raise RuntimeError(
+                    "U'1 RPC invalid shutdown response required forced process reap"
+                )
+        finally:
+            lifecycle["post_response_elapsed_s"] = max(
+                0.0, time.monotonic() - started
+            )
+        if lifecycle["post_response_elapsed_s"] > POST_RESPONSE_TIMEOUT_S:
+            raise TimeoutError("U'1 RPC post-response deadline expired")
+        lifecycle["transport_finalized"] = True
 
     def abort(self) -> None:
         if self.process.poll() is not None:
@@ -676,19 +878,33 @@ class _RpcProcess:
         return {
             "returncode": self.process.poll(),
             "transport_overflow": self.transport_overflow,
+            "non_json_stdout_count": self.non_json_stdout_count,
             "non_json_stdout_tail": list(self.non_json_stdout),
+            "stderr_count": self.stderr_count,
             "stderr_tail": list(self.stderr_lines),
+            "shutdown_lifecycle": dict(self.shutdown_lifecycle),
         }
 
     def assert_transport_drained(self) -> None:
-        residual: list[tuple[str, Any]] = []
+        residual: list[tuple[str, Any, dict[str, Any] | None]] = []
         while True:
             try:
                 residual.append(self.stdout_queue.get_nowait())
             except queue.Empty:
                 break
-        if len(residual) != 1 or residual[0][0] != "eof":
-            kinds = [kind for kind, _value in residual]
+        kinds = [kind for kind, _value, _receipt in residual]
+        eof_count = sum(kind == "eof" for kind in kinds)
+        response_count = sum(kind == "response" for kind in kinds)
+        lifecycle = self.shutdown_lifecycle
+        lifecycle["stdout_eof_count"] = eof_count
+        lifecycle["residual_response_count"] = response_count
+        lifecycle["residual_frame_kinds"] = kinds
+        lifecycle["terminal_eof_exact"] = bool(
+            len(residual) == 1
+            and residual[0][0] == "eof"
+            and residual[0][1] is None
+        )
+        if lifecycle["terminal_eof_exact"] is not True:
             raise RuntimeError(
                 "U'1 RPC transport had unsolicited or missing terminal frames: "
                 f"{kinds}"
@@ -807,7 +1023,9 @@ def select_side_effect_target(kernel_state: Any) -> str:
     return goals[1]["mvar_id"]
 
 
-def _response_summary(response: dict[str, Any]) -> dict[str, Any]:
+def _response_summary(
+    response: dict[str, Any], receipt: dict[str, Any] | None = None
+) -> dict[str, Any]:
     kernel = _kernel(response, "after") or _kernel(response, "current")
     flags = _audit_flags(response)
     replay = flags.get("replay") if isinstance(flags.get("replay"), dict) else {}
@@ -817,11 +1035,23 @@ def _response_summary(response: dict[str, Any]) -> dict[str, Any]:
         if isinstance(response.get("state_delta"), dict)
         else None
     )
+    response_sha256 = _stable_json_sha256(response)
+    receipt_sha256 = receipt.get("response_sha256") if receipt else None
     return {
-        "response_sha256": _stable_json_sha256(response),
+        "response_sha256": response_sha256,
+        "receipt_response_sha256": receipt_sha256,
+        "receipt_sha256_match": receipt_sha256 is not None
+        and receipt_sha256 == response_sha256,
+        "frame_index": receipt.get("frame_index") if receipt else None,
+        "received_at_utc": receipt.get("received_at_utc") if receipt else None,
         "id": response.get("id"),
         "rpc_protocol_version": response.get("rpc_protocol_version"),
         "ok": response.get("ok"),
+        "loaded": response.get("loaded"),
+        "shutdown": response.get("shutdown"),
+        "n_states": response.get("n_states"),
+        "n_requests": response.get("n_requests"),
+        "n_failures": response.get("n_failures"),
         "status": response.get("status"),
         "error": response.get("error"),
         "before_state_id": response.get("before_state_id"),
@@ -839,10 +1069,86 @@ def _response_summary(response: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def shutdown_transport_clear_gate(
+    shutdown_response: Any, transport: Any
+) -> dict[str, Any]:
+    response = shutdown_response if isinstance(shutdown_response, dict) else {}
+    summary = transport if isinstance(transport, dict) else {}
+    lifecycle = (
+        summary.get("shutdown_lifecycle")
+        if isinstance(summary.get("shutdown_lifecycle"), dict)
+        else {}
+    )
+    elapsed = lifecycle.get("post_response_elapsed_s")
+    elapsed_bound = bool(
+        isinstance(elapsed, (int, float))
+        and not isinstance(elapsed, bool)
+        and math.isfinite(float(elapsed))
+        and 0.0 <= float(elapsed) <= POST_RESPONSE_TIMEOUT_S
+        and lifecycle.get("post_response_timeout_s") == POST_RESPONSE_TIMEOUT_S
+    )
+    checks = {
+        "stream_complete": lifecycle.get("stream_complete") is True,
+        "shutdown_ack_ok": lifecycle.get("shutdown_ack_ok") is True,
+        "response_sha256_bound": bool(response)
+        and lifecycle.get("shutdown_response_sha256")
+        == _stable_json_sha256(response),
+        "natural_exit_within_grace": lifecycle.get("graceful_exit") is True
+        and lifecycle.get("exit_mode") == "natural",
+        "no_forced_reap": lifecycle.get("forced_reap") is False,
+        "returncode_zero": summary.get("returncode") == 0,
+        "reader_threads_drained": lifecycle.get("reader_threads_drained") is True,
+        "terminal_eof_exact": lifecycle.get("terminal_eof_exact") is True,
+        "no_transport_overflow": summary.get("transport_overflow") is False,
+        "json_stdout_only": summary.get("non_json_stdout_count") == 0,
+        "post_response_elapsed_bounded": elapsed_bound,
+        "transport_finalized": lifecycle.get("transport_finalized") is True,
+    }
+    if tuple(checks) != TRANSPORT_CLEAR_CHECK_IDS:
+        raise AssertionError("U'1 transport clear check registry drifted")
+    return {
+        "gate_id": TRANSPORT_CLEAR_GATE_ID,
+        "passed": all(checks.values()),
+        "checks": checks,
+    }
+
+
+def diagnostic_disposition(
+    contracts: dict[str, dict[str, Any]], transport_gate: dict[str, Any]
+) -> dict[str, Any]:
+    if tuple(contracts) != CONTRACT_IDS:
+        raise ValueError("U'1 contract registry is incomplete, reordered, or extended")
+    if not all(isinstance(row, dict) for row in contracts.values()):
+        raise TypeError("U'1 contract rows must be objects")
+    gate_checks = transport_gate.get("checks")
+    if (
+        transport_gate.get("gate_id") != TRANSPORT_CLEAR_GATE_ID
+        or not isinstance(gate_checks, dict)
+        or tuple(gate_checks) != TRANSPORT_CLEAR_CHECK_IDS
+        or not all(isinstance(value, bool) for value in gate_checks.values())
+    ):
+        raise ValueError("U'1 transport clear gate registry is invalid")
+    derived_gate_pass = all(value is True for value in gate_checks.values())
+    if transport_gate.get("passed") is not derived_gate_pass:
+        raise ValueError("U'1 transport clear gate summary contradicts its checks")
+    contract_failures = [
+        name for name, row in contracts.items() if row.get("passed") is not True
+    ]
+    failures = list(contract_failures)
+    if transport_gate.get("passed") is not True:
+        failures.append(TRANSPORT_CLEAR_GATE_ID)
+    return {
+        "contract_failures": contract_failures,
+        "failures": failures,
+        "verdict": "U1_DIAGNOSTIC_CLEAR" if not failures else "U1_DIAGNOSTIC_BLOCKED",
+    }
+
+
 def _run_sequence(
     rpc: _RpcProcess,
     responses: dict[str, dict[str, Any]],
     request_ids: dict[str, str],
+    response_receipts: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     requested_state_ids: dict[str, str] = {}
     replay_specs: dict[str, dict[str, Any]] = {}
@@ -850,8 +1156,13 @@ def _run_sequence(
     def send(label: str, payload: dict[str, Any]) -> dict[str, Any]:
         request_id = f"uprime-{len(request_ids) + 1:02d}-{label}"
         request_ids[label] = request_id
-        reply = rpc.request({"id": request_id, **payload})
+        reply, receipt = rpc.request({"id": request_id, **payload})
         responses[label] = reply
+        response_receipts[label] = {
+            **receipt,
+            "frame_index": len(request_ids),
+            "response_sha256": _stable_json_sha256(reply),
+        }
         return reply
 
     def send_action(
@@ -1008,11 +1319,11 @@ def _run_sequence(
         },
     )
     send("status", {"cmd": "status"})
-    send("shutdown", {"cmd": "shutdown"})
-    rpc.wait_after_shutdown()
-    rpc.assert_transport_drained()
-    if rpc.transport_overflow:
-        raise RuntimeError("U'1 RPC transport produced unsolicited response overflow")
+    shutdown_response = send("shutdown", {"cmd": "shutdown"})
+    rpc.finalize_after_shutdown(
+        shutdown_response,
+        received_monotonic_s=response_receipts["shutdown"]["received_monotonic_s"],
+    )
     return {
         "primary_head": primary_head,
         "primary_tail": primary_tail,
@@ -1570,6 +1881,7 @@ def run_diagnostic(
 
     responses: dict[str, dict[str, Any]] = {}
     request_ids: dict[str, str] = {}
+    response_receipts: dict[str, dict[str, Any]] = {}
     context: dict[str, Any] = {}
     rpc: _RpcProcess | None = None
     worker_snapshot_dir: tempfile.TemporaryDirectory[str] | None = None
@@ -1607,6 +1919,11 @@ def run_diagnostic(
             "burn_counter_increment": BURN_COUNTER_INCREMENT,
             "rpc_protocol_version": RPC_PROTOCOL_VERSION,
             "timeout_s": float(timeout_s),
+            "post_response_timeout_s": POST_RESPONSE_TIMEOUT_S,
+            "natural_exit_grace_s": NATURAL_EXIT_GRACE_S,
+            "forced_reap_budget_s": FORCED_REAP_BUDGET_S,
+            "reader_drain_reserve_s": READER_DRAIN_RESERVE_S,
+            "terminate_grace_s": TERMINATE_GRACE_S,
         },
         "licenses_later_stage": False,
     }
@@ -1643,26 +1960,30 @@ def run_diagnostic(
             cwd=root,
             timeout_s=timeout_s,
         )
-        context = _run_sequence(rpc, responses, request_ids)
+        context = _run_sequence(rpc, responses, request_ids, response_receipts)
         post_records, _post_blobs = _anchored_input_snapshot(root)
         if _git_commit(root) != commit or post_records != source_records:
             raise RuntimeError("anchored inputs or HEAD changed during live execution")
         report["anchor_inputs_post_execution"] = post_records
         contracts = evaluate_contracts(responses, request_ids, context)
-        failures = [name for name, row in contracts.items() if row["passed"] is not True]
+        transport_gate = shutdown_transport_clear_gate(
+            responses.get("shutdown"), rpc.transport_summary()
+        )
+        disposition = diagnostic_disposition(contracts, transport_gate)
         report.update(
             {
                 "context": context,
                 "requests": request_ids,
+                "response_count": len(responses),
                 "responses": {
-                    label: _response_summary(response)
+                    label: _response_summary(response, response_receipts.get(label))
                     for label, response in responses.items()
                 },
                 "contracts": contracts,
-                "failures": failures,
-                "verdict": (
-                    "U1_DIAGNOSTIC_CLEAR" if not failures else "U1_DIAGNOSTIC_BLOCKED"
-                ),
+                "contract_failures": disposition["contract_failures"],
+                "transport_clear_gate": transport_gate,
+                "failures": disposition["failures"],
+                "verdict": disposition["verdict"],
             }
         )
     except BaseException as exc:
@@ -1677,8 +1998,9 @@ def run_diagnostic(
             {
                 "context": context,
                 "requests": request_ids,
+                "response_count": len(responses),
                 "responses": {
-                    label: _response_summary(response)
+                    label: _response_summary(response, response_receipts.get(label))
                     for label, response in responses.items()
                 },
                 "contracts": {},
