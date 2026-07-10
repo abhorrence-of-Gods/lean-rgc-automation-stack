@@ -342,6 +342,9 @@
   "test_uprime_rpc_litmus.py": [
     "unit"
   ],
+  "test_uprime_rpc_ledger.py": [
+    "unit"
+  ],
   "test_uprime_rerun_license.py": [
     "unit"
   ],

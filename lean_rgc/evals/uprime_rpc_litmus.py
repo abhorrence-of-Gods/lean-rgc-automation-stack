@@ -42,8 +42,13 @@ REPAIR_MILESTONE_1_PATH = Path(
 EVIDENCE_MILESTONE_2A_PATH = Path(
     "docs/experiments/uprime_odlrq_u1_evidence_milestone_2a_rerun_gate_2026-07-10.md"
 )
+EVIDENCE_MILESTONE_2B_PREREG_PATH = Path(
+    "docs/experiments/uprime_odlrq_u1_evidence_milestone_2b_parsed_ledger_preregistration.md"
+)
 RERUN_LICENSE_SOURCE_PATH = Path("lean_rgc/evals/uprime_rerun_license.py")
 RERUN_LICENSE_TEST_PATH = Path("tests/test_uprime_rerun_license.py")
+LEDGER_SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_ledger.py")
+LEDGER_TEST_PATH = Path("tests/test_uprime_rpc_ledger.py")
 PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
 EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
@@ -63,9 +68,12 @@ ANCHOR_PATHS = (
     AMENDMENT_2_PATH,
     REPAIR_MILESTONE_1_PATH,
     EVIDENCE_MILESTONE_2A_PATH,
+    EVIDENCE_MILESTONE_2B_PREREG_PATH,
     RERUN_REGISTRY_PATH,
     RERUN_LICENSE_SOURCE_PATH,
     RERUN_LICENSE_TEST_PATH,
+    LEDGER_SOURCE_PATH,
+    LEDGER_TEST_PATH,
     PACKAGE_INIT_PATH,
     EVALS_PACKAGE_INIT_PATH,
     SOURCE_PATH,

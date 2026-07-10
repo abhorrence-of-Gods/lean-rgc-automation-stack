@@ -221,9 +221,12 @@ def test_reservation_and_publication_helpers_are_independently_default_deny(
 def test_rerun_gate_and_executed_package_initializers_are_anchored():
     required = {
         litmus.EVIDENCE_MILESTONE_2A_PATH,
+        litmus.EVIDENCE_MILESTONE_2B_PREREG_PATH,
         RERUN_REGISTRY_PATH,
         litmus.RERUN_LICENSE_SOURCE_PATH,
         litmus.RERUN_LICENSE_TEST_PATH,
+        litmus.LEDGER_SOURCE_PATH,
+        litmus.LEDGER_TEST_PATH,
         litmus.PACKAGE_INIT_PATH,
         litmus.EVALS_PACKAGE_INIT_PATH,
         litmus.TEST_PATH,
