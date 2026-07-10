@@ -1,0 +1,1076 @@
+{
+  "anchor_commit": "fc6b69ea14fb2d7820a190aea22df9409f59b666",
+  "anchor_inputs": {
+    "docs/experiments/uprime_odlrq_u1_rpc_diagnostic_amendment_1.md": {
+      "git_blob_oid": "c608c876fc3789262bfec49ed0ceb1a4e834817a",
+      "head_blob_sha256": "78AD883576F803DE31EBC6DC8761BB7168304681956D1F47247E2072F3A5DFA1",
+      "working_raw_sha256": "78AD883576F803DE31EBC6DC8761BB7168304681956D1F47247E2072F3A5DFA1"
+    },
+    "docs/experiments/uprime_odlrq_u1_rpc_diagnostic_preregistration.md": {
+      "git_blob_oid": "a4aeca102c907135fe61597405ab868d41419c8e",
+      "head_blob_sha256": "6F469AA959B766ADDF95A52B2851A4824A093AEE446C462A826B44DD1D3163E1",
+      "working_raw_sha256": "6F469AA959B766ADDF95A52B2851A4824A093AEE446C462A826B44DD1D3163E1"
+    },
+    "lean_rgc/audit_result_cache.py": {
+      "git_blob_oid": "ff3e147368d05d22f191716e8eb204d86e879301",
+      "head_blob_sha256": "B326A5CD2CA79C713E8C084225EA169E54195AA6AA8626895B56B1872AD1919D",
+      "working_raw_sha256": "B326A5CD2CA79C713E8C084225EA169E54195AA6AA8626895B56B1872AD1919D"
+    },
+    "lean_rgc/evals/uprime_rpc_litmus.py": {
+      "git_blob_oid": "5a66e8890afa5215af30f0eb8cabf1d8cfa2f7d4",
+      "head_blob_sha256": "9558F7CB5B804135ADBD5A0846AE41057C1CEF1509451E4E683002EC584CF4DE",
+      "working_raw_sha256": "9558F7CB5B804135ADBD5A0846AE41057C1CEF1509451E4E683002EC584CF4DE"
+    },
+    "lean_rgc/lean/worker_supervisor.py": {
+      "git_blob_oid": "e452eee1cab7d6bf2515b1831acf6fa918693161",
+      "head_blob_sha256": "3F3B19CEA4F0218146F91673B3951A050728E86A0C5009BFD7FB449D46D7D3D3",
+      "working_raw_sha256": "3F3B19CEA4F0218146F91673B3951A050728E86A0C5009BFD7FB449D46D7D3D3"
+    },
+    "lean_rgc/native_lean/RGCKernelRPC.lean": {
+      "git_blob_oid": "5b9df6067ef739241ecf56bc0b8221791777c916",
+      "head_blob_sha256": "A925EBB4203C9EAD09E54D6DF6B93BCB689FAE78C0A156F801028B687A10635F",
+      "working_raw_sha256": "A925EBB4203C9EAD09E54D6DF6B93BCB689FAE78C0A156F801028B687A10635F"
+    },
+    "tests/test_uprime_rpc_litmus.py": {
+      "git_blob_oid": "447c8d58f9ddf09bbe9b14babd7e4a91ffaa64ed",
+      "head_blob_sha256": "D9F73B9A0995F132602975842CE6F9CFAA42800B42382852FA7C25898A1A8EB6",
+      "working_raw_sha256": "D9F73B9A0995F132602975842CE6F9CFAA42800B42382852FA7C25898A1A8EB6"
+    },
+    "tests/tier_manifest.json": {
+      "git_blob_oid": "c9a584e6a70ff246d674babc7c238573b452b4e6",
+      "head_blob_sha256": "F5664DFB95EA0E6FC8B3F661164ECFA109D30DC5BA56807C4AE1A840899DE10C",
+      "working_raw_sha256": "83000538289E8BF7B27094933EA4AD078523663F1134C5D57D9914BB163424FE"
+    }
+  },
+  "anchor_upstream": "origin/codex/uprime-odlrq-plan",
+  "context": {},
+  "contracts": {},
+  "elapsed_seconds": 117.120953,
+  "failures": [
+    "HARNESS_ERROR"
+  ],
+  "finished_at_utc": "2026-07-10T13:32:18.097920+00:00",
+  "frozen_parameters": {
+    "burn_counter_increment": 400000000,
+    "burn_max_heartbeats_counter": 200000000,
+    "burn_max_heartbeats_option": 200000,
+    "constructor_max_heartbeats_counter": 123456000,
+    "constructor_max_heartbeats_option": 123456,
+    "episode_max_heartbeats_counter": 1000000,
+    "rpc_protocol_version": "lean-rgc-jsonl-rpc-v2",
+    "task_max_heartbeats_counter": 731000,
+    "task_max_heartbeats_option": 731,
+    "timeout_s": 900.0
+  },
+  "harness_error": {
+    "message": "U'1 RPC worker did not exit after shutdown",
+    "type": "TimeoutError"
+  },
+  "lean": {
+    "binary_name": "lean.exe",
+    "binary_sha256": "9B216DEB50D37C32C829D1EFAAA5BAFD5560417D382DF35A815489E31A31593F",
+    "command_shape": [
+      "lean",
+      "--run",
+      "HEAD:lean_rgc/native_lean/RGCKernelRPC.lean",
+      "--imports",
+      "Lean"
+    ],
+    "version": "Lean (version 4.31.0, x86_64-w64-windows-gnu, commit 68218e876d2a38b1985b8590fff244a83c321783, Release)"
+  },
+  "licenses_later_stage": false,
+  "platform": {
+    "machine": "AMD64",
+    "python": "3.13.7",
+    "release": "11",
+    "system": "Windows"
+  },
+  "requests": {
+    "burn": "uprime-18-burn",
+    "burn_init": "uprime-17-burn_init",
+    "load": "uprime-01-load",
+    "primary_head_close": "uprime-07-primary_head_close",
+    "primary_head_close_replay": "uprime-08-primary_head_close_replay",
+    "primary_init": "uprime-02-primary_init",
+    "primary_split": "uprime-03-primary_split",
+    "primary_split_replay": "uprime-04-primary_split_replay",
+    "primary_tail_close": "uprime-05-primary_tail_close",
+    "primary_tail_close_replay": "uprime-06-primary_tail_close_replay",
+    "reset": "uprime-20-reset",
+    "reset_init": "uprime-19-reset_init",
+    "reset_replay": "uprime-21-reset_replay",
+    "shutdown": "uprime-23-shutdown",
+    "side_effect_close": "uprime-15-side_effect_close",
+    "side_effect_close_replay": "uprime-16-side_effect_close_replay",
+    "side_init": "uprime-14-side_init",
+    "status": "uprime-22-status",
+    "zero_child_close": "uprime-12-zero_child_close",
+    "zero_child_close_replay": "uprime-13-zero_child_close_replay",
+    "zero_init": "uprime-09-zero_init",
+    "zero_split": "uprime-10-zero_split",
+    "zero_split_replay": "uprime-11-zero_split_replay"
+  },
+  "reservation": {
+    "path": "runs/uprime_u1_rpc_20260710/rpc_diagnostic_fc6b69ea14fb.json.reservation",
+    "reserved_at_utc": "2026-07-10T13:30:20.003132+00:00",
+    "schema_version": "lean-rgc-uprime-rpc-reservation-v1.0",
+    "token_sha256": "3E5F9FB5AD42C7B2EFF057B93D573B95A7C3C7AC20AA4A5A3BF9652C16BB6C6E"
+  },
+  "responses": {
+    "burn": {
+      "after_state_id": "krpc_state_10",
+      "before_state_id": "krpc_state_9",
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {
+        "action": "run_tac do IO.addHeartbeats 400000000; Lean.Core.checkMaxHeartbeats \"uprime-litmus\"",
+        "proof_prefix_after": "",
+        "proof_prefix_before": "",
+        "replay_status": "pending",
+        "source_check_hash": "3996474138706621587"
+      },
+      "response_sha256": "73119722FA26D507E0DF60F58A094774381A87A60303BCFDF861CF5ECF0EBF8D",
+      "rpc_protocol_version": null,
+      "state_delta": {
+        "assigned_mvars": [],
+        "closed_goals": [],
+        "minimal_support": {
+          "goals": [],
+          "schema_version": "lean-rgc-minimal-support-v1",
+          "source": "lean_kernel_rpc_proof_term_v1"
+        },
+        "new_goals": [],
+        "new_mvars": []
+      },
+      "state_option_maxHeartbeats": "200000",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2"
+        ],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.2"
+        ]
+      },
+      "status": "failure"
+    },
+    "burn_init": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {},
+      "response_sha256": "CD92BAE0D43E08530852A5CB55DE2B82B442D2E3A7063D4060B7A9509DE7C526",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": "200000",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2"
+        ],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.2"
+        ]
+      },
+      "status": null
+    },
+    "load": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {},
+      "response_sha256": "0EEB83743ECD203810A156C0BA5B04EBFDE83ABF09661245AB995B62E1F2A3EC",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    },
+    "primary_head_close": {
+      "after_state_id": "krpc_state_3",
+      "before_state_id": "krpc_state_2",
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {
+        "action": "exact True.intro",
+        "proof_prefix_after": "constructor\nexact True.intro\nexact True.intro",
+        "proof_prefix_before": "constructor\nexact True.intro",
+        "replay_status": "pending",
+        "source_check_hash": "7239095427938240029"
+      },
+      "response_sha256": "DB3EE229C49E2C7A7375461997DAF23F054AB2DA6709D574E83F0F2F165EC8C7",
+      "rpc_protocol_version": null,
+      "state_delta": {
+        "assigned_mvars": [
+          "?_uniq.9",
+          "?_uniq.8",
+          "?_uniq.7",
+          "?_uniq.10",
+          "?_uniq.2"
+        ],
+        "closed_goals": [
+          "?_uniq.10"
+        ],
+        "minimal_support": {
+          "goals": [
+            {
+              "constants_truncated": false,
+              "fully_closed": true,
+              "mvar_id": "?_uniq.10",
+              "n_constants_total": 1,
+              "proof_hash_raw": "1210772730021681616",
+              "residual_mvars": [],
+              "used_constants": [
+                "True.intro"
+              ],
+              "used_hypotheses": []
+            }
+          ],
+          "schema_version": "lean-rgc-minimal-support-v1",
+          "source": "lean_kernel_rpc_proof_term_v1"
+        },
+        "new_goals": [],
+        "new_mvars": []
+      },
+      "state_option_maxHeartbeats": "123456",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8",
+          "?_uniq.9",
+          "?_uniq.10"
+        ],
+        "assigned": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8",
+          "?_uniq.9",
+          "?_uniq.10"
+        ],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": "success"
+    },
+    "primary_head_close_replay": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": "unknown cmd: replay_transition",
+      "heartbeats": null,
+      "id": null,
+      "ok": false,
+      "replay": {},
+      "response_sha256": "F971754057D16390FAF4D98A05F88A27D701456248CF77DD68C282BC79CED6DC",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    },
+    "primary_init": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {},
+      "response_sha256": "8EF44F5A37278A2EDEA74AA6FE3E1D2B2E13740181C0B2F20DD225776CF10CED",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": "200000",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2"
+        ],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.2"
+        ]
+      },
+      "status": null
+    },
+    "primary_split": {
+      "after_state_id": "krpc_state_1",
+      "before_state_id": "krpc_state_0",
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {
+        "action": "constructor",
+        "proof_prefix_after": "constructor",
+        "proof_prefix_before": "",
+        "replay_status": "pending",
+        "source_check_hash": "9539704530554028928"
+      },
+      "response_sha256": "483674DFBAAA0DEC096BC4821DB889B929B70C2FDA796F59820A75D7152110EF",
+      "rpc_protocol_version": null,
+      "state_delta": {
+        "assigned_mvars": [
+          "?_uniq.2"
+        ],
+        "closed_goals": [
+          "?_uniq.2"
+        ],
+        "minimal_support": {
+          "goals": [
+            {
+              "constants_truncated": false,
+              "fully_closed": false,
+              "mvar_id": "?_uniq.2",
+              "n_constants_total": 2,
+              "proof_hash_raw": "1733904039687666232",
+              "residual_mvars": [
+                "?_uniq.9",
+                "?_uniq.10"
+              ],
+              "used_constants": [
+                "And.intro",
+                "True"
+              ],
+              "used_hypotheses": []
+            }
+          ],
+          "schema_version": "lean-rgc-minimal-support-v1",
+          "source": "lean_kernel_rpc_proof_term_v1"
+        },
+        "new_goals": [
+          "?_uniq.9",
+          "?_uniq.10"
+        ],
+        "new_mvars": [
+          "?_uniq.9",
+          "?_uniq.8",
+          "?_uniq.7",
+          "?_uniq.10"
+        ]
+      },
+      "state_option_maxHeartbeats": "123456",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8",
+          "?_uniq.9",
+          "?_uniq.10"
+        ],
+        "assigned": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8"
+        ],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.9",
+          "?_uniq.10"
+        ]
+      },
+      "status": "partial"
+    },
+    "primary_split_replay": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": "unknown cmd: replay_transition",
+      "heartbeats": null,
+      "id": null,
+      "ok": false,
+      "replay": {},
+      "response_sha256": "F971754057D16390FAF4D98A05F88A27D701456248CF77DD68C282BC79CED6DC",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    },
+    "primary_tail_close": {
+      "after_state_id": "krpc_state_2",
+      "before_state_id": "krpc_state_1",
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {
+        "action": "exact True.intro",
+        "proof_prefix_after": "constructor\nexact True.intro",
+        "proof_prefix_before": "constructor",
+        "replay_status": "pending",
+        "source_check_hash": "12173927110950724519"
+      },
+      "response_sha256": "656921C9ADB312BD16DB5ACF53841FDA664784C6DA21609E2827064EC828E073",
+      "rpc_protocol_version": null,
+      "state_delta": {
+        "assigned_mvars": [
+          "?_uniq.9",
+          "?_uniq.8",
+          "?_uniq.7",
+          "?_uniq.2"
+        ],
+        "closed_goals": [
+          "?_uniq.9"
+        ],
+        "minimal_support": {
+          "goals": [
+            {
+              "constants_truncated": false,
+              "fully_closed": true,
+              "mvar_id": "?_uniq.9",
+              "n_constants_total": 1,
+              "proof_hash_raw": "1210772730021681616",
+              "residual_mvars": [],
+              "used_constants": [
+                "True.intro"
+              ],
+              "used_hypotheses": []
+            }
+          ],
+          "schema_version": "lean-rgc-minimal-support-v1",
+          "source": "lean_kernel_rpc_proof_term_v1"
+        },
+        "new_goals": [],
+        "new_mvars": []
+      },
+      "state_option_maxHeartbeats": "123456",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8",
+          "?_uniq.9",
+          "?_uniq.10"
+        ],
+        "assigned": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8",
+          "?_uniq.9"
+        ],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.10"
+        ]
+      },
+      "status": "partial"
+    },
+    "primary_tail_close_replay": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": "unknown cmd: replay_transition",
+      "heartbeats": null,
+      "id": null,
+      "ok": false,
+      "replay": {},
+      "response_sha256": "F971754057D16390FAF4D98A05F88A27D701456248CF77DD68C282BC79CED6DC",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    },
+    "reset": {
+      "after_state_id": "krpc_state_12",
+      "before_state_id": "krpc_state_11",
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {
+        "action": "trivial",
+        "proof_prefix_after": "trivial",
+        "proof_prefix_before": "",
+        "replay_status": "pending",
+        "source_check_hash": "2241454999822660143"
+      },
+      "response_sha256": "718C50E392B3BFBF0056E86DD2D4EE58D6E8CF018082E966F04E36CD7A572F3F",
+      "rpc_protocol_version": null,
+      "state_delta": {
+        "assigned_mvars": [
+          "?_uniq.2"
+        ],
+        "closed_goals": [
+          "?_uniq.2"
+        ],
+        "minimal_support": {
+          "goals": [
+            {
+              "constants_truncated": false,
+              "fully_closed": true,
+              "mvar_id": "?_uniq.2",
+              "n_constants_total": 1,
+              "proof_hash_raw": "1210772730021681616",
+              "residual_mvars": [],
+              "used_constants": [
+                "True.intro"
+              ],
+              "used_hypotheses": []
+            }
+          ],
+          "schema_version": "lean-rgc-minimal-support-v1",
+          "source": "lean_kernel_rpc_proof_term_v1"
+        },
+        "new_goals": [],
+        "new_mvars": []
+      },
+      "state_option_maxHeartbeats": "200000",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2"
+        ],
+        "assigned": [
+          "?_uniq.2"
+        ],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": "success"
+    },
+    "reset_init": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {},
+      "response_sha256": "9A68F1939F72774E0004601D43C1B0CE239431B763803742936A01487AC6B547",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": "200000",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2"
+        ],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.2"
+        ]
+      },
+      "status": null
+    },
+    "reset_replay": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": "unknown cmd: replay_transition",
+      "heartbeats": null,
+      "id": null,
+      "ok": false,
+      "replay": {},
+      "response_sha256": "F971754057D16390FAF4D98A05F88A27D701456248CF77DD68C282BC79CED6DC",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    },
+    "shutdown": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {},
+      "response_sha256": "83CE864C3900035B460FA7C583945C96A0C11153387D5C6183713D8AAD12A4A4",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    },
+    "side_effect_close": {
+      "after_state_id": "krpc_state_8",
+      "before_state_id": "krpc_state_7",
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {
+        "action": "rfl",
+        "proof_prefix_after": "refine ⟨?_, ?_⟩",
+        "proof_prefix_before": "refine ⟨?_, ?_⟩",
+        "replay_status": "pending",
+        "source_check_hash": "13226638512255127931"
+      },
+      "response_sha256": "3194D53FEF37D57921BFE3F746742E25A0EE2B4F995172057250A07D1778618C",
+      "rpc_protocol_version": null,
+      "state_delta": {
+        "assigned_mvars": [],
+        "closed_goals": [],
+        "minimal_support": {
+          "goals": [],
+          "schema_version": "lean-rgc-minimal-support-v1",
+          "source": "lean_kernel_rpc_proof_term_v1"
+        },
+        "new_goals": [],
+        "new_mvars": []
+      },
+      "state_option_maxHeartbeats": "200000",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.3",
+          "?_uniq.8",
+          "?_uniq.10",
+          "?_uniq.31",
+          "?_uniq.38",
+          "?_uniq.44",
+          "?_uniq.45",
+          "?_uniq.46",
+          "?_uniq.47"
+        ],
+        "assigned": [
+          "?_uniq.3",
+          "?_uniq.8",
+          "?_uniq.10",
+          "?_uniq.31",
+          "?_uniq.38",
+          "?_uniq.44",
+          "?_uniq.45"
+        ],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.46",
+          "?_uniq.47"
+        ]
+      },
+      "status": "failure"
+    },
+    "side_effect_close_replay": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": "unknown cmd: replay_transition",
+      "heartbeats": null,
+      "id": null,
+      "ok": false,
+      "replay": {},
+      "response_sha256": "F971754057D16390FAF4D98A05F88A27D701456248CF77DD68C282BC79CED6DC",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    },
+    "side_init": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {},
+      "response_sha256": "4CDDFC65A50F2647C0E1ED2B944F5F9DC652A206DDA9384FAEBE8EB6A1E84FF3",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": "200000",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.3",
+          "?_uniq.8",
+          "?_uniq.10",
+          "?_uniq.31",
+          "?_uniq.38",
+          "?_uniq.44",
+          "?_uniq.45",
+          "?_uniq.46",
+          "?_uniq.47"
+        ],
+        "assigned": [
+          "?_uniq.3",
+          "?_uniq.8",
+          "?_uniq.10",
+          "?_uniq.31",
+          "?_uniq.38",
+          "?_uniq.44",
+          "?_uniq.45"
+        ],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.46",
+          "?_uniq.47"
+        ]
+      },
+      "status": null
+    },
+    "status": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {},
+      "response_sha256": "C46E095D6E969BF58C415DE24EA79683CC5B844EF73D21C2EB034A1D60C4CE34",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    },
+    "zero_child_close": {
+      "after_state_id": "krpc_state_6",
+      "before_state_id": "krpc_state_5",
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {
+        "action": "exact True.intro",
+        "proof_prefix_after": "constructor\nexact True.intro",
+        "proof_prefix_before": "constructor",
+        "replay_status": "pending",
+        "source_check_hash": "12173927110950724519"
+      },
+      "response_sha256": "E9B4334B2398A45332A9F631374707C2454EADDA0FC5F5D799B15289C164163A",
+      "rpc_protocol_version": null,
+      "state_delta": {
+        "assigned_mvars": [
+          "?_uniq.9",
+          "?_uniq.8",
+          "?_uniq.7",
+          "?_uniq.2"
+        ],
+        "closed_goals": [
+          "?_uniq.9"
+        ],
+        "minimal_support": {
+          "goals": [
+            {
+              "constants_truncated": false,
+              "fully_closed": true,
+              "mvar_id": "?_uniq.9",
+              "n_constants_total": 1,
+              "proof_hash_raw": "1210772730021681616",
+              "residual_mvars": [],
+              "used_constants": [
+                "True.intro"
+              ],
+              "used_hypotheses": []
+            }
+          ],
+          "schema_version": "lean-rgc-minimal-support-v1",
+          "source": "lean_kernel_rpc_proof_term_v1"
+        },
+        "new_goals": [],
+        "new_mvars": []
+      },
+      "state_option_maxHeartbeats": "0",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8",
+          "?_uniq.9",
+          "?_uniq.10"
+        ],
+        "assigned": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8",
+          "?_uniq.9"
+        ],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.10"
+        ]
+      },
+      "status": "partial"
+    },
+    "zero_child_close_replay": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": "unknown cmd: replay_transition",
+      "heartbeats": null,
+      "id": null,
+      "ok": false,
+      "replay": {},
+      "response_sha256": "F971754057D16390FAF4D98A05F88A27D701456248CF77DD68C282BC79CED6DC",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    },
+    "zero_init": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {},
+      "response_sha256": "7BAB166550F0B7E375082A602A8C00291C1A017A5BDF854B82B5ABB3EB75172C",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": "200000",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2"
+        ],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.2"
+        ]
+      },
+      "status": null
+    },
+    "zero_split": {
+      "after_state_id": "krpc_state_5",
+      "before_state_id": "krpc_state_4",
+      "budget": null,
+      "error": null,
+      "heartbeats": null,
+      "id": null,
+      "ok": true,
+      "replay": {
+        "action": "constructor",
+        "proof_prefix_after": "constructor",
+        "proof_prefix_before": "",
+        "replay_status": "pending",
+        "source_check_hash": "9539704530554028928"
+      },
+      "response_sha256": "4B1C689DFC0E8503A1BFE855B204EEC91640FB6BE631D8B06964D087C253111A",
+      "rpc_protocol_version": null,
+      "state_delta": {
+        "assigned_mvars": [
+          "?_uniq.2"
+        ],
+        "closed_goals": [
+          "?_uniq.2"
+        ],
+        "minimal_support": {
+          "goals": [
+            {
+              "constants_truncated": false,
+              "fully_closed": false,
+              "mvar_id": "?_uniq.2",
+              "n_constants_total": 2,
+              "proof_hash_raw": "1733904039687666232",
+              "residual_mvars": [
+                "?_uniq.9",
+                "?_uniq.10"
+              ],
+              "used_constants": [
+                "And.intro",
+                "True"
+              ],
+              "used_hypotheses": []
+            }
+          ],
+          "schema_version": "lean-rgc-minimal-support-v1",
+          "source": "lean_kernel_rpc_proof_term_v1"
+        },
+        "new_goals": [
+          "?_uniq.9",
+          "?_uniq.10"
+        ],
+        "new_mvars": [
+          "?_uniq.9",
+          "?_uniq.8",
+          "?_uniq.7",
+          "?_uniq.10"
+        ]
+      },
+      "state_option_maxHeartbeats": "0",
+      "state_view": {
+        "all_mvars": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8",
+          "?_uniq.9",
+          "?_uniq.10"
+        ],
+        "assigned": [
+          "?_uniq.2",
+          "?_uniq.7",
+          "?_uniq.8"
+        ],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": [
+          "?_uniq.9",
+          "?_uniq.10"
+        ]
+      },
+      "status": "partial"
+    },
+    "zero_split_replay": {
+      "after_state_id": null,
+      "before_state_id": null,
+      "budget": null,
+      "error": "unknown cmd: replay_transition",
+      "heartbeats": null,
+      "id": null,
+      "ok": false,
+      "replay": {},
+      "response_sha256": "F971754057D16390FAF4D98A05F88A27D701456248CF77DD68C282BC79CED6DC",
+      "rpc_protocol_version": null,
+      "state_delta": null,
+      "state_option_maxHeartbeats": null,
+      "state_view": {
+        "all_mvars": [],
+        "assigned": [],
+        "assigned_open_goals": [],
+        "duplicate_assigned": false,
+        "duplicate_goals": false,
+        "duplicate_mvars": false,
+        "goals": []
+      },
+      "status": null
+    }
+  },
+  "schema_version": "lean-rgc-uprime-rpc-diagnostic-v1.0",
+  "started_at_utc": "2026-07-10T13:30:20.978541+00:00",
+  "transport": {
+    "non_json_stdout_tail": [],
+    "returncode": 1,
+    "stderr_tail": [],
+    "transport_overflow": false
+  },
+  "verdict": "HARNESS_ERROR"
+}

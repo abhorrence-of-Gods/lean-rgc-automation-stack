@@ -1,0 +1,35 @@
+{
+  "schema_version": "lean-rgc-uprime-u1-rpc-publication-v1.0",
+  "anchor_commit": "fc6b69ea14fb2d7820a190aea22df9409f59b666",
+  "anchor_upstream": "origin/codex/uprime-odlrq-plan",
+  "anchor_was_pushed_before_execution": true,
+  "anchor_ci": {
+    "run_id": 29096213184,
+    "conclusion": "success"
+  },
+  "artifact": {
+    "raw_location": "runs/uprime_u1_rpc_20260710/rpc_diagnostic_fc6b69ea14fb.json (gitignored, investigator-local)",
+    "raw_sha256": "054FE61EEEB10493037530ACBF70197729C756E42EAACC4FB9C3FDF5D0341A88",
+    "reservation_location": "runs/uprime_u1_rpc_20260710/rpc_diagnostic_fc6b69ea14fb.json.reservation (gitignored, investigator-local)",
+    "reservation_sha256": "45ED3A7F40791B8FF3E701D7054B9E4ACF14BBB72D3F29E7025AC5934BD148AF",
+    "public_path": "docs/experiments/artifacts/uprime_u1_rpc_20260710/rpc_diagnostic_fc6b69ea14fb.public.json",
+    "public_sha256": "054FE61EEEB10493037530ACBF70197729C756E42EAACC4FB9C3FDF5D0341A88",
+    "transformation": "exact byte copy; no fields redacted because the compact raw report contains no private path, token, or endpoint"
+  },
+  "execution": {
+    "platform": "Windows CPU",
+    "verdict": "HARNESS_ERROR",
+    "last_completed_request": "shutdown (frame 23)",
+    "error_type": "TimeoutError",
+    "error_message": "U'1 RPC worker did not exit after shutdown",
+    "elapsed_seconds": 117.120953,
+    "licenses_later_stage": false
+  },
+  "disposition": {
+    "substrate_verdict_available": false,
+    "all_registered_response_summaries_preserved": true,
+    "each_summary_binds_full_response_sha256": true,
+    "raw_artifact_is_immutable": true,
+    "repair_requires_new_pushed_anchor": true
+  }
+}
