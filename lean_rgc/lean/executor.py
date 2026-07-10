@@ -10,7 +10,14 @@ import tempfile
 import time
 from typing import Sequence
 
-from ..schemas import AuditRecord, LeanTask, ProofState, TacticAction, stable_hash
+from ..schemas import (
+    DEFAULT_MAX_HEARTBEATS,
+    AuditRecord,
+    LeanTask,
+    ProofState,
+    TacticAction,
+    stable_hash,
+)
 from .state_parser import LeanMessageParser
 from ..cache import AuditCache
 
@@ -59,8 +66,17 @@ class LeanExecutor:
     def _render_file(self, task: LeanTask, action: TacticAction) -> str:
         imports = "\n".join(f"import {imp}" for imp in task.imports)
         top_preamble = str((task.metadata or {}).get("top_preamble") or "").strip()
+        task_max_heartbeats = (
+            task.max_heartbeats
+            if task.max_heartbeats is not None
+            else DEFAULT_MAX_HEARTBEATS
+        )
         options = {
-            "maxHeartbeats": action.max_heartbeats or task.max_heartbeats,
+            "maxHeartbeats": (
+                action.max_heartbeats
+                if action.max_heartbeats is not None
+                else task_max_heartbeats
+            ),
         }
         if self.config.extra_set_options:
             options.update(self.config.extra_set_options)

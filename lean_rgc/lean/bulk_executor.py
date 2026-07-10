@@ -11,7 +11,16 @@ import tempfile
 import time
 from typing import Any
 
-from ..schemas import AuditRecord, DefectVector, LeanTask, ProofState, TacticAction, stable_hash, write_records
+from ..schemas import (
+    DEFAULT_MAX_HEARTBEATS,
+    AuditRecord,
+    DefectVector,
+    LeanTask,
+    ProofState,
+    TacticAction,
+    stable_hash,
+    write_records,
+)
 from ..batch import SCHEMA_AUDIT_ROW, SCHEMA_DEFECT_ROW, SCHEMA_RESPONSE_ROW
 from ..dataset import summarize_response_rows
 from .executor import LeanExecutor, LeanExecutorConfig
@@ -111,7 +120,16 @@ def _render_bulk_file(pairs: list[tuple[LeanTask, TacticAction]], *, trace_state
         theorem_name = "rgc_bulk_" + _sanitize_ident(task.task_id) + "_" + stable_hash({"task": task.task_id, "action": action.action_id, "idx": idx}, n=10)
         lines.append(f"/- RGC_AUDIT_BEGIN task={task.task_id} action={action.action_id} -/")
         start_line = len(lines) + 1
-        max_hb = action.max_heartbeats or task.max_heartbeats
+        task_max_heartbeats = (
+            task.max_heartbeats
+            if task.max_heartbeats is not None
+            else DEFAULT_MAX_HEARTBEATS
+        )
+        max_hb = (
+            action.max_heartbeats
+            if action.max_heartbeats is not None
+            else task_max_heartbeats
+        )
         lines.append(f"set_option maxHeartbeats {max_hb}")
         if task.namespace:
             lines.append(f"namespace {task.namespace}")

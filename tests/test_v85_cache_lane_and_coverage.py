@@ -4,7 +4,9 @@ from pathlib import Path
 
 from lean_rgc.audit_job_queue import connect_queue, enqueue_audit_jobs, lease_next_job, mark_job_result
 from lean_rgc.audit_result_cache import (
+    AUDIT_CACHE_KEY_SEMANTICS,
     DEFAULT_CACHE_LANE,
+    SCHEMA_AUDIT_RESULT_CACHE,
     apply_cache_to_queue,
     connect_audit_cache,
     ensure_audit_cache_schema,
@@ -13,6 +15,8 @@ from lean_rgc.audit_result_cache import (
 )
 from lean_rgc.crg_audit import audit_crg_candidates
 from lean_rgc.hardening_gap_report import build_hardening_gap_report
+from lean_rgc.lean.bulk_executor import _render_bulk_file
+from lean_rgc.lean.executor import LeanExecutor, LeanExecutorConfig
 from lean_rgc.schemas import LeanTask, TacticAction, read_jsonl, stable_hash
 
 
@@ -44,6 +48,143 @@ def test_cache_key_differs_by_lane():
     assert key_source != key_kernel
     assert fields_source["lane"] == "source_check"
     assert fields_kernel["lane"] == "kernel"
+
+
+def test_cache_key_aligns_omitted_and_explicit_runtime_heartbeat_default():
+    omitted = _payload()
+    explicit = _payload()
+    explicit["task"]["max_heartbeats"] = 200_000
+
+    omitted_key, omitted_fields = make_audit_cache_key(
+        omitted, lane="source_check", **_key_kwargs()
+    )
+    explicit_key, explicit_fields = make_audit_cache_key(
+        explicit, lane="source_check", **_key_kwargs()
+    )
+
+    assert omitted_fields["max_heartbeats"] == "200000"
+    assert explicit_fields["max_heartbeats"] == "200000"
+    assert omitted_key == explicit_key
+
+
+def test_source_check_renderers_preserve_explicit_zero_heartbeat_option():
+    task = LeanTask(task_id="t0", statement="True", imports=[], max_heartbeats=731)
+    zero = TacticAction(action_id="zero", tactic="trivial", max_heartbeats=0)
+    inherited = TacticAction(action_id="inherited", tactic="trivial")
+    override = TacticAction(action_id="override", tactic="trivial", max_heartbeats=123)
+    direct_null = LeanTask(
+        task_id="null", statement="True", imports=[], max_heartbeats=None
+    )
+    parsed_null = LeanTask.from_dict(
+        {
+            "task_id": "parsed-null",
+            "statement": "True",
+            "imports": [],
+            "max_heartbeats": None,
+        }
+    )
+
+    executor = LeanExecutor(LeanExecutorConfig(dry_run=True))
+    assert "set_option maxHeartbeats 0" in executor._render_file(task, zero)
+    assert "set_option maxHeartbeats 731" in executor._render_file(task, inherited)
+    assert "set_option maxHeartbeats 123" in executor._render_file(task, override)
+    assert "set_option maxHeartbeats 200000" in executor._render_file(
+        direct_null, inherited
+    )
+    assert parsed_null.max_heartbeats == 200_000
+    assert "set_option maxHeartbeats 200000" in executor._render_file(
+        parsed_null, inherited
+    )
+
+    bulk_zero, _ = _render_bulk_file([(task, zero)])
+    bulk_inherited, _ = _render_bulk_file([(task, inherited)])
+    bulk_override, _ = _render_bulk_file([(task, override)])
+    bulk_null, _ = _render_bulk_file([(direct_null, inherited)])
+    assert "set_option maxHeartbeats 0" in bulk_zero
+    assert "set_option maxHeartbeats 731" in bulk_inherited
+    assert "set_option maxHeartbeats 123" in bulk_override
+    assert "set_option maxHeartbeats 200000" in bulk_null
+
+
+def test_v103_key_salt_orphans_pre_fix_explicit_zero_cache_row(tmp_path: Path):
+    task = LeanTask(task_id="zero-task", statement="True", imports=[], max_heartbeats=731)
+    action = TacticAction(action_id="zero", tactic="trivial", max_heartbeats=0)
+    queue = tmp_path / "queue.sqlite"
+    enqueue_audit_jobs(
+        queue,
+        [task],
+        [action],
+        run_id="zero-run",
+        backend="source_check_bulk",
+        import_mode="preserve",
+        project_fingerprint_value="fp",
+        lane="source_check",
+    )
+    qconn = connect_queue(queue)
+    payload = json.loads(
+        qconn.execute(
+            "SELECT payload_json FROM audit_jobs WHERE run_id=?", ("zero-run",)
+        ).fetchone()[0]
+    )
+    qconn.close()
+
+    current_key, fields = make_audit_cache_key(
+        payload, lane="source_check", **_key_kwargs()
+    )
+    assert fields["cache_key_semantics"] == AUDIT_CACHE_KEY_SEMANTICS
+    legacy_fields = dict(fields)
+    legacy_fields.pop("cache_key_semantics")
+    legacy_key = stable_hash(legacy_fields, 48)
+    assert legacy_key != current_key
+
+    cache = tmp_path / "cache.sqlite"
+    cconn = connect_audit_cache(cache)
+    ensure_audit_cache_schema(cconn)
+    schema = cconn.execute(
+        "SELECT value FROM meta WHERE key='audit_result_cache_schema_version'"
+    ).fetchone()[0]
+    assert schema == SCHEMA_AUDIT_RESULT_CACHE
+    cconn.execute(
+        """
+        INSERT INTO audit_result_cache(
+            cache_key, task_hash, state_hash, tactic_hash, imports_hash,
+            lean_version, workdir_fingerprint, import_mode, max_heartbeats,
+            trace_state, lane, audit_status, queue_status, result_json,
+            created_at, updated_at, last_hit_at, hit_count
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        (
+            legacy_key,
+            fields["task_hash"],
+            fields["state_hash"],
+            fields["tactic_hash"],
+            fields["imports_hash"],
+            fields["lean_version"],
+            fields["workdir_fingerprint"],
+            fields["import_mode"],
+            fields["max_heartbeats"],
+            fields["trace_state"],
+            fields["lane"],
+            "ok",
+            "succeeded",
+            "{}",
+            0.0,
+            0.0,
+            None,
+            0,
+        ),
+    )
+    cconn.commit()
+    cconn.close()
+
+    result = apply_cache_to_queue(
+        cache_db=cache,
+        queue_db=queue,
+        run_id="zero-run",
+        **_key_kwargs(),
+    )
+    assert result["n_cache_hit"] == 0
+    assert result["n_cache_miss"] == 1
 
 
 def test_cache_lookup_never_crosses_lanes(tmp_path: Path):

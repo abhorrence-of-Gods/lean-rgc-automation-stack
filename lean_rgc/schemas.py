@@ -8,6 +8,9 @@ from .core.ids import stable_hash
 from .core.jsonio import default_run_id_for_path, read_jsonl, write_jsonl, write_records
 
 
+DEFAULT_MAX_HEARTBEATS = 200_000
+
+
 @dataclass
 class LeanTask:
     """A theorem/task-level Lean proof target.
@@ -23,13 +26,15 @@ class LeanTask:
     prefix: str = ""
     namespace: str | None = None
     domain_tags: list[str] = field(default_factory=list)
-    max_heartbeats: int = 200000
+    max_heartbeats: int = DEFAULT_MAX_HEARTBEATS
     allowed_axioms: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "LeanTask":
         d = dict(d)
+        if d.get("max_heartbeats") is None:
+            d["max_heartbeats"] = DEFAULT_MAX_HEARTBEATS
         allowed = {"task_id", "statement", "imports", "prefix", "namespace", "domain_tags", "max_heartbeats", "allowed_axioms", "metadata"}
         extra = {k: d.pop(k) for k in list(d.keys()) if k not in allowed}
         if extra:

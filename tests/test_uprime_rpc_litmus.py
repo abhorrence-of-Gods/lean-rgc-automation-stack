@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -19,6 +20,15 @@ from lean_rgc.evals.uprime_rpc_litmus import (
 from lean_rgc.lean.worker_supervisor import audit_cache_eligibility
 from lean_rgc.lean.executor import LeanExecutorConfig
 from lean_rgc.lean import worker_supervisor
+
+
+def test_rpc_worker_uses_one_enveloped_jsonl_output_boundary():
+    repo_root = Path(__file__).resolve().parents[1]
+    source = (repo_root / litmus.RPC_PATH).read_text(encoding="utf-8")
+    assert 'def rpcProtocolVersion : String := "lean-rgc-jsonl-rpc-v2"' in source
+    assert "def responseEnvelope (requestId payload : Json) : Json" in source
+    assert "let rep ← handleLine ref line" in source
+    assert source.count("stdout.putStrLn") == 1
 
 
 def _kernel(goals, rows, state_id="state"):
@@ -240,14 +250,16 @@ def test_replay_oracle_rejects_bare_verified_claim():
     assert replay_evidence(primary, replay, **kwargs)["passed"] is False
 
 
-def test_cache_probe_preserves_zero_and_exposes_missing_default_alignment():
+def test_cache_probe_preserves_zero_and_aligns_omitted_runtime_default():
     probe = cache_budget_probe()
     assert probe["checks"]["task_fallback"] is True
     assert probe["checks"]["explicit_zero"] is True
     assert probe["checks"]["explicit_nonzero"] is True
-    assert probe["resolved"]["omitted_default"] == ""
-    assert probe["checks"]["omitted_runtime_default"] is False
-    assert probe["passed"] is False
+    assert probe["resolved"]["omitted_default"] == "200000"
+    assert probe["checks"]["omitted_runtime_default"] is True
+    assert probe["checks"]["omitted_equals_explicit_default_key"] is True
+    assert probe["checks"]["omitted_equals_explicit_default_field"] is True
+    assert probe["passed"] is True
 
 
 def test_stateful_kernel_rpc_cache_is_hard_disabled():
@@ -926,3 +938,14 @@ def test_all_contracts_have_a_reachable_clear_fixture(monkeypatch):
     assert {name: row["passed"] for name, row in contracts.items()} == {
         name: True for name in litmus.CONTRACT_IDS
     }
+
+    responses["shutdown"].pop("rpc_protocol_version")
+    missing_shutdown_envelope = litmus.evaluate_contracts(
+        responses, request_ids, context
+    )
+    assert missing_shutdown_envelope["R0_request_id_echo"]["passed"] is False
+    assert all(
+        row["passed"] is True
+        for name, row in missing_shutdown_envelope.items()
+        if name != "R0_request_id_echo"
+    )

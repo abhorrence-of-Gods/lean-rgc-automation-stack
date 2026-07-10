@@ -27,11 +27,23 @@ namespace KernelRPC
 def schemaVersion : String := "lean-rgc-kernel-state-v3"
 def transitionVersion : String := "lean-rgc-kernel-transition-v1"
 def minimalSupportVersion : String := "lean-rgc-minimal-support-v1"
+def rpcProtocolVersion : String := "lean-rgc-jsonl-rpc-v2"
 
 partial def jsonArr (xs : List Json) : Json := Json.arr xs.toArray
 partial def obj (xs : List (String × Json)) : Json := Json.mkObj xs
 partial def ok (xs : List (String × Json) := []) : Json := obj (("ok", Json.bool true) :: xs)
 partial def err (msg : String) : Json := obj [("ok", Json.bool false), ("error", Json.str msg)]
+
+def responseEnvelope (requestId payload : Json) : Json :=
+  match payload with
+  | Json.obj kvs =>
+      Json.obj ((kvs.insert "id" requestId).insert
+        "rpc_protocol_version" (Json.str rpcProtocolVersion))
+  | other => obj [
+      ("id", requestId),
+      ("rpc_protocol_version", Json.str rpcProtocolVersion),
+      ("payload", other)
+    ]
 
 def hashString (s : String) : String := toString s.hash
 
@@ -42,6 +54,9 @@ partial def jsonGetObjVal? (j : Json) (k : String) : Option Json :=
       | some kv => some kv.snd
       | none => none
   | _ => none
+
+def requestIdJson (req : Json) : Json :=
+  jsonGetObjVal? req "id" |>.getD Json.null
 
 partial def jsonGetStr? (j : Json) (k : String) : Option String :=
   match jsonGetObjVal? j k with
@@ -1118,16 +1133,21 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
   | "shutdown" => pure (ok [("shutdown", Json.bool true)])
   | _ => pure (err ("unknown cmd: " ++ cmd))
 
+unsafe def handleLine (ref : WRef) (line : String) : IO Json := do
+  match Json.parse line with
+  | .error e =>
+      pure (responseEnvelope Json.null (err ("json parse error: " ++ e)))
+  | .ok req => do
+      let rep ← handle ref req
+      pure (responseEnvelope (requestIdJson req) rep)
+
 unsafe def loop (ref : WRef) : IO Unit := do
   let stdin ← IO.getStdin
   let stdout ← IO.getStdout
   let rec go : IO Unit := do
     let line ← stdin.getLine
     if line.trimAscii.isEmpty then go else
-      let rep ←
-        match Json.parse line with
-        | .error e => pure (err ("json parse error: " ++ e))
-        | .ok j => handle ref j
+      let rep ← handleLine ref line
       stdout.putStrLn (Json.compress rep)
       stdout.flush
       if jsonGetBool? rep "shutdown" |>.getD false then pure () else go

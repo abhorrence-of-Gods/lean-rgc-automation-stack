@@ -32,21 +32,35 @@ AMENDMENT_1_PATH = Path(
 AMENDMENT_2_PATH = Path(
     "docs/experiments/uprime_odlrq_u1_rpc_diagnostic_amendment_2.md"
 )
+REPAIR_MILESTONE_1_PATH = Path(
+    "docs/experiments/uprime_odlrq_u1_repair_milestone_1_2026-07-10.md"
+)
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
 TEST_PATH = Path("tests/test_uprime_rpc_litmus.py")
+PROTOCOL_TEST_PATH = Path("tests/test_v49_kernel_rpc_worker.py")
+CACHE_TEST_PATH = Path("tests/test_v85_cache_lane_and_coverage.py")
 TIER_PATH = Path("tests/tier_manifest.json")
 RPC_PATH = Path("lean_rgc/native_lean/RGCKernelRPC.lean")
 CACHE_PATH = Path("lean_rgc/audit_result_cache.py")
+SCHEMAS_PATH = Path("lean_rgc/schemas.py")
+EXECUTOR_PATH = Path("lean_rgc/lean/executor.py")
+BULK_EXECUTOR_PATH = Path("lean_rgc/lean/bulk_executor.py")
 SUPERVISOR_PATH = Path("lean_rgc/lean/worker_supervisor.py")
 ANCHOR_PATHS = (
     PREREG_PATH,
     AMENDMENT_1_PATH,
     AMENDMENT_2_PATH,
+    REPAIR_MILESTONE_1_PATH,
     SOURCE_PATH,
     TEST_PATH,
+    PROTOCOL_TEST_PATH,
+    CACHE_TEST_PATH,
     TIER_PATH,
     RPC_PATH,
     CACHE_PATH,
+    SCHEMAS_PATH,
+    EXECUTOR_PATH,
+    BULK_EXECUTOR_PATH,
     SUPERVISOR_PATH,
 )
 
@@ -86,6 +100,31 @@ TRANSPORT_CLEAR_CHECK_IDS = (
     "json_stdout_only",
     "post_response_elapsed_bounded",
     "transport_finalized",
+)
+EXPECTED_RESPONSE_LABELS = (
+    "load",
+    "primary_init",
+    "primary_split",
+    "primary_split_replay",
+    "primary_tail_close",
+    "primary_tail_close_replay",
+    "primary_head_close",
+    "primary_head_close_replay",
+    "zero_init",
+    "zero_split",
+    "zero_split_replay",
+    "zero_child_close",
+    "zero_child_close_replay",
+    "side_init",
+    "side_effect_close",
+    "side_effect_close_replay",
+    "burn_init",
+    "burn",
+    "reset_init",
+    "reset",
+    "reset_replay",
+    "status",
+    "shutdown",
 )
 
 CONTRACT_IDS = (
@@ -1694,6 +1733,13 @@ def evaluate_contracts(
     }
 
     control_checks = {
+        "frame_label_registry": len(request_ids)
+        == len(responses)
+        == len(EXPECTED_RESPONSE_LABELS)
+        and set(request_ids) == set(responses) == set(EXPECTED_RESPONSE_LABELS),
+        "request_ids_unique": len(set(request_ids.values()))
+        == len(EXPECTED_RESPONSE_LABELS)
+        and all(isinstance(value, str) and bool(value) for value in request_ids.values()),
         "load_ok": responses.get("load", {}).get("ok") is True
         and responses.get("load", {}).get("loaded") is True,
         "status_ok": responses.get("status", {}).get("ok") is True

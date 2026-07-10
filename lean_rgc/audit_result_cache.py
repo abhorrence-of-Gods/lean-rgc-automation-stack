@@ -13,13 +13,15 @@ import subprocess
 import time
 
 from .audit_job_queue import connect_queue, ensure_audit_queue_schema
-from .schemas import stable_hash
+from .schemas import DEFAULT_MAX_HEARTBEATS, stable_hash
 
 
-SCHEMA_AUDIT_RESULT_CACHE = "lean-rgc-audit-result-cache-v102.0"
+SCHEMA_AUDIT_RESULT_CACHE = "lean-rgc-audit-result-cache-v103.0"
+AUDIT_CACHE_KEY_SEMANTICS = "lean-rgc-audit-cache-key-v103.0"
 WORKDIR_FINGERPRINT_SCHEMA = "lean-rgc-workdir-fingerprint-content-v1"
 
 DEFAULT_CACHE_LANE = "source_check"
+RUNTIME_DEFAULT_MAX_HEARTBEATS = DEFAULT_MAX_HEARTBEATS
 
 
 def _now() -> float:
@@ -272,7 +274,7 @@ def _max_heartbeats(payload: dict[str, Any]) -> str:
     value = action.get("max_heartbeats")
     if value is None:
         value = task.get("max_heartbeats")
-    return str(value if value is not None else "")
+    return str(value if value is not None else RUNTIME_DEFAULT_MAX_HEARTBEATS)
 
 
 def make_audit_cache_key(
@@ -290,6 +292,7 @@ def make_audit_cache_key(
     imports = task.get("imports") if isinstance(task.get("imports"), list) else []
     max_hb = _max_heartbeats(payload)
     fields = {
+        "cache_key_semantics": AUDIT_CACHE_KEY_SEMANTICS,
         "task_hash": stable_hash(
             {
                 "task_id": task.get("task_id"),
@@ -573,7 +576,9 @@ def audit_cache_report(db_path: str | Path) -> dict[str, Any]:
 
 
 __all__ = [
+    "AUDIT_CACHE_KEY_SEMANTICS",
     "DEFAULT_CACHE_LANE",
+    "RUNTIME_DEFAULT_MAX_HEARTBEATS",
     "SCHEMA_AUDIT_RESULT_CACHE",
     "apply_cache_to_queue",
     "audit_cache_report",
