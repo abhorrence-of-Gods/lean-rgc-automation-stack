@@ -1,0 +1,10 @@
+{
+  "schema_version": "lean-rgc-uprime-t0-model-bound-v1.0",
+  "domain": "R",
+  "norm": "absolute-value",
+  "bound": 0.0,
+  "provenance": {
+    "class": "synthetic-positive-fixture",
+    "construction": "identity model equals reference map on the declared scalar domain"
+  }
+}

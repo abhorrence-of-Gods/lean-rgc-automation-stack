@@ -336,6 +336,9 @@
   "test_uprime_k0_foundations.py": [
     "unit"
   ],
+  "test_uprime_t0_errata.py": [
+    "unit"
+  ],
   "test_v8_iterate_corebench.py": [
     "legacy"
   ],
