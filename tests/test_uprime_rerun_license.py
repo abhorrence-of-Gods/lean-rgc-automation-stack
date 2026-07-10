@@ -223,6 +223,7 @@ def test_rerun_gate_and_executed_package_initializers_are_anchored():
         litmus.EVIDENCE_MILESTONE_2A_PATH,
         litmus.EVIDENCE_MILESTONE_2B_PREREG_PATH,
         litmus.EVIDENCE_MILESTONE_2B_PHASE1A_EXECUTION_PATH,
+        litmus.EVIDENCE_MILESTONE_2B_PHASE1B1_EXECUTION_PATH,
         RERUN_REGISTRY_PATH,
         litmus.RERUN_LICENSE_SOURCE_PATH,
         litmus.RERUN_LICENSE_TEST_PATH,
