@@ -618,6 +618,56 @@ structure WorkerState where
 
 abbrev WRef := IO.Ref WorkerState
 
+/-- Lean's option unit used by the frozen U05 task/prefix/action contract.  The
+worker protocol and the legacy structured-state schema stay unchanged; the
+effective value is echoed by `kernel_state.options.maxHeartbeats`. -/
+def u05MaxHeartbeatsOption : Nat := 20000
+
+def defaultMaxHeartbeatsOption : Nat := 200000
+
+def taskMaxHeartbeats? (ks : KState) : Option Nat :=
+  jsonGetNat? ks.task "max_heartbeats"
+
+def stateMaxHeartbeats (ks : KState) : Nat :=
+  ks.opts.get `maxHeartbeats defaultMaxHeartbeatsOption
+
+/-- A task-declared cap is part of the persistent KState contract.  Checking it
+at serialization and status boundaries prevents a later project/default option
+from silently replacing the cap used for task-prefix elaboration. -/
+def heartbeatCapInvariantError? (ks : KState) : Option String :=
+  match taskMaxHeartbeats? ks with
+  | none => none
+  | some declared =>
+      let effective := stateMaxHeartbeats ks
+      if effective == declared then none
+      else some ("state " ++ ks.id ++ " declares max_heartbeats=" ++ toString declared ++
+        " but stores maxHeartbeats=" ++ toString effective)
+
+def firstHeartbeatCapInvariantError? : List (String × KState) → Option String
+  | [] => none
+  | (_, ks) :: rest =>
+      match heartbeatCapInvariantError? ks with
+      | some e => some e
+      | none => firstHeartbeatCapInvariantError? rest
+
+def ensureHeartbeatCapInvariant (where_ : String) (ks : KState) : IO Unit := do
+  match heartbeatCapInvariantError? ks with
+  | none => pure ()
+  | some e => throw <| IO.userError (where_ ++ ": heartbeat cap invariant failed: " ++ e)
+
+def isU05HeartbeatState (ks : KState) : Bool :=
+  taskMaxHeartbeats? ks == some u05MaxHeartbeatsOption
+
+def ensureU05ActionCap (base : KState) (action : Json) : IO Unit := do
+  if isU05HeartbeatState base then
+    match jsonGetNat? action "max_heartbeats" with
+    | some requested =>
+        if requested != u05MaxHeartbeatsOption then
+          throw <| IO.userError ("U05 cap mismatch: action requested " ++
+            toString requested ++ " but task/prefix cap is " ++
+            toString u05MaxHeartbeatsOption)
+    | none => pure ()
+
 def freshId (st : WorkerState) (tag : String := "krpc_state") : String × WorkerState :=
   (tag ++ "_" ++ toString st.nextId, {st with nextId := st.nextId + 1})
 
@@ -713,9 +763,14 @@ def resolveTarget (base : KState) (action : Json) (requestTarget? : Option Strin
   pure {target := goal, index := index, requestedMVar? := requestedMVar?, requestedSelector? := selector?, source := source}
 
 def effectiveOptions (base : KState) (action : Json) : Options :=
-  match jsonGetNat? action "max_heartbeats" with
-  | some hb => base.opts.set `maxHeartbeats hb
-  | none => base.opts
+  /- U05 always executes from the cap stored by `initGoalState`; the explicit
+  action field is an equality witness checked by `ensureU05ActionCap`, not a
+  second control knob.  Non-U05 callers retain the legacy override behavior. -/
+  if isU05HeartbeatState base then base.opts
+  else
+    match jsonGetNat? action "max_heartbeats" with
+    | some hb => base.opts.set `maxHeartbeats hb
+    | none => base.opts
 
 def budgetJson (base : KState) (action : Json) : Json :=
   let requested := jsonGetNat? action "max_heartbeats"
@@ -771,14 +826,17 @@ post-prefix state (mirrors how the persistent worker audits
 `state.prefix + tactic`). -/
 unsafe def replayPrefix (ks : KState) (proofPrefix : String) : IO KState := do
   let mut cur := ks
+  ensureHeartbeatCapInvariant "prefix entry" cur
   for line in prefixTacticLines proofPrefix do
     if cur.goals.isEmpty then
       throw <| IO.userError ("prefix replay: no open goals before tactic '" ++ line ++ "'")
-    cur ←
+    let next ←
       try
         stepTactic cur line cur.opts
       catch e =>
         throw <| IO.userError ("prefix replay failed on '" ++ line ++ "': " ++ toString e)
+    ensureHeartbeatCapInvariant "prefix step" next
+    cur := next
   pure {cur with proofPrefix := proofPrefix}
 
 unsafe def initGoalState (id : String) (task : Json) (env : Environment) (opts : Options) : IO KState := do
@@ -814,12 +872,17 @@ unsafe def initGoalState (id : String) (task : Json) (env : Environment) (opts :
     proofPrefix := "",
     status := "open"
   }
-  if (prefixTacticLines proofPrefix).isEmpty then
-    pure base
-  else
-    replayPrefix base proofPrefix
+  ensureHeartbeatCapInvariant "init_state" base
+  let result ←
+    if (prefixTacticLines proofPrefix).isEmpty then
+      pure base
+    else
+      replayPrefix base proofPrefix
+  ensureHeartbeatCapInvariant "init_state result" result
+  pure result
 
 unsafe def serializeKernelState (ks : KState) : IO Json := do
+  ensureHeartbeatCapInvariant "kernel_state" ks
   let serialize : MetaM Json := do
     let openGoals := ks.goals
     let mctx ← getMCtx
@@ -907,7 +970,7 @@ unsafe def serializeKernelState (ks : KState) : IO Json := do
       ("typeclasses", Json.arr tcObjs),
       ("messages", jsonArr []),
       ("options", obj [
-        ("maxHeartbeats", Json.str (toString (ks.opts.get `maxHeartbeats 200000)))
+        ("maxHeartbeats", Json.str (toString (stateMaxHeartbeats ks)))
       ]),
       ("proof_prefix_hash", Json.str (hashString ks.proofPrefix)),
       ("proof_prefix", Json.str ks.proofPrefix),
@@ -1013,6 +1076,8 @@ def transitionComparableJson
 unsafe def executeTacticCore
     (base : KState) (action : Json) (requestTarget? : Option String)
     (newId : String) : IO TransitionExecution := do
+  ensureHeartbeatCapInvariant "apply source" base
+  ensureU05ActionCap base action
   let binding ←
     match resolveTarget base action requestTarget? with
     | .ok binding => pure binding
@@ -1022,6 +1087,7 @@ unsafe def executeTacticCore
   let beforeMvars := mvarsOf base
   let beforeAssigned := assignedMvarsOf base
   let stepped ← stepTacticAt base tactic opts binding
+  ensureHeartbeatCapInvariant "apply result" stepped
   let afterMvars := mvarsOf stepped
   let afterAssigned := assignedMvarsOf stepped
   let newlyAssigned := afterAssigned.filter fun m => !(beforeAssigned.contains m)
@@ -1226,17 +1292,24 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
         pure (err ("load_project failed: " ++ toString e))
   | "status" => do
       let st ← ref.get
-      pure (ok [
-        ("backend", Json.str "lean_kernel_rpc_in_memory_v1"),
-        ("loaded", Json.bool st.loaded),
-        ("session_id", Json.str st.sessionId),
-        ("n_states", Json.num st.states.size),
-        ("n_requests", Json.num st.nRequests),
-        ("n_failures", Json.num st.nFailures),
-        ("n_primary_executions", Json.num st.nPrimaryExecutions),
-        ("n_replay_executions", Json.num st.nReplayExecutions),
-        ("imports", jsonArr (st.imports.map Json.str))
-      ])
+      match firstHeartbeatCapInvariantError? st.states.toList with
+      | some capError =>
+          pure (err ("status heartbeat cap invariant failed: " ++ capError))
+      | none =>
+          /- Keep the legacy status field set byte-compatible.  The check
+          above binds it to the effective values echoed by each v3
+          `kernel_state.options.maxHeartbeats` record. -/
+          pure (ok [
+            ("backend", Json.str "lean_kernel_rpc_in_memory_v1"),
+            ("loaded", Json.bool st.loaded),
+            ("session_id", Json.str st.sessionId),
+            ("n_states", Json.num st.states.size),
+            ("n_requests", Json.num st.nRequests),
+            ("n_failures", Json.num st.nFailures),
+            ("n_primary_executions", Json.num st.nPrimaryExecutions),
+            ("n_replay_executions", Json.num st.nReplayExecutions),
+            ("imports", jsonArr (st.imports.map Json.str))
+          ])
   | "register_task" | "init_state" => do
       match jsonGetObj? req "task" with
       | none => pure (err "register_task requires task")

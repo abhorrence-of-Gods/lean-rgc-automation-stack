@@ -3,20 +3,39 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+import queue as std_queue
 import subprocess
 
 import pytest
 
 from lean_rgc.lean import kernel_state_identity as identity_module
 from lean_rgc.lean.kernel_rpc_client import (
+    ApplyOracleResult,
+    KernelRPCTransportError,
+    KernelRPCTransportTimeout,
     RawStateDelta,
     RawTargetBinding,
+    RuntimeStateView,
+    StrictKernelRPCOracleAdapter,
     StrictKernelRPCProtocolError,
+    StrictStateOwnershipError,
+    SynchronousJSONLSubprocessTransport,
+    build_runtime_state_view,
+    occurrence_response_signature,
+    oracle_event_from_apply,
     parse_apply_tactic_response,
     parse_discard_state_response,
+    parse_init_state_response,
+    parse_load_project_response,
+    parse_shutdown_response,
+    parse_status_response,
     parse_strict_json_line,
     strict_apply_request_bytes,
     strict_discard_request_bytes,
+    strict_init_state_request_bytes,
+    strict_load_project_request_bytes,
+    strict_shutdown_request_bytes,
+    strict_status_request_bytes,
     strip_replay_transport,
 )
 from lean_rgc.lean.kernel_state_identity import (
@@ -47,8 +66,10 @@ from lean_rgc.odlrq.contracts import (
     TargetSelector,
     TotalizedStatus,
     U05ProbeTransition,
+    U05TaskSpec,
     canonical_contract_bytes,
 )
+from lean_rgc.odlrq.rule_algebra import OutcomeKind
 
 
 PLAN_COMMIT = "0da9ff3de91819778761fb087e85e6f83e4c9ea4"
@@ -532,6 +553,33 @@ def test_unreachable_raw_history_cannot_change_identity_or_debt():
     )
     assert left == right
     assert debt_readout_from_identity(left) == debt_readout_from_identity(right)
+
+
+def test_occurrence_response_excludes_process_and_proof_history():
+    left = _kernel_state_fixture("response_left", universe_name="?u.1", user_name="h")
+    right = copy.deepcopy(left)
+    right["state_id"] = "different-process-state"
+    right["parent_state_id"] = "different-parent"
+    right["task_id"] = "different-task"
+    right["state_hash_raw"] = "different-raw-hash"
+    right["state_hash_norm"] = "different-norm-hash"
+    right["proof_prefix"] = "different proof history"
+    right["proof_prefix_hash"] = "different-prefix-hash"
+    assert occurrence_response_signature(left) == occurrence_response_signature(right)
+
+
+def test_occurrence_response_audits_native_readout_outside_state_identity():
+    left = _kernel_state_fixture("response_readout", universe_name="?u.1", user_name="h")
+    right = copy.deepcopy(left)
+    right["goals"][0]["carrier_atoms_readout"] = ["independent", "readout"]
+    left_identity = state_identity_from_kernel_state(
+        left, environment_content_digest=ENVIRONMENT_DIGEST
+    )
+    right_identity = state_identity_from_kernel_state(
+        right, environment_content_digest=ENVIRONMENT_DIGEST
+    )
+    assert left_identity == right_identity
+    assert occurrence_response_signature(left) != occurrence_response_signature(right)
 
 
 @pytest.mark.parametrize("field_name,prefix", [("expressions", "e"), ("local_declarations", "f"), ("metavars", "m")])
@@ -1442,4 +1490,601 @@ def test_frozen_local_constant_and_opaque_actions_bind_and_render_deterministica
             runtime_target_mvar_id="?m.runtime.goal",
             premises=(wrong_ordinal,),
             rendered_tactic="exact runtime_h",
+        )
+
+
+def _synthetic_u05_task() -> U05TaskSpec:
+    return U05TaskSpec(
+        task_id="task_rpc",
+        statement="h = h",
+        imports=("Lean",),
+        prefix="ignored prefix rpc",
+    )
+
+
+def _init_response(task: U05TaskSpec, request_id: str) -> dict[str, object]:
+    kernel = _kernel_state_fixture("rpc", universe_name="?u.1", user_name="h")
+    kernel["parent_state_id"] = None
+    kernel["task_id"] = task.task_id
+    kernel["proof_prefix"] = task.prefix
+    state_id = kernel["state_id"]
+    return {
+        "id": request_id,
+        "rpc_protocol_version": "lean-rgc-jsonl-rpc-v2",
+        "ok": True,
+        "state": {
+            "state_id": state_id,
+            "task_id": task.task_id,
+            "status": "open",
+            "goal_count": 1,
+            "parent_state_id": None,
+            "proof_prefix": task.prefix,
+            "canonical_status": "lean_kernel_rpc_in_memory_state",
+        },
+        "kernel_state": kernel,
+    }
+
+
+def _bind_explicit_request_target(
+    response: dict[str, object], request_id: str
+) -> dict[str, object]:
+    response["id"] = request_id
+    target_id = response["target_mvar_id"]
+    bindings = [
+        response["target_binding"],
+        response["audit"]["audit_flags"]["target_binding"],
+    ]
+    replay_rows = [
+        response["replay"],
+        response["replay_certificate"],
+        response["audit"]["audit_flags"]["replay"],
+    ]
+    for replay in replay_rows:
+        for comparable in ("primary_comparable", "replay_comparable"):
+            bindings.append(replay[comparable]["target_binding"])
+    for binding in bindings:
+        binding["requested_target_mvar_id"] = target_id
+        binding["source"] = "request_target_mvar_id"
+    return response
+
+
+def _closed_apply_response(request_id: str) -> dict[str, object]:
+    response = _bind_explicit_request_target(_valid_apply_response(), request_id)
+    before = response["kernel_state_before"]
+    after = copy.deepcopy(response["kernel_state_after"])
+    goal_id = before["goals"][0]["mvar_id"]
+    after["status"] = "closed"
+    after["closed"] = True
+    after["goals"] = []
+    after["expr_graph"]["roots"] = []
+    delta = copy.deepcopy(response["state_delta"])
+    delta["closed_goals"] = [goal_id]
+    delta["after_goals"] = []
+    response["status"] = "success"
+    response["kernel_state_after"] = after
+    response["kernel_state"] = copy.deepcopy(after)
+    response["state_delta"] = delta
+    response["state"]["status"] = "closed"
+    response["state"]["goal_count"] = 0
+    response["audit"]["status"] = "success"
+    flags = response["audit"]["audit_flags"]
+    flags["kernel_state_after"] = copy.deepcopy(after)
+    flags["state_delta"] = copy.deepcopy(delta)
+    for replay_name in ("replay", "replay_certificate"):
+        replay = response[replay_name]
+        for comparable_name in ("primary_comparable", "replay_comparable"):
+            comparable = replay[comparable_name]
+            comparable["semantic_status"] = "closed"
+            comparable["post_kernel_state"] = strip_replay_transport(after)
+            comparable["state_delta"] = strip_replay_transport(delta)
+    flags["replay"] = copy.deepcopy(response["replay"])
+    return response
+
+
+def _failure_apply_response(
+    request_id: str, *, replay_mismatch: bool = False
+) -> dict[str, object]:
+    response = _bind_explicit_request_target(_valid_apply_response(), request_id)
+    before = response["kernel_state_before"]
+    after = copy.deepcopy(before)
+    after["state_id"] = response["after_state_id"]
+    after["parent_state_id"] = response["before_state_id"]
+    after["state_hash_raw"] = "synthetic_failure_raw"
+    after["state_hash_norm"] = "synthetic_failure_norm"
+    after["status"] = "failed"
+    response["status"] = "censor" if replay_mismatch else "failure"
+    response.pop("censor_reason")
+    if replay_mismatch:
+        response["censor_reason"] = "replay_mismatch"
+    else:
+        response["normalized_failure_class"] = "ordinary_failure"
+    response["after_state_retained"] = False
+    response["kernel_state_after"] = after
+    response["kernel_state"] = copy.deepcopy(after)
+    response["state"]["status"] = "failed"
+    response["state"]["proof_prefix"] = after["proof_prefix"]
+    response["audit"].pop("heartbeats")
+    response["audit"]["status"] = "fail"
+    flags = response["audit"]["audit_flags"]
+    flags["kernel_state_after"] = copy.deepcopy(after)
+    flags["after_persistent_state_id"] = None
+    for replay_name in ("replay", "replay_certificate"):
+        replay = response[replay_name]
+        for comparable_name in ("primary_comparable", "replay_comparable"):
+            comparable = replay[comparable_name]
+            comparable["semantic_status"] = "ordinary_failure"
+            comparable["post_kernel_state"] = strip_replay_transport(before)
+            comparable["state_delta"] = None
+            comparable["normalized_failure_class"] = "ordinary_failure"
+        if replay_mismatch:
+            replay["replay_status"] = "mismatch"
+            replay["semantic_response_match"] = False
+            replay["error"] = "synthetic replay disagreement"
+            replay["replay_comparable"]["semantic_status"] = "target_resolution"
+            replay["replay_comparable"]["normalized_failure_class"] = (
+                "target_resolution"
+            )
+    flags["replay"] = copy.deepcopy(response["replay"])
+    return response
+
+
+def test_u05_task_and_control_rpc_are_exactly_versioned_and_bound():
+    task = _synthetic_u05_task()
+    assert U05TaskSpec.from_dict(task.to_dict()) == task
+    with pytest.raises(StrictContractError, match="must be 20000"):
+        U05TaskSpec(
+            task_id=task.task_id,
+            statement=task.statement,
+            imports=task.imports,
+            prefix=task.prefix,
+            max_heartbeats=19_999,
+        )
+
+    load_request = parse_canonical_json_bytes(
+        strict_load_project_request_bytes(request_id="ctl-load", imports=task.imports)[:-1]
+    )
+    assert load_request == {
+        "cmd": "load_project",
+        "id": "ctl-load",
+        "imports": ["Lean"],
+    }
+    load = parse_load_project_response(
+        {
+            "id": "ctl-load",
+            "rpc_protocol_version": "lean-rgc-jsonl-rpc-v2",
+            "ok": True,
+            "backend": "lean_kernel_rpc_in_memory_v1",
+            "loaded": True,
+            "imports": ["Lean"],
+            "session_id": "synthetic_session",
+            "n_states": 0,
+        },
+        expected_request_id="ctl-load",
+        expected_imports=task.imports,
+    )
+    assert load.session_id == "synthetic_session"
+
+    init_request = parse_canonical_json_bytes(
+        strict_init_state_request_bytes(request_id="ctl-init", task=task)[:-1]
+    )
+    assert init_request["task"] == task.to_rpc_dict()
+    init = parse_init_state_response(
+        _init_response(task, "ctl-init"),
+        expected_request_id="ctl-init",
+        expected_task=task,
+    )
+    assert init.summary.proof_prefix == task.prefix
+    bad_cap = _init_response(task, "ctl-init")
+    bad_cap["kernel_state"]["options"]["maxHeartbeats"] = "19999"
+    with pytest.raises(StrictKernelRPCProtocolError, match="cap"):
+        parse_init_state_response(
+            bad_cap, expected_request_id="ctl-init", expected_task=task
+        )
+
+    assert parse_canonical_json_bytes(
+        strict_status_request_bytes(request_id="ctl-status")[:-1]
+    ) == {"cmd": "status", "id": "ctl-status"}
+    status = parse_status_response(
+        {
+            "id": "ctl-status",
+            "rpc_protocol_version": "lean-rgc-jsonl-rpc-v2",
+            "ok": True,
+            "backend": "lean_kernel_rpc_in_memory_v1",
+            "loaded": True,
+            "session_id": load.session_id,
+            "n_states": 1,
+            "n_requests": 3,
+            "n_failures": 0,
+            "n_primary_executions": 0,
+            "n_replay_executions": 0,
+            "imports": ["Lean"],
+        },
+        expected_request_id="ctl-status",
+        expected_session_id=load.session_id,
+        expected_imports=task.imports,
+    )
+    assert status.n_requests == 3
+    assert parse_canonical_json_bytes(
+        strict_shutdown_request_bytes(request_id="ctl-stop")[:-1]
+    ) == {"cmd": "shutdown", "id": "ctl-stop"}
+    assert parse_shutdown_response(
+        {
+            "id": "ctl-stop",
+            "rpc_protocol_version": "lean-rgc-jsonl-rpc-v2",
+            "ok": True,
+            "shutdown": True,
+        },
+        expected_request_id="ctl-stop",
+    ).request_id == "ctl-stop"
+
+
+def test_runtime_state_binds_frozen_exact_local_to_raw_goal_and_fvar_names():
+    kernel = _init_response(_synthetic_u05_task(), "local-init")["kernel_state"]
+    local = kernel["local_contexts"][0]["nodes"][0]
+    local["type_expr_id"] = "expr_arg_rpc"
+    runtime = build_runtime_state_view(
+        kernel,
+        environment_content_digest=ENVIRONMENT_DIGEST,
+        live_rpc_state_id=kernel["state_id"],
+    )
+    symbol = ActionSymbol.from_frozen_action_record(
+        {
+            "action_id": "synthetic_exact_local",
+            "opcode": "exact_local",
+            "target_selector": "first",
+            "premise_slot_rule_id": "local_decl_0_type_local_0",
+            "premise_selector_ordinal": 0,
+            "expected_normalized_type_signature": "FVAR_TYPE(local:0)",
+            "global_constant": None,
+            "opaque_hyperedge_source": None,
+            "opaque_hyperedge_digest": None,
+            "max_heartbeats": 20_000,
+        }
+    )
+    bound = runtime.bind_action(symbol)
+    assert bound.runtime_target_mvar_id == "?m.goal.rpc"
+    assert bound.premises[0].runtime_fvar_id == "fvar_local.rpc"
+    assert bound.rendered_tactic == "exact fvar_local.rpc"
+
+
+class _ScriptedLineTransport:
+    def __init__(self, handler):
+        self.handler = handler
+        self.requests = []
+        self.finished = False
+
+    def round_trip(self, request: bytes, *, timeout_seconds: float) -> bytes:
+        assert timeout_seconds == 30.0
+        parsed = parse_canonical_json_bytes(request[:-1])
+        self.requests.append(parsed)
+        return canonical_json_bytes(self.handler(parsed)) + b"\n"
+
+    def finish_clean_shutdown(self, *, timeout_seconds: float) -> None:
+        assert timeout_seconds == 30.0
+        self.finished = True
+
+
+class _AdapterScript:
+    def __init__(self, task: U05TaskSpec, *, close_on_apply: bool = False):
+        self.task = task
+        self.n_states = 0
+        self.close_on_apply = close_on_apply
+
+    def __call__(self, request: dict[str, object]) -> dict[str, object]:
+        request_id = request["id"]
+        envelope = {
+            "id": request_id,
+            "rpc_protocol_version": "lean-rgc-jsonl-rpc-v2",
+            "ok": True,
+        }
+        if request["cmd"] == "load_project":
+            return {
+                **envelope,
+                "backend": "lean_kernel_rpc_in_memory_v1",
+                "loaded": True,
+                "imports": list(self.task.imports),
+                "session_id": "synthetic_adapter_session",
+                "n_states": self.n_states,
+            }
+        if request["cmd"] == "init_state":
+            self.n_states += 1
+            return _init_response(self.task, request_id)
+        if request["cmd"] == "apply_tactic":
+            self.n_states += 1
+            return (
+                _closed_apply_response(request_id)
+                if self.close_on_apply
+                else _bind_explicit_request_target(
+                    _valid_apply_response(), request_id
+                )
+            )
+        if request["cmd"] == "discard_state":
+            before = self.n_states
+            self.n_states -= 1
+            return {
+                **envelope,
+                "u05_semantics_version": "lean-rgc-u05-rpc-semantics-v1",
+                "state_id": request["state_id"],
+                "discarded": True,
+                "n_states_before": before,
+                "n_states_after": self.n_states,
+            }
+        if request["cmd"] == "status":
+            return {
+                **envelope,
+                "backend": "lean_kernel_rpc_in_memory_v1",
+                "loaded": True,
+                "session_id": "synthetic_adapter_session",
+                "n_states": self.n_states,
+                "n_requests": 5,
+                "n_failures": 0,
+                "n_primary_executions": 1,
+                "n_replay_executions": 1,
+                "imports": list(self.task.imports),
+            }
+        if request["cmd"] == "shutdown":
+            return {**envelope, "shutdown": True}
+        raise AssertionError(request)
+
+
+def test_runtime_adapter_binds_names_totalizes_open_and_owns_discard():
+    task = _synthetic_u05_task()
+    script = _AdapterScript(task)
+    transport = _ScriptedLineTransport(script)
+    adapter = StrictKernelRPCOracleAdapter(
+        transport, environment_content_digest=ENVIRONMENT_DIGEST
+    )
+    adapter.load_project(request_id="adapter-load", imports=task.imports)
+    source = adapter.init_state(request_id="adapter-init", task=task)
+    assert isinstance(source, RuntimeStateView)
+    assert source.runtime_goal_mvar_ids == ("?m.goal.rpc",)
+    assert source.runtime_local_fvar_ids_by_goal == (("fvar_local.rpc",),)
+    assert source.debt.to_tuple() == source.state_view.debt
+
+    result = adapter.apply_symbol(
+        request_id="adapter-apply", source=source, symbol=_action()
+    )
+    assert isinstance(result, ApplyOracleResult)
+    assert result.event.totalized_status is OutcomeKind.OPEN
+    assert result.target_state is not None
+    assert result.event.target == result.target_state.state_view
+    child_id = result.target_state.live_rpc_state_id
+    assert adapter.owned_state_ids == frozenset(
+        {source.live_rpc_state_id, child_id}
+    )
+    apply_request = next(
+        row for row in transport.requests if row["cmd"] == "apply_tactic"
+    )
+    assert apply_request["target_mvar_id"] == source.runtime_goal_mvar_ids[0]
+
+    with pytest.raises(StrictStateOwnershipError, match="owned"):
+        adapter.discard_owned(request_id="foreign", state_id="synthetic_foreign")
+    adapter.discard_owned(request_id="adapter-discard", state_id=child_id)
+    with pytest.raises(StrictStateOwnershipError, match="owned"):
+        adapter.discard_owned(request_id="double", state_id=child_id)
+    assert adapter.status(request_id="adapter-status").n_states == 1
+    adapter.shutdown(request_id="adapter-stop")
+    assert transport.finished is True
+    assert adapter.owned_state_ids == frozenset()
+
+
+def test_runtime_adapter_owns_retained_closed_child_until_strict_discard():
+    task = _synthetic_u05_task()
+    script = _AdapterScript(task, close_on_apply=True)
+    adapter = StrictKernelRPCOracleAdapter(
+        _ScriptedLineTransport(script),
+        environment_content_digest=ENVIRONMENT_DIGEST,
+    )
+    adapter.load_project(request_id="closed-load", imports=task.imports)
+    source = adapter.init_state(request_id="closed-init", task=task)
+    result = adapter.apply_symbol(
+        request_id="closed-apply", source=source, symbol=_action()
+    )
+    assert result.event.totalized_status is OutcomeKind.CLOSED
+    assert result.target_state is None
+    assert result.retained_state_id == result.response.after_state_id
+    assert result.retained_state_id in adapter.owned_state_ids
+    adapter.discard_owned(
+        request_id="closed-discard", state_id=result.retained_state_id
+    )
+
+
+def test_runtime_adapter_maps_action_wall_timeout_to_external_censor():
+    task = _synthetic_u05_task()
+    script = _AdapterScript(task)
+
+    def handler(request):
+        if request["cmd"] == "apply_tactic":
+            raise KernelRPCTransportTimeout("synthetic action deadline")
+        return script(request)
+
+    adapter = StrictKernelRPCOracleAdapter(
+        _ScriptedLineTransport(handler),
+        environment_content_digest=ENVIRONMENT_DIGEST,
+    )
+    adapter.load_project(request_id="timeout-load", imports=task.imports)
+    source = adapter.init_state(request_id="timeout-init", task=task)
+    result = adapter.apply_symbol(
+        request_id="timeout-apply", source=source, symbol=_action()
+    )
+    assert result.event.is_censor
+    assert result.event.totalized_status is None
+    assert result.censor.kind is CensorKind.WALL_TIMEOUT
+    assert adapter.owned_state_ids == frozenset({source.live_rpc_state_id})
+
+
+def test_strict_apply_totalization_is_closed_sink_or_external_censor():
+    before = _valid_apply_response()["kernel_state_before"]
+    source = build_runtime_state_view(
+        before,
+        environment_content_digest=ENVIRONMENT_DIGEST,
+        live_rpc_state_id=before["state_id"],
+    )
+    bound = source.bind_action(_action())
+    target_id = bound.runtime_target_mvar_id
+
+    closed_response = parse_apply_tactic_response(
+        _closed_apply_response("map-closed"),
+        expected_request_id="map-closed",
+        expected_state_id=source.live_rpc_state_id,
+        expected_action=bound.to_rpc_action(),
+        expected_target_mvar_id=target_id,
+    )
+    closed = oracle_event_from_apply(
+        closed_response,
+        source=source,
+        bound_action=bound,
+        environment_content_digest=ENVIRONMENT_DIGEST,
+    )
+    assert closed.event.totalized_status is OutcomeKind.CLOSED
+    assert closed.censor is None
+
+    failure_response = parse_apply_tactic_response(
+        _failure_apply_response("map-failure"),
+        expected_request_id="map-failure",
+        expected_state_id=source.live_rpc_state_id,
+        expected_action=bound.to_rpc_action(),
+        expected_target_mvar_id=target_id,
+    )
+    sink = oracle_event_from_apply(
+        failure_response,
+        source=source,
+        bound_action=bound,
+        environment_content_digest=ENVIRONMENT_DIGEST,
+    )
+    assert sink.event.totalized_status is OutcomeKind.SINK
+    assert sink.censor is None
+
+    censor_response = parse_apply_tactic_response(
+        _failure_apply_response("map-censor", replay_mismatch=True),
+        expected_request_id="map-censor",
+        expected_state_id=source.live_rpc_state_id,
+        expected_action=bound.to_rpc_action(),
+        expected_target_mvar_id=target_id,
+    )
+    censored = oracle_event_from_apply(
+        censor_response,
+        source=source,
+        bound_action=bound,
+        environment_content_digest=ENVIRONMENT_DIGEST,
+    )
+    assert censored.event.is_censor
+    assert censored.censor is not None
+    assert censored.censor.kind is CensorKind.REPLAY_MISMATCH
+
+
+class _QueueStdout:
+    def __init__(self):
+        self.rows = std_queue.Queue()
+
+    def readline(self):
+        row = self.rows.get()
+        return b"" if row is None else row
+
+    def push(self, row: bytes) -> None:
+        self.rows.put(row)
+
+    def eof(self) -> None:
+        self.rows.put(None)
+
+
+class _EmptyStderr:
+    def read(self, _size: int) -> bytes:
+        return b""
+
+
+class _FakeStdin:
+    def __init__(self, process):
+        self.process = process
+        self.closed = False
+
+    def write(self, row: bytes) -> int:
+        self.process.receive(row)
+        return len(row)
+
+    def flush(self) -> None:
+        return None
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _FakeJSONLProcess:
+    def __init__(self, *, respond: bool):
+        self.respond = respond
+        self.stdout = _QueueStdout()
+        self.stderr = _EmptyStderr()
+        self.stdin = _FakeStdin(self)
+        self.returncode = None
+        self.terminated = False
+        self.killed = False
+
+    def receive(self, row: bytes) -> None:
+        if not self.respond:
+            return
+        request = parse_canonical_json_bytes(row[:-1])
+        response = {
+            "id": request["id"],
+            "rpc_protocol_version": "lean-rgc-jsonl-rpc-v2",
+            "ok": True,
+            "shutdown": True,
+        }
+        self.stdout.push(canonical_json_bytes(response) + b"\n")
+        self.returncode = 0
+        self.stdout.eof()
+
+    def poll(self):
+        return self.returncode
+
+    def wait(self, timeout: float):
+        if self.returncode is None:
+            raise subprocess.TimeoutExpired("synthetic-worker", timeout)
+        return self.returncode
+
+    def terminate(self) -> None:
+        self.terminated = True
+        self.returncode = -15
+        self.stdout.eof()
+
+    def kill(self) -> None:
+        self.killed = True
+        self.returncode = -9
+        self.stdout.eof()
+
+
+def test_subprocess_transport_uses_injected_process_and_clean_ack_exit():
+    process = _FakeJSONLProcess(respond=True)
+    seen = []
+
+    def factory(argv, **kwargs):
+        seen.append((argv, kwargs))
+        return process
+
+    transport = SynchronousJSONLSubprocessTransport(
+        ("synthetic-worker", "--synthetic"), popen_factory=factory
+    )
+    request = strict_shutdown_request_bytes(request_id="transport-stop")
+    response = transport.round_trip(request, timeout_seconds=0.5)
+    parse_shutdown_response(response, expected_request_id="transport-stop")
+    transport.finish_clean_shutdown(timeout_seconds=0.5)
+    assert seen[0][0] == ("synthetic-worker", "--synthetic")
+    assert process.terminated is False
+    assert process.killed is False
+
+
+def test_subprocess_transport_timeout_stops_worker_and_cannot_reuse_line():
+    process = _FakeJSONLProcess(respond=False)
+    transport = SynchronousJSONLSubprocessTransport(
+        ("synthetic-worker",), popen_factory=lambda *_args, **_kwargs: process
+    )
+    with pytest.raises(KernelRPCTransportTimeout, match="exceeded"):
+        transport.round_trip(
+            strict_status_request_bytes(request_id="transport-timeout"),
+            timeout_seconds=0.01,
+        )
+    assert process.terminated is True
+    with pytest.raises(KernelRPCTransportError, match="closed"):
+        transport.round_trip(
+            strict_status_request_bytes(request_id="transport-reuse"),
+            timeout_seconds=0.01,
         )

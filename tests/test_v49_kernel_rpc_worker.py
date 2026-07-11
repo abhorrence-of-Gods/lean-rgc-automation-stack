@@ -39,6 +39,10 @@ def test_kernel_rpc_worker_is_packaged_and_selectable(tmp_path: Path):
     assert 'def rpcProtocolVersion : String := "lean-rgc-jsonl-rpc-v2"' in text
     assert 'def failureTransitionStatus (failedStatus replayStatus : String) : String :=' in text
     assert 'if replayStatus != "verified" then "censor"' in text
+    assert "def u05MaxHeartbeatsOption : Nat := 20000" in text
+    assert 'ensureHeartbeatCapInvariant "prefix step" next' in text
+    assert "ensureU05ActionCap base action" in text
+    assert "firstHeartbeatCapInvariantError? st.states.toList" in text
     failure_branch = text.split("| .error (failed, msg, replay, targetBinding, budget) =>", 1)[1]
     failure_branch = failure_branch.split('| "shutdown" =>', 1)[0]
     assert "let status := failureTransitionStatus failed.status replayStatus" in failure_branch
@@ -125,6 +129,8 @@ def test_kernel_rpc_worker_applies_intro_and_rfl_in_memory():
 
     assert replies[2]["ok"] is True
     assert replies[3]["kernel_state"]["object_coverage"]["expr_ast"] is True
+    # A legacy task with no declared cap still uses the historical default.
+    assert replies[3]["kernel_state"]["options"] == {"maxHeartbeats": "200000"}
 
     intro = replies[4]
     assert intro["status"] == "partial"
@@ -140,6 +146,108 @@ def test_kernel_rpc_worker_applies_intro_and_rfl_in_memory():
     assert rfl["audit"]["audit_flags"]["execution_backend"] == "lean_kernel_rpc_in_memory_v1"
     assert replies[6]["ok"] is True
     assert replies[6]["shutdown"] is True
+
+
+@pytest.mark.skipif(_lean_bin() is None, reason="Lean binary is not installed")
+def test_u05_task_prefix_and_actions_share_the_frozen_heartbeat_cap():
+    lean = _lean_bin()
+    assert lean is not None
+    worker = packaged_kernel_rpc_worker_path()
+    proc = subprocess.Popen(
+        [lean, "--run", str(worker), "--imports", "Lean"],
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+        encoding="utf-8",
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert proc.stdin is not None
+    assert proc.stdout is not None
+
+    request_index = 0
+
+    def rpc(cmd: str, **payload: object) -> dict[str, object]:
+        nonlocal request_index
+        request_index += 1
+        request = {"id": f"unit-cap-{request_index}", "cmd": cmd, **payload}
+        proc.stdin.write(json.dumps(request, ensure_ascii=True) + "\n")
+        proc.stdin.flush()
+        raw = proc.stdout.readline()
+        assert raw, proc.stderr.read() if proc.stderr is not None else "worker exited"
+        reply = json.loads(raw)
+        assert reply["id"] == request["id"]
+        assert reply["rpc_protocol_version"] == "lean-rgc-jsonl-rpc-v2"
+        return reply
+
+    try:
+        init = rpc(
+            "register_task",
+            task={
+                "task_id": "unit_u05_frozen_cap",
+                "statement": "forall n : Nat, n = n",
+                "prefix": "intro n",
+                "imports": ["Lean"],
+                "max_heartbeats": 20_000,
+            },
+        )
+        assert init["ok"] is True
+        assert init["state"]["proof_prefix"] == "intro n"
+        assert init["kernel_state"]["proof_prefix"] == "intro n"
+        assert init["kernel_state"]["options"] == {"maxHeartbeats": "20000"}
+        root_state_id = init["state"]["state_id"]
+
+        # A different explicit action cap is rejected before the tactic can
+        # mutate or retain a state.  The effective cap remains the task cap.
+        bad = rpc(
+            "apply_tactic",
+            state_id=root_state_id,
+            action={
+                "action_id": "unit_u05_bad_cap",
+                "tactic": "rfl",
+                "max_heartbeats": 19_999,
+            },
+        )
+        assert bad["status"] == "failure"
+        assert bad["after_state_retained"] is False
+        assert bad["replay"]["replay_status"] == "verified"
+        assert "U05 cap mismatch" in bad["messages"][0]
+        assert bad["budget"]["requested_max_heartbeats_option"] == 19_999
+        assert bad["budget"]["effective_max_heartbeats_option"] == 20_000
+        assert bad["kernel_state_after"]["options"] == {"maxHeartbeats": "20000"}
+
+        after_bad = rpc("status")
+        assert after_bad["ok"] is True
+        assert after_bad["n_states"] == 1
+
+        # Omitting the action field exercises inheritance from the stored task
+        # option; primary execution and replay therefore use the same cap.
+        inherited = rpc(
+            "apply_tactic",
+            state_id=root_state_id,
+            action={"action_id": "unit_u05_inherited_cap", "tactic": "rfl"},
+        )
+        assert inherited["status"] == "success"
+        assert inherited["replay"]["replay_status"] == "verified"
+        assert inherited["budget"]["requested_max_heartbeats_option"] is None
+        assert inherited["budget"]["effective_max_heartbeats_option"] == 20_000
+        assert inherited["budget"]["effective_max_heartbeats_counter"] == 20_000_000
+        assert inherited["budget"]["source"] == "inherited_state"
+        assert inherited["kernel_state_before"]["options"] == {
+            "maxHeartbeats": "20000"
+        }
+        assert inherited["kernel_state_after"]["options"] == {
+            "maxHeartbeats": "20000"
+        }
+
+        final_status = rpc("status")
+        assert final_status["ok"] is True
+        assert final_status["n_states"] == 2
+        assert rpc("shutdown")["shutdown"] is True
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+        proc.wait(timeout=30)
 
 
 @pytest.mark.skipif(_lean_bin() is None, reason="Lean binary is not installed")

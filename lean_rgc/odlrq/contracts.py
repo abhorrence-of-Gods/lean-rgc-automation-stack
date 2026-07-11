@@ -36,6 +36,7 @@ FIELD_COVERAGE_SCHEMA = "lean-rgc-u05-field-coverage-v1"
 CENSOR_SCHEMA = "lean-rgc-u05-censor-v1"
 EXACT_KERNEL_TRANSITION_CORE_SCHEMA = "lean-rgc-u05-exact-kernel-transition-core-v1"
 U05_PROBE_TRANSITION_SCHEMA = "lean-rgc-u05-probe-transition-v1"
+U05_TASK_SCHEMA = "lean-rgc-u05-task-v1"
 EPISODE_BUDGET_SENTINEL = "NOT_ENFORCED_DEVELOPMENT_ONLY"
 
 
@@ -162,6 +163,84 @@ class WorkPackageStatus(str, Enum):
     BLOCKED = "blocked"
     KILLED = "killed"
     DEFERRED = "deferred"
+
+
+@dataclass(frozen=True)
+class U05TaskSpec:
+    """Exact inline task/prefix record admitted by the U05 RPC adapter."""
+
+    task_id: str
+    statement: str
+    imports: tuple[str, ...]
+    prefix: str
+    max_heartbeats: int = 20_000
+
+    def __post_init__(self) -> None:
+        _str(self.task_id, "U05TaskSpec.task_id")
+        _str(self.statement, "U05TaskSpec.statement")
+        if type(self.imports) is not tuple or not self.imports or not all(
+            type(item) is str and item for item in self.imports
+        ):
+            raise StrictContractError("U05TaskSpec.imports must be a nonempty string tuple")
+        if len(self.imports) != len(set(self.imports)):
+            raise StrictContractError("U05TaskSpec.imports contains duplicates")
+        if type(self.prefix) is not str:
+            raise StrictContractError("U05TaskSpec.prefix must be a string")
+        if self.max_heartbeats != 20_000:
+            raise StrictContractError("U05TaskSpec max_heartbeats must be 20000")
+
+    def to_rpc_dict(self) -> dict[str, Any]:
+        return {
+            "task_id": self.task_id,
+            "statement": self.statement,
+            "imports": list(self.imports),
+            "prefix": self.prefix,
+            "max_heartbeats": self.max_heartbeats,
+        }
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"schema_version": U05_TASK_SCHEMA, **self.to_rpc_dict()}
+
+    @classmethod
+    def from_frozen_record(cls, value: Mapping[str, Any]) -> "U05TaskSpec":
+        obj = _obj(value, "U05 task record")
+        _exact_fields(
+            obj,
+            {"task_id", "statement", "imports", "prefix", "max_heartbeats"},
+            "U05 task record",
+        )
+        imports = tuple(_str(item, "task import") for item in _list(obj["imports"], "imports"))
+        prefix = obj["prefix"]
+        if type(prefix) is not str:
+            raise StrictContractError("U05 task prefix must be a string")
+        return cls(
+            task_id=_str(obj["task_id"], "task_id"),  # type: ignore[arg-type]
+            statement=_str(obj["statement"], "statement"),  # type: ignore[arg-type]
+            imports=imports,  # type: ignore[arg-type]
+            prefix=prefix,
+            max_heartbeats=_int(obj["max_heartbeats"], "max_heartbeats", minimum=1),
+        )
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "U05TaskSpec":
+        obj = _obj(value, "U05TaskSpec")
+        _exact_fields(
+            obj,
+            {
+                "schema_version",
+                "task_id",
+                "statement",
+                "imports",
+                "prefix",
+                "max_heartbeats",
+            },
+            "U05TaskSpec",
+        )
+        if obj["schema_version"] != U05_TASK_SCHEMA:
+            raise StrictContractError("wrong U05TaskSpec schema")
+        return cls.from_frozen_record(
+            {key: item for key, item in obj.items() if key != "schema_version"}
+        )
 
 
 @dataclass(frozen=True)
@@ -1805,6 +1884,7 @@ __all__ = [
     "TRANSITION_SEMANTICS_SCHEMA",
     "U05_PROBE_TRANSITION_SCHEMA",
     "U05_SEMANTICS_VERSION",
+    "U05_TASK_SCHEMA",
     "ActionSymbol",
     "BehavioralObservationKey",
     "BoundAction",
@@ -1827,6 +1907,7 @@ __all__ = [
     "TotalizedStatus",
     "TransitionSemanticsId",
     "U05ProbeTransition",
+    "U05TaskSpec",
     "WorkPackageStatus",
     "canonical_contract_bytes",
 ]
