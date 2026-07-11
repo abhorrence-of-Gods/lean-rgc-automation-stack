@@ -101,6 +101,10 @@ EVIDENCE_MILESTONE_2B_PHASE2B2C_AMENDMENT_PATH = Path(
     "docs/experiments/"
     "uprime_odlrq_u1_evidence_milestone_2b_phase2b2c_in_memory_fake_cas_amendment_2026-07-11.md"
 )
+EVIDENCE_MILESTONE_2B_PHASE2B2C_EXECUTION_PATH = Path(
+    "docs/experiments/"
+    "uprime_odlrq_u1_evidence_milestone_2b_phase2b2c_execution_2026-07-11.md"
+)
 RERUN_LICENSE_SOURCE_PATH = Path("lean_rgc/evals/uprime_rerun_license.py")
 RERUN_LICENSE_TEST_PATH = Path("tests/test_uprime_rerun_license.py")
 LEDGER_SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_ledger.py")
@@ -181,6 +185,7 @@ ANCHOR_PATHS = (
     EVIDENCE_MILESTONE_2B_PHASE2B2B_AMENDMENT_PATH,
     EVIDENCE_MILESTONE_2B_PHASE2B2B_EXECUTION_PATH,
     EVIDENCE_MILESTONE_2B_PHASE2B2C_AMENDMENT_PATH,
+    EVIDENCE_MILESTONE_2B_PHASE2B2C_EXECUTION_PATH,
     RERUN_REGISTRY_PATH,
     RERUN_LICENSE_SOURCE_PATH,
     RERUN_LICENSE_TEST_PATH,
