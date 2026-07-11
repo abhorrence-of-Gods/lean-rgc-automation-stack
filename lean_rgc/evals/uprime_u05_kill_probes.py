@@ -1554,17 +1554,28 @@ def _runtime_source_snapshot(repo_root: Path) -> Mapping[str, Any]:
 
 
 def _assert_empty_rerun_registry(repo_root: Path) -> Mapping[str, Any]:
-    from lean_rgc.evals.uprime_rerun_license import RERUN_REGISTRY_PATH, load_rerun_registry
+    from lean_rgc.evals.uprime_rerun_license import (
+        RERUN_REGISTRY_PATH,
+        SCHEMA_UPRIME_RERUN_REGISTRY,
+        load_rerun_registry,
+    )
 
     registry_path = repo_root / RERUN_REGISTRY_PATH
     value = load_rerun_registry(registry_path)
-    if value.get("entries") != []:
+    expected = {
+        "default_allow": False,
+        "licenses": {},
+        "schema_version": SCHEMA_UPRIME_RERUN_REGISTRY,
+    }
+    if value != expected:
         raise ProductionExecutionDenied("formal rerun registry is not empty")
     return {
         "path": RERUN_REGISTRY_PATH.as_posix(),
         "git_blob": _git_text(repo_root, "rev-parse", f"HEAD:{RERUN_REGISTRY_PATH.as_posix()}"),
         "sha256": _sha256_bytes(registry_path.read_bytes()),
-        "entry_count": 0,
+        "schema_version": SCHEMA_UPRIME_RERUN_REGISTRY,
+        "default_allow": False,
+        "license_count": 0,
     }
 
 

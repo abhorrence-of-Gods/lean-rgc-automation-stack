@@ -481,6 +481,15 @@ def test_production_literals_match_frozen_digests_without_enumerating_matrix():
     assert probes.FROZEN_LIMITS["cache_policy"] == "bypass"
 
 
+def test_preflight_accepts_the_canonical_empty_rerun_registry():
+    evidence = probes._assert_empty_rerun_registry(Path.cwd())
+    assert evidence["default_allow"] is False
+    assert evidence["license_count"] == 0
+    assert evidence["schema_version"].endswith("rerun-registry-v1.0")
+    assert len(evidence["git_blob"]) == 40
+    assert len(evidence["sha256"]) == 64
+
+
 def test_production_entrypoint_denies_before_task_or_root_file_access(monkeypatch):
     forbidden = {
         "llm_local.json",
