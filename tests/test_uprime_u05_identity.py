@@ -108,6 +108,31 @@ RESULT_PATHS = {
     "tests/test_uprime_rerun_license.py",
 }
 
+U05_CANDIDATE = "3bb3408afc50a08307cff2c9b1906a299739dfb5"
+U05_RESULT_COMMIT = "cc91a4181a9f87ec10f11727ed787eb7149f955a"
+U05_RESULT_BLOBS = {
+    "docs/experiments/artifacts/uprime_u05_20260711/u05_kill_probes.json":
+        "33061cffae56abf4ed2a4fcdb9400eb2004e61c6",
+    "docs/experiments/uprime_odlrq_u05_execution_2026-07-11.md":
+        "724f8c426aa71de62c1f0837f36077133e64ca6f",
+    "lean_rgc/evals/uprime_rpc_litmus.py":
+        "2bbc052a2afa954b46090dcdcf2ec082d8e9a1a4",
+    "tests/test_uprime_rerun_license.py":
+        "9f1e20e742aa3c53cd779a1ca392e870a7e15477",
+}
+
+CPU_SURVIVOR_AMENDMENT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_cpu_survivor_implementation_bundle_amendment_2026-07-12.md"
+)
+CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB = (
+    "f3b991b42228b0f36acaf5aaad6572777aa76b5a"
+)
+CPU_SURVIVOR_AMENDMENT_PATHS = {
+    CPU_SURVIVOR_AMENDMENT_PATH,
+    "tests/test_uprime_u05_identity.py",
+}
+
 
 def _git(*args: str, check: bool = True) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(
@@ -124,8 +149,13 @@ def _raw_parents(commit: str) -> list[str]:
     return [line[7:] for line in headers if line.startswith("parent ")]
 
 
+def _assert_tree_blob(commit: str, path: str, expected_blob: str) -> None:
+    row = _git("ls-tree", commit, "--", path).stdout.decode("utf-8").split()
+    assert row == ["100644", "blob", expected_blob, path]
+
+
 def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
-    """Seal A in full history, shallow CI, and the pre-commit worktree."""
+    """Seal the plan, candidate, immutable U05 result, and CPU amendment."""
 
     plan_available = (
         _git("cat-file", "-e", f"{PLAN_COMMIT}^{{commit}}", check=False).returncode
@@ -135,10 +165,7 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
     if plan_available:
         assert _raw_parents(PLAN_COMMIT) == [PLAN_PARENT]
         for path, expected_blob in PLAN_BLOBS.items():
-            row = _git("ls-tree", PLAN_COMMIT, "--", path).stdout.decode(
-                "utf-8"
-            ).split()
-            assert row == ["100644", "blob", expected_blob, path]
+            _assert_tree_blob(PLAN_COMMIT, path, expected_blob)
 
         parent_available = (
             _git("cat-file", "-e", f"{PLAN_PARENT}^{{commit}}", check=False).returncode
@@ -218,22 +245,110 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
             assert plan_blob == PLAN_BLOBS[plan_path]
 
             interval_head = head
-            head_changed = set(
+            result_on_lineage = (
                 _git(
-                    "diff-tree",
-                    "--no-commit-id",
-                    "--name-only",
-                    "--no-renames",
-                    "-r",
+                    "cat-file",
+                    "-e",
+                    f"{U05_RESULT_COMMIT}^{{commit}}",
+                    check=False,
+                ).returncode
+                == 0
+                and _git(
+                    "merge-base",
+                    "--is-ancestor",
+                    U05_RESULT_COMMIT,
                     head,
-                )
-                .stdout.decode("utf-8")
-                .splitlines()
+                    check=False,
+                ).returncode
+                == 0
             )
-            if head_changed == RESULT_PATHS:
-                result_parents = _raw_parents(head)
-                assert len(result_parents) == 1
-                interval_head = result_parents[0]
+            if result_on_lineage:
+                assert _raw_parents(U05_RESULT_COMMIT) == [U05_CANDIDATE]
+                result_changed = set(
+                    _git(
+                        "diff-tree",
+                        "--no-commit-id",
+                        "--name-only",
+                        "--no-renames",
+                        "-r",
+                        U05_RESULT_COMMIT,
+                    )
+                    .stdout.decode("utf-8")
+                    .splitlines()
+                )
+                assert result_changed == RESULT_PATHS
+                for path, expected_blob in U05_RESULT_BLOBS.items():
+                    _assert_tree_blob(U05_RESULT_COMMIT, path, expected_blob)
+                assert (
+                    _git(
+                        "merge-base",
+                        "--is-ancestor",
+                        PLAN_COMMIT,
+                        U05_CANDIDATE,
+                        check=False,
+                    ).returncode
+                    == 0
+                )
+                interval_head = U05_CANDIDATE
+
+                amendment_additions = (
+                    _git(
+                        "log",
+                        "--diff-filter=A",
+                        "--format=%H",
+                        "--",
+                        CPU_SURVIVOR_AMENDMENT_PATH,
+                    )
+                    .stdout.decode("ascii")
+                    .splitlines()
+                )
+                if amendment_additions:
+                    assert len(amendment_additions) == 1
+                    amendment_commit = amendment_additions[0]
+                    assert _raw_parents(amendment_commit) == [U05_RESULT_COMMIT]
+                    amendment_changed = set(
+                        _git(
+                            "diff-tree",
+                            "--no-commit-id",
+                            "--name-only",
+                            "--no-renames",
+                            "-r",
+                            amendment_commit,
+                        )
+                        .stdout.decode("utf-8")
+                        .splitlines()
+                    )
+                    assert amendment_changed == CPU_SURVIVOR_AMENDMENT_PATHS
+                    _assert_tree_blob(
+                        amendment_commit,
+                        CPU_SURVIVOR_AMENDMENT_PATH,
+                        CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB,
+                    )
+                    assert (
+                        _git(
+                            "merge-base",
+                            "--is-ancestor",
+                            amendment_commit,
+                            head,
+                            check=False,
+                        ).returncode
+                        == 0
+                    )
+                elif head == U05_RESULT_COMMIT:
+                    # Pre-commit validation of the exact two-path amendment.
+                    status = _git(
+                        "status", "--porcelain=v1", "--untracked-files=all"
+                    ).stdout.decode("utf-8")
+                    dirty = {
+                        row[3:] for row in status.splitlines() if row
+                    }
+                    assert dirty == CPU_SURVIVOR_AMENDMENT_PATHS
+                    assert (
+                        _git(
+                            "hash-object", CPU_SURVIVOR_AMENDMENT_PATH
+                        ).stdout.decode("ascii").strip()
+                        == CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB
+                    )
 
             commits = (
                 _git(
@@ -276,11 +391,31 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
             .strip()
             == "true"
         )
-        # A shallow descendant cannot prove the missing parent edge, but it can
-        # and must retain every exact anchored blob in its current tree.
-        for path, expected_blob in PLAN_BLOBS.items():
-            actual = _git("rev-parse", f"HEAD:{path}").stdout.decode("ascii").strip()
-            assert actual == expected_blob
+        # Depth-one CI cannot inspect the missing history.  It must nevertheless
+        # retain the plan document and the complete immutable result package.
+        plan_path = next(path for path in PLAN_BLOBS if path.startswith("docs/"))
+        _assert_tree_blob("HEAD", plan_path, PLAN_BLOBS[plan_path])
+        for path, expected_blob in U05_RESULT_BLOBS.items():
+            _assert_tree_blob("HEAD", path, expected_blob)
+
+        parents = _raw_parents(head)
+        if head == U05_RESULT_COMMIT:
+            assert parents == [U05_CANDIDATE]
+        else:
+            # This is the exact amendment head.  Milestone 1 will freeze its
+            # now-known commit ID before any further shallow descendant exists.
+            assert parents == [U05_RESULT_COMMIT]
+            _assert_tree_blob(
+                "HEAD",
+                CPU_SURVIVOR_AMENDMENT_PATH,
+                CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB,
+            )
+            row = _git(
+                "ls-tree", "HEAD", "--", "tests/test_uprime_u05_identity.py"
+            ).stdout.decode("utf-8").split()
+            assert len(row) == 4
+            assert row[:2] == ["100644", "blob"]
+            assert row[3] == "tests/test_uprime_u05_identity.py"
 
 
 def _expr(
