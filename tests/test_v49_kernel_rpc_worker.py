@@ -13,6 +13,8 @@ from lean_rgc.native_worker import (
     native_worker_manifest,
     packaged_kernel_rpc_worker_path,
 )
+from lean_rgc.lean.kernel_rpc_client import U05_BASELINE_OPTIONS
+from lean_rgc.lean.kernel_state_identity import state_identity_from_kernel_state
 
 
 def _lean_bin() -> str | None:
@@ -195,6 +197,15 @@ def test_u05_task_prefix_and_actions_share_the_frozen_heartbeat_cap():
         assert init["state"]["proof_prefix"] == "intro n"
         assert init["kernel_state"]["proof_prefix"] == "intro n"
         assert init["kernel_state"]["options"] == {"maxHeartbeats": "20000"}
+        # A prefix-created local can occur in the open target.  Every Expr-DAG
+        # free-FVar reference must resolve to the same opaque local-declaration
+        # ID namespace before this native payload can enter strict U05 identity.
+        strict_identity = state_identity_from_kernel_state(
+            init["kernel_state"],
+            environment_content_digest="A" * 64,
+            baseline_semantic_options=U05_BASELINE_OPTIONS,
+        )
+        assert strict_identity.status == "open"
         root_state_id = init["state"]["state_id"]
 
         # A different explicit action cap is rejected before the tactic can

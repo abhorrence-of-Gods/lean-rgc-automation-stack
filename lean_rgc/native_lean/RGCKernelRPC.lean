@@ -195,7 +195,12 @@ partial def collectMVars (e : Expr) (acc : Std.HashSet MVarId := {}) : Std.HashS
   | _ => acc
 
 def fvarStrings (s : Std.HashSet FVarId) : List Json :=
-  (s.toList.map fun id => Json.str (toString id.name))
+  /- Expression-graph references must use the same opaque identifier namespace
+  as `serializeLocalContext`.  Emitting the bare internal Lean name here made a
+  post-`intro` target refer to `_uniq.*` while its declaration was registered as
+  `fvar__uniq.*`, so strict reachable-closure validation correctly rejected the
+  native payload. -/
+  (s.toList.map fun id => Json.str ("fvar_" ++ toString id.name))
 
 def mvarStrings (s : Std.HashSet MVarId) : List Json :=
   (s.toList.map fun id => Json.str ("?" ++ toString id.name))

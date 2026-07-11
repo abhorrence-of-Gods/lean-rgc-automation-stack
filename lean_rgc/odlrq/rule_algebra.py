@@ -103,6 +103,7 @@ class OracleEvent:
     censor_reason: str | None = None
     primary_attempts: int = 1
     replay_attempts: int = 1
+    derived_from_sealed_row: bool = False
 
     def __post_init__(self) -> None:
         if not isinstance(self.source_key, bytes) or not self.source_key:
@@ -111,6 +112,20 @@ class OracleEvent:
             raise ValueError("action_id must be nonempty")
         if self.primary_attempts < 0 or self.replay_attempts < 0:
             raise ValueError("attempt counters must be nonnegative")
+        if self.derived_from_sealed_row and (
+            self.primary_attempts != 0
+            or self.replay_attempts != 0
+            or self.censor_reason is not None
+            or not self.replay_verified
+            or not self.exact_delta
+            or (
+                self.target is not None
+                and self.target.live_rpc_state_id is not None
+            )
+        ):
+            raise ValueError(
+                "a sealed-row derivation must be exact, replayed, handle-free, and zero-attempt"
+            )
         if self.censor_reason is not None:
             if self.totalized_status is not None or self.target is not None:
                 raise ValueError("a censor cannot create a totalized transition")
@@ -175,6 +190,8 @@ class OracleEvent:
         *,
         replay_verified: bool = True,
         exact_delta: bool = True,
+        primary_attempts: int = 1,
+        replay_attempts: int = 1,
     ) -> "OracleEvent":
         return cls(
             source_key=source_key,
@@ -183,6 +200,8 @@ class OracleEvent:
             totalized_status=OutcomeKind.SINK,
             replay_verified=replay_verified,
             exact_delta=exact_delta,
+            primary_attempts=primary_attempts,
+            replay_attempts=replay_attempts,
         )
 
     @classmethod

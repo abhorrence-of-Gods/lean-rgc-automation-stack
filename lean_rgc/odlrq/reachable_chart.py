@@ -346,8 +346,9 @@ class ReachableChartBuilder:
     ) -> None:
         if entry.expansion_status != "queued":
             return
-        if entry.live_rpc_state_id is None:
-            raise ChartPrerequisiteBlocked("queued state lacks a live RPC state ID")
+        # A production oracle may derive an already sealed row without a
+        # process-local handle.  If the row is not actually sealed, that oracle
+        # must fail closed before attempting concrete execution.
         source = entry.state_view()
         task_id = entry.first_task_id
         for action in self.action_ids:
