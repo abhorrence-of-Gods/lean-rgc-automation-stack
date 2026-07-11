@@ -134,6 +134,12 @@ UPPER_STACK_IMPLEMENTATION_PLAN_AND_U05_AMENDMENT_PATH = Path(
     "docs/experiments/"
     "uprime_odlrq_upper_stack_implementation_plan_and_u05_amendment_2026-07-11.md"
 )
+UPRIME_U05_EXECUTION_RESULT_PATH = Path(
+    "docs/experiments/uprime_odlrq_u05_execution_2026-07-11.md"
+)
+UPRIME_U05_EXECUTION_ARTIFACT_PATH = Path(
+    "docs/experiments/artifacts/uprime_u05_20260711/u05_kill_probes.json"
+)
 RERUN_LICENSE_SOURCE_PATH = Path("lean_rgc/evals/uprime_rerun_license.py")
 RERUN_LICENSE_TEST_PATH = Path("tests/test_uprime_rerun_license.py")
 LEDGER_SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_ledger.py")
@@ -240,6 +246,8 @@ ANCHOR_PATHS = (
     EVIDENCE_MILESTONE_2B_PHASE2B2F_AMENDMENT_PATH,
     EVIDENCE_MILESTONE_2B_PHASE2B2F_EXECUTION_PATH,
     UPPER_STACK_IMPLEMENTATION_PLAN_AND_U05_AMENDMENT_PATH,
+    UPRIME_U05_EXECUTION_RESULT_PATH,
+    UPRIME_U05_EXECUTION_ARTIFACT_PATH,
     RERUN_REGISTRY_PATH,
     RERUN_LICENSE_SOURCE_PATH,
     RERUN_LICENSE_TEST_PATH,

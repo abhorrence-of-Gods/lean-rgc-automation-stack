@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -804,3 +805,248 @@ def test_anchor_preflight_compares_head_blob_despite_assume_unchanged(
 
     with pytest.raises(RuntimeError, match="anchored input differs from HEAD blob"):
         litmus._assert_anchor_inputs_clean(tmp_path)
+
+
+def test_u05_one_look_result_is_canonical_anchored_and_default_deny():
+    candidate = "3bb3408afc50a08307cff2c9b1906a299739dfb5"
+    artifact_sha256 = (
+        "75BD0F4A742FD7F5DA221FD629DA58F080FD17CB0ACE9BFC8150153D8FDB55F8"
+    )
+    artifact_blob = "33061cffae56abf4ed2a4fcdb9400eb2004e61c6"
+    raw_sha256 = "704E05D66AB57633F015486C4C9E4718493A8A3529F3877693DD56B7CB79E6E9"
+    expected_paths = tuple(
+        sorted(
+            (
+                "docs/experiments/uprime_odlrq_u05_execution_2026-07-11.md",
+                "docs/experiments/artifacts/uprime_u05_20260711/u05_kill_probes.json",
+                "lean_rgc/evals/uprime_rpc_litmus.py",
+                "tests/test_uprime_rerun_license.py",
+            )
+        )
+    )
+    result_path = Path(expected_paths[1])
+    artifact_path = Path(expected_paths[0])
+    # The sorted order places the artifact before the execution document.
+    assert artifact_path == litmus.UPRIME_U05_EXECUTION_ARTIFACT_PATH
+    assert result_path == litmus.UPRIME_U05_EXECUTION_RESULT_PATH
+    assert litmus.ANCHOR_PATHS.count(artifact_path) == 1
+    assert litmus.ANCHOR_PATHS.count(result_path) == 1
+    assert artifact_path.is_file() and not artifact_path.is_symlink()
+    assert result_path.is_file() and not result_path.is_symlink()
+
+    def reject_duplicates(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError(f"duplicate JSON key: {key}")
+            value[key] = item
+        return value
+
+    def reject_constant(value):
+        raise ValueError(f"nonfinite JSON constant: {value}")
+
+    artifact_bytes = artifact_path.read_bytes()
+    assert len(artifact_bytes) == 160_974
+    assert hashlib.sha256(artifact_bytes).hexdigest().upper() == artifact_sha256
+    assert (
+        subprocess.run(
+            ["git", "hash-object", "--stdin"],
+            input=artifact_bytes,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        .stdout.decode("ascii")
+        .strip()
+        == artifact_blob
+    )
+    envelope = json.loads(
+        artifact_bytes.decode("utf-8", errors="strict"),
+        object_pairs_hook=reject_duplicates,
+        parse_constant=reject_constant,
+    )
+    assert artifact_bytes == (
+        json.dumps(
+            envelope,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+        + b"\n"
+    )
+    assert envelope["schema"] == "lean-rgc-uprime-u05-attempt-envelope-v1.0"
+    assert envelope["candidate"] == candidate
+    assert envelope["envelope_kind"] == "runner_complete"
+    assert envelope["look_consumed"] is True
+    assert envelope["matrix_open_marker_valid"] is True
+    assert envelope["raw_child_schema_valid"] is True
+    assert envelope["raw_child_status"] == "U05_COMPLETE"
+    assert envelope["process"]["exit_code"] == 0
+    assert envelope["process"]["exception_class"] is None
+    assert envelope["process"]["stdout"]["byte_length"] == 0
+    assert envelope["process"]["stderr"]["byte_length"] == 0
+
+    raw_bytes = base64.b64decode(
+        envelope["raw_child_output"]["bytes_base64"], validate=True
+    )
+    assert len(raw_bytes) == envelope["raw_child_output"]["byte_length"] == 9_208
+    assert hashlib.sha256(raw_bytes).hexdigest().upper() == raw_sha256
+    assert envelope["raw_child_output"]["sha256"] == raw_sha256
+    raw = json.loads(
+        raw_bytes.decode("utf-8", errors="strict"),
+        object_pairs_hook=reject_duplicates,
+        parse_constant=reject_constant,
+    )
+    assert raw_bytes == (
+        json.dumps(
+            raw,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+        + b"\n"
+    )
+    assert raw["status"] == "U05_COMPLETE"
+    assert raw["candidate"] == candidate
+    assert raw["probe_report"]["kp1"]["disposition"] == "U05_KP1_SCALE_READY"
+    assert raw["probe_report"]["kp2"]["disposition"] == "U05_KP2_EVENTUAL_WINDOW"
+    assert raw["probe_report"]["kp3"]["disposition"] == "U05_KP3_PLATEAU_AT_D3"
+    expected_licenses = {
+        "licenses_k1_k4",
+        "licenses_u2_u5_claims",
+        "licenses_wp4_wp12_implementation",
+        "licenses_gpu",
+        "licenses_canonical_rpc_rerun",
+        "licenses_reserved_data_read",
+    }
+    assert {key for key in raw if key.startswith("licenses_")} == expected_licenses
+    assert {
+        key for key in raw["probe_report"] if key.startswith("licenses_")
+    } == expected_licenses
+    assert all(raw[key] is False for key in expected_licenses)
+    assert all(raw["probe_report"][key] is False for key in expected_licenses)
+    capabilities = raw["probe_report"]["capability_matrix"]
+    assert capabilities["candidate_exact_partition"] == {
+        "candidate": True,
+        "may_draft": True,
+        "scale_ready": True,
+    }
+    assert capabilities["candidate_hankel_predictive_model"] == {
+        "candidate": True,
+        "may_draft": True,
+    }
+    assert capabilities["candidate_componentwise_window"] == {
+        "candidate": True,
+        "may_draft": True,
+    }
+    assert all(
+        capabilities[name]["candidate"] is False
+        and capabilities[name]["may_draft"] is False
+        for name in (
+            "candidate_finite_horizon_envelope",
+            "candidate_maxent_nominal",
+            "candidate_predictive_similarity",
+            "candidate_positive_similarity",
+        )
+    )
+
+    receipt_bytes = base64.b64decode(envelope["receipt"]["bytes_base64"], validate=True)
+    assert hashlib.sha256(receipt_bytes).hexdigest().upper() == (
+        "E3225BE4AB7E3BE5E482B119352DD0A8F08891E6D7E9336859FB35FF2DF9D0BB"
+    )
+    receipt = json.loads(
+        receipt_bytes.decode("utf-8", errors="strict"),
+        object_pairs_hook=reject_duplicates,
+        parse_constant=reject_constant,
+    )
+    assert receipt["candidate"] == candidate
+    assert receipt["ci_control_plane"]["run_id"] == 29166073728
+    assert receipt["ci_control_plane"]["job_id"] == 86579287017
+    assert receipt["ci_control_plane"]["conclusion"] == "success"
+    assert receipt["rerun_registry"]["default_allow"] is False
+    assert receipt["rerun_registry"]["license_count"] == 0
+    assert load_rerun_registry(Path(RERUN_REGISTRY_PATH)) == _empty_registry()
+
+    result_text = result_path.read_text(encoding="utf-8")
+    for literal in (
+        candidate,
+        artifact_sha256,
+        artifact_blob,
+        raw_sha256,
+        "U05_KP1_SCALE_READY",
+        "U05_KP2_EVENTUAL_WINDOW",
+        "U05_KP3_PLATEAU_AT_D3",
+        "licenses_gpu                      false",
+    ):
+        assert literal in result_text
+    assert "ssh -p" not in result_text.lower()
+    assert re.search(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", result_text) is None
+
+    def git(*args, check=True):
+        return subprocess.run(
+            ["git", "--no-replace-objects", *args],
+            check=check,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+    def raw_parents(commit):
+        payload = git("cat-file", "-p", commit).stdout.decode("utf-8")
+        return [
+            row.removeprefix("parent ")
+            for row in payload.split("\n\n", 1)[0].splitlines()
+            if row.startswith("parent ")
+        ]
+
+    head = git("rev-parse", "HEAD").stdout.decode("ascii").strip()
+    if head == candidate:
+        # Pre-commit local verification: the candidate is immutable and only
+        # the four frozen result paths may be dirty/untracked.
+        status = git("status", "--porcelain=v1", "--untracked-files=all").stdout.decode(
+            "utf-8"
+        )
+        changed = tuple(sorted(row[3:] for row in status.splitlines() if row))
+        assert changed == expected_paths
+        return
+
+    result_commit = None
+    if raw_parents(head) == [candidate]:
+        result_commit = head
+    elif git("cat-file", "-e", f"{candidate}^{{commit}}", check=False).returncode == 0:
+        additions = git(
+            "log",
+            "--diff-filter=A",
+            "--format=%H",
+            "--",
+            result_path.as_posix(),
+        ).stdout.decode("ascii").splitlines()
+        if additions:
+            result_commit = additions[0]
+    if result_commit is not None:
+        assert raw_parents(result_commit) == [candidate]
+        if git("cat-file", "-e", f"{candidate}^{{commit}}", check=False).returncode == 0:
+            changed = tuple(
+                sorted(
+                    git(
+                        "diff-tree",
+                        "--no-commit-id",
+                        "--name-only",
+                        "--no-renames",
+                        "-r",
+                        result_commit,
+                    ).stdout.decode("utf-8").splitlines()
+                )
+            )
+            assert changed == expected_paths
+        else:
+            assert git("rev-parse", "--is-shallow-repository").stdout.decode(
+                "ascii"
+            ).strip() == "true"
+        for relative in expected_paths:
+            row = git("ls-tree", result_commit, "--", relative).stdout.decode(
+                "utf-8"
+            ).split()
+            assert len(row) == 4 and row[:2] == ["100644", "blob"]
+            assert row[3] == relative
