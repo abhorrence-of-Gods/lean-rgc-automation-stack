@@ -253,6 +253,8 @@ def test_rerun_gate_and_executed_package_initializers_are_anchored():
         litmus.SEED_INVENTORY_TEST_SUPPORT_PATH,
         litmus.LOCAL_ARTIFACT_OBSERVER_SOURCE_PATH,
         litmus.LOCAL_ARTIFACT_OBSERVER_TEST_SUPPORT_PATH,
+        litmus.FAKE_CAS_KERNEL_SOURCE_PATH,
+        litmus.FAKE_CAS_KERNEL_TEST_SUPPORT_PATH,
         litmus.PACKAGE_INIT_PATH,
         litmus.EVALS_PACKAGE_INIT_PATH,
         litmus.TEST_PATH,
@@ -277,13 +279,11 @@ def test_local_artifact_observer_support_is_collected_exactly_once():
     assert collector.count("uprime_rpc_local_artifact_observer_cases") == 1
 
 
-def test_phase2b2c_prereg_tree_contains_no_implementation():
-    assert not Path("lean_rgc/evals/uprime_rpc_fake_cas_kernel.py").exists()
-    assert not Path("tests/uprime_rpc_fake_cas_kernel_cases.py").exists()
+def test_fake_cas_kernel_support_is_collected_exactly_once():
     collector = Path("tests/test_uprime_rpc_ledger.py").read_text(encoding="utf-8")
     import_line = "from uprime_rpc_fake_cas_kernel_cases import *  # noqa: F403"
-    assert collector.splitlines().count(import_line) == 0
-    assert collector.count("uprime_rpc_fake_cas_kernel_cases") == 0
+    assert collector.splitlines().count(import_line) == 1
+    assert collector.count("uprime_rpc_fake_cas_kernel_cases") == 1
 
 
 def test_anchor_preflight_compares_head_blob_despite_assume_unchanged(
