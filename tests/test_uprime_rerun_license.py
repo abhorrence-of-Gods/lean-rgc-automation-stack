@@ -245,12 +245,21 @@ def test_rerun_gate_and_executed_package_initializers_are_anchored():
         litmus.BUNDLE_RESERVATION_TEST_SUPPORT_PATH,
         litmus.ATTEMPT_MANIFEST_SOURCE_PATH,
         litmus.ATTEMPT_MANIFEST_TEST_SUPPORT_PATH,
+        litmus.SEED_INVENTORY_SOURCE_PATH,
+        litmus.SEED_INVENTORY_TEST_SUPPORT_PATH,
         litmus.PACKAGE_INIT_PATH,
         litmus.EVALS_PACKAGE_INIT_PATH,
         litmus.TEST_PATH,
         litmus.TIER_PATH,
     }
     assert required <= set(litmus.ANCHOR_PATHS)
+
+
+def test_seed_inventory_support_is_collected_exactly_once():
+    collector = Path("tests/test_uprime_rpc_ledger.py").read_text(encoding="utf-8")
+    import_line = "from uprime_rpc_seed_inventory_cases import *  # noqa: F403"
+    assert collector.splitlines().count(import_line) == 1
+    assert collector.count("uprime_rpc_seed_inventory_cases") == 1
 
 
 def test_anchor_preflight_compares_head_blob_despite_assume_unchanged(

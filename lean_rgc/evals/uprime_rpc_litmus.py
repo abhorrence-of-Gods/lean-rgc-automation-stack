@@ -113,6 +113,12 @@ ATTEMPT_MANIFEST_SOURCE_PATH = Path(
 ATTEMPT_MANIFEST_TEST_SUPPORT_PATH = Path(
     "tests/uprime_rpc_attempt_manifest_cases.py"
 )
+SEED_INVENTORY_SOURCE_PATH = Path(
+    "lean_rgc/evals/uprime_rpc_seed_inventory.py"
+)
+SEED_INVENTORY_TEST_SUPPORT_PATH = Path(
+    "tests/uprime_rpc_seed_inventory_cases.py"
+)
 PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
 EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
@@ -156,6 +162,8 @@ ANCHOR_PATHS = (
     BUNDLE_RESERVATION_TEST_SUPPORT_PATH,
     ATTEMPT_MANIFEST_SOURCE_PATH,
     ATTEMPT_MANIFEST_TEST_SUPPORT_PATH,
+    SEED_INVENTORY_SOURCE_PATH,
+    SEED_INVENTORY_TEST_SUPPORT_PATH,
     PACKAGE_INIT_PATH,
     EVALS_PACKAGE_INIT_PATH,
     SOURCE_PATH,
