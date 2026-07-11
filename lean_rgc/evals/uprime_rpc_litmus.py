@@ -121,6 +121,15 @@ EVIDENCE_MILESTONE_2B_PHASE2B2E_EXECUTION_PATH = Path(
     "docs/experiments/"
     "uprime_odlrq_u1_evidence_milestone_2b_phase2b2e_execution_2026-07-11.md"
 )
+EVIDENCE_MILESTONE_2B_PHASE2B2F_AMENDMENT_PATH = Path(
+    "docs/experiments/"
+    "uprime_odlrq_u1_evidence_milestone_2b_phase2b2f_"
+    "integrated_synthetic_manifest_recovery_audit_amendment_2026-07-11.md"
+)
+EVIDENCE_MILESTONE_2B_PHASE2B2F_EXECUTION_PATH = Path(
+    "docs/experiments/"
+    "uprime_odlrq_u1_evidence_milestone_2b_phase2b2f_execution_2026-07-11.md"
+)
 RERUN_LICENSE_SOURCE_PATH = Path("lean_rgc/evals/uprime_rerun_license.py")
 RERUN_LICENSE_TEST_PATH = Path("tests/test_uprime_rerun_license.py")
 LEDGER_SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_ledger.py")
@@ -179,6 +188,12 @@ SYNTHETIC_RECOVERY_COORDINATOR_SOURCE_PATH = Path(
 SYNTHETIC_RECOVERY_COORDINATOR_TEST_SUPPORT_PATH = Path(
     "tests/uprime_rpc_synthetic_recovery_coordinator_cases.py"
 )
+INTEGRATED_SYNTHETIC_MANIFEST_SOURCE_PATH = Path(
+    "lean_rgc/evals/uprime_rpc_integrated_synthetic_manifest.py"
+)
+INTEGRATED_SYNTHETIC_MANIFEST_TEST_SUPPORT_PATH = Path(
+    "tests/uprime_rpc_integrated_synthetic_manifest_cases.py"
+)
 PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
 EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
@@ -218,6 +233,7 @@ ANCHOR_PATHS = (
     EVIDENCE_MILESTONE_2B_PHASE2B2D_EXECUTION_PATH,
     EVIDENCE_MILESTONE_2B_PHASE2B2E_AMENDMENT_PATH,
     EVIDENCE_MILESTONE_2B_PHASE2B2E_EXECUTION_PATH,
+    EVIDENCE_MILESTONE_2B_PHASE2B2F_AMENDMENT_PATH,
     RERUN_REGISTRY_PATH,
     RERUN_LICENSE_SOURCE_PATH,
     RERUN_LICENSE_TEST_PATH,
