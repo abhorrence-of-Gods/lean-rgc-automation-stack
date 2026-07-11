@@ -235,6 +235,7 @@ def test_rerun_gate_and_executed_package_initializers_are_anchored():
         litmus.EVIDENCE_MILESTONE_2B_PHASE2B2A_EXECUTION_PATH,
         litmus.EVIDENCE_MILESTONE_2B_PHASE2B2B_AMENDMENT_PATH,
         litmus.EVIDENCE_MILESTONE_2B_PHASE2B2B_EXECUTION_PATH,
+        litmus.EVIDENCE_MILESTONE_2B_PHASE2B2C_AMENDMENT_PATH,
         RERUN_REGISTRY_PATH,
         litmus.RERUN_LICENSE_SOURCE_PATH,
         litmus.RERUN_LICENSE_TEST_PATH,
@@ -274,6 +275,15 @@ def test_local_artifact_observer_support_is_collected_exactly_once():
     )
     assert collector.splitlines().count(import_line) == 1
     assert collector.count("uprime_rpc_local_artifact_observer_cases") == 1
+
+
+def test_phase2b2c_prereg_tree_contains_no_implementation():
+    assert not Path("lean_rgc/evals/uprime_rpc_fake_cas_kernel.py").exists()
+    assert not Path("tests/uprime_rpc_fake_cas_kernel_cases.py").exists()
+    collector = Path("tests/test_uprime_rpc_ledger.py").read_text(encoding="utf-8")
+    import_line = "from uprime_rpc_fake_cas_kernel_cases import *  # noqa: F403"
+    assert collector.splitlines().count(import_line) == 0
+    assert collector.count("uprime_rpc_fake_cas_kernel_cases") == 0
 
 
 def test_anchor_preflight_compares_head_blob_despite_assume_unchanged(
