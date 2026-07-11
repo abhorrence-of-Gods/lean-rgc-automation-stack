@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import runpy
 import subprocess
 
 import pytest
@@ -315,31 +316,145 @@ def test_synthetic_recovery_coordinator_support_is_collected_exactly_once():
     assert collector.count("uprime_rpc_synthetic_recovery_coordinator_cases") == 1
 
 
-def test_phase2b2f_preregistration_keeps_future_implementation_absent():
+def test_phase2b2f_implementation_matches_green_preregistration_gate():
+    prereg_commit = "8f1c0ba42b9c8568e802b79ee8bfc55ac3459a75"
+    amendment_blob = "c72d18a17411071f1d1511581978d1b6792761e6"
+    amendment_path = Path(
+        "docs/experiments/uprime_odlrq_u1_evidence_milestone_2b_phase2b2f_"
+        "integrated_synthetic_manifest_recovery_audit_amendment_2026-07-11.md"
+    )
+    source_path = Path(
+        "lean_rgc/evals/uprime_rpc_integrated_synthetic_manifest.py"
+    )
+    support_path = Path(
+        "tests/uprime_rpc_integrated_synthetic_manifest_cases.py"
+    )
+    result_path = Path(
+        "docs/experiments/uprime_odlrq_u1_evidence_milestone_2b_phase2b2f_"
+        "execution_2026-07-11.md"
+    )
+    assert litmus.EVIDENCE_MILESTONE_2B_PHASE2B2F_AMENDMENT_PATH == amendment_path
+    assert litmus.INTEGRATED_SYNTHETIC_MANIFEST_SOURCE_PATH == source_path
+    assert litmus.INTEGRATED_SYNTHETIC_MANIFEST_TEST_SUPPORT_PATH == support_path
+    assert litmus.EVIDENCE_MILESTONE_2B_PHASE2B2F_EXECUTION_PATH == result_path
+
     assert litmus.ANCHOR_PATHS.count(
-        litmus.EVIDENCE_MILESTONE_2B_PHASE2B2F_AMENDMENT_PATH
+        amendment_path
     ) == 1
-    assert not os.path.lexists(str(litmus.INTEGRATED_SYNTHETIC_MANIFEST_SOURCE_PATH))
-    assert not os.path.lexists(
-        str(litmus.INTEGRATED_SYNTHETIC_MANIFEST_TEST_SUPPORT_PATH)
-    )
-    assert not os.path.lexists(
-        str(litmus.EVIDENCE_MILESTONE_2B_PHASE2B2F_EXECUTION_PATH)
-    )
-    assert litmus.INTEGRATED_SYNTHETIC_MANIFEST_SOURCE_PATH not in litmus.ANCHOR_PATHS
-    assert (
-        litmus.INTEGRATED_SYNTHETIC_MANIFEST_TEST_SUPPORT_PATH
-        not in litmus.ANCHOR_PATHS
-    )
-    assert litmus.EVIDENCE_MILESTONE_2B_PHASE2B2F_EXECUTION_PATH not in (
-        litmus.ANCHOR_PATHS
-    )
+    assert source_path.exists() and source_path.is_file() and not source_path.is_symlink()
+    assert support_path.exists() and support_path.is_file() and not support_path.is_symlink()
+    assert litmus.ANCHOR_PATHS.count(source_path) == 1
+    assert litmus.ANCHOR_PATHS.count(support_path) == 1
+    assert not os.path.lexists(str(result_path))
+    assert result_path not in litmus.ANCHOR_PATHS
+
     collector = Path("tests/test_uprime_rpc_ledger.py").read_text(encoding="utf-8")
     import_line = (
         "from uprime_rpc_integrated_synthetic_manifest_cases import *  # noqa: F403"
     )
-    assert collector.splitlines().count(import_line) == 0
-    assert collector.count("uprime_rpc_integrated_synthetic_manifest_cases") == 0
+    assert collector.splitlines().count(import_line) == 1
+    assert collector.count("uprime_rpc_integrated_synthetic_manifest_cases") == 1
+
+    def git(*args: str, check: bool = True) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.run(
+            ["git", *args],
+            check=check,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+    assert git("hash-object", str(amendment_path)).stdout.decode("ascii").strip() == (
+        amendment_blob
+    )
+
+    head = git("rev-parse", "HEAD").stdout.decode("ascii").strip()
+    prereg_available = (
+        git("cat-file", "-e", f"{prereg_commit}^{{commit}}", check=False).returncode
+        == 0
+    )
+    allowed_paths = tuple(
+        sorted((
+            "lean_rgc/evals/uprime_rpc_integrated_synthetic_manifest.py",
+            "tests/uprime_rpc_integrated_synthetic_manifest_cases.py",
+            "tests/test_uprime_rpc_ledger.py",
+            "lean_rgc/evals/uprime_rpc_litmus.py",
+            "tests/test_uprime_rerun_license.py",
+        ))
+    )
+    if prereg_available:
+        for path in (source_path, support_path, result_path):
+            probe = git(
+                "cat-file", "-e", f"{prereg_commit}:{path.as_posix()}",
+                check=False,
+            )
+            assert probe.returncode != 0
+        actual_amendment_blob = git(
+            "rev-parse", f"{prereg_commit}:{amendment_path.as_posix()}"
+        ).stdout.decode("ascii").strip()
+        assert actual_amendment_blob == amendment_blob
+        if head != prereg_commit:
+            ancestry = git(
+                "rev-list", "--parents", "-n", "1", "HEAD"
+            ).stdout.decode("ascii").split()
+            assert ancestry == [head, prereg_commit]
+        if head != prereg_commit:
+            changed = tuple(
+                sorted(
+                    git(
+                        "diff-tree", "--no-commit-id", "--name-only",
+                        "--no-renames", "-r", "HEAD"
+                    )
+                    .stdout.decode("utf-8")
+                    .splitlines()
+                )
+            )
+            assert changed == allowed_paths
+    else:
+        assert git("rev-parse", "--is-shallow-repository").stdout.decode(
+            "ascii"
+        ).strip() == "true"
+        hidden_ancestry = git(
+            "rev-list", "--parents", "-n", "1", "HEAD"
+        ).stdout.decode("ascii").split()
+        assert hidden_ancestry == [head]
+
+    if head != prereg_commit:
+        for path in (source_path, support_path):
+            tree_row = git("ls-tree", "HEAD", "--", path.as_posix()).stdout.decode(
+                "utf-8"
+            ).split()
+            assert len(tree_row) == 4
+            assert tree_row[:2] == ["100644", "blob"]
+            assert tree_row[3] == path.as_posix()
+
+    lines = amendment_path.read_text(encoding="utf-8").splitlines()
+    header = (
+        "case_id|obligation|killed_mutant|expected_outcome|"
+        "expected_side_effects"
+    )
+    start = lines.index(header) + 1
+    expected_matrix = []
+    for line in lines[start:]:
+        if line == "```":
+            break
+        cells = tuple(line.split("|"))
+        assert len(cells) == 5 and all(cells)
+        expected_matrix.append(cells)
+    assert len(expected_matrix) == 64
+
+    support = runpy.run_path(str(support_path))
+    expected_matrix_tuple = tuple(expected_matrix)
+    expected_ids = tuple(row[0] for row in expected_matrix_tuple)
+    expected_tests = tuple(f"test_phase2b2f_{case_id}" for case_id in expected_ids)
+    assert support["PHASE2B2F_CASE_IDS"] == expected_ids
+    assert support["CASE_MATRIX"] == expected_matrix_tuple
+    actual_tests = tuple(
+        name
+        for name, value in support.items()
+        if name.startswith("test_phase2b2f_") and callable(value)
+    )
+    assert actual_tests == expected_tests
+    assert tuple(support["__all__"]) == expected_tests
 
 
 def test_anchor_preflight_compares_head_blob_despite_assume_unchanged(
