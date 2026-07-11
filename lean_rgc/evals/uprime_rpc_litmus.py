@@ -127,6 +127,12 @@ SEED_INVENTORY_SOURCE_PATH = Path(
 SEED_INVENTORY_TEST_SUPPORT_PATH = Path(
     "tests/uprime_rpc_seed_inventory_cases.py"
 )
+LOCAL_ARTIFACT_OBSERVER_SOURCE_PATH = Path(
+    "lean_rgc/evals/uprime_rpc_local_artifact_observer.py"
+)
+LOCAL_ARTIFACT_OBSERVER_TEST_SUPPORT_PATH = Path(
+    "tests/uprime_rpc_local_artifact_observer_cases.py"
+)
 PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
 EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
@@ -174,6 +180,8 @@ ANCHOR_PATHS = (
     ATTEMPT_MANIFEST_TEST_SUPPORT_PATH,
     SEED_INVENTORY_SOURCE_PATH,
     SEED_INVENTORY_TEST_SUPPORT_PATH,
+    LOCAL_ARTIFACT_OBSERVER_SOURCE_PATH,
+    LOCAL_ARTIFACT_OBSERVER_TEST_SUPPORT_PATH,
     PACKAGE_INIT_PATH,
     EVALS_PACKAGE_INIT_PATH,
     SOURCE_PATH,
