@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import runpy
 import subprocess
 
@@ -324,6 +325,7 @@ def test_phase2b2f_result_matches_green_implementation_gate():
     prereg_parent = "d838d8c4873e04bc649b8551f0545af5d9944c4c"
     prereg_commit = "8f1c0ba42b9c8568e802b79ee8bfc55ac3459a75"
     implementation_commit = "0a6eb4a92edc1061773c175975f986f0c5ea5a3c"
+    result_commit_expected = "df38daea2139b67d9935408c82bfb3297efd9536"
     implementation_blobs = {
         "docs/experiments/uprime_odlrq_u1_evidence_milestone_2b_phase2b2f_"
         "integrated_synthetic_manifest_recovery_audit_amendment_2026-07-11.md":
@@ -403,9 +405,6 @@ def test_phase2b2f_result_matches_green_implementation_gate():
         )
     assert git("hash-object", str(result_path)).stdout.decode("ascii").strip() == (
         result_blob
-    )
-    assert git("hash-object", str(litmus_path)).stdout.decode("ascii").strip() == (
-        result_litmus_blob
     )
     assert hashlib.sha256(source_path.read_bytes()).hexdigest().upper() == source_sha256
     assert hashlib.sha256(support_path.read_bytes()).hexdigest().upper() == support_sha256
@@ -488,6 +487,7 @@ def test_phase2b2f_result_matches_green_implementation_gate():
         ).stdout.decode("ascii").splitlines()
         if result_commits:
             result_commit = result_commits[0]
+            assert result_commit == result_commit_expected
             result_ancestry = git(
                 "rev-list", "--parents", "-n", "1", result_commit
             ).stdout.decode("ascii").split()
@@ -528,7 +528,14 @@ def test_phase2b2f_result_matches_green_implementation_gate():
             "rev-list", "--parents", "-n", "1", "HEAD"
         ).stdout.decode("ascii").split()
         assert hidden_ancestry == [head]
-        assert raw_parents(head) == [implementation_commit]
+        parents = raw_parents(head)
+        if parents == [implementation_commit]:
+            assert head == result_commit_expected
+        elif parents == [result_commit_expected]:
+            assert litmus.UPPER_STACK_IMPLEMENTATION_PLAN_AND_U05_AMENDMENT_PATH.is_file()
+        else:
+            assert len(parents) == 1
+            assert litmus.UPPER_STACK_IMPLEMENTATION_PLAN_AND_U05_AMENDMENT_PATH.is_file()
 
     for path in (amendment_path, source_path, support_path, collector_path):
         tree_row = git("ls-tree", "HEAD", "--", path.as_posix()).stdout.decode(
@@ -546,12 +553,13 @@ def test_phase2b2f_result_matches_green_implementation_gate():
         assert result_tree[:2] == ["100644", "blob"]
         assert result_tree[2] == result_blob
         assert result_tree[3] == result_path.as_posix()
-        litmus_tree = git(
-            "ls-tree", "HEAD", "--", litmus_path.as_posix()
-        ).stdout.decode("utf-8").split()
-        assert len(litmus_tree) == 4
-        assert litmus_tree[:3] == ["100644", "blob", result_litmus_blob]
-        assert litmus_tree[3] == litmus_path.as_posix()
+        if head == result_commit_expected:
+            litmus_tree = git(
+                "ls-tree", "HEAD", "--", litmus_path.as_posix()
+            ).stdout.decode("utf-8").split()
+            assert len(litmus_tree) == 4
+            assert litmus_tree[:3] == ["100644", "blob", result_litmus_blob]
+            assert litmus_tree[3] == litmus_path.as_posix()
         rerun_tree = git(
             "ls-tree", "HEAD", "--", rerun_test_path.as_posix()
         ).stdout.decode("utf-8").split()
@@ -587,6 +595,188 @@ def test_phase2b2f_result_matches_green_implementation_gate():
     )
     assert actual_tests == expected_tests
     assert tuple(support["__all__"]) == expected_tests
+
+
+def test_upper_stack_plan_and_u05_amendment_seals_phase2b2f_result():
+    result_commit = "df38daea2139b67d9935408c82bfb3297efd9536"
+    result_parent = "0a6eb4a92edc1061773c175975f986f0c5ea5a3c"
+    result_blobs = {
+        "docs/experiments/uprime_odlrq_u1_evidence_milestone_2b_"
+        "phase2b2f_execution_2026-07-11.md":
+            "2013c1fec71dd51bfabcb369a2f1844966786d88",
+        "lean_rgc/evals/uprime_rpc_litmus.py":
+            "58ea51e44acca2cf2ec86a640e218db5c7c6e095",
+        "tests/test_uprime_rerun_license.py":
+            "8966af27c07f97b0fff85fb2229f577142e9db7f",
+    }
+    result_paths = tuple(sorted(result_blobs))
+    plan_path = Path(
+        "docs/experiments/"
+        "uprime_odlrq_upper_stack_implementation_plan_and_u05_amendment_2026-07-11.md"
+    )
+    litmus_path = Path("lean_rgc/evals/uprime_rpc_litmus.py")
+    test_path = Path("tests/test_uprime_rerun_license.py")
+    plan_paths = tuple(sorted((
+        plan_path.as_posix(),
+        litmus_path.as_posix(),
+        test_path.as_posix(),
+    )))
+    future_apparatus = (
+        "lean_rgc/lean/kernel_state_identity.py",
+        "lean_rgc/lean/kernel_rpc_client.py",
+        "lean_rgc/odlrq/contracts.py",
+        "lean_rgc/evals/uprime_u05_kill_probes.py",
+        "tests/test_uprime_u05_identity.py",
+        "tests/test_uprime_u05_kill_probes.py",
+    )
+
+    assert litmus.UPPER_STACK_IMPLEMENTATION_PLAN_AND_U05_AMENDMENT_PATH == plan_path
+    assert litmus.ANCHOR_PATHS.count(plan_path) == 1
+    assert plan_path.is_file() and not plan_path.is_symlink()
+    assert litmus_path.is_file() and not litmus_path.is_symlink()
+    assert test_path.is_file() and not test_path.is_symlink()
+
+    plan_text = plan_path.read_text(encoding="utf-8")
+    for literal in (
+        result_commit,
+        result_parent,
+        *result_blobs.values(),
+        "29154121499",
+        "86548332796",
+        "13ffca6de484effc66f0e628d2e46823277271c6",
+        "C86569C9C5A793C842BD3F4D7E5795A16C5B6C0B8F6E806F3D30D6A8B571E0E3",
+        "6EA21704F48153362504D4AC7F753C30B8EF6FBDFB0FD98B15A37E56120D393D",
+        "upper_stack_substrate_rpc",
+        "upper_stack_substrate_models",
+        "upper_stack_governance_map",
+        "Final disposition: APPROVE",
+    ):
+        assert literal in plan_text
+    assert "ssh -p" not in plan_text.lower()
+    assert re.search(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", plan_text) is None
+
+    json_blocks = re.findall(r"```json\n(\[.*?\])\n```", plan_text, re.DOTALL)
+    assert len(json_blocks) >= 2
+    task_matrix = json.loads(json_blocks[0])
+    assert [row["task_id"] for row in task_matrix] == [
+        "u05_identity",
+        "u05_pair",
+        "u05_split",
+        "u05_nested_split",
+        "u05_nat_zero",
+    ]
+    task_bytes = json.dumps(
+        task_matrix,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    assert hashlib.sha256(task_bytes).hexdigest().upper() == (
+        "C86569C9C5A793C842BD3F4D7E5795A16C5B6C0B8F6E806F3D30D6A8B571E0E3"
+    )
+
+    action_matrix = json.loads(json_blocks[1])
+    assert len(action_matrix) == 12
+    assert [row["action_id"] for row in action_matrix] == sorted(
+        row["action_id"] for row in action_matrix
+    )
+    assert {row["target_selector"] for row in action_matrix} == {"first", "last"}
+    assert all(row["max_heartbeats"] == 20_000 for row in action_matrix)
+    assert all("premise_slot_rule_id" in row for row in action_matrix)
+    action_bytes = json.dumps(
+        action_matrix,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    assert hashlib.sha256(action_bytes).hexdigest().upper() == (
+        "6EA21704F48153362504D4AC7F753C30B8EF6FBDFB0FD98B15A37E56120D393D"
+    )
+
+    registry = load_rerun_registry(Path(RERUN_REGISTRY_PATH))
+    assert registry == _empty_registry()
+
+    def git(*args: str, check: bool = True) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.run(
+            ["git", "--no-replace-objects", *args],
+            check=check,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+    def raw_parents(commit: str) -> list[str]:
+        raw = git("cat-file", "-p", commit).stdout.decode("utf-8")
+        headers = raw.split("\n\n", 1)[0].splitlines()
+        return [line.removeprefix("parent ") for line in headers if line.startswith("parent ")]
+
+    head = git("rev-parse", "HEAD").stdout.decode("ascii").strip()
+    result_available = (
+        git("cat-file", "-e", f"{result_commit}^{{commit}}", check=False).returncode
+        == 0
+    )
+    if result_available:
+        assert raw_parents(result_commit) == [result_parent]
+        changed = tuple(sorted(
+            git(
+                "diff-tree", "--no-commit-id", "--name-only", "--no-renames",
+                "-r", result_commit,
+            ).stdout.decode("utf-8").splitlines()
+        ))
+        assert changed == result_paths
+        for relative, expected_blob in result_blobs.items():
+            row = git("ls-tree", result_commit, "--", relative).stdout.decode(
+                "utf-8"
+            ).split()
+            assert row == ["100644", "blob", expected_blob, relative]
+
+        additions = git(
+            "log", "--diff-filter=A", "--format=%H", "--", plan_path.as_posix()
+        ).stdout.decode("ascii").splitlines()
+        if additions:
+            plan_commit = additions[0]
+            assert raw_parents(plan_commit) == [result_commit]
+            plan_changed = tuple(sorted(
+                git(
+                    "diff-tree", "--no-commit-id", "--name-only", "--no-renames",
+                    "-r", plan_commit,
+                ).stdout.decode("utf-8").splitlines()
+            ))
+            assert plan_changed == plan_paths
+            for relative in plan_paths:
+                row = git("ls-tree", plan_commit, "--", relative).stdout.decode(
+                    "utf-8"
+                ).split()
+                assert len(row) == 4 and row[:2] == ["100644", "blob"]
+                assert row[3] == relative
+            for relative in future_apparatus:
+                assert git(
+                    "cat-file", "-e", f"{plan_commit}:{relative}", check=False
+                ).returncode != 0
+        else:
+            # Pre-commit local validation is allowed only on the sealed result
+            # head. Hosted CI and every descendant take the strict branch above.
+            assert head == result_commit
+            status = git("status", "--porcelain=v1", "--", plan_path.as_posix())
+            assert status.stdout.decode("utf-8").startswith("?? ")
+            for relative in future_apparatus:
+                assert not Path(relative).exists()
+    else:
+        assert git("rev-parse", "--is-shallow-repository").stdout.decode(
+            "ascii"
+        ).strip() == "true"
+        parents = raw_parents(head)
+        assert len(parents) == 1
+        if parents == [result_commit]:
+            # Exact depth-one plan-commit CI: parent/diff contents are sealed by
+            # raw parent plus the three current regular paths and literals above.
+            for relative in plan_paths:
+                row = git("ls-tree", "HEAD", "--", relative).stdout.decode(
+                    "utf-8"
+                ).split()
+                assert len(row) == 4 and row[:2] == ["100644", "blob"]
+                assert row[3] == relative
+            for relative in future_apparatus:
+                assert not Path(relative).exists()
 
 
 def test_anchor_preflight_compares_head_blob_despite_assume_unchanged(
