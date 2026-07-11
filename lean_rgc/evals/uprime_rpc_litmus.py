@@ -169,6 +169,12 @@ LOCAL_STAGING_FAKE_PUBLISHER_SOURCE_PATH = Path(
 LOCAL_STAGING_FAKE_PUBLISHER_TEST_SUPPORT_PATH = Path(
     "tests/uprime_rpc_local_staging_fake_publisher_cases.py"
 )
+SYNTHETIC_RECOVERY_COORDINATOR_SOURCE_PATH = Path(
+    "lean_rgc/evals/uprime_rpc_synthetic_recovery_coordinator.py"
+)
+SYNTHETIC_RECOVERY_COORDINATOR_TEST_SUPPORT_PATH = Path(
+    "tests/uprime_rpc_synthetic_recovery_coordinator_cases.py"
+)
 PACKAGE_INIT_PATH = Path("lean_rgc/__init__.py")
 EVALS_PACKAGE_INIT_PATH = Path("lean_rgc/evals/__init__.py")
 SOURCE_PATH = Path("lean_rgc/evals/uprime_rpc_litmus.py")
@@ -228,6 +234,8 @@ ANCHOR_PATHS = (
     FAKE_CAS_KERNEL_TEST_SUPPORT_PATH,
     LOCAL_STAGING_FAKE_PUBLISHER_SOURCE_PATH,
     LOCAL_STAGING_FAKE_PUBLISHER_TEST_SUPPORT_PATH,
+    SYNTHETIC_RECOVERY_COORDINATOR_SOURCE_PATH,
+    SYNTHETIC_RECOVERY_COORDINATOR_TEST_SUPPORT_PATH,
     PACKAGE_INIT_PATH,
     EVALS_PACKAGE_INIT_PATH,
     SOURCE_PATH,

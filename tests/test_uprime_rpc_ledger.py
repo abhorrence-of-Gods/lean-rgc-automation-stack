@@ -20,6 +20,7 @@ from uprime_rpc_seed_inventory_cases import *  # noqa: F403
 from uprime_rpc_local_artifact_observer_cases import *  # noqa: F403
 from uprime_rpc_fake_cas_kernel_cases import *  # noqa: F403
 from uprime_rpc_local_staging_fake_publisher_cases import *  # noqa: F403
+from uprime_rpc_synthetic_recovery_coordinator_cases import *  # noqa: F403
 
 
 HEADER_BODY = {"phase": "synthetic", "wire_exact": False}

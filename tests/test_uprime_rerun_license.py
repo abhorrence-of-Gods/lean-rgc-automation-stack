@@ -261,6 +261,8 @@ def test_rerun_gate_and_executed_package_initializers_are_anchored():
         litmus.FAKE_CAS_KERNEL_TEST_SUPPORT_PATH,
         litmus.LOCAL_STAGING_FAKE_PUBLISHER_SOURCE_PATH,
         litmus.LOCAL_STAGING_FAKE_PUBLISHER_TEST_SUPPORT_PATH,
+        litmus.SYNTHETIC_RECOVERY_COORDINATOR_SOURCE_PATH,
+        litmus.SYNTHETIC_RECOVERY_COORDINATOR_TEST_SUPPORT_PATH,
         litmus.PACKAGE_INIT_PATH,
         litmus.EVALS_PACKAGE_INIT_PATH,
         litmus.TEST_PATH,
@@ -301,19 +303,13 @@ def test_local_staging_fake_publisher_support_is_collected_exactly_once():
     assert collector.count("uprime_rpc_local_staging_fake_publisher_cases") == 1
 
 
-def test_phase2b2e_prereg_tree_contains_no_implementation():
-    assert not Path(
-        "lean_rgc/evals/uprime_rpc_synthetic_recovery_coordinator.py"
-    ).exists()
-    assert not Path(
-        "tests/uprime_rpc_synthetic_recovery_coordinator_cases.py"
-    ).exists()
+def test_synthetic_recovery_coordinator_support_is_collected_exactly_once():
     collector = Path("tests/test_uprime_rpc_ledger.py").read_text(encoding="utf-8")
     import_line = (
         "from uprime_rpc_synthetic_recovery_coordinator_cases import *  # noqa: F403"
     )
-    assert collector.splitlines().count(import_line) == 0
-    assert collector.count("uprime_rpc_synthetic_recovery_coordinator_cases") == 0
+    assert collector.splitlines().count(import_line) == 1
+    assert collector.count("uprime_rpc_synthetic_recovery_coordinator_cases") == 1
 
 
 def test_anchor_preflight_compares_head_blob_despite_assume_unchanged(
