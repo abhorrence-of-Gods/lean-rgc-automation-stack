@@ -166,7 +166,8 @@
     "legacy"
   ],
   "test_v49_kernel_rpc_worker.py": [
-    "legacy"
+    "integration",
+    "e2e"
   ],
   "test_v50_premise_contextual_quotient.py": [
     "legacy"
@@ -334,6 +335,12 @@
     "legacy"
   ],
   "test_uprime_k0_foundations.py": [
+    "unit"
+  ],
+  "test_uprime_u05_identity.py": [
+    "unit"
+  ],
+  "test_uprime_u05_kill_probes.py": [
     "unit"
   ],
   "test_uprime_t0_errata.py": [

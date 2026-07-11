@@ -28,6 +28,8 @@ def schemaVersion : String := "lean-rgc-kernel-state-v3"
 def transitionVersion : String := "lean-rgc-kernel-transition-v1"
 def minimalSupportVersion : String := "lean-rgc-minimal-support-v1"
 def rpcProtocolVersion : String := "lean-rgc-jsonl-rpc-v2"
+def u05SemanticsVersion : String := "lean-rgc-u05-rpc-semantics-v1"
+def u05ReplayVersion : String := "lean-rgc-u05-replay-v1"
 
 partial def jsonArr (xs : List Json) : Json := Json.arr xs.toArray
 partial def obj (xs : List (String × Json)) : Json := Json.mkObj xs
@@ -78,6 +80,14 @@ partial def jsonGetNat? (j : Json) (k : String) : Option Nat :=
 
 partial def jsonGetObj? (j : Json) (k : String) : Option Json :=
   jsonGetObjVal? j k
+
+def jsonStrOrNull : Option String → Json
+  | some s => Json.str s
+  | none => Json.null
+
+def jsonNatOrNull : Option Nat → Json
+  | some n => Json.num n
+  | none => Json.null
 
 partial def jsonGetStrArray? (j : Json) (k : String) : Option (List String) :=
   match jsonGetObjVal? j k with
@@ -586,6 +596,13 @@ structure KState where
   status : String := "open"
   minimalSupport : Json := emptyMinimalSupport
 
+structure TargetBinding where
+  target : MVarId
+  index : Nat
+  requestedMVar? : Option String
+  requestedSelector? : Option String
+  source : String
+
 structure WorkerState where
   sessionId : String
   states : Std.HashMap String KState := {}
@@ -596,6 +613,8 @@ structure WorkerState where
   imports : List String := defaultImports
   nRequests : Nat := 0
   nFailures : Nat := 0
+  nPrimaryExecutions : Nat := 0
+  nReplayExecutions : Nat := 0
 
 abbrev WRef := IO.Ref WorkerState
 
@@ -614,11 +633,110 @@ def metaCtx : Meta.Context := {}
 def prefixTacticLines (s : String) : List String :=
   (s.splitOn "\n").map (fun l => toString l.trimAscii) |>.filter (fun l => !l.isEmpty)
 
-/-- Apply one tactic string to the first open goal of a stored state, threading
-Core/Meta/Term state.  Shared by prefix replay and `apply_tactic`. -/
-unsafe def stepTactic (base : KState) (tactic : String) (opts : Options) : IO KState := do
-  let goal := base.goals.head!
-  let tail := base.goals.tail!
+def goalAt? : List MVarId → Nat → Option MVarId
+  | [], _ => none
+  | g :: _, 0 => some g
+  | _ :: gs, n + 1 => goalAt? gs n
+
+def findGoalByString? (goals : List MVarId) (needle : String) : Option (Nat × MVarId) :=
+  let rec go (rest : List MVarId) (index : Nat) : Option (Nat × MVarId) :=
+    match rest with
+    | [] => none
+    | g :: gs =>
+        if mvarIdString g == needle then some (index, g)
+        else go gs (index + 1)
+  go goals 0
+
+def targetBindingJson (binding : TargetBinding) : Json :=
+  obj [
+    ("requested_target_mvar_id", jsonStrOrNull binding.requestedMVar?),
+    ("requested_target_selector", jsonStrOrNull binding.requestedSelector?),
+    ("effective_target_mvar_id", Json.str (mvarIdString binding.target)),
+    ("effective_target_goal_index", Json.num binding.index),
+    ("source", Json.str binding.source)
+  ]
+
+def unresolvedTargetBindingJson (requestedMVar? requestedSelector? : Option String) : Json :=
+  obj [
+    ("requested_target_mvar_id", jsonStrOrNull requestedMVar?),
+    ("requested_target_selector", jsonStrOrNull requestedSelector?),
+    ("effective_target_mvar_id", Json.null),
+    ("effective_target_goal_index", Json.null),
+    ("source", Json.str "unresolved")
+  ]
+
+def resolveTarget (base : KState) (action : Json) (requestTarget? : Option String) : Except String TargetBinding := do
+  if base.goals.isEmpty then
+    throw "target resolution failed: state has no open goals"
+  let actionTarget? := jsonGetStr? action "target_mvar_id"
+  let selector? := jsonGetStr? action "target_selector"
+  let requestedMVar? ←
+    match requestTarget?, actionTarget? with
+    | some lhs, some rhs =>
+        if lhs == rhs then pure (some lhs)
+        else throw "target resolution failed: request/action target_mvar_id disagree"
+    | some lhs, none => pure (some lhs)
+    | none, some rhs => pure (some rhs)
+    | none, none => pure none
+  let resolved ←
+    match requestedMVar? with
+    | some raw =>
+        match findGoalByString? base.goals raw with
+        | some pair => pure pair
+        | none => throw ("target resolution failed: target_mvar_id is not an open goal: " ++ raw)
+    | none =>
+        match selector? with
+        | some "first" => pure (0, base.goals.head!)
+        | some "last" =>
+            let index := base.goals.length - 1
+            match goalAt? base.goals index with
+            | some g => pure (index, g)
+            | none => throw "target resolution failed: last goal is unavailable"
+        | some other => throw ("target resolution failed: unknown target_selector: " ++ other)
+        | none => pure (0, base.goals.head!)
+  let index := resolved.fst
+  let goal := resolved.snd
+  match selector? with
+  | some "first" =>
+      if index != 0 then
+        throw "target resolution failed: target_mvar_id disagrees with target_selector=first"
+  | some "last" =>
+      if index + 1 != base.goals.length then
+        throw "target resolution failed: target_mvar_id disagrees with target_selector=last"
+  | some other => throw ("target resolution failed: unknown target_selector: " ++ other)
+  | none => pure ()
+  let source :=
+    if requestTarget?.isSome then "request_target_mvar_id"
+    else if actionTarget?.isSome then "action_target_mvar_id"
+    else if selector?.isSome then "action_target_selector"
+    else "legacy_default_first"
+  pure {target := goal, index := index, requestedMVar? := requestedMVar?, requestedSelector? := selector?, source := source}
+
+def effectiveOptions (base : KState) (action : Json) : Options :=
+  match jsonGetNat? action "max_heartbeats" with
+  | some hb => base.opts.set `maxHeartbeats hb
+  | none => base.opts
+
+def budgetJson (base : KState) (action : Json) : Json :=
+  let requested := jsonGetNat? action "max_heartbeats"
+  let effective : Nat := (effectiveOptions base action).get `maxHeartbeats 200000
+  let effectiveCounter : Nat := effective * 1000
+  obj [
+    ("requested_max_heartbeats_option", jsonNatOrNull requested),
+    ("effective_max_heartbeats_option", Json.num effective),
+    ("effective_max_heartbeats_counter", if effective == 0 then Json.null else Json.num effectiveCounter),
+    ("unlimited", Json.bool (effective == 0)),
+    ("source", Json.str (if requested.isSome then "explicit_action" else "inherited_state")),
+    ("cache_policy", Json.str "bypass"),
+    ("cache_lookup_performed", Json.bool false),
+    ("consumption_reported", Json.bool false),
+    ("episode_budget", Json.str "NOT_ENFORCED_DEVELOPMENT_ONLY")
+  ]
+
+/-- Apply one tactic string to an explicitly resolved open goal, threading
+Core/Meta/Term state and sweeping every goal assigned as a side effect. -/
+unsafe def stepTacticAt (base : KState) (tactic : String) (opts : Options) (binding : TargetBinding) : IO KState := do
+  let goal := binding.target
   let stx ←
     match Parser.runParserCategory base.env `tactic tactic with
     | .ok stx => pure stx
@@ -626,7 +744,13 @@ unsafe def stepTactic (base : KState) (tactic : String) (opts : Options) : IO KS
   let run : MetaM (List MVarId × Term.State) := Lean.Elab.runTactic goal stx {} base.termState
   let ((newGoalsHead, termState'), coreState', metaState') ←
     run.toIO (coreCtx base.env opts tactic) {base.coreState with env := base.env} metaCtx {base.metaState with mctx := base.metaState.mctx}
-  let goals' := newGoalsHead ++ tail
+  let candidates := base.goals.take binding.index ++ newGoalsHead ++ base.goals.drop (binding.index + 1)
+  let mctx := metaState'.mctx
+  let goals' := candidates.foldl (fun acc g =>
+    if mctx.eAssignment.contains g then acc
+    else if (mctx.decls.find? g).isNone then acc
+    else if acc.contains g then acc
+    else acc ++ [g]) []
   pure {base with
     env := coreState'.env,
     opts := opts,
@@ -635,6 +759,12 @@ unsafe def stepTactic (base : KState) (tactic : String) (opts : Options) : IO KS
     termState := termState',
     goals := goals',
     status := if goals'.isEmpty then "closed" else "open"}
+
+/-- Legacy first-goal wrapper used only for frozen task-prefix tactics. -/
+unsafe def stepTactic (base : KState) (tactic : String) (opts : Options) : IO KState := do
+  match resolveTarget base (obj []) none with
+  | .error e => throw <| IO.userError e
+  | .ok binding => stepTacticAt base tactic opts binding
 
 /-- Replay `task.prefix` tactic lines so the stored initial state is the
 post-prefix state (mirrors how the persistent worker audits
@@ -652,6 +782,10 @@ unsafe def replayPrefix (ks : KState) (proofPrefix : String) : IO KState := do
   pure {cur with proofPrefix := proofPrefix}
 
 unsafe def initGoalState (id : String) (task : Json) (env : Environment) (opts : Options) : IO KState := do
+  let opts :=
+    match jsonGetNat? task "max_heartbeats" with
+    | some hb => opts.set `maxHeartbeats hb
+    | none => opts
   let statement := jsonGetStr? task "statement" |>.getD "True"
   let cctx := coreCtx env opts statement
   let cstate : Core.State := { env := env }
@@ -830,60 +964,204 @@ def minimalSupportJson (ks : KState) (closedGoals : List MVarId) : IO Json := do
         ("error", Json.str (toString e))
       ])
 
-unsafe def replayCertificate (before : KState) (after : KState) (action : Json) : IO Json := do
-  let tactic := jsonGetStr? action "tactic" |>.getD ""
-  let beforePrefix := before.proofPrefix
-  let afterPrefix := after.proofPrefix
-  let sourceHash := hashString ((jsonGetStr? before.task "statement" |>.getD "") ++ "\n" ++ afterPrefix)
-  let replayStatus := if after.goals.isEmpty then "pending" else "pending"
-  pure (obj [
-    ("proof_prefix_before", Json.str beforePrefix),
-    ("action", Json.str tactic),
-    ("proof_prefix_after", Json.str afterPrefix),
-    ("source_check_hash", Json.str sourceHash),
-    ("replay_status", Json.str replayStatus)
-  ])
+partial def stripReplayTransport : Json → Json
+  | Json.obj kvs =>
+      Json.mkObj <| kvs.toList.filterMap fun kv =>
+        let key := kv.fst
+        if key == "state_id" || key == "parent_state_id" ||
+            key == "state_hash_raw" || key == "state_hash_norm" ||
+            key == "graph_id" || key == "local_context_graph_id" then
+          none
+        else
+          some (key, stripReplayTransport kv.snd)
+  | Json.arr xs => Json.arr (xs.map stripReplayTransport)
+  | other => other
 
-unsafe def applyTacticCore (base : KState) (action : Json) (newId : String) : IO (KState × Json × Json) := do
+def jsonExactEq (lhs rhs : Json) : Bool :=
+  Json.compress lhs == Json.compress rhs
+
+def mvarsOf (ks : KState) : List MVarId :=
+  ks.metaState.mctx.decls.toList.map Prod.fst
+
+def assignedMvarsOf (ks : KState) : List MVarId :=
+  (mvarsOf ks).filter fun m => ks.metaState.mctx.eAssignment.contains m
+
+def mvarIdJson (xs : List MVarId) : Json :=
+  jsonArr (xs.map (fun m => Json.str (mvarIdString m)))
+
+structure TransitionExecution where
+  child : KState
+  delta : Json
+  targetBinding : Json
+  budget : Json
+  kernelState : Json
+  comparable : Json
+
+def transitionComparableJson
+    (action childKernel delta targetBinding budget : Json)
+    (status : String) : Json :=
+  obj [
+    ("semantic_status", Json.str status),
+    ("post_kernel_state", stripReplayTransport childKernel),
+    ("state_delta", stripReplayTransport delta),
+    ("action_id", Json.str (jsonGetStr? action "action_id" |>.getD "")),
+    ("target_binding", targetBinding),
+    ("budget", budget),
+    ("normalized_failure_class", Json.null)
+  ]
+
+unsafe def executeTacticCore
+    (base : KState) (action : Json) (requestTarget? : Option String)
+    (newId : String) : IO TransitionExecution := do
+  let binding ←
+    match resolveTarget base action requestTarget? with
+    | .ok binding => pure binding
+    | .error e => throw <| IO.userError e
   let tactic := jsonGetStr? action "tactic" |>.getD ""
-  if base.goals.isEmpty then
-    let child := {base with id := newId, parent? := some base.id, status := "closed", minimalSupport := emptyMinimalSupport}
-    let replay ← replayCertificate base child action
-    pure (child, obj [
-      ("closed_goals", jsonArr []),
-      ("new_goals", jsonArr []),
-      ("assigned_mvars", jsonArr []),
-      ("new_mvars", jsonArr []),
-      ("minimal_support", emptyMinimalSupport)
-    ], replay)
+  let opts := effectiveOptions base action
+  let beforeMvars := mvarsOf base
+  let beforeAssigned := assignedMvarsOf base
+  let stepped ← stepTacticAt base tactic opts binding
+  let afterMvars := mvarsOf stepped
+  let afterAssigned := assignedMvarsOf stepped
+  let newlyAssigned := afterAssigned.filter fun m => !(beforeAssigned.contains m)
+  let closedGoals := base.goals.filter fun g => newlyAssigned.contains g
+  let newGoals := stepped.goals.filter fun m => !(base.goals.contains m)
+  let newMvars := afterMvars.filter fun m => !(beforeMvars.contains m)
+  let minimalSupport ← minimalSupportJson stepped closedGoals
+  let child : KState := {stepped with
+    id := newId,
+    proofPrefix := if base.proofPrefix.trimAscii.isEmpty then tactic else base.proofPrefix ++ "\n" ++ tactic,
+    parent? := some base.id,
+    minimalSupport := minimalSupport
+  }
+  let delta := obj [
+    ("closed_goals", mvarIdJson closedGoals),
+    ("new_goals", mvarIdJson newGoals),
+    ("assigned_mvars", mvarIdJson newlyAssigned),
+    ("new_mvars", mvarIdJson newMvars),
+    ("before_goals", mvarIdJson base.goals),
+    ("after_goals", mvarIdJson child.goals),
+    ("before_mvars", mvarIdJson beforeMvars),
+    ("after_mvars", mvarIdJson afterMvars),
+    ("before_assigned_mvars", mvarIdJson beforeAssigned),
+    ("after_assigned_mvars", mvarIdJson afterAssigned),
+    ("minimal_support", minimalSupport)
+  ]
+  let targetBinding := targetBindingJson binding
+  let budget := budgetJson base action
+  let kernelState ← serializeKernelState child
+  let status := if child.goals.isEmpty then "closed" else "open"
+  let comparable := transitionComparableJson action kernelState delta targetBinding budget status
+  pure ({
+    child := child
+    delta := delta
+    targetBinding := targetBinding
+    budget := budget
+    kernelState := kernelState
+    comparable := comparable
+  } : TransitionExecution)
+
+def replayCertificateJson
+    (primaryComparable replayComparable : Json)
+    (postStateMatch deltaMatch targetMatch capMatch : Bool)
+    (error? : Option String := none) : Json :=
+  let responseMatch := jsonExactEq primaryComparable replayComparable
+  obj [
+    ("schema_version", Json.str u05ReplayVersion),
+    ("replay_status", Json.str (if responseMatch && postStateMatch && deltaMatch && targetMatch && capMatch then "verified" else "mismatch")),
+    ("reexecution_performed", Json.bool true),
+    ("verification_method", Json.str "fresh_from_immutable_before_state"),
+    ("semantic_response_match", Json.bool responseMatch),
+    ("post_state_match", Json.bool postStateMatch),
+    ("delta_match", Json.bool deltaMatch),
+    ("target_match", Json.bool targetMatch),
+    ("cap_match", Json.bool capMatch),
+    ("error", jsonStrOrNull error?),
+    ("primary_comparable", primaryComparable),
+    ("replay_comparable", replayComparable)
+  ]
+
+unsafe def successReplayCertificate
+    (base : KState) (action : Json) (requestTarget? : Option String)
+    (newId : String) (primary : TransitionExecution) : IO Json := do
+  try
+    let replay ← executeTacticCore base action requestTarget? newId
+    pure <| replayCertificateJson primary.comparable replay.comparable
+      (jsonExactEq (stripReplayTransport primary.kernelState) (stripReplayTransport replay.kernelState))
+      (jsonExactEq primary.delta replay.delta)
+      (jsonExactEq primary.targetBinding replay.targetBinding)
+      (jsonExactEq primary.budget replay.budget)
+  catch e =>
+    pure <| replayCertificateJson primary.comparable Json.null false false false false (some (toString e))
+
+def normalizedFailureClass (message : String) : String :=
+  if (message.splitOn "heartbeat").length > 1 || (message.splitOn "maximum heartbeats").length > 1 then
+    "heartbeat_exhaustion"
+  else if (message.splitOn "target resolution failed").length > 1 then
+    "target_resolution"
   else
-    let opts :=
-      match jsonGetNat? action "max_heartbeats" with
-      | some hb => base.opts.set `maxHeartbeats hb
-      | none => base.opts
-    let beforeMvars := base.metaState.mctx.decls.toList.map Prod.fst
-    let stepped ← stepTactic base tactic opts
-    let goals' := stepped.goals
-    let closedGoals := base.goals.filter fun g => !(goals'.contains g)
-    let minimalSupport ← minimalSupportJson stepped closedGoals
-    let child : KState := {stepped with
-      id := newId,
-      proofPrefix := if base.proofPrefix.trimAscii.isEmpty then tactic else base.proofPrefix ++ "\n" ++ tactic,
-      parent? := some base.id,
-      minimalSupport := minimalSupport
-    }
-    let afterMvars := stepped.metaState.mctx.decls.toList.map Prod.fst
-    let newMvars := afterMvars.filter fun m => !(beforeMvars.contains m)
-    let assigned := beforeMvars.filter fun m => stepped.metaState.mctx.eAssignment.contains m
-    let delta := obj [
-      ("closed_goals", jsonArr (closedGoals.map (fun m => Json.str (mvarIdString m)))),
-      ("new_goals", jsonArr (goals'.filter (fun m => !(base.goals.contains m)) |>.map (fun m => Json.str (mvarIdString m)))),
-      ("assigned_mvars", jsonArr (assigned.map (fun m => Json.str (mvarIdString m)))),
-      ("new_mvars", jsonArr (newMvars.map (fun m => Json.str (mvarIdString m)))),
-      ("minimal_support", minimalSupport)
-    ]
-    let replay ← replayCertificate base child action
-    pure (child, delta, replay)
+    "ordinary_failure"
+
+def failureComparableJson
+    (base : KState) (action : Json) (requestTarget? : Option String)
+    (beforeKernel : Json) (message : String) : Json :=
+  let selector? := jsonGetStr? action "target_selector"
+  let actionTarget? := jsonGetStr? action "target_mvar_id"
+  let requestedMVar? := requestTarget?.orElse fun _ => actionTarget?
+  let targetBinding :=
+    match resolveTarget base action requestTarget? with
+    | .ok binding => targetBindingJson binding
+    | .error _ => unresolvedTargetBindingJson requestedMVar? selector?
+  obj [
+    ("semantic_status", Json.str (normalizedFailureClass message)),
+    ("post_kernel_state", stripReplayTransport beforeKernel),
+    ("state_delta", Json.null),
+    ("action_id", Json.str (jsonGetStr? action "action_id" |>.getD "")),
+    ("target_binding", targetBinding),
+    ("budget", budgetJson base action),
+    ("normalized_failure_class", Json.str (normalizedFailureClass message))
+  ]
+
+unsafe def failureReplayCertificate
+    (base : KState) (action : Json) (requestTarget? : Option String)
+    (newId : String) (beforeKernel : Json) (primaryMessage : String) : IO Json := do
+  let primaryComparable := failureComparableJson base action requestTarget? beforeKernel primaryMessage
+  try
+    let replay ← executeTacticCore base action requestTarget? newId
+    pure <| replayCertificateJson primaryComparable replay.comparable false false false
+      (jsonExactEq (budgetJson base action) replay.budget)
+      (some "primary failed but replay succeeded")
+  catch e =>
+    let replayMessage := toString e
+    let replayComparable := failureComparableJson base action requestTarget? beforeKernel replayMessage
+    let classMatch := normalizedFailureClass primaryMessage == normalizedFailureClass replayMessage
+    pure <| replayCertificateJson primaryComparable replayComparable true classMatch true true
+      (if classMatch then none else some replayMessage)
+
+unsafe def applyTacticCore
+    (base : KState) (action : Json) (requestTarget? : Option String)
+    (newId : String) : IO (TransitionExecution × Json) := do
+  let primary ← executeTacticCore base action requestTarget? newId
+  let replay ← successReplayCertificate base action requestTarget? newId primary
+  pure (primary, replay)
+
+def unchangedDeltaJson (base : KState) : Json :=
+  let mvars := mvarsOf base
+  let assigned := assignedMvarsOf base
+  obj [
+    ("closed_goals", jsonArr []),
+    ("new_goals", jsonArr []),
+    ("assigned_mvars", jsonArr []),
+    ("new_mvars", jsonArr []),
+    ("before_goals", mvarIdJson base.goals),
+    ("after_goals", mvarIdJson base.goals),
+    ("before_mvars", mvarIdJson mvars),
+    ("after_mvars", mvarIdJson mvars),
+    ("before_assigned_mvars", mvarIdJson assigned),
+    ("after_assigned_mvars", mvarIdJson assigned),
+    ("minimal_support", emptyMinimalSupport)
+  ]
 
 def auditStatusFromTransitionStatus (s : String) : String :=
   if s == "success" then "success"
@@ -891,6 +1169,11 @@ def auditStatusFromTransitionStatus (s : String) : String :=
   else if s == "timeout" then "timeout"
   else if s == "elab_error" then "elab_error"
   else "fail"
+
+def failureTransitionStatus (failedStatus replayStatus : String) : String :=
+  if replayStatus != "verified" then "censor"
+  else if failedStatus == "timeout" then "timeout"
+  else "failure"
 
 def proofStateJson (ks : KState) : Json :=
   obj [
@@ -950,6 +1233,8 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
         ("n_states", Json.num st.states.size),
         ("n_requests", Json.num st.nRequests),
         ("n_failures", Json.num st.nFailures),
+        ("n_primary_executions", Json.num st.nPrimaryExecutions),
+        ("n_replay_executions", Json.num st.nReplayExecutions),
         ("imports", jsonArr (st.imports.map Json.str))
       ])
   | "register_task" | "init_state" => do
@@ -982,6 +1267,22 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
   | "list_states" => do
       let states := (← ref.get).states.toList.map fun kv => stateSummaryJson kv.snd
       pure (ok [("states", jsonArr states)])
+  | "discard_state" => do
+      let sid := jsonGetStr? req "state_id" |>.getD ""
+      let st ← ref.get
+      match st.states.get? sid with
+      | none => pure (err ("unknown state_id: " ++ sid))
+      | some _ =>
+          let before := st.states.size
+          let states := st.states.erase sid
+          ref.set {st with states := states}
+          pure (ok [
+            ("u05_semantics_version", Json.str u05SemanticsVersion),
+            ("state_id", Json.str sid),
+            ("discarded", Json.bool true),
+            ("n_states_before", Json.num before),
+            ("n_states_after", Json.num states.size)
+          ])
   | "branch_state" => do
       let sid := jsonGetStr? req "state_id" |>.getD ""
       match (← ref.get).states.get? sid with
@@ -1011,6 +1312,7 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
   | "apply_tactic" => do
       let action := jsonGetObj? req "action" |>.getD Json.null
       let actionId := jsonGetStr? action "action_id" |>.getD (hashString (jsonGetStr? action "tactic" |>.getD ""))
+      let requestTarget? := jsonGetStr? req "target_mvar_id"
       let sid? := jsonGetStr? req "state_id"
       let base? ←
         match sid? with
@@ -1035,24 +1337,48 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
           let (newId, st1) := freshId st
           let result ←
             try
-              let (child, delta, replay) ← applyTacticCore base action newId
-              pure (Except.ok (child, delta, replay))
+              let (primary, replay) ← applyTacticCore base action requestTarget? newId
+              pure (Except.ok (primary, replay))
             catch e =>
               let msg := toString e
-              let failed : KState := {base with id := newId, parent? := some base.id, status := if (msg.splitOn "heartbeat").length > 1 then "timeout" else "failed", minimalSupport := emptyMinimalSupport}
-              let replay ← replayCertificate base failed action
-              pure (Except.error (failed, msg, replay))
+              let failureClass := normalizedFailureClass msg
+              let failed : KState := {base with
+                id := newId
+                parent? := some base.id
+                status := if failureClass == "heartbeat_exhaustion" then "timeout" else "failed"
+                minimalSupport := emptyMinimalSupport}
+              let replay ← failureReplayCertificate base action requestTarget? newId beforeKernel msg
+              let selector? := jsonGetStr? action "target_selector"
+              let actionTarget? := jsonGetStr? action "target_mvar_id"
+              let requestedMVar? := requestTarget?.orElse fun _ => actionTarget?
+              let targetBinding :=
+                match resolveTarget base action requestTarget? with
+                | .ok binding => targetBindingJson binding
+                | .error _ => unresolvedTargetBindingJson requestedMVar? selector?
+              pure (Except.error (failed, msg, replay, targetBinding, budgetJson base action))
           let t1 ← IO.monoMsNow
+          let stExec := {st1 with
+            nPrimaryExecutions := st1.nPrimaryExecutions + 1
+            nReplayExecutions := st1.nReplayExecutions + 1}
           match result with
-          | .ok (child, delta, replay) =>
-              ref.set {st1 with states := st1.states.insert child.id child}
-              let afterKernel ← serializeKernelState child
-              let status := if child.goals.isEmpty then "success" else "partial"
+          | .ok (primary, replay) =>
+              let child := primary.child
+              let delta := primary.delta
+              let afterKernel := primary.kernelState
+              let replayVerified := jsonGetStr? replay "replay_status" == some "verified"
+              let status :=
+                if !replayVerified then "censor"
+                else if child.goals.isEmpty then "success"
+                else "partial"
+              if replayVerified then
+                ref.set {stExec with states := stExec.states.insert child.id child}
+              else
+                ref.set {stExec with nFailures := stExec.nFailures + 1}
               let audit := obj [
                 ("task_id", Json.str (jsonGetStr? child.task "task_id" |>.getD child.id)),
                 ("state_id", Json.str base.id),
                 ("action_id", Json.str actionId),
-                ("status", Json.str (auditStatusFromTransitionStatus status)),
+                ("status", Json.str (if replayVerified then auditStatusFromTransitionStatus status else "fail")),
                 ("elapsed_ms", Json.num (t1 - t0)),
                 ("heartbeats", Json.null),
                 ("stdout", Json.str ""),
@@ -1066,35 +1392,41 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
                   ("kernel_state_after", afterKernel),
                   ("state_delta", delta),
                   ("replay", replay),
+                  ("heartbeat_telemetry", primary.budget),
+                  ("target_binding", primary.targetBinding),
                   ("before_persistent_state_id", Json.str base.id),
-                  ("after_persistent_state_id", Json.str child.id)
+                  ("after_persistent_state_id", if replayVerified then Json.str child.id else Json.null)
                 ])
               ]
               pure (ok [
+                ("u05_semantics_version", Json.str u05SemanticsVersion),
                 ("status", Json.str status),
+                ("censor_reason", if replayVerified then Json.null else Json.str "replay_mismatch"),
                 ("before_state_id", Json.str base.id),
                 ("after_state_id", Json.str child.id),
+                ("after_state_retained", Json.bool replayVerified),
+                ("target_mvar_id", jsonGetObjVal? primary.targetBinding "effective_target_mvar_id" |>.getD Json.null),
+                ("target_binding", primary.targetBinding),
+                ("budget", primary.budget),
                 ("state_delta", delta),
                 ("kernel_state_before", beforeKernel),
                 ("kernel_state_after", afterKernel),
                 ("kernel_state", afterKernel),
                 ("state", stateSummaryJson child),
                 ("audit", audit),
+                ("replay", replay),
+                ("replay_certificate", replay),
                 ("messages", jsonArr []),
                 ("elapsed_ms", Json.num (t1 - t0)),
                 ("heartbeats", Json.null)
               ])
-          | .error (failed, msg, replay) =>
-              ref.set {st1 with states := st1.states.insert failed.id failed, nFailures := st1.nFailures + 1}
+          | .error (failed, msg, replay, targetBinding, budget) =>
+              ref.set {stExec with nFailures := stExec.nFailures + 1}
               let afterKernel ← serializeKernelState failed
-              let status := if failed.status == "timeout" then "timeout" else "failure"
-              let delta := obj [
-                ("closed_goals", jsonArr []),
-                ("new_goals", jsonArr []),
-                ("assigned_mvars", jsonArr []),
-                ("new_mvars", jsonArr []),
-                ("minimal_support", emptyMinimalSupport)
-              ]
+              let replayStatus := jsonGetStr? replay "replay_status" |>.getD "missing"
+              let replayVerified := replayStatus == "verified"
+              let status := failureTransitionStatus failed.status replayStatus
+              let delta := unchangedDeltaJson base
               let audit := obj [
                 ("task_id", Json.str (jsonGetStr? failed.task "task_id" |>.getD failed.id)),
                 ("state_id", Json.str base.id),
@@ -1112,24 +1444,39 @@ unsafe def handle (ref : WRef) (req : Json) : IO Json := do
                   ("kernel_state_after", afterKernel),
                   ("state_delta", delta),
                   ("replay", replay),
+                  ("heartbeat_telemetry", budget),
+                  ("target_binding", targetBinding),
                   ("before_persistent_state_id", Json.str base.id),
-                  ("after_persistent_state_id", Json.str failed.id)
+                  ("after_persistent_state_id", Json.null)
                 ])
               ]
-              pure (ok [
+              let statusDetail :=
+                if replayVerified then
+                  [("normalized_failure_class", Json.str (normalizedFailureClass msg))]
+                else
+                  [("censor_reason", Json.str "replay_mismatch")]
+              pure (ok ([
+                ("u05_semantics_version", Json.str u05SemanticsVersion),
                 ("status", Json.str status),
+              ] ++ statusDetail ++ [
                 ("before_state_id", Json.str base.id),
                 ("after_state_id", Json.str failed.id),
+                ("after_state_retained", Json.bool false),
+                ("target_mvar_id", jsonGetObjVal? targetBinding "effective_target_mvar_id" |>.getD Json.null),
+                ("target_binding", targetBinding),
+                ("budget", budget),
                 ("state_delta", delta),
                 ("kernel_state_before", beforeKernel),
                 ("kernel_state_after", afterKernel),
                 ("kernel_state", afterKernel),
                 ("state", stateSummaryJson failed),
                 ("audit", audit),
+                ("replay", replay),
+                ("replay_certificate", replay),
                 ("messages", jsonArr [Json.str msg]),
                 ("elapsed_ms", Json.num (t1 - t0)),
                 ("heartbeats", Json.null)
-              ])
+              ]))
   | "shutdown" => pure (ok [("shutdown", Json.bool true)])
   | _ => pure (err ("unknown cmd: " ++ cmd))
 

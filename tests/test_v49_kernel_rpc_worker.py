@@ -37,11 +37,19 @@ def test_kernel_rpc_worker_is_packaged_and_selectable(tmp_path: Path):
     assert "Lean.Elab.runTactic" in text
     assert "lean_kernel_rpc_in_memory_v1" in text
     assert 'def rpcProtocolVersion : String := "lean-rgc-jsonl-rpc-v2"' in text
+    assert 'def failureTransitionStatus (failedStatus replayStatus : String) : String :=' in text
+    assert 'if replayStatus != "verified" then "censor"' in text
+    failure_branch = text.split("| .error (failed, msg, replay, targetBinding, budget) =>", 1)[1]
+    failure_branch = failure_branch.split('| "shutdown" =>', 1)[0]
+    assert "let status := failureTransitionStatus failed.status replayStatus" in failure_branch
+    assert '[("normalized_failure_class", Json.str (normalizedFailureClass msg))]' in failure_branch
+    assert '[("censor_reason", Json.str "replay_mismatch")]' in failure_branch
+    assert "states := stExec.states.insert failed.id failed" not in failure_branch
     assert "let rep ← handleLine ref line" in text
     assert text.count("stdout.putStrLn") == 1
 
     manifest = native_worker_manifest(tmp_path, exec_mode="kernel_rpc", force=True)
-    assert manifest["version"].startswith("lean-rgc-native-worker-v50")
+    assert manifest["version"].startswith("lean-rgc-native-worker-v51")
     assert manifest["exec_mode"] == "kernel_rpc"
     assert Path(manifest["worker_path"]).name == "RGCKernelRPC.lean"
 
@@ -132,3 +140,163 @@ def test_kernel_rpc_worker_applies_intro_and_rfl_in_memory():
     assert rfl["audit"]["audit_flags"]["execution_backend"] == "lean_kernel_rpc_in_memory_v1"
     assert replies[6]["ok"] is True
     assert replies[6]["shutdown"] is True
+
+
+@pytest.mark.skipif(_lean_bin() is None, reason="Lean binary is not installed")
+def test_u05_rpc_routes_non_head_deltas_replays_and_discards():
+    lean = _lean_bin()
+    assert lean is not None
+    worker = packaged_kernel_rpc_worker_path()
+    proc = subprocess.Popen(
+        [lean, "--run", str(worker), "--imports", "Lean"],
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+        encoding="utf-8",
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    assert proc.stdin is not None
+    assert proc.stdout is not None
+
+    request_index = 0
+
+    def rpc(cmd: str, **payload: object) -> dict[str, object]:
+        nonlocal request_index
+        request_index += 1
+        request = {"id": f"u05-{request_index}", "cmd": cmd, **payload}
+        proc.stdin.write(json.dumps(request, ensure_ascii=True) + "\n")
+        proc.stdin.flush()
+        raw = proc.stdout.readline()
+        assert raw, proc.stderr.read() if proc.stderr is not None else "worker exited"
+        reply = json.loads(raw)
+        assert reply["id"] == request["id"]
+        assert reply["rpc_protocol_version"] == "lean-rgc-jsonl-rpc-v2"
+        return reply
+
+    try:
+        init = rpc(
+            "init_state",
+            task={
+                "task_id": "unit_u05_non_head",
+                "statement": "True ∧ True",
+                "imports": ["Lean"],
+                "max_heartbeats": 20_000,
+            },
+        )
+        root_state_id = init["state"]["state_id"]
+        root_goal_id = init["kernel_state"]["goals"][0]["mvar_id"]
+        split = rpc(
+            "apply_tactic",
+            state_id=root_state_id,
+            action={
+                "action_id": "unit_u05_constructor_first",
+                "tactic": "constructor",
+                "target_selector": "first",
+                "max_heartbeats": 20_000,
+            },
+        )
+        assert split["status"] == "partial"
+        assert split["after_state_retained"] is True
+        split_goals = [row["mvar_id"] for row in split["kernel_state_after"]["goals"]]
+        assert len(split_goals) == 2
+        assert root_goal_id in split["state_delta"]["assigned_mvars"]
+        assert split["replay"]["replay_status"] == "verified"
+        assert split["replay"]["reexecution_performed"] is True
+        assert split["replay"]["primary_comparable"] == split["replay"]["replay_comparable"]
+        assert split["budget"] == {
+            "requested_max_heartbeats_option": 20_000,
+            "effective_max_heartbeats_option": 20_000,
+            "effective_max_heartbeats_counter": 20_000_000,
+            "unlimited": False,
+            "source": "explicit_action",
+            "cache_policy": "bypass",
+            "cache_lookup_performed": False,
+            "consumption_reported": False,
+            "episode_budget": "NOT_ENFORCED_DEVELOPMENT_ONLY",
+        }
+
+        head_goal, tail_goal = split_goals
+        tail = rpc(
+            "apply_tactic",
+            state_id=split["after_state_id"],
+            action={
+                "action_id": "unit_u05_exact_tail",
+                "tactic": "exact True.intro",
+                "target_selector": "last",
+                "max_heartbeats": 20_000,
+            },
+        )
+        assert tail["status"] == "partial"
+        assert tail["target_binding"]["effective_target_goal_index"] == 1
+        assert tail["target_binding"]["effective_target_mvar_id"] == tail_goal
+        assert tail["target_binding"]["source"] == "action_target_selector"
+        assert [row["mvar_id"] for row in tail["kernel_state_after"]["goals"]] == [head_goal]
+        # The assigned root remains in the mctx, but the transition delta is a
+        # true before/after difference and therefore reports only this tail.
+        assert tail_goal in tail["state_delta"]["assigned_mvars"]
+        assert root_goal_id not in tail["state_delta"]["assigned_mvars"]
+        assert root_goal_id in tail["state_delta"]["before_assigned_mvars"]
+        assert root_goal_id in tail["state_delta"]["after_assigned_mvars"]
+        assert tail["replay"]["replay_status"] == "verified"
+
+        side_init = rpc(
+            "init_state",
+            task={
+                "task_id": "unit_u05_tail_sweep",
+                "statement": "∃ n : Nat, n = 0",
+                "prefix": "refine ⟨?_, ?_⟩",
+                "imports": ["Lean"],
+                "max_heartbeats": 20_000,
+            },
+        )
+        side_goals = [row["mvar_id"] for row in side_init["kernel_state"]["goals"]]
+        assert len(side_goals) == 2
+        side = rpc(
+            "apply_tactic",
+            state_id=side_init["state"]["state_id"],
+            target_mvar_id=side_goals[1],
+            action={
+                "action_id": "unit_u05_side_effect_rfl",
+                "tactic": "rfl",
+                "max_heartbeats": 20_000,
+            },
+        )
+        assert side["status"] == "success"
+        assert side["kernel_state_after"]["goals"] == []
+        assert set(side["state_delta"]["assigned_mvars"]) == set(side_goals)
+        assert set(side["state_delta"]["closed_goals"]) == set(side_goals)
+
+        before_failure = rpc("status")
+        failed = rpc(
+            "apply_tactic",
+            state_id=tail["after_state_id"],
+            action={
+                "action_id": "unit_u05_inapplicable",
+                "tactic": "exact False.elim",
+                "target_selector": "first",
+                "max_heartbeats": 20_000,
+            },
+        )
+        assert failed["status"] == "failure"
+        assert failed["normalized_failure_class"] == "ordinary_failure"
+        assert failed["after_state_retained"] is False
+        assert failed["replay"]["replay_status"] == "verified"
+        assert rpc("status")["n_states"] == before_failure["n_states"]
+
+        before_discard = rpc("status")
+        assert before_discard["n_primary_executions"] == 4
+        assert before_discard["n_replay_executions"] == 4
+        # Every replay is transient: only initial/primary states are live.
+        assert before_discard["n_states"] == 5
+        discarded = rpc("discard_state", state_id=tail["after_state_id"])
+        assert discarded["discarded"] is True
+        assert discarded["n_states_after"] == discarded["n_states_before"] - 1
+        missing = rpc("get_state", state_id=tail["after_state_id"])
+        assert missing["ok"] is False
+        assert rpc("status")["n_states"] == 4
+        assert rpc("shutdown")["shutdown"] is True
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+        proc.wait(timeout=30)
