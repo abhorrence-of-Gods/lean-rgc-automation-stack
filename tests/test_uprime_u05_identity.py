@@ -138,6 +138,21 @@ CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB = CPU_SURVIVOR_AMENDMENT_BLOBS[
 ]
 CPU_SURVIVOR_AMENDMENT_PATHS = set(CPU_SURVIVOR_AMENDMENT_BLOBS)
 
+CPU_SURVIVOR_CLOSEOUT_PARENT = (
+    "ec7275d18755331285dc1b9ac4e9b5ccfbe13f17"
+)
+CPU_SURVIVOR_CLOSEOUT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_cpu_survivor_implementation_bundle_closeout_2026-07-12.md"
+)
+CPU_SURVIVOR_CLOSEOUT_DOCUMENT_BLOB = (
+    "c86f6d54be728d5bae429d1c7e362f580c3fe536"
+)
+CPU_SURVIVOR_CLOSEOUT_PATHS = {
+    CPU_SURVIVOR_CLOSEOUT_PATH,
+    "tests/test_uprime_u05_identity.py",
+}
+
 CPU_SURVIVOR_IMPLEMENTATION_ALLOWLIST = {
     "lean_rgc/odlrq/__init__.py",
     "lean_rgc/odlrq/contracts.py",
@@ -425,12 +440,71 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
                         assert "tests/test_uprime_u05_identity.py" in dirty
                         assert dirty <= CPU_SURVIVOR_MILESTONE_ALLOWLISTS[0]
                     else:
+                        closeout_additions = (
+                            _git(
+                                "log",
+                                "--diff-filter=A",
+                                "--format=%H",
+                                "--",
+                                CPU_SURVIVOR_CLOSEOUT_PATH,
+                            )
+                            .stdout.decode("ascii")
+                            .splitlines()
+                        )
+                        cpu_interval_head = head
+                        if closeout_additions:
+                            assert len(closeout_additions) == 1
+                            closeout_commit = closeout_additions[0]
+                            assert _raw_parents(closeout_commit) == [
+                                CPU_SURVIVOR_CLOSEOUT_PARENT
+                            ]
+                            closeout_changed = set(
+                                _git(
+                                    "diff-tree",
+                                    "--no-commit-id",
+                                    "--name-only",
+                                    "--no-renames",
+                                    "-r",
+                                    closeout_commit,
+                                )
+                                .stdout.decode("utf-8")
+                                .splitlines()
+                            )
+                            assert closeout_changed == CPU_SURVIVOR_CLOSEOUT_PATHS
+                            _assert_tree_blob(
+                                closeout_commit,
+                                CPU_SURVIVOR_CLOSEOUT_PATH,
+                                CPU_SURVIVOR_CLOSEOUT_DOCUMENT_BLOB,
+                            )
+                            closeout_test_row = _git(
+                                "ls-tree",
+                                closeout_commit,
+                                "--",
+                                "tests/test_uprime_u05_identity.py",
+                            ).stdout.decode("utf-8").split()
+                            assert len(closeout_test_row) == 4
+                            assert closeout_test_row[:2] == ["100644", "blob"]
+                            assert closeout_test_row[3] == (
+                                "tests/test_uprime_u05_identity.py"
+                            )
+                            assert (
+                                _git(
+                                    "merge-base",
+                                    "--is-ancestor",
+                                    closeout_commit,
+                                    head,
+                                    check=False,
+                                ).returncode
+                                == 0
+                            )
+                            cpu_interval_head = CPU_SURVIVOR_CLOSEOUT_PARENT
+
                         cpu_commits = (
                             _git(
                                 "rev-list",
                                 "--first-parent",
                                 "--reverse",
-                                f"{amendment_commit}..{head}",
+                                f"{amendment_commit}..{cpu_interval_head}",
                             )
                             .stdout.decode("ascii")
                             .splitlines()
@@ -474,12 +548,23 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
 
                         dirty = _dirty_paths()
                         if dirty:
-                            assert len(cpu_commits) < len(
-                                CPU_SURVIVOR_MILESTONE_ALLOWLISTS
-                            )
-                            assert dirty <= CPU_SURVIVOR_MILESTONE_ALLOWLISTS[
-                                len(cpu_commits)
-                            ]
+                            if dirty == CPU_SURVIVOR_CLOSEOUT_PATHS:
+                                assert not closeout_additions
+                                assert head == CPU_SURVIVOR_CLOSEOUT_PARENT
+                                assert (
+                                    _git(
+                                        "hash-object",
+                                        CPU_SURVIVOR_CLOSEOUT_PATH,
+                                    ).stdout.decode("ascii").strip()
+                                    == CPU_SURVIVOR_CLOSEOUT_DOCUMENT_BLOB
+                                )
+                            else:
+                                assert len(cpu_commits) < len(
+                                    CPU_SURVIVOR_MILESTONE_ALLOWLISTS
+                                )
+                                assert dirty <= CPU_SURVIVOR_MILESTONE_ALLOWLISTS[
+                                    len(cpu_commits)
+                                ]
                 elif head == U05_RESULT_COMMIT:
                     # Pre-commit validation of the exact two-path amendment.
                     dirty = _dirty_paths()
@@ -555,6 +640,23 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
                 CPU_SURVIVOR_AMENDMENT_PATH,
                 CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB,
             )
+            closeout_row = _git(
+                "ls-tree", "HEAD", "--", CPU_SURVIVOR_CLOSEOUT_PATH
+            ).stdout.decode("utf-8").split()
+            if parents == [CPU_SURVIVOR_CLOSEOUT_PARENT]:
+                assert closeout_row == [
+                    "100644",
+                    "blob",
+                    CPU_SURVIVOR_CLOSEOUT_DOCUMENT_BLOB,
+                    CPU_SURVIVOR_CLOSEOUT_PATH,
+                ]
+            elif closeout_row:
+                assert closeout_row == [
+                    "100644",
+                    "blob",
+                    CPU_SURVIVOR_CLOSEOUT_DOCUMENT_BLOB,
+                    CPU_SURVIVOR_CLOSEOUT_PATH,
+                ]
             row = _git(
                 "ls-tree", "HEAD", "--", "tests/test_uprime_u05_identity.py"
             ).stdout.decode("utf-8").split()
