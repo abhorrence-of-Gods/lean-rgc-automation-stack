@@ -26,6 +26,9 @@
   "test_odlrq_componentwise_window.py": [
     "unit"
   ],
+  "test_uprime_kp3_d4_canonical_history.py": [
+    "unit"
+  ],
   "test_qgen.py": [
     "unit"
   ],
