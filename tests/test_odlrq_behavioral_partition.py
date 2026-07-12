@@ -8,7 +8,9 @@ import pytest
 import lean_rgc.odlrq.contracts as odlrq_contracts
 from lean_rgc.odlrq import (
     EXACT_ADMISSION_CHECKS,
+    EXACT_PARTITION_VERIFICATION_CHECKS,
     MAX_EXACT_RATIONAL_BITS,
+    MAX_EXACT_PARTITION_WORK_UNITS,
     MAX_SYNTHETIC_ACTIONS,
     MAX_SYNTHETIC_TOTALIZED_STATES,
     MAX_SYNTHETIC_TRANSITION_ROWS,
@@ -18,7 +20,10 @@ from lean_rgc.odlrq import (
     CanonicalPayload,
     ExactAdmissionCompletionGate,
     ExactAdmissionReport,
+    ExactDistinguishingWitness,
     ExactKernelTransitionCore,
+    ExactPartitionBlock,
+    ExactPartitionCertificate,
     ExactRational,
     ResponseVocabularyId,
     StrictContractError,
@@ -30,12 +35,15 @@ from lean_rgc.odlrq import (
     SyntheticTransitionRow,
     TotalizedStatus,
     U05ProbeTransition,
+    VerifiedExactPartition,
     admit_synthetic_finite_snapshot,
     build_synthetic_finite_snapshot,
     canonical_contract_bytes,
     make_synthetic_observation_frame_id,
     make_synthetic_transition_semantics_id,
     observation_frame_digest,
+    refine_exact_partition,
+    verify_exact_partition,
 )
 from lean_rgc.odlrq.reachable_chart import ReachableChart
 
@@ -790,3 +798,212 @@ def test_report_schema_cannot_drop_checks() -> None:
         ExactAdmissionReport.from_dict(bad)
 
     assert NOT_APPLICABLE == "NOT_APPLICABLE"
+
+
+SEMANTIC_A_ID = "unit_cpu_survivor_locator_z"
+SEMANTIC_Z_ID = "unit_cpu_survivor_locator_a"
+
+
+def _delayed_partition_candidate() -> SyntheticFiniteSnapshot:
+    states = (
+        _state("u", TotalizedStatus.OPEN, (2, 2)),
+        _state("v", TotalizedStatus.OPEN, (2, 2)),
+        _state("m", TotalizedStatus.OPEN, (1, 1)),
+        _state("n", TotalizedStatus.OPEN, (1, 1)),
+        _state("closed", TotalizedStatus.CLOSED, (0, 0)),
+        _state("sink", TotalizedStatus.SINK, (0, 0)),
+    )
+    # Locator order intentionally opposes semantic payload order.
+    actions = (
+        _action("semantic-z", action_id=SEMANTIC_Z_ID),
+        _action("semantic-a", action_id=SEMANTIC_A_ID),
+    )
+
+    def delayed_row(source: str, action_id: str, target: str) -> SyntheticTransitionRow:
+        return SyntheticTransitionRow(
+            source_state_id=f"unit_cpu_survivor_{source}",
+            action_id=action_id,
+            target_state_id=f"unit_cpu_survivor_{target}",
+            transition_semantics_digest=SEMANTICS,
+        )
+
+    rows = (
+        delayed_row("u", SEMANTIC_A_ID, "m"),
+        delayed_row("u", SEMANTIC_Z_ID, "m"),
+        delayed_row("v", SEMANTIC_A_ID, "n"),
+        delayed_row("v", SEMANTIC_Z_ID, "n"),
+        delayed_row("m", SEMANTIC_A_ID, "closed"),
+        delayed_row("m", SEMANTIC_Z_ID, "m"),
+        delayed_row("n", SEMANTIC_A_ID, "sink"),
+        delayed_row("n", SEMANTIC_Z_ID, "n"),
+        delayed_row("closed", SEMANTIC_A_ID, "closed"),
+        delayed_row("closed", SEMANTIC_Z_ID, "closed"),
+        delayed_row("sink", SEMANTIC_A_ID, "sink"),
+        delayed_row("sink", SEMANTIC_Z_ID, "sink"),
+    )
+    return _candidate(
+        states=states,
+        actions=actions,
+        rows=rows,
+        seeds=("unit_cpu_survivor_u", "unit_cpu_survivor_v"),
+    )
+
+
+def _block_index_for(certificate: ExactPartitionCertificate, state: str) -> int:
+    state_id = f"unit_cpu_survivor_{state}"
+    return next(
+        block.block_index
+        for block in certificate.final_blocks
+        if state_id in block.member_state_ids
+    )
+
+
+def test_exact_partition_delayed_separator_semantic_word_and_roundtrip() -> None:
+    admitted = admit_synthetic_finite_snapshot(_delayed_partition_candidate())
+    certificate = refine_exact_partition(admitted)
+
+    assert certificate.evidence_scope == SYNTHETIC_EVIDENCE_SCOPE
+    assert certificate.canonical_action_ids == (SEMANTIC_A_ID, SEMANTIC_Z_ID)
+    assert [stage.changed_from_previous for stage in certificate.refinement_trace] == [
+        False,
+        True,
+        True,
+    ]
+    assert certificate.strict_refinement_passes == 2
+    assert certificate.fixed_point_passes == 1
+    assert len(certificate.quotient_rows) == (
+        len(certificate.final_blocks) * len(certificate.canonical_action_ids)
+    )
+    assert certificate.work_counters.total_units <= MAX_EXACT_PARTITION_WORK_UNITS
+
+    p0_members = {
+        frozenset(block.member_state_ids)
+        for block in certificate.refinement_trace[0].blocks
+    }
+    assert frozenset(
+        {"unit_cpu_survivor_u", "unit_cpu_survivor_v"}
+    ) in p0_members
+    assert frozenset(
+        {"unit_cpu_survivor_m", "unit_cpu_survivor_n"}
+    ) in p0_members
+
+    u_pair = tuple(
+        sorted((_block_index_for(certificate, "u"), _block_index_for(certificate, "v")))
+    )
+    m_pair = tuple(
+        sorted((_block_index_for(certificate, "m"), _block_index_for(certificate, "n")))
+    )
+    words = {
+        (witness.left_block_index, witness.right_block_index): witness.action_ids
+        for witness in certificate.distinguishing_witnesses
+    }
+    assert words[u_pair] == (SEMANTIC_A_ID, SEMANTIC_A_ID)
+    assert words[m_pair] == (SEMANTIC_A_ID,)
+    terminal_pair = tuple(
+        sorted(
+            (
+                _block_index_for(certificate, "closed"),
+                _block_index_for(certificate, "sink"),
+            )
+        )
+    )
+    assert words[terminal_pair] == ()
+
+    assert ExactPartitionCertificate.from_dict(certificate.to_dict()) == certificate
+    verified = verify_exact_partition(admitted, certificate)
+    assert verified.admitted is admitted
+    assert verified.verification_report.checks == EXACT_PARTITION_VERIFICATION_CHECKS
+    assert verified.verification_report.final_block_count == len(
+        certificate.final_blocks
+    )
+    assert "admitted" not in verified.to_dict()
+    assert VerifiedExactPartition.from_dict(verified.to_dict(), admitted) == verified
+
+
+def test_independent_partition_verifier_rejects_stable_and_witness_tampering() -> None:
+    admitted = admit_synthetic_finite_snapshot(_delayed_partition_candidate())
+    certificate = refine_exact_partition(admitted)
+    block_count = len(certificate.final_blocks)
+
+    bad_binding = replace(certificate, domain_payload_digest="00" * 32)
+    with pytest.raises(StrictContractError, match="source binding"):
+        verify_exact_partition(admitted, bad_binding)
+
+    quotient_rows = list(certificate.quotient_rows)
+    quotient_rows[0] = replace(
+        quotient_rows[0],
+        target_block_index=(quotient_rows[0].target_block_index + 1) % block_count,
+    )
+    bad_quotient = replace(certificate, quotient_rows=tuple(quotient_rows))
+    with pytest.raises(StrictContractError, match="quotient"):
+        verify_exact_partition(admitted, bad_quotient)
+
+    u_pair = tuple(
+        sorted((_block_index_for(certificate, "u"), _block_index_for(certificate, "v")))
+    )
+    witnesses = list(certificate.distinguishing_witnesses)
+    witness_index = next(
+        index
+        for index, witness in enumerate(witnesses)
+        if (witness.left_block_index, witness.right_block_index) == u_pair
+    )
+    witnesses[witness_index] = replace(
+        witnesses[witness_index], action_ids=(SEMANTIC_Z_ID, SEMANTIC_A_ID)
+    )
+    bad_word = replace(certificate, distinguishing_witnesses=tuple(witnesses))
+    with pytest.raises(StrictContractError, match="shortest semantic-action-lexicographic"):
+        verify_exact_partition(admitted, bad_word)
+
+    identity_p0 = replace(
+        certificate.refinement_trace[0], blocks=certificate.final_blocks
+    )
+    stable_but_not_coarsest = replace(
+        certificate, refinement_trace=(identity_p0,)
+    )
+    with pytest.raises(StrictContractError, match="P0"):
+        verify_exact_partition(admitted, stable_but_not_coarsest)
+
+
+def test_partition_resource_and_public_type_boundaries_fail_closed() -> None:
+    states, actions, rows = _parts()
+    huge_state = replace(
+        states[0],
+        payload=CanonicalPayload.from_value(
+            {"kind": "state", "name": "x" * MAX_EXACT_PARTITION_WORK_UNITS}
+        ),
+    )
+    admitted_huge = admit_synthetic_finite_snapshot(
+        _candidate(states=(huge_state, *states[1:]), actions=actions, rows=rows)
+    )
+    with pytest.raises(StrictContractError, match="CPU_SURVIVOR_PREREQUISITE_BLOCKED"):
+        refine_exact_partition(admitted_huge)
+
+    admitted = admit_synthetic_finite_snapshot(_delayed_partition_candidate())
+    certificate = refine_exact_partition(admitted)
+    forged = ExactPartitionCertificate.from_dict(certificate.to_dict())
+    long_word = ExactDistinguishingWitness(
+        0, 1, (certificate.canonical_action_ids[0],) * 127
+    )
+    object.__setattr__(forged, "distinguishing_witnesses", (long_word,) * 2_000)
+    with pytest.raises(StrictContractError, match="CPU_SURVIVOR_PREREQUISITE_BLOCKED"):
+        verify_exact_partition(admitted, forged)
+
+    class EvilBlock(ExactPartitionBlock):
+        pass
+
+    class EvilCertificate(ExactPartitionCertificate):
+        pass
+
+    with pytest.raises(StrictContractError, match="subclasses are forbidden"):
+        EvilBlock(0, ("unit_cpu_survivor_x",))
+    with pytest.raises(StrictContractError, match="polymorphic"):
+        EvilCertificate.from_dict(certificate.to_dict())
+
+    evil_schema = certificate.final_blocks[0].to_dict()
+
+    class EvilString(str):
+        pass
+
+    evil_schema["schema_version"] = EvilString(evil_schema["schema_version"])
+    with pytest.raises(StrictContractError, match="exact literal"):
+        ExactPartitionBlock.from_dict(evil_schema)

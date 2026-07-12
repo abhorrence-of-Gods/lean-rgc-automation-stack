@@ -1,8 +1,8 @@
 """ODLRQ strict semantic substrate.
 
-U05 contracts and the synthetic finite-table admission substrate are exported
-at this stage.  Partition refinement, operators, learners, and hard Lean
-certificates remain outside the current milestone.
+U05 contracts, finite-table admission, and the source-bound exact behavioral
+partition capability are exported.  Operators, learners, and hard Lean
+certificates remain outside this milestone.
 """
 
 from .adapters import (
@@ -62,9 +62,25 @@ from .contracts import (
     WorkPackageStatus,
     canonical_contract_bytes,
 )
+from .behavioral_partition import (
+    EXACT_PARTITION_VERIFICATION_CHECKS,
+    MAX_EXACT_PARTITION_WORK_UNITS,
+    ExactDistinguishingWitness,
+    ExactPartitionBlock,
+    ExactPartitionCertificate,
+    ExactPartitionVerificationReport,
+    ExactPartitionWorkCounters,
+    ExactQuotientRow,
+    ExactRefinementStage,
+    VerifiedExactPartition,
+    refine_exact_partition,
+    verify_exact_partition,
+)
 
 __all__ = [
     "EXACT_ADMISSION_CHECKS",
+    "EXACT_PARTITION_VERIFICATION_CHECKS",
+    "MAX_EXACT_PARTITION_WORK_UNITS",
     "MAX_SYNTHETIC_ACTIONS",
     "MAX_SYNTHETIC_TOTALIZED_STATES",
     "MAX_SYNTHETIC_TRANSITION_ROWS",
@@ -85,6 +101,13 @@ __all__ = [
     "ExactAdmissionCompletionGate",
     "ExactAdmissionReport",
     "ExactKernelTransitionCore",
+    "ExactDistinguishingWitness",
+    "ExactPartitionBlock",
+    "ExactPartitionCertificate",
+    "ExactPartitionVerificationReport",
+    "ExactPartitionWorkCounters",
+    "ExactQuotientRow",
+    "ExactRefinementStage",
     "ExactRational",
     "FieldCoverage",
     "FieldCoverageStatus",
@@ -108,6 +131,7 @@ __all__ = [
     "TotalizedStatus",
     "TransitionSemanticsId",
     "U05ProbeTransition",
+    "VerifiedExactPartition",
     "WorkPackageStatus",
     "admit_synthetic_finite_snapshot",
     "build_synthetic_finite_snapshot",
@@ -116,5 +140,7 @@ __all__ = [
     "make_synthetic_observation_frame_id",
     "make_synthetic_transition_semantics_id",
     "observation_frame_digest",
+    "refine_exact_partition",
     "validate_synthetic_finite_snapshot",
+    "verify_exact_partition",
 ]
