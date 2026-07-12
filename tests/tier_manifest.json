@@ -8,6 +8,9 @@
   "test_odlrq_lane_isolated_recovery_identity.py": [
     "unit"
   ],
+  "test_odlrq_quotient_generator.py": [
+    "unit"
+  ],
   "test_qgen.py": [
     "unit"
   ],

@@ -1,8 +1,9 @@
 """ODLRQ strict semantic substrate.
 
-U05 contracts, finite-table admission, and the source-bound exact behavioral
-partition capability are exported.  Operators, learners, and hard Lean
-certificates remain outside this milestone.
+U05 contracts, finite-table admission, the source-bound exact behavioral
+partition capability, and the synthetic finite tier firewall are exported.
+Learners, positive envelopes, and hard Lean certificates remain outside this
+milestone.
 """
 
 from .adapters import (
@@ -76,16 +77,44 @@ from .behavioral_partition import (
     refine_exact_partition,
     verify_exact_partition,
 )
+from .quotient_generator import (
+    CERTIFIED_OPERATOR_TIER,
+    EXACT_OPERATOR_TIER,
+    MAX_SIGNED_64,
+    MAX_TIER_FIREWALL_WORK_UNITS,
+    NOMINAL_OPERATOR_TIER,
+    OBSERVED_OPERATOR_TIER,
+    CertifiedIntervalOperator,
+    ExactFiniteOperator,
+    IntervalCandidate,
+    IntervalTargetRow,
+    NominalOperator,
+    ObservedIntervalOperator,
+    UppernessDomainEvidence,
+    UppernessDomainWitness,
+    UppernessEvidenceRow,
+    certify_interval_operator,
+    export_exact_finite_operator,
+    extend_interval_candidate,
+    make_interval_candidate,
+    verify_upperness_domain,
+)
 
 __all__ = [
+    "CERTIFIED_OPERATOR_TIER",
     "EXACT_ADMISSION_CHECKS",
     "EXACT_PARTITION_VERIFICATION_CHECKS",
+    "EXACT_OPERATOR_TIER",
     "MAX_EXACT_PARTITION_WORK_UNITS",
     "MAX_SYNTHETIC_ACTIONS",
     "MAX_SYNTHETIC_TOTALIZED_STATES",
     "MAX_SYNTHETIC_TRANSITION_ROWS",
     "MAX_EXACT_RATIONAL_BITS",
+    "MAX_SIGNED_64",
+    "MAX_TIER_FIREWALL_WORK_UNITS",
+    "NOMINAL_OPERATOR_TIER",
     "NOT_APPLICABLE",
+    "OBSERVED_OPERATOR_TIER",
     "SYNTHETIC_EVIDENCE_SCOPE",
     "SYNTHETIC_FIXTURE_ID_PREFIX",
     "AdmittedExactFiniteSnapshot",
@@ -97,10 +126,12 @@ __all__ = [
     "CapSemantics",
     "Censor",
     "CensorKind",
+    "CertifiedIntervalOperator",
     "DebtReadout",
     "ExactAdmissionCompletionGate",
     "ExactAdmissionReport",
     "ExactKernelTransitionCore",
+    "ExactFiniteOperator",
     "ExactDistinguishingWitness",
     "ExactPartitionBlock",
     "ExactPartitionCertificate",
@@ -111,7 +142,11 @@ __all__ = [
     "ExactRational",
     "FieldCoverage",
     "FieldCoverageStatus",
+    "IntervalCandidate",
+    "IntervalTargetRow",
+    "NominalOperator",
     "ObservationFrameId",
+    "ObservedIntervalOperator",
     "PremiseBinding",
     "RawTransitionStatus",
     "ReplayComparableResponse",
@@ -131,16 +166,24 @@ __all__ = [
     "TotalizedStatus",
     "TransitionSemanticsId",
     "U05ProbeTransition",
+    "UppernessDomainEvidence",
+    "UppernessDomainWitness",
+    "UppernessEvidenceRow",
     "VerifiedExactPartition",
     "WorkPackageStatus",
     "admit_synthetic_finite_snapshot",
     "build_synthetic_finite_snapshot",
     "canonical_contract_bytes",
+    "certify_interval_operator",
+    "export_exact_finite_operator",
+    "extend_interval_candidate",
     "make_reachable_domain_id",
     "make_synthetic_observation_frame_id",
     "make_synthetic_transition_semantics_id",
+    "make_interval_candidate",
     "observation_frame_digest",
     "refine_exact_partition",
     "validate_synthetic_finite_snapshot",
     "verify_exact_partition",
+    "verify_upperness_domain",
 ]
