@@ -11,6 +11,12 @@
   "test_odlrq_kp3_d4_identity.py": [
     "unit"
   ],
+  "test_odlrq_history_normal_form.py": [
+    "unit"
+  ],
+  "test_odlrq_hankel_depth4.py": [
+    "unit"
+  ],
   "test_odlrq_quotient_generator.py": [
     "unit"
   ],
