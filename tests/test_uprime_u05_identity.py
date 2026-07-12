@@ -546,25 +546,30 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
                                 _assert_tree_blob(cpu_commit, path, expected_blob)
                             previous_cpu_commit = cpu_commit
 
-                        dirty = _dirty_paths()
-                        if dirty:
-                            if dirty == CPU_SURVIVOR_CLOSEOUT_PATHS:
-                                assert not closeout_additions
-                                assert head == CPU_SURVIVOR_CLOSEOUT_PARENT
-                                assert (
-                                    _git(
-                                        "hash-object",
-                                        CPU_SURVIVOR_CLOSEOUT_PATH,
-                                    ).stdout.decode("ascii").strip()
-                                    == CPU_SURVIVOR_CLOSEOUT_DOCUMENT_BLOB
-                                )
-                            else:
-                                assert len(cpu_commits) < len(
-                                    CPU_SURVIVOR_MILESTONE_ALLOWLISTS
-                                )
-                                assert dirty <= CPU_SURVIVOR_MILESTONE_ALLOWLISTS[
-                                    len(cpu_commits)
-                                ]
+                        # Dirty-worktree checks are precommit controls for the
+                        # still-open CPU bundle.  Once its exact closeout has
+                        # been found and fully validated above, later build
+                        # byproducts belong to later phases and cannot extend
+                        # or alter the already-fixed CPU interval.
+                        if not closeout_additions:
+                            dirty = _dirty_paths()
+                            if dirty:
+                                if dirty == CPU_SURVIVOR_CLOSEOUT_PATHS:
+                                    assert head == CPU_SURVIVOR_CLOSEOUT_PARENT
+                                    assert (
+                                        _git(
+                                            "hash-object",
+                                            CPU_SURVIVOR_CLOSEOUT_PATH,
+                                        ).stdout.decode("ascii").strip()
+                                        == CPU_SURVIVOR_CLOSEOUT_DOCUMENT_BLOB
+                                    )
+                                else:
+                                    assert len(cpu_commits) < len(
+                                        CPU_SURVIVOR_MILESTONE_ALLOWLISTS
+                                    )
+                                    assert dirty <= CPU_SURVIVOR_MILESTONE_ALLOWLISTS[
+                                        len(cpu_commits)
+                                    ]
                 elif head == U05_RESULT_COMMIT:
                     # Pre-commit validation of the exact two-path amendment.
                     dirty = _dirty_paths()

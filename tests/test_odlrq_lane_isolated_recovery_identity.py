@@ -9,6 +9,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 RECOVERY_PARENT = "92b34496d3f2455a63e05791b7a0342050c49bcd"
+AMENDMENT_COMMIT = "2712060ff5b0223aa581dd611363dba517520048"
 AMENDMENT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_lane_isolated_recovery_amendment_2026-07-12.md"
@@ -20,6 +21,11 @@ CLOSEOUT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_lane_isolated_recovery_closeout_2026-07-12.md"
 )
+LEGACY_IDENTITY_PATH = "tests/test_uprime_u05_identity.py"
+CONTROL_REPAIR_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_lane_isolated_recovery_control_plane_repair_2026-07-12.md"
+)
 
 AMENDMENT_DOCUMENT_BLOB = "955872dacb1ebfe6328a178797b68479ebc55069"
 AMENDMENT_MANIFEST_BLOB = "dd52b95c998e1bf09466d62856b1e6a73256542d"
@@ -29,6 +35,15 @@ AMENDMENT_PATHS = {
     IDENTITY_PATH,
     MANIFEST_PATH,
     CI_WORKFLOW_PATH,
+}
+ORIGINAL_AMENDMENT_IDENTITY_BLOB = "b64bb52453b67118c7b7e6a89a38d8a4438ac6b8"
+ORIGINAL_LEGACY_IDENTITY_BLOB = "ecb65579d800c78cbc070a101f7282db73871cd9"
+CONTROL_REPAIR_DOCUMENT_BLOB = "494e424b36f20b4ad9efa6093dcebf30a78f045a"
+CONTROL_REPAIR_LEGACY_IDENTITY_BLOB = "277f46ec0e4cecfe6ae3d119adb85c2b3a043182"
+CONTROL_REPAIR_PATHS = {
+    CONTROL_REPAIR_PATH,
+    LEGACY_IDENTITY_PATH,
+    IDENTITY_PATH,
 }
 
 IMMUTABLE_PREDECESSOR_BLOBS = {
@@ -44,8 +59,6 @@ IMMUTABLE_PREDECESSOR_BLOBS = {
         "docs/experiments/"
         "uprime_odlrq_cpu_survivor_implementation_bundle_closeout_2026-07-12.md"
     ): "c86f6d54be728d5bae429d1c7e362f580c3fe536",
-    "tests/test_uprime_u05_identity.py":
-        "ecb65579d800c78cbc070a101f7282db73871cd9",
     (
         "docs/experiments/artifacts/"
         "uprime_u05_20260711/u05_kill_probes.json"
@@ -176,16 +189,64 @@ def _assert_predecessor_blobs(revision: str) -> None:
 
 
 def _assert_recovery_base(
-    revision: str, *, amendment_identity_blob: str
+    revision: str, *, recovery_identity_blob: str
 ) -> None:
     _assert_predecessor_blobs(revision)
     assert _tree_blob(revision, AMENDMENT_PATH) == AMENDMENT_DOCUMENT_BLOB
     assert _tree_blob(revision, CI_WORKFLOW_PATH) == AMENDMENT_WORKFLOW_BLOB
-    assert _tree_blob(revision, IDENTITY_PATH) == amendment_identity_blob
+    assert _tree_blob(revision, CONTROL_REPAIR_PATH) == CONTROL_REPAIR_DOCUMENT_BLOB
+    assert (
+        _tree_blob(revision, LEGACY_IDENTITY_PATH)
+        == CONTROL_REPAIR_LEGACY_IDENTITY_BLOB
+    )
+    assert _tree_blob(revision, IDENTITY_PATH) == recovery_identity_blob
 
 
 def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
     head = _head()
+
+    if head == AMENDMENT_COMMIT:
+        # Pre-commit validation for the one control-plane successor.  The
+        # recovery identity file cannot contain its own future Git blob, so the
+        # other two blobs and the exact scoped three-path dirt are frozen here.
+        status = (
+            _git(
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+                "--",
+                *sorted(CONTROL_REPAIR_PATHS),
+            )
+            .stdout.decode("utf-8")
+            .splitlines()
+        )
+        dirty_paths = {row[3:] for row in status if len(row) >= 4}
+        assert dirty_paths == CONTROL_REPAIR_PATHS
+        assert (
+            _git("hash-object", CONTROL_REPAIR_PATH)
+            .stdout.decode("ascii")
+            .strip()
+            == CONTROL_REPAIR_DOCUMENT_BLOB
+        )
+        assert (
+            _git("hash-object", LEGACY_IDENTITY_PATH)
+            .stdout.decode("ascii")
+            .strip()
+            == CONTROL_REPAIR_LEGACY_IDENTITY_BLOB
+        )
+        assert _tree_blob("HEAD", AMENDMENT_PATH) == AMENDMENT_DOCUMENT_BLOB
+        assert _tree_blob("HEAD", MANIFEST_PATH) == AMENDMENT_MANIFEST_BLOB
+        assert _tree_blob("HEAD", CI_WORKFLOW_PATH) == AMENDMENT_WORKFLOW_BLOB
+        assert (
+            _tree_blob("HEAD", IDENTITY_PATH)
+            == ORIGINAL_AMENDMENT_IDENTITY_BLOB
+        )
+        assert (
+            _tree_blob("HEAD", LEGACY_IDENTITY_PATH)
+            == ORIGINAL_LEGACY_IDENTITY_BLOB
+        )
+        _assert_predecessor_blobs("HEAD")
+        return
 
     if head == RECOVERY_PARENT:
         # Pre-commit validation is scoped to the amendment paths, so unrelated
@@ -243,6 +304,7 @@ def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
     )
     assert len(additions) == 1
     amendment_commit = additions[0]
+    assert amendment_commit == AMENDMENT_COMMIT
     assert _raw_parents(amendment_commit) == [RECOVERY_PARENT]
     assert _changed_paths(amendment_commit) == AMENDMENT_PATHS
     assert _tree_blob(amendment_commit, AMENDMENT_PATH) == AMENDMENT_DOCUMENT_BLOB
@@ -253,15 +315,49 @@ def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
         _manifest(amendment_commit),
         Path(IDENTITY_PATH).name,
     )
-    amendment_identity_blob = _tree_blob(amendment_commit, IDENTITY_PATH)
+    _assert_predecessor_blobs(amendment_commit)
+    assert (
+        _tree_blob(amendment_commit, IDENTITY_PATH)
+        == ORIGINAL_AMENDMENT_IDENTITY_BLOB
+    )
+    assert (
+        _tree_blob(amendment_commit, LEGACY_IDENTITY_PATH)
+        == ORIGINAL_LEGACY_IDENTITY_BLOB
+    )
+
+    repair_additions = (
+        _git(
+            "log",
+            "--diff-filter=A",
+            "--format=%H",
+            "--",
+            CONTROL_REPAIR_PATH,
+        )
+        .stdout.decode("ascii")
+        .splitlines()
+    )
+    assert len(repair_additions) == 1
+    phase_anchor = repair_additions[0]
+    assert _raw_parents(phase_anchor) == [amendment_commit]
+    assert _changed_paths(phase_anchor) == CONTROL_REPAIR_PATHS
+    assert (
+        _tree_blob(phase_anchor, CONTROL_REPAIR_PATH)
+        == CONTROL_REPAIR_DOCUMENT_BLOB
+    )
+    assert (
+        _tree_blob(phase_anchor, LEGACY_IDENTITY_PATH)
+        == CONTROL_REPAIR_LEGACY_IDENTITY_BLOB
+    )
+    assert _manifest(phase_anchor) == _manifest(amendment_commit)
+    recovery_identity_blob = _tree_blob(phase_anchor, IDENTITY_PATH)
     _assert_recovery_base(
-        amendment_commit, amendment_identity_blob=amendment_identity_blob
+        phase_anchor, recovery_identity_blob=recovery_identity_blob
     )
     assert (
         _git(
             "merge-base",
             "--is-ancestor",
-            amendment_commit,
+            phase_anchor,
             head,
             check=False,
         ).returncode
@@ -273,7 +369,7 @@ def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
             "log",
             "--diff-filter=A",
             "--format=%H",
-            f"{amendment_commit}..{head}",
+            f"{phase_anchor}..{head}",
             "--",
             CLOSEOUT_PATH,
         )
@@ -303,19 +399,19 @@ def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
             "rev-list",
             "--first-parent",
             "--reverse",
-            f"{amendment_commit}..{phase_head}",
+            f"{phase_anchor}..{phase_head}",
         )
         .stdout.decode("ascii")
         .splitlines()
     )
     lane_counts = [0, 0, 0]
     previous_lane = -1
-    previous_commit = amendment_commit
+    previous_commit = phase_anchor
     closeout_seen = False
 
     for index, commit in enumerate(interval):
         assert _raw_parents(commit) == [previous_commit]
-        _assert_recovery_base(commit, amendment_identity_blob=amendment_identity_blob)
+        _assert_recovery_base(commit, recovery_identity_blob=recovery_identity_blob)
         changed = _changed_paths(commit)
         assert changed
 
