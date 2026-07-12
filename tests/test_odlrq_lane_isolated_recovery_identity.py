@@ -26,6 +26,10 @@ CONTROL_REPAIR_PATH = (
     "docs/experiments/"
     "uprime_odlrq_lane_isolated_recovery_control_plane_repair_2026-07-12.md"
 )
+M5_CORRECTION_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_m5_two_sided_hankel_closure_amendment_2026-07-12.md"
+)
 
 AMENDMENT_DOCUMENT_BLOB = "955872dacb1ebfe6328a178797b68479ebc55069"
 AMENDMENT_MANIFEST_BLOB = "dd52b95c998e1bf09466d62856b1e6a73256542d"
@@ -43,6 +47,14 @@ CONTROL_REPAIR_LEGACY_IDENTITY_BLOB = "277f46ec0e4cecfe6ae3d119adb85c2b3a043182"
 CONTROL_REPAIR_PATHS = {
     CONTROL_REPAIR_PATH,
     LEGACY_IDENTITY_PATH,
+    IDENTITY_PATH,
+}
+CONTROL_REPAIR_COMMIT = "40cb97a8bac94e17538958c33c53b2f2c758b0f5"
+M5_CORRECTION_PARENT = "9f67edeff33c77a756788c29023f693d1bad8ab8"
+M5_CORRECTION_PARENT_IDENTITY_BLOB = "959b900902e15273fc4aa507d265300cb758dd96"
+M5_CORRECTION_DOCUMENT_BLOB = "93d5417d3b313bc3559f9eebceaeab1ffcfed26d"
+M5_CORRECTION_PATHS = {
+    M5_CORRECTION_PATH,
     IDENTITY_PATH,
 }
 
@@ -202,8 +214,60 @@ def _assert_recovery_base(
     assert _tree_blob(revision, IDENTITY_PATH) == recovery_identity_blob
 
 
+def _assert_m5_correction_base(
+    revision: str, *, correction_identity_blob: str
+) -> None:
+    _assert_recovery_base(
+        revision, recovery_identity_blob=correction_identity_blob
+    )
+    assert (
+        _tree_blob(revision, M5_CORRECTION_PATH)
+        == M5_CORRECTION_DOCUMENT_BLOB
+    )
+
+
 def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
     head = _head()
+
+    if head == M5_CORRECTION_PARENT:
+        # One-time, pre-commit validation for the M5 mathematical-direction
+        # correction.  The identity file cannot pin its own future Git blob;
+        # pin the exact parent, document blob, and scoped two-path dirt now.
+        status = (
+            _git(
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+                "--",
+                *sorted(M5_CORRECTION_PATHS),
+            )
+            .stdout.decode("utf-8")
+            .splitlines()
+        )
+        dirty_paths = {row[3:] for row in status if len(row) >= 4}
+        assert dirty_paths == M5_CORRECTION_PATHS
+        assert (
+            _git("hash-object", M5_CORRECTION_PATH)
+            .stdout.decode("ascii")
+            .strip()
+            == M5_CORRECTION_DOCUMENT_BLOB
+        )
+        assert _raw_parents("HEAD") == [CONTROL_REPAIR_COMMIT]
+        assert _changed_paths("HEAD") == M4_ALLOWLIST
+        assert (
+            _tree_blob("HEAD", IDENTITY_PATH)
+            == M5_CORRECTION_PARENT_IDENTITY_BLOB
+        )
+        _assert_recovery_base(
+            "HEAD",
+            recovery_identity_blob=M5_CORRECTION_PARENT_IDENTITY_BLOB,
+        )
+        _assert_one_manifest_append(
+            _manifest(CONTROL_REPAIR_COMMIT),
+            _manifest("HEAD"),
+            "test_odlrq_quotient_generator.py",
+        )
+        return
 
     if head == AMENDMENT_COMMIT:
         # Pre-commit validation for the one control-plane successor.  The
@@ -338,6 +402,7 @@ def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
     )
     assert len(repair_additions) == 1
     phase_anchor = repair_additions[0]
+    assert phase_anchor == CONTROL_REPAIR_COMMIT
     assert _raw_parents(phase_anchor) == [amendment_commit]
     assert _changed_paths(phase_anchor) == CONTROL_REPAIR_PATHS
     assert (
@@ -350,14 +415,67 @@ def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
     )
     assert _manifest(phase_anchor) == _manifest(amendment_commit)
     recovery_identity_blob = _tree_blob(phase_anchor, IDENTITY_PATH)
+    assert recovery_identity_blob == M5_CORRECTION_PARENT_IDENTITY_BLOB
     _assert_recovery_base(
         phase_anchor, recovery_identity_blob=recovery_identity_blob
+    )
+
+    # M4 is a completed, immutable predecessor of the one-time mathematical
+    # correction.  The correction does not reopen M4 or consume a lane commit.
+    assert _raw_parents(M5_CORRECTION_PARENT) == [phase_anchor]
+    assert _changed_paths(M5_CORRECTION_PARENT) == M4_ALLOWLIST
+    _assert_recovery_base(
+        M5_CORRECTION_PARENT,
+        recovery_identity_blob=M5_CORRECTION_PARENT_IDENTITY_BLOB,
+    )
+    _assert_one_manifest_append(
+        _manifest(phase_anchor),
+        _manifest(M5_CORRECTION_PARENT),
+        "test_odlrq_quotient_generator.py",
     )
     assert (
         _git(
             "merge-base",
             "--is-ancestor",
-            phase_anchor,
+            M5_CORRECTION_PARENT,
+            head,
+            check=False,
+        ).returncode
+        == 0
+    )
+
+    correction_additions = (
+        _git(
+            "log",
+            "--diff-filter=A",
+            "--format=%H",
+            f"{M5_CORRECTION_PARENT}..{head}",
+            "--",
+            M5_CORRECTION_PATH,
+        )
+        .stdout.decode("ascii")
+        .splitlines()
+    )
+    assert len(correction_additions) == 1
+    correction_commit = correction_additions[0]
+    assert _raw_parents(correction_commit) == [M5_CORRECTION_PARENT]
+    assert _changed_paths(correction_commit) == M5_CORRECTION_PATHS
+    assert (
+        _tree_blob(correction_commit, M5_CORRECTION_PATH)
+        == M5_CORRECTION_DOCUMENT_BLOB
+    )
+    correction_identity_blob = _tree_blob(correction_commit, IDENTITY_PATH)
+    assert correction_identity_blob != M5_CORRECTION_PARENT_IDENTITY_BLOB
+    _assert_m5_correction_base(
+        correction_commit,
+        correction_identity_blob=correction_identity_blob,
+    )
+    assert _manifest(correction_commit) == _manifest(M5_CORRECTION_PARENT)
+    assert (
+        _git(
+            "merge-base",
+            "--is-ancestor",
+            correction_commit,
             head,
             check=False,
         ).returncode
@@ -369,7 +487,7 @@ def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
             "log",
             "--diff-filter=A",
             "--format=%H",
-            f"{phase_anchor}..{head}",
+            f"{correction_commit}..{head}",
             "--",
             CLOSEOUT_PATH,
         )
@@ -399,19 +517,21 @@ def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
             "rev-list",
             "--first-parent",
             "--reverse",
-            f"{phase_anchor}..{phase_head}",
+            f"{correction_commit}..{phase_head}",
         )
         .stdout.decode("ascii")
         .splitlines()
     )
-    lane_counts = [0, 0, 0]
-    previous_lane = -1
-    previous_commit = phase_anchor
+    lane_counts = [1, 0, 0]
+    previous_lane = 0
+    previous_commit = correction_commit
     closeout_seen = False
 
     for index, commit in enumerate(interval):
         assert _raw_parents(commit) == [previous_commit]
-        _assert_recovery_base(commit, recovery_identity_blob=recovery_identity_blob)
+        _assert_m5_correction_base(
+            commit, correction_identity_blob=correction_identity_blob
+        )
         changed = _changed_paths(commit)
         assert changed
 
@@ -432,6 +552,7 @@ def test_lane_isolated_recovery_anchor_and_topology_are_immutable() -> None:
         ]
         assert len(matching_lanes) == 1
         lane_index = matching_lanes[0]
+        assert lane_index in {1, 2}, "M4 is complete at the correction parent"
         _lane_name, allowlist, _markers, expected_test = LANES[lane_index]
         assert changed <= allowlist
         assert lane_index >= previous_lane
