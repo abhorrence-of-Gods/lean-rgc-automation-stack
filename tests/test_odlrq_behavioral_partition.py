@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import hashlib
+from itertools import product
 import json
 
 import pytest
 
+import lean_rgc.odlrq.adapters as odlrq_adapters
+import lean_rgc.odlrq.behavioral_partition as behavioral_partition_module
 import lean_rgc.odlrq.contracts as odlrq_contracts
 from lean_rgc.odlrq import (
     EXACT_ADMISSION_CHECKS,
@@ -25,6 +29,7 @@ from lean_rgc.odlrq import (
     ExactPartitionBlock,
     ExactPartitionCertificate,
     ExactRational,
+    ObservationFrameId,
     ResponseVocabularyId,
     StrictContractError,
     SyntheticAction,
@@ -33,6 +38,7 @@ from lean_rgc.odlrq import (
     SyntheticFiniteSnapshot,
     SyntheticTotalizedState,
     SyntheticTransitionRow,
+    SyntheticTransitionSemanticsId,
     TotalizedStatus,
     U05ProbeTransition,
     VerifiedExactPartition,
@@ -789,6 +795,23 @@ def test_lean_u05_and_reachable_chart_promotions_are_explicitly_rejected(source)
         admit_synthetic_finite_snapshot(source)
 
 
+@pytest.mark.parametrize(
+    "source",
+    [
+        _candidate(),
+        object.__new__(ExactKernelTransitionCore),
+        object.__new__(U05ProbeTransition),
+        object.__new__(ReachableChart),
+    ],
+)
+def test_partition_boundary_rejects_raw_and_legacy_sources(source: object) -> None:
+    with pytest.raises(
+        StrictContractError,
+        match="exact partition requires an exact AdmittedExactFiniteSnapshot",
+    ):
+        refine_exact_partition(source)  # type: ignore[arg-type]
+
+
 def test_report_schema_cannot_drop_checks() -> None:
     report = admit_synthetic_finite_snapshot(_candidate()).admission_report
     assert ExactAdmissionReport.from_dict(report.to_dict()) == report
@@ -1007,3 +1030,710 @@ def test_partition_resource_and_public_type_boundaries_fail_closed() -> None:
     evil_schema["schema_version"] = EvilString(evil_schema["schema_version"])
     with pytest.raises(StrictContractError, match="exact literal"):
         ExactPartitionBlock.from_dict(evil_schema)
+
+
+def _restricted_growth_partitions(size: int):
+    """Enumerate set partitions without calling the production refiner."""
+
+    if size < 1:
+        return
+
+    def extend(prefix: tuple[int, ...]):
+        if len(prefix) == size:
+            yield prefix
+            return
+        for block_index in range(max(prefix) + 2):
+            yield from extend((*prefix, block_index))
+
+    yield from extend((0,))
+
+
+def _independent_coarsest_congruence(
+    outputs: tuple[int, ...],
+    transition_targets: tuple[int, ...],
+    action_count: int,
+) -> frozenset[frozenset[int]]:
+    """Brute-force every set partition; no production partition helper is used."""
+
+    state_count = len(outputs)
+    best: frozenset[frozenset[int]] | None = None
+    best_block_count = state_count + 1
+    for owner in _restricted_growth_partitions(state_count):
+        stable = True
+        for left_state in range(state_count):
+            for right_state in range(left_state + 1, state_count):
+                if owner[left_state] != owner[right_state]:
+                    continue
+                if outputs[left_state] != outputs[right_state]:
+                    stable = False
+                    break
+                for action_index in range(action_count):
+                    left_target = transition_targets[
+                        left_state * action_count + action_index
+                    ]
+                    right_target = transition_targets[
+                        right_state * action_count + action_index
+                    ]
+                    if owner[left_target] != owner[right_target]:
+                        stable = False
+                        break
+                if not stable:
+                    break
+            if not stable:
+                break
+        if not stable:
+            continue
+        blocks = frozenset(
+            frozenset(
+                state_index
+                for state_index, assigned_block in enumerate(owner)
+                if assigned_block == block_index
+            )
+            for block_index in range(max(owner) + 1)
+        )
+        if len(blocks) < best_block_count:
+            best = blocks
+            best_block_count = len(blocks)
+        elif len(blocks) == best_block_count:
+            # A deterministic Moore system has one greatest response
+            # congruence.  Treat a second incomparable minimum as an oracle
+            # construction error rather than silently tie-breaking it.
+            assert blocks == best
+    assert best is not None
+    return best
+
+
+def _public_pipeline_open_partition(
+    *,
+    states: tuple[SyntheticTotalizedState, ...],
+    actions: tuple[SyntheticAction, ...],
+    response_vocabulary_id: ResponseVocabularyId,
+    observation_frame_id: ObservationFrameId,
+    transition_semantics_id: SyntheticTransitionSemanticsId,
+    transition_targets: tuple[int, ...],
+) -> frozenset[frozenset[int]]:
+    """Embed one machine with terminals, then use every public exact gate."""
+
+    open_states = tuple(
+        state for state in states if state.totalized_kind is TotalizedStatus.OPEN
+    )
+    state_id_by_index = tuple(state.state_id for state in open_states)
+    index_by_state_id = {
+        state_id: state_index
+        for state_index, state_id in enumerate(state_id_by_index)
+    }
+    action_count = len(actions)
+    semantics_digest = transition_semantics_id.semantics_digest
+    rows = tuple(
+        SyntheticTransitionRow(
+            source_state_id=state_id_by_index[state_index],
+            action_id=actions[action_index].action_id,
+            target_state_id=state_id_by_index[
+                transition_targets[state_index * action_count + action_index]
+            ],
+            transition_semantics_digest=semantics_digest,
+        )
+        for state_index in range(len(open_states))
+        for action_index in range(action_count)
+    ) + tuple(
+        SyntheticTransitionRow(
+            source_state_id=terminal.state_id,
+            action_id=action.action_id,
+            target_state_id=terminal.state_id,
+            transition_semantics_digest=semantics_digest,
+        )
+        for terminal in states[len(open_states):]
+        for action in actions
+    )
+    seeds = tuple(state.state_id for state in open_states)
+    domain_id = odlrq_adapters.make_reachable_domain_id(
+        environment_digest=ENV,
+        observation_frame_id=observation_frame_id,
+        transition_semantics_id=transition_semantics_id,
+        seed_state_ids=seeds,
+        states=states,
+        actions=actions,
+        transitions=rows,
+    )
+    candidate = SyntheticFiniteSnapshot(
+        domain_id=domain_id,
+        response_vocabulary_id=response_vocabulary_id,
+        observation_frame_id=observation_frame_id,
+        transition_semantics_id=transition_semantics_id,
+        evidence_profile=SyntheticEvidenceProfile(),
+        seed_state_ids=seeds,
+        states=states,
+        actions=actions,
+        transitions=rows,
+    )
+    admitted = admit_synthetic_finite_snapshot(candidate)
+    certificate = refine_exact_partition(admitted)
+    verified = verify_exact_partition(admitted, certificate)
+    assert verified.certificate is certificate
+    return frozenset(
+        open_members
+        for block in certificate.final_blocks
+        if (
+            open_members := frozenset(
+                index_by_state_id[state_id]
+                for state_id in block.member_state_ids
+                if state_id in index_by_state_id
+            )
+        )
+    )
+
+
+def test_exhaustive_6132_binary_output_automata_match_independent_solver() -> None:
+    """Stream the complete frozen n<=3, m<=2 family through both solvers."""
+
+    checked = 0
+    # The enumerated family has one binary Moore output.  Keep this carrier
+    # genuinely one-coordinate so the frozen 300-second runner retains room
+    # for the three later CPU-survivor modules without weakening the 6,132
+    # public admit -> refine -> verify checks.
+    vocabulary = ResponseVocabularyId.from_coordinate_names(("o",))
+    frame = make_synthetic_observation_frame_id(
+        environment_digest=ENV,
+        response_vocabulary_id=vocabulary,
+    )
+    frame_digest = observation_frame_digest(frame)
+    for state_count in range(1, 4):
+        for action_count in range(1, 3):
+            locator_ids = (
+                "unit_cpu_survivor_z",
+                "unit_cpu_survivor_a",
+            )
+            actions = tuple(
+                SyntheticAction(
+                    action_id=locator_ids[action_index],
+                    payload=CanonicalPayload.from_value({"a": action_index}),
+                )
+                for action_index in range(action_count)
+            )
+            semantics = make_synthetic_transition_semantics_id(
+                actions=actions,
+                response_vocabulary_id=vocabulary,
+            )
+            for outputs in product((0, 1), repeat=state_count):
+                states = tuple(
+                    SyntheticTotalizedState(
+                        state_id=f"unit_cpu_survivor_{state_index}",
+                        payload=CanonicalPayload.from_value({"s": state_index}),
+                        totalized_kind=TotalizedStatus.OPEN,
+                        response_coordinates=(ExactRational(output),),
+                        frame_digest=frame_digest,
+                    )
+                    for state_index, output in enumerate(outputs)
+                ) + (
+                    SyntheticTotalizedState(
+                        state_id="unit_cpu_survivor_c",
+                        payload=CanonicalPayload.from_value({"s": "c"}),
+                        totalized_kind=TotalizedStatus.CLOSED,
+                        response_coordinates=(ExactRational(0),),
+                        frame_digest=frame_digest,
+                    ),
+                    SyntheticTotalizedState(
+                        state_id="unit_cpu_survivor_f",
+                        payload=CanonicalPayload.from_value({"s": "f"}),
+                        totalized_kind=TotalizedStatus.SINK,
+                        response_coordinates=(ExactRational(0),),
+                        frame_digest=frame_digest,
+                    ),
+                )
+                transition_count = state_count * action_count
+                for transition_targets in product(
+                    range(state_count), repeat=transition_count
+                ):
+                    expected = _independent_coarsest_congruence(
+                        outputs, transition_targets, action_count
+                    )
+                    actual = _public_pipeline_open_partition(
+                        states=states,
+                        actions=actions,
+                        response_vocabulary_id=vocabulary,
+                        observation_frame_id=frame,
+                        transition_semantics_id=semantics,
+                        transition_targets=transition_targets,
+                    )
+                    assert actual == expected
+                    checked += 1
+    assert checked == 6_132
+
+
+def test_partition_is_byte_canonical_under_all_input_array_reversals() -> None:
+    candidate = _delayed_partition_candidate()
+    left = refine_exact_partition(admit_synthetic_finite_snapshot(candidate))
+    permuted = SyntheticFiniteSnapshot(
+        domain_id=candidate.domain_id,
+        response_vocabulary_id=candidate.response_vocabulary_id,
+        observation_frame_id=candidate.observation_frame_id,
+        transition_semantics_id=candidate.transition_semantics_id,
+        evidence_profile=candidate.evidence_profile,
+        seed_state_ids=tuple(reversed(candidate.seed_state_ids)),
+        states=tuple(reversed(candidate.states)),
+        actions=tuple(reversed(candidate.actions)),
+        transitions=tuple(reversed(candidate.transitions)),
+    )
+    right = refine_exact_partition(admit_synthetic_finite_snapshot(permuted))
+    assert canonical_contract_bytes(left) == canonical_contract_bytes(right)
+
+
+def test_semantic_action_order_defeats_locator_and_reverse_hash_order() -> None:
+    first = _action(
+        "k000", action_id="unit_cpu_survivor_reverse_locator_z"
+    )
+    second = _action(
+        "k001", action_id="unit_cpu_survivor_reverse_locator_a"
+    )
+    first_bytes = first.payload.canonical_json.encode("utf-8")
+    second_bytes = second.payload.canonical_json.encode("utf-8")
+    assert first.action_id > second.action_id
+    assert first_bytes < second_bytes
+    assert hashlib.sha256(first_bytes).hexdigest() == (
+        "f55c36234c4adc1c7ff054be65f16a2a52cf0ca8c0b882128d8b74d1334749e2"
+    )
+    assert hashlib.sha256(second_bytes).hexdigest() == (
+        "a60f94fe3c0e4e14e1ead576e127498d16ada4de8317e62ea41920ab02e7b8ce"
+    )
+    assert hashlib.sha256(first_bytes).digest() > hashlib.sha256(second_bytes).digest()
+
+    states = (
+        _state("hash_u", TotalizedStatus.OPEN, (1, 0)),
+        _state("hash_v", TotalizedStatus.OPEN, (1, 0)),
+        _state("hash_closed", TotalizedStatus.CLOSED, (0, 0)),
+        _state("hash_sink", TotalizedStatus.SINK, (0, 0)),
+    )
+    rows = []
+    for action in (first, second):
+        rows.extend(
+            (
+                SyntheticTransitionRow(
+                    states[0].state_id, action.action_id, states[2].state_id, SEMANTICS
+                ),
+                SyntheticTransitionRow(
+                    states[1].state_id, action.action_id, states[3].state_id, SEMANTICS
+                ),
+                SyntheticTransitionRow(
+                    states[2].state_id, action.action_id, states[2].state_id, SEMANTICS
+                ),
+                SyntheticTransitionRow(
+                    states[3].state_id, action.action_id, states[3].state_id, SEMANTICS
+                ),
+            )
+        )
+    admitted = admit_synthetic_finite_snapshot(
+        _candidate(
+            states=states,
+            actions=(second, first),
+            rows=tuple(reversed(rows)),
+            seeds=(states[0].state_id, states[1].state_id),
+        )
+    )
+    certificate = refine_exact_partition(admitted)
+    pair = tuple(
+        sorted(
+            (
+                _block_index_for(certificate, "hash_u"),
+                _block_index_for(certificate, "hash_v"),
+            )
+        )
+    )
+    witness = next(
+        item for item in certificate.distinguishing_witnesses
+        if (item.left_block_index, item.right_block_index) == pair
+    )
+    assert certificate.canonical_action_ids == (first.action_id, second.action_id)
+    assert witness.action_ids == (first.action_id,)
+    verify_exact_partition(admitted, certificate)
+
+
+def test_bisimilar_block_members_follow_payload_not_locator_or_hash_order() -> None:
+    first = _state(
+        "p",
+        TotalizedStatus.OPEN,
+        (1, 0),
+        state_id="unit_cpu_survivor_state_locator_z",
+    )
+    second = _state(
+        "q",
+        TotalizedStatus.OPEN,
+        (1, 0),
+        state_id="unit_cpu_survivor_state_locator_a",
+    )
+    first_bytes = first.payload.canonical_json.encode("utf-8")
+    second_bytes = second.payload.canonical_json.encode("utf-8")
+    assert first.state_id > second.state_id
+    assert first_bytes < second_bytes
+    assert hashlib.sha256(first_bytes).digest() > hashlib.sha256(second_bytes).digest()
+    states = (
+        first,
+        second,
+        _state("member_closed", TotalizedStatus.CLOSED, (0, 0)),
+        _state("member_sink", TotalizedStatus.SINK, (0, 0)),
+    )
+    action = _action("member_action")
+    rows = tuple(
+        SyntheticTransitionRow(
+            state.state_id,
+            action.action_id,
+            state.state_id,
+            SEMANTICS,
+        )
+        for state in states
+    )
+    admitted = admit_synthetic_finite_snapshot(
+        _candidate(
+            states=tuple(reversed(states)),
+            actions=(action,),
+            rows=tuple(reversed(rows)),
+            seeds=(first.state_id, second.state_id),
+        )
+    )
+    certificate = refine_exact_partition(admitted)
+    bisimilar_block = next(
+        block
+        for block in certificate.final_blocks
+        if first.state_id in block.member_state_ids
+    )
+    assert bisimilar_block.member_state_ids == (first.state_id, second.state_id)
+    verify_exact_partition(admitted, certificate)
+
+
+def _bisimilar_diamond_candidate(*, perturb_q: bool = False) -> SyntheticFiniteSnapshot:
+    q_response = (4, 0) if perturb_q else (3, 0)
+    states = (
+        _state("diamond_p", TotalizedStatus.OPEN, (3, 0)),
+        _state("diamond_q", TotalizedStatus.OPEN, q_response),
+        _state("diamond_l0", TotalizedStatus.OPEN, (2, 0)),
+        _state("diamond_l1", TotalizedStatus.OPEN, (2, 0)),
+        _state("diamond_r0", TotalizedStatus.OPEN, (1, 0)),
+        _state("diamond_r1", TotalizedStatus.OPEN, (1, 0)),
+        _state("diamond_closed", TotalizedStatus.CLOSED, (0, 0)),
+        _state("diamond_sink", TotalizedStatus.SINK, (0, 0)),
+    )
+    actions = (_action("diamond_a"), _action("diamond_b"))
+    by_name = {state.state_id.rsplit("_", 1)[-1]: state for state in states}
+    targets = {
+        "p": ("l0", "r0"),
+        "q": ("l1", "r1"),
+        "l0": ("closed", "closed"),
+        "l1": ("closed", "closed"),
+        "r0": ("sink", "sink"),
+        "r1": ("sink", "sink"),
+        "closed": ("closed", "closed"),
+        "sink": ("sink", "sink"),
+    }
+    rows = tuple(
+        SyntheticTransitionRow(
+            by_name[source].state_id,
+            actions[action_index].action_id,
+            by_name[target].state_id,
+            SEMANTICS,
+        )
+        for source, action_targets in targets.items()
+        for action_index, target in enumerate(action_targets)
+    )
+    return _candidate(
+        states=states,
+        actions=actions,
+        rows=rows,
+        seeds=(by_name["p"].state_id, by_name["q"].state_id),
+    )
+
+
+def test_bisimilar_diamond_merges_and_response_perturbation_splits() -> None:
+    baseline_admitted = admit_synthetic_finite_snapshot(
+        _bisimilar_diamond_candidate()
+    )
+    baseline = refine_exact_partition(baseline_admitted)
+    assert _block_index_for(baseline, "diamond_p") == _block_index_for(
+        baseline, "diamond_q"
+    )
+    assert _block_index_for(baseline, "diamond_l0") == _block_index_for(
+        baseline, "diamond_l1"
+    )
+    assert _block_index_for(baseline, "diamond_r0") == _block_index_for(
+        baseline, "diamond_r1"
+    )
+    verify_exact_partition(baseline_admitted, baseline)
+
+    perturbed_admitted = admit_synthetic_finite_snapshot(
+        _bisimilar_diamond_candidate(perturb_q=True)
+    )
+    perturbed = refine_exact_partition(perturbed_admitted)
+    assert _block_index_for(perturbed, "diamond_p") != _block_index_for(
+        perturbed, "diamond_q"
+    )
+    assert len(perturbed.final_blocks) == len(baseline.final_blocks) + 1
+    with pytest.raises(StrictContractError, match="source binding"):
+        verify_exact_partition(perturbed_admitted, baseline)
+
+
+def test_trace_and_verified_wrapper_forgeries_recompute_and_fail_closed() -> None:
+    admitted = admit_synthetic_finite_snapshot(_delayed_partition_candidate())
+    certificate = refine_exact_partition(admitted)
+    forged_trace = ExactPartitionCertificate.from_dict(certificate.to_dict())
+    skipped_stage = replace(certificate.refinement_trace[-1], stage_index=1)
+    object.__setattr__(
+        forged_trace,
+        "refinement_trace",
+        (certificate.refinement_trace[0], skipped_stage),
+    )
+    with pytest.raises(StrictContractError, match="stage is missing"):
+        verify_exact_partition(admitted, forged_trace)
+
+    u_pair = tuple(
+        sorted((_block_index_for(certificate, "u"), _block_index_for(certificate, "v")))
+    )
+    nonshortest_witnesses = tuple(
+        replace(
+            witness,
+            action_ids=(SEMANTIC_A_ID, SEMANTIC_A_ID, SEMANTIC_A_ID),
+        )
+        if (witness.left_block_index, witness.right_block_index) == u_pair
+        else witness
+        for witness in certificate.distinguishing_witnesses
+    )
+    nonshortest = replace(
+        certificate, distinguishing_witnesses=nonshortest_witnesses
+    )
+    with pytest.raises(
+        StrictContractError, match="shortest semantic-action-lexicographic"
+    ):
+        verify_exact_partition(admitted, nonshortest)
+
+    wrong_scope = ExactPartitionCertificate.from_dict(certificate.to_dict())
+    object.__setattr__(wrong_scope, "evidence_scope", "lean_exact")
+    with pytest.raises(StrictContractError, match="evidence_scope"):
+        verify_exact_partition(admitted, wrong_scope)
+
+    verified = verify_exact_partition(admitted, certificate)
+    bad_report = json.loads(json.dumps(verified.to_dict()))
+    bad_report["verification_report"]["final_block_count"] += 1
+    with pytest.raises(StrictContractError, match="does not match recomputed"):
+        VerifiedExactPartition.from_dict(bad_report, admitted)
+
+    bad_outer_binding = json.loads(json.dumps(verified.to_dict()))
+    bad_outer_binding["action_alphabet_digest"] = "00" * 32
+    with pytest.raises(StrictContractError, match="does not match recomputed"):
+        VerifiedExactPartition.from_dict(bad_outer_binding, admitted)
+
+
+def _large_self_loop_candidate(
+    *, totalized_state_count: int, action_count: int, unique_responses: bool = False
+) -> SyntheticFiniteSnapshot:
+    open_count = totalized_state_count - 2
+    states = tuple(
+        _state(
+            f"work_s{state_index:03d}",
+            TotalizedStatus.OPEN,
+            ((state_index if unique_responses else 1), 0),
+        )
+        for state_index in range(open_count)
+    ) + (
+        _state("work_closed", TotalizedStatus.CLOSED, (0, 0)),
+        _state("work_sink", TotalizedStatus.SINK, (0, 0)),
+    )
+    actions = tuple(_action(f"work_a{action_index:02d}") for action_index in range(action_count))
+    rows = tuple(
+        SyntheticTransitionRow(
+            state.state_id, action.action_id, state.state_id, SEMANTICS
+        )
+        for state in states
+        for action in actions
+    )
+    return _candidate(
+        states=states,
+        actions=actions,
+        rows=rows,
+        seeds=tuple(state.state_id for state in states[:open_count]),
+    )
+
+
+def test_64_by_12_structural_work_counters_are_exact_not_timing_based() -> None:
+    admitted = admit_synthetic_finite_snapshot(
+        _large_self_loop_candidate(totalized_state_count=64, action_count=12)
+    )
+    certificate = refine_exact_partition(admitted)
+    verified = verify_exact_partition(admitted, certificate)
+    assert len(certificate.final_blocks) == 3
+    assert certificate.work_counters.refinement_units == 963
+    assert certificate.work_counters.quotient_units == 768
+    assert certificate.work_counters.total_units == 130_347
+    assert verified.verification_report.work_counters.refinement_units == 57_693
+    assert verified.verification_report.work_counters.distinguishing_units == 30_243
+    assert verified.verification_report.work_counters.total_units == 218_203
+
+
+def test_100_by_10_verifier_cap_fires_before_pair_refinement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    admitted = admit_synthetic_finite_snapshot(
+        _large_self_loop_candidate(totalized_state_count=100, action_count=10)
+    )
+    certificate = refine_exact_partition(admitted)
+
+    def forbidden_pair_refinement(*args: object, **kwargs: object) -> object:
+        raise AssertionError("pair-refinement allocation began before its frozen charge")
+
+    monkeypatch.setattr(
+        behavioral_partition_module,
+        "_verifier_relation_refinement",
+        forbidden_pair_refinement,
+    )
+    with pytest.raises(
+        StrictContractError, match="CPU_SURVIVOR_PREREQUISITE_BLOCKED"
+    ):
+        verify_exact_partition(admitted, certificate)
+
+
+def _delayed_chain_candidate() -> SyntheticFiniteSnapshot:
+    open_count = 98
+    states = tuple(
+        _state(f"chain_s{state_index:03d}", TotalizedStatus.OPEN, (1, 0))
+        for state_index in range(open_count)
+    ) + (
+        _state("chain_closed", TotalizedStatus.CLOSED, (0, 0)),
+        _state("chain_sink", TotalizedStatus.SINK, (0, 0)),
+    )
+    actions = tuple(
+        _action(f"chain_a{action_index:02d}") for action_index in range(10)
+    )
+    rows = []
+    for state_index, state in enumerate(states):
+        for action_index, action in enumerate(actions):
+            if state.totalized_kind is TotalizedStatus.OPEN and action_index == 0:
+                target = (
+                    states[state_index + 1]
+                    if state_index + 1 < open_count
+                    else states[-2]
+                )
+            else:
+                target = state
+            rows.append(
+                SyntheticTransitionRow(
+                    state.state_id,
+                    action.action_id,
+                    target.state_id,
+                    SEMANTICS,
+                )
+            )
+    return _candidate(
+        states=states,
+        actions=actions,
+        rows=tuple(rows),
+        seeds=(states[0].state_id,),
+    )
+
+
+def test_100_by_10_producer_cap_fires_before_the_next_refinement_pass(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    admitted = admit_synthetic_finite_snapshot(_delayed_chain_candidate())
+    original = behavioral_partition_module._producer_refinement_pass
+    completed_passes = 0
+
+    def counted_refinement_pass(*args: object, **kwargs: object) -> object:
+        nonlocal completed_passes
+        completed_passes += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        behavioral_partition_module,
+        "_producer_refinement_pass",
+        counted_refinement_pass,
+    )
+    with pytest.raises(
+        StrictContractError, match="CPU_SURVIVOR_PREREQUISITE_BLOCKED"
+    ):
+        refine_exact_partition(admitted)
+    # The 65th pass is charged first and therefore never begins.
+    assert completed_passes == 64
+
+
+def test_utf8_units_pass_below_and_block_above_the_aggregate_cap() -> None:
+    states, actions, rows = _parts()
+    below = replace(
+        states[0],
+        payload=CanonicalPayload.from_value(
+            {"kind": "state", "name": "\U0001F600" * 40_000}
+        ),
+    )
+    below_admitted = admit_synthetic_finite_snapshot(
+        _candidate(states=(below, *states[1:]), actions=actions, rows=rows)
+    )
+    below_certificate = refine_exact_partition(below_admitted)
+    verify_exact_partition(below_admitted, below_certificate)
+    assert below_certificate.work_counters.total_units == 163_094
+
+    above = replace(
+        states[0],
+        payload=CanonicalPayload.from_value(
+            {"kind": "state", "name": "\U0001F600" * 62_000}
+        ),
+    )
+    above_admitted = admit_synthetic_finite_snapshot(
+        _candidate(states=(above, *states[1:]), actions=actions, rows=rows)
+    )
+    with pytest.raises(
+        StrictContractError, match="CPU_SURVIVOR_PREREQUISITE_BLOCKED"
+    ):
+        refine_exact_partition(above_admitted)
+
+
+def _coordinate_stress_candidate(coordinate_count: int) -> SyntheticFiniteSnapshot:
+    coordinates = tuple(
+        f"c{coordinate_index:04d}\U0001F600"
+        for coordinate_index in range(coordinate_count)
+    )
+    base_values = (0,) * coordinate_count
+    perturbed_values = (*base_values[:-1], 1)
+    states = (
+        _state("coordinate_open0", TotalizedStatus.OPEN, base_values),
+        _state("coordinate_open1", TotalizedStatus.OPEN, perturbed_values),
+        _state("coordinate_closed", TotalizedStatus.CLOSED, base_values),
+        _state("coordinate_sink", TotalizedStatus.SINK, base_values),
+    )
+    action = _action("coordinate_action")
+    rows = tuple(
+        SyntheticTransitionRow(
+            state.state_id, action.action_id, state.state_id, SEMANTICS
+        )
+        for state in states
+    )
+    return _candidate(
+        states=states,
+        actions=(action,),
+        rows=rows,
+        seeds=(states[0].state_id, states[1].state_id),
+        coordinates=coordinates,
+    )
+
+
+def test_coordinate_cardinality_passes_below_and_blocks_above_work_cap() -> None:
+    below_admitted = admit_synthetic_finite_snapshot(
+        _coordinate_stress_candidate(256)
+    )
+    below = refine_exact_partition(below_admitted)
+    verify_exact_partition(below_admitted, below)
+    assert below.work_counters.total_units < MAX_EXACT_PARTITION_WORK_UNITS
+    assert _block_index_for(below, "coordinate_open0") != _block_index_for(
+        below, "coordinate_open1"
+    )
+    p0_owner = {
+        state_id: block.block_index
+        for block in below.refinement_trace[0].blocks
+        for state_id in block.member_state_ids
+    }
+    assert (
+        p0_owner["unit_cpu_survivor_coordinate_open0"]
+        != p0_owner["unit_cpu_survivor_coordinate_open1"]
+    )
+
+    above_admitted = admit_synthetic_finite_snapshot(
+        _coordinate_stress_candidate(9_500)
+    )
+    with pytest.raises(
+        StrictContractError, match="CPU_SURVIVOR_PREREQUISITE_BLOCKED"
+    ):
+        refine_exact_partition(above_admitted)
