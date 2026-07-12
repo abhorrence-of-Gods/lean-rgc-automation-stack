@@ -125,13 +125,84 @@ CPU_SURVIVOR_AMENDMENT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_cpu_survivor_implementation_bundle_amendment_2026-07-12.md"
 )
-CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB = (
-    "f3b991b42228b0f36acaf5aaad6572777aa76b5a"
-)
-CPU_SURVIVOR_AMENDMENT_PATHS = {
-    CPU_SURVIVOR_AMENDMENT_PATH,
-    "tests/test_uprime_u05_identity.py",
+CPU_SURVIVOR_AMENDMENT_COMMIT = "9e126ce70f42944329ae361341f5934c1a569afe"
+CPU_SURVIVOR_AMENDMENT_PARENT = U05_RESULT_COMMIT
+CPU_SURVIVOR_AMENDMENT_BLOBS = {
+    CPU_SURVIVOR_AMENDMENT_PATH:
+        "f3b991b42228b0f36acaf5aaad6572777aa76b5a",
+    "tests/test_uprime_u05_identity.py":
+        "6f472260ec70b896b546bcd78755b06dd8d44909",
 }
+CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB = CPU_SURVIVOR_AMENDMENT_BLOBS[
+    CPU_SURVIVOR_AMENDMENT_PATH
+]
+CPU_SURVIVOR_AMENDMENT_PATHS = set(CPU_SURVIVOR_AMENDMENT_BLOBS)
+
+CPU_SURVIVOR_IMPLEMENTATION_ALLOWLIST = {
+    "lean_rgc/odlrq/__init__.py",
+    "lean_rgc/odlrq/contracts.py",
+    "lean_rgc/odlrq/adapters.py",
+    "lean_rgc/odlrq/behavioral_partition.py",
+    "lean_rgc/odlrq/quotient_generator.py",
+    "lean_rgc/odlrq/hankel.py",
+    "lean_rgc/odlrq/componentwise_window.py",
+    "tools/run_uprime_cpu_survivor_tests.ps1",
+    "tests/test_odlrq_behavioral_partition.py",
+    "tests/test_odlrq_quotient_generator.py",
+    "tests/test_odlrq_hankel_predictive.py",
+    "tests/test_odlrq_componentwise_window.py",
+    "tests/test_uprime_u05_identity.py",
+    "tests/tier_manifest.json",
+}
+
+CPU_COMMON_WP4E_ALLOWLIST = frozenset(
+    {
+        "lean_rgc/odlrq/__init__.py",
+        "lean_rgc/odlrq/contracts.py",
+        "lean_rgc/odlrq/adapters.py",
+        "lean_rgc/odlrq/behavioral_partition.py",
+        "tools/run_uprime_cpu_survivor_tests.ps1",
+        "tests/test_odlrq_behavioral_partition.py",
+        "tests/test_uprime_u05_identity.py",
+        "tests/tier_manifest.json",
+    }
+)
+
+CPU_SURVIVOR_MILESTONE_ALLOWLISTS = (
+    CPU_COMMON_WP4E_ALLOWLIST,
+    CPU_COMMON_WP4E_ALLOWLIST,
+    CPU_COMMON_WP4E_ALLOWLIST,
+    frozenset(
+        {
+            "lean_rgc/odlrq/__init__.py",
+            "lean_rgc/odlrq/contracts.py",
+            "lean_rgc/odlrq/quotient_generator.py",
+            "tests/test_odlrq_quotient_generator.py",
+            "tests/tier_manifest.json",
+        }
+    ),
+    frozenset(
+        {
+            "lean_rgc/odlrq/__init__.py",
+            "lean_rgc/odlrq/contracts.py",
+            "lean_rgc/odlrq/hankel.py",
+            "tests/test_odlrq_hankel_predictive.py",
+            "tests/tier_manifest.json",
+        }
+    ),
+    frozenset(
+        {
+            "lean_rgc/odlrq/__init__.py",
+            "lean_rgc/odlrq/contracts.py",
+            "lean_rgc/odlrq/componentwise_window.py",
+            "tests/test_odlrq_behavioral_partition.py",
+            "tests/test_odlrq_quotient_generator.py",
+            "tests/test_odlrq_hankel_predictive.py",
+            "tests/test_odlrq_componentwise_window.py",
+            "tests/tier_manifest.json",
+        }
+    ),
+)
 
 
 def _git(*args: str, check: bool = True) -> subprocess.CompletedProcess[bytes]:
@@ -154,8 +225,20 @@ def _assert_tree_blob(commit: str, path: str, expected_blob: str) -> None:
     assert row == ["100644", "blob", expected_blob, path]
 
 
+def _dirty_paths() -> set[str]:
+    raw = _git(
+        "status", "--porcelain=v1", "-z", "--untracked-files=all"
+    ).stdout.decode("utf-8")
+    return {row[3:] for row in raw.split("\0") if row}
+
+
 def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
     """Seal the plan, candidate, immutable U05 result, and CPU amendment."""
+
+    assert len(CPU_SURVIVOR_MILESTONE_ALLOWLISTS) == 6
+    assert set().union(*CPU_SURVIVOR_MILESTONE_ALLOWLISTS) == (
+        CPU_SURVIVOR_IMPLEMENTATION_ALLOWLIST
+    )
 
     plan_available = (
         _git("cat-file", "-e", f"{PLAN_COMMIT}^{{commit}}", check=False).returncode
@@ -305,7 +388,10 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
                 if amendment_additions:
                     assert len(amendment_additions) == 1
                     amendment_commit = amendment_additions[0]
-                    assert _raw_parents(amendment_commit) == [U05_RESULT_COMMIT]
+                    assert amendment_commit == CPU_SURVIVOR_AMENDMENT_COMMIT
+                    assert _raw_parents(amendment_commit) == [
+                        CPU_SURVIVOR_AMENDMENT_PARENT
+                    ]
                     amendment_changed = set(
                         _git(
                             "diff-tree",
@@ -319,11 +405,8 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
                         .splitlines()
                     )
                     assert amendment_changed == CPU_SURVIVOR_AMENDMENT_PATHS
-                    _assert_tree_blob(
-                        amendment_commit,
-                        CPU_SURVIVOR_AMENDMENT_PATH,
-                        CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB,
-                    )
+                    for path, expected_blob in CPU_SURVIVOR_AMENDMENT_BLOBS.items():
+                        _assert_tree_blob(amendment_commit, path, expected_blob)
                     assert (
                         _git(
                             "merge-base",
@@ -334,14 +417,72 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
                         ).returncode
                         == 0
                     )
+
+                    if head == amendment_commit:
+                        # Milestone 1 pre-commit validation includes every
+                        # visible path, including individual untracked files.
+                        dirty = _dirty_paths()
+                        assert "tests/test_uprime_u05_identity.py" in dirty
+                        assert dirty <= CPU_SURVIVOR_MILESTONE_ALLOWLISTS[0]
+                    else:
+                        cpu_commits = (
+                            _git(
+                                "rev-list",
+                                "--first-parent",
+                                "--reverse",
+                                f"{amendment_commit}..{head}",
+                            )
+                            .stdout.decode("ascii")
+                            .splitlines()
+                        )
+                        assert 1 <= len(cpu_commits) <= 6
+                        previous_cpu_commit = amendment_commit
+                        plan_document_path = next(
+                            path for path in PLAN_BLOBS if path.startswith("docs/")
+                        )
+                        for milestone_index, cpu_commit in enumerate(cpu_commits):
+                            assert _raw_parents(cpu_commit) == [previous_cpu_commit]
+                            cpu_changed = set(
+                                _git(
+                                    "diff-tree",
+                                    "--no-commit-id",
+                                    "--name-only",
+                                    "--no-renames",
+                                    "-r",
+                                    cpu_commit,
+                                )
+                                .stdout.decode("utf-8")
+                                .splitlines()
+                            )
+                            assert cpu_changed
+                            assert cpu_changed <= CPU_SURVIVOR_MILESTONE_ALLOWLISTS[
+                                milestone_index
+                            ]
+                            _assert_tree_blob(
+                                cpu_commit,
+                                CPU_SURVIVOR_AMENDMENT_PATH,
+                                CPU_SURVIVOR_AMENDMENT_DOCUMENT_BLOB,
+                            )
+                            _assert_tree_blob(
+                                cpu_commit,
+                                plan_document_path,
+                                PLAN_BLOBS[plan_document_path],
+                            )
+                            for path, expected_blob in U05_RESULT_BLOBS.items():
+                                _assert_tree_blob(cpu_commit, path, expected_blob)
+                            previous_cpu_commit = cpu_commit
+
+                        dirty = _dirty_paths()
+                        if dirty:
+                            assert len(cpu_commits) < len(
+                                CPU_SURVIVOR_MILESTONE_ALLOWLISTS
+                            )
+                            assert dirty <= CPU_SURVIVOR_MILESTONE_ALLOWLISTS[
+                                len(cpu_commits)
+                            ]
                 elif head == U05_RESULT_COMMIT:
                     # Pre-commit validation of the exact two-path amendment.
-                    status = _git(
-                        "status", "--porcelain=v1", "--untracked-files=all"
-                    ).stdout.decode("utf-8")
-                    dirty = {
-                        row[3:] for row in status.splitlines() if row
-                    }
+                    dirty = _dirty_paths()
                     assert dirty == CPU_SURVIVOR_AMENDMENT_PATHS
                     assert (
                         _git(
@@ -399,12 +540,16 @@ def test_first_implementation_commit_freezes_exact_plan_anchor_topology():
             _assert_tree_blob("HEAD", path, expected_blob)
 
         parents = _raw_parents(head)
+        assert len(parents) == 1
         if head == U05_RESULT_COMMIT:
             assert parents == [U05_CANDIDATE]
         else:
-            # This is the exact amendment head.  Milestone 1 will freeze its
-            # now-known commit ID before any further shallow descendant exists.
-            assert parents == [U05_RESULT_COMMIT]
+            # Every CPU-bundle descendant retains the exact immutable anchors.
+            # A depth-one checkout exposes only its direct raw parent; it cannot
+            # prove unavailable intermediate diffs or ancestry and does not
+            # pretend to do so here.
+            if head == CPU_SURVIVOR_AMENDMENT_COMMIT:
+                assert parents == [CPU_SURVIVOR_AMENDMENT_PARENT]
             _assert_tree_blob(
                 "HEAD",
                 CPU_SURVIVOR_AMENDMENT_PATH,

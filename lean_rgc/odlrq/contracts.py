@@ -10,6 +10,8 @@ The contracts in this module are intentionally not adapters for legacy
 
 from dataclasses import dataclass, field
 from enum import Enum
+import hashlib
+from math import gcd
 import re
 from typing import Any, Mapping, Sequence
 
@@ -19,6 +21,7 @@ from lean_rgc.lean.kernel_state_identity import (
     StrictIdentityError,
     canonical_json_bytes,
     debt_readout_from_identity,
+    parse_canonical_json_bytes,
 )
 
 
@@ -39,6 +42,47 @@ U05_PROBE_TRANSITION_SCHEMA = "lean-rgc-u05-probe-transition-v1"
 U05_TASK_SCHEMA = "lean-rgc-u05-task-v1"
 EPISODE_BUDGET_SENTINEL = "NOT_ENFORCED_DEVELOPMENT_ONLY"
 
+SYNTHETIC_EVIDENCE_SCOPE = "synthetic_development"
+SYNTHETIC_FIXTURE_ID_PREFIX = "unit_cpu_survivor_"
+NOT_APPLICABLE = "NOT_APPLICABLE"
+SYNTHETIC_CLOSURE_POLICY = "synthetic_totalized_fixed_table_v1"
+SYNTHETIC_FRAME_GRANULARITY = "synthetic_totalized_state"
+SYNTHETIC_FRAME_NORMALIZATION = "exact_rational_decimal_v1"
+SYNTHETIC_FRAME_EXTRACTOR_VERSION = "cpu_survivor_synthetic_v1"
+SYNTHETIC_TOTALIZATION_POLICY = "closed_or_open_ordinary_failure_to_sink_v1"
+SYNTHETIC_TERMINAL_POLICY = "closed_and_sink_absorb_v1"
+SYNTHETIC_CENSOR_POLICY = "censors_forbidden_v1"
+MAX_SYNTHETIC_TOTALIZED_STATES = 128
+MAX_SYNTHETIC_ACTIONS = 16
+MAX_SYNTHETIC_TRANSITION_ROWS = 2_048
+MAX_EXACT_RATIONAL_BITS = 8_192
+_MAX_EXACT_RATIONAL_DECIMAL_DIGITS = 2_467
+
+REACHABLE_DOMAIN_ID_SCHEMA = "lean-rgc-odlrq-reachable-domain-id-v1"
+RESPONSE_VOCABULARY_ID_SCHEMA = "lean-rgc-odlrq-response-vocabulary-id-v1"
+SYNTHETIC_TRANSITION_SEMANTICS_ID_SCHEMA = (
+    "lean-rgc-odlrq-synthetic-transition-semantics-id-v1"
+)
+SYNTHETIC_EVIDENCE_PROFILE_SCHEMA = (
+    "lean-rgc-odlrq-synthetic-evidence-profile-v1"
+)
+CANONICAL_PAYLOAD_SCHEMA = "lean-rgc-odlrq-canonical-payload-v1"
+EXACT_RATIONAL_SCHEMA = "lean-rgc-odlrq-exact-rational-v1"
+SYNTHETIC_TOTALIZED_STATE_SCHEMA = (
+    "lean-rgc-odlrq-synthetic-totalized-state-v1"
+)
+SYNTHETIC_ACTION_SCHEMA = "lean-rgc-odlrq-synthetic-action-v1"
+SYNTHETIC_TRANSITION_ROW_SCHEMA = (
+    "lean-rgc-odlrq-synthetic-transition-row-v1"
+)
+SYNTHETIC_FINITE_SNAPSHOT_SCHEMA = (
+    "lean-rgc-odlrq-synthetic-finite-snapshot-v1"
+)
+EXACT_ADMISSION_REPORT_SCHEMA = "lean-rgc-odlrq-exact-admission-report-v1"
+ADMITTED_EXACT_FINITE_SNAPSHOT_SCHEMA = (
+    "lean-rgc-odlrq-admitted-exact-finite-snapshot-v1"
+)
+
 
 class StrictContractError(ValueError):
     """A payload is not a member of a strict ODLRQ/U05 contract."""
@@ -47,7 +91,16 @@ class StrictContractError(ValueError):
 def _obj(value: Any, where: str) -> dict[str, Any]:
     if type(value) is not dict:
         raise StrictContractError(f"{where} must be an object")
+    if any(type(key) is not str for key in value):
+        raise StrictContractError(f"{where} keys must be exact strings")
     return value
+
+
+def _require_strict_json(value: Any, where: str) -> None:
+    try:
+        canonical_json_bytes(value)
+    except StrictIdentityError as exc:
+        raise StrictContractError(f"{where} is outside strict canonical JSON") from exc
 
 
 def _list(value: Any, where: str) -> list[Any]:
@@ -64,9 +117,21 @@ def _str(value: Any, where: str, *, optional: bool = False) -> str | None:
     return value
 
 
+def _fixed_str(value: Any, expected: str, where: str) -> str:
+    if type(value) is not str or value != expected:
+        raise StrictContractError(f"{where} must be the exact literal {expected}")
+    return value
+
+
 def _int(value: Any, where: str, *, minimum: int = 0) -> int:
     if type(value) is not int or value < minimum:
         raise StrictContractError(f"{where} must be an integer >= {minimum}")
+    return value
+
+
+def _signed_int(value: Any, where: str) -> int:
+    if type(value) is not int:
+        raise StrictContractError(f"{where} must be an integer")
     return value
 
 
@@ -89,6 +154,8 @@ def _exact_fields(
 
 
 _HEX64_RE = re.compile(r"[0-9A-Fa-f]{64}\Z")
+_CANONICAL_SIGNED_DECIMAL_RE = re.compile(r"(?:0|-[1-9][0-9]*|[1-9][0-9]*)\Z")
+_CANONICAL_POSITIVE_DECIMAL_RE = re.compile(r"[1-9][0-9]*\Z")
 
 
 def _digest(value: Any, where: str, *, optional: bool = False) -> str | None:
@@ -97,6 +164,10 @@ def _digest(value: Any, where: str, *, optional: bool = False) -> str | None:
     if type(value) is not str or _HEX64_RE.fullmatch(value) is None:
         raise StrictContractError(f"{where} must be a full SHA-256 hex digest")
     return value.upper()
+
+
+def _sha256_upper(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest().upper()
 
 
 def _enum(cls: type[Enum], value: Any, where: str) -> Any:
@@ -1857,6 +1928,1124 @@ class U05ProbeTransition:
         )
 
 
+class SyntheticExpansionStatus(str, Enum):
+    SEALED = "sealed"
+    QUEUED = "queued"
+
+
+@dataclass(frozen=True)
+class ReachableDomainId:
+    """Content-bound identity for one finite synthetic reachable domain."""
+
+    environment_digest: str
+    frame_digest: str
+    transition_semantics_digest: str
+    seed_set_digest: str
+    action_alphabet_digest: str
+    domain_payload_digest: str
+    evidence_scope: str = SYNTHETIC_EVIDENCE_SCOPE
+    closure_policy: str = SYNTHETIC_CLOSURE_POLICY
+
+    def __post_init__(self) -> None:
+        for name in (
+            "environment_digest",
+            "frame_digest",
+            "transition_semantics_digest",
+            "seed_set_digest",
+            "action_alphabet_digest",
+            "domain_payload_digest",
+        ):
+            object.__setattr__(self, name, _digest(getattr(self, name), name))
+        _fixed_str(
+            self.evidence_scope,
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "reachable domain evidence_scope",
+        )
+        _fixed_str(
+            self.closure_policy,
+            SYNTHETIC_CLOSURE_POLICY,
+            "reachable domain closure_policy",
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": REACHABLE_DOMAIN_ID_SCHEMA,
+            "evidence_scope": self.evidence_scope,
+            "closure_policy": self.closure_policy,
+            "environment_digest": self.environment_digest,
+            "frame_digest": self.frame_digest,
+            "transition_semantics_digest": self.transition_semantics_digest,
+            "seed_set_digest": self.seed_set_digest,
+            "action_alphabet_digest": self.action_alphabet_digest,
+            "domain_payload_digest": self.domain_payload_digest,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "ReachableDomainId":
+        obj = _obj(value, "ReachableDomainId")
+        fields = {
+            "schema_version",
+            "evidence_scope",
+            "closure_policy",
+            "environment_digest",
+            "frame_digest",
+            "transition_semantics_digest",
+            "seed_set_digest",
+            "action_alphabet_digest",
+            "domain_payload_digest",
+        }
+        _exact_fields(obj, fields, "ReachableDomainId")
+        _fixed_str(
+            obj["schema_version"], REACHABLE_DOMAIN_ID_SCHEMA, "ReachableDomainId schema"
+        )
+        return cls(
+            environment_digest=obj["environment_digest"],
+            frame_digest=obj["frame_digest"],
+            transition_semantics_digest=obj["transition_semantics_digest"],
+            seed_set_digest=obj["seed_set_digest"],
+            action_alphabet_digest=obj["action_alphabet_digest"],
+            domain_payload_digest=obj["domain_payload_digest"],
+            evidence_scope=obj["evidence_scope"],
+            closure_policy=obj["closure_policy"],
+        )
+
+
+@dataclass(frozen=True)
+class ResponseVocabularyId:
+    """Frozen ordered response coordinates with an unerasable kind tag."""
+
+    coordinate_names: tuple[str, ...]
+    coordinate_schema_digest: str
+    vocabulary_digest: str
+    totalized_kind_in_key: bool = True
+    evidence_scope: str = SYNTHETIC_EVIDENCE_SCOPE
+
+    def __post_init__(self) -> None:
+        if (
+            type(self.coordinate_names) is not tuple
+            or not self.coordinate_names
+            or not all(type(name) is str and name for name in self.coordinate_names)
+        ):
+            raise StrictContractError(
+                "response coordinate_names must be a nonempty string tuple"
+            )
+        if len(self.coordinate_names) != len(set(self.coordinate_names)):
+            raise StrictContractError("response coordinate_names contain duplicates")
+        _fixed_str(
+            self.evidence_scope,
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "response vocabulary evidence_scope",
+        )
+        if self.totalized_kind_in_key is not True:
+            raise StrictContractError("totalized kind must be part of every response key")
+        object.__setattr__(
+            self,
+            "coordinate_schema_digest",
+            _digest(self.coordinate_schema_digest, "coordinate_schema_digest"),
+        )
+        object.__setattr__(
+            self,
+            "vocabulary_digest",
+            _digest(self.vocabulary_digest, "vocabulary_digest"),
+        )
+        expected_schema = _sha256_upper(
+            canonical_json_bytes({"coordinate_names": list(self.coordinate_names)})
+        )
+        if self.coordinate_schema_digest != expected_schema:
+            raise StrictContractError("response coordinate schema digest mismatch")
+        expected_vocabulary = _sha256_upper(
+            canonical_json_bytes(
+                {
+                    "coordinate_schema_digest": expected_schema,
+                    "evidence_scope": SYNTHETIC_EVIDENCE_SCOPE,
+                    "totalized_kind_in_key": True,
+                }
+            )
+        )
+        if self.vocabulary_digest != expected_vocabulary:
+            raise StrictContractError("response vocabulary digest mismatch")
+
+    @classmethod
+    def from_coordinate_names(
+        cls, coordinate_names: Sequence[str]
+    ) -> "ResponseVocabularyId":
+        if type(coordinate_names) is not tuple:
+            raise StrictContractError(
+                "response coordinate_names factory requires an exact tuple"
+            )
+        if not coordinate_names or not all(
+            type(name) is str and name for name in coordinate_names
+        ):
+            raise StrictContractError(
+                "response coordinate_names must be exact nonempty strings"
+            )
+        names = coordinate_names
+        schema_digest = _sha256_upper(
+            canonical_json_bytes({"coordinate_names": list(names)})
+        )
+        vocabulary_digest = _sha256_upper(
+            canonical_json_bytes(
+                {
+                    "coordinate_schema_digest": schema_digest,
+                    "evidence_scope": SYNTHETIC_EVIDENCE_SCOPE,
+                    "totalized_kind_in_key": True,
+                }
+            )
+        )
+        return cls(names, schema_digest, vocabulary_digest)
+
+    @property
+    def coordinate_count(self) -> int:
+        return len(self.coordinate_names)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": RESPONSE_VOCABULARY_ID_SCHEMA,
+            "evidence_scope": self.evidence_scope,
+            "coordinate_names": list(self.coordinate_names),
+            "coordinate_schema_digest": self.coordinate_schema_digest,
+            "vocabulary_digest": self.vocabulary_digest,
+            "totalized_kind_in_key": self.totalized_kind_in_key,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "ResponseVocabularyId":
+        obj = _obj(value, "ResponseVocabularyId")
+        fields = {
+            "schema_version",
+            "evidence_scope",
+            "coordinate_names",
+            "coordinate_schema_digest",
+            "vocabulary_digest",
+            "totalized_kind_in_key",
+        }
+        _exact_fields(obj, fields, "ResponseVocabularyId")
+        _fixed_str(
+            obj["schema_version"],
+            RESPONSE_VOCABULARY_ID_SCHEMA,
+            "ResponseVocabularyId schema",
+        )
+        return cls(
+            coordinate_names=tuple(
+                _str(name, "response coordinate name")
+                for name in _list(obj["coordinate_names"], "coordinate_names")
+            ),  # type: ignore[arg-type]
+            coordinate_schema_digest=obj["coordinate_schema_digest"],
+            vocabulary_digest=obj["vocabulary_digest"],
+            totalized_kind_in_key=_bool(
+                obj["totalized_kind_in_key"], "totalized_kind_in_key"
+            ),
+            evidence_scope=_str(
+                obj["evidence_scope"], "evidence_scope"
+            ),  # type: ignore[arg-type]
+        )
+
+
+@dataclass(frozen=True)
+class SyntheticTransitionSemanticsId:
+    """Synthetic transition law bound to full actions and response vocabulary."""
+
+    action_alphabet_digest: str
+    response_vocabulary_digest: str
+    semantics_digest: str
+    totalization_policy: str = SYNTHETIC_TOTALIZATION_POLICY
+    terminal_policy: str = SYNTHETIC_TERMINAL_POLICY
+    censor_policy: str = SYNTHETIC_CENSOR_POLICY
+    evidence_scope: str = SYNTHETIC_EVIDENCE_SCOPE
+
+    def __post_init__(self) -> None:
+        for name in (
+            "action_alphabet_digest",
+            "response_vocabulary_digest",
+            "semantics_digest",
+        ):
+            object.__setattr__(self, name, _digest(getattr(self, name), name))
+        _fixed_str(
+            self.evidence_scope,
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "synthetic semantics evidence_scope",
+        )
+        expected_policies = {
+            "totalization_policy": SYNTHETIC_TOTALIZATION_POLICY,
+            "terminal_policy": SYNTHETIC_TERMINAL_POLICY,
+            "censor_policy": SYNTHETIC_CENSOR_POLICY,
+        }
+        for name, expected in expected_policies.items():
+            _fixed_str(getattr(self, name), expected, f"synthetic {name}")
+        expected_digest = self._derived_digest(
+            self.action_alphabet_digest,
+            self.response_vocabulary_digest,
+        )
+        if self.semantics_digest != expected_digest:
+            raise StrictContractError("synthetic transition-semantics digest mismatch")
+
+    @staticmethod
+    def _derived_digest(
+        action_alphabet_digest: str, response_vocabulary_digest: str
+    ) -> str:
+        return _sha256_upper(
+            canonical_json_bytes(
+                {
+                    "action_alphabet_digest": action_alphabet_digest,
+                    "censor_policy": SYNTHETIC_CENSOR_POLICY,
+                    "evidence_scope": SYNTHETIC_EVIDENCE_SCOPE,
+                    "response_vocabulary_digest": response_vocabulary_digest,
+                    "terminal_policy": SYNTHETIC_TERMINAL_POLICY,
+                    "totalization_policy": SYNTHETIC_TOTALIZATION_POLICY,
+                }
+            )
+        )
+
+    @classmethod
+    def from_bindings(
+        cls, action_alphabet_digest: str, response_vocabulary_digest: str
+    ) -> "SyntheticTransitionSemanticsId":
+        action_digest = _digest(action_alphabet_digest, "action_alphabet_digest")
+        response_digest = _digest(
+            response_vocabulary_digest, "response_vocabulary_digest"
+        )
+        return cls(
+            action_alphabet_digest=action_digest,
+            response_vocabulary_digest=response_digest,
+            semantics_digest=cls._derived_digest(action_digest, response_digest),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": SYNTHETIC_TRANSITION_SEMANTICS_ID_SCHEMA,
+            "evidence_scope": self.evidence_scope,
+            "action_alphabet_digest": self.action_alphabet_digest,
+            "response_vocabulary_digest": self.response_vocabulary_digest,
+            "totalization_policy": self.totalization_policy,
+            "terminal_policy": self.terminal_policy,
+            "censor_policy": self.censor_policy,
+            "semantics_digest": self.semantics_digest,
+        }
+
+    @classmethod
+    def from_dict(
+        cls, value: Mapping[str, Any]
+    ) -> "SyntheticTransitionSemanticsId":
+        obj = _obj(value, "SyntheticTransitionSemanticsId")
+        fields = {
+            "schema_version",
+            "evidence_scope",
+            "action_alphabet_digest",
+            "response_vocabulary_digest",
+            "totalization_policy",
+            "terminal_policy",
+            "censor_policy",
+            "semantics_digest",
+        }
+        _exact_fields(obj, fields, "SyntheticTransitionSemanticsId")
+        _fixed_str(
+            obj["schema_version"],
+            SYNTHETIC_TRANSITION_SEMANTICS_ID_SCHEMA,
+            "SyntheticTransitionSemanticsId schema",
+        )
+        return cls(
+            action_alphabet_digest=obj["action_alphabet_digest"],
+            response_vocabulary_digest=obj["response_vocabulary_digest"],
+            semantics_digest=obj["semantics_digest"],
+            totalization_policy=_str(
+                obj["totalization_policy"], "totalization_policy"
+            ),  # type: ignore[arg-type]
+            terminal_policy=_str(
+                obj["terminal_policy"], "terminal_policy"
+            ),  # type: ignore[arg-type]
+            censor_policy=_str(
+                obj["censor_policy"], "censor_policy"
+            ),  # type: ignore[arg-type]
+            evidence_scope=_str(
+                obj["evidence_scope"], "evidence_scope"
+            ),  # type: ignore[arg-type]
+        )
+
+
+@dataclass(frozen=True)
+class SyntheticEvidenceProfile:
+    """A nonpromotable profile; Lean-only evidence is necessarily absent."""
+
+    evidence_scope: str = SYNTHETIC_EVIDENCE_SCOPE
+    target_binding: str = NOT_APPLICABLE
+    delta: str = NOT_APPLICABLE
+    replay: str = NOT_APPLICABLE
+    cap: str = NOT_APPLICABLE
+    m3: str = NOT_APPLICABLE
+    locality_claim: bool = False
+
+    def __post_init__(self) -> None:
+        _fixed_str(
+            self.evidence_scope,
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "synthetic profile evidence_scope",
+        )
+        for name in ("target_binding", "delta", "replay", "cap", "m3"):
+            _fixed_str(
+                getattr(self, name),
+                NOT_APPLICABLE,
+                f"synthetic profile {name}",
+            )
+        if self.locality_claim is not False:
+            raise StrictContractError("synthetic profile cannot make a locality claim")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": SYNTHETIC_EVIDENCE_PROFILE_SCHEMA,
+            "evidence_scope": self.evidence_scope,
+            "target_binding": self.target_binding,
+            "delta": self.delta,
+            "replay": self.replay,
+            "cap": self.cap,
+            "m3": self.m3,
+            "locality_claim": self.locality_claim,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "SyntheticEvidenceProfile":
+        obj = _obj(value, "SyntheticEvidenceProfile")
+        fields = {
+            "schema_version",
+            "evidence_scope",
+            "target_binding",
+            "delta",
+            "replay",
+            "cap",
+            "m3",
+            "locality_claim",
+        }
+        _exact_fields(obj, fields, "SyntheticEvidenceProfile")
+        _fixed_str(
+            obj["schema_version"],
+            SYNTHETIC_EVIDENCE_PROFILE_SCHEMA,
+            "SyntheticEvidenceProfile schema",
+        )
+        return cls(
+            evidence_scope=_str(obj["evidence_scope"], "evidence_scope"),  # type: ignore[arg-type]
+            target_binding=_str(obj["target_binding"], "target_binding"),  # type: ignore[arg-type]
+            delta=_str(obj["delta"], "delta"),  # type: ignore[arg-type]
+            replay=_str(obj["replay"], "replay"),  # type: ignore[arg-type]
+            cap=_str(obj["cap"], "cap"),  # type: ignore[arg-type]
+            m3=_str(obj["m3"], "m3"),  # type: ignore[arg-type]
+            locality_claim=_bool(obj["locality_claim"], "locality_claim"),
+        )
+
+
+@dataclass(frozen=True)
+class CanonicalPayload:
+    """Full canonical JSON object payload, never a hash-only identity."""
+
+    canonical_json: str
+
+    def __post_init__(self) -> None:
+        if type(self.canonical_json) is not str or not self.canonical_json:
+            raise StrictContractError("canonical payload must be a nonempty string")
+        try:
+            parsed = parse_canonical_json_bytes(
+                self.canonical_json.encode("utf-8", errors="strict")
+            )
+        except (StrictIdentityError, UnicodeEncodeError) as exc:
+            raise StrictContractError("payload is not strict canonical JSON") from exc
+        if type(parsed) is not dict:
+            raise StrictContractError("canonical payload must encode an object")
+
+    @classmethod
+    def from_value(cls, value: Mapping[str, Any]) -> "CanonicalPayload":
+        if type(value) is not dict:
+            raise StrictContractError("canonical payload source must be an object")
+        try:
+            encoded = canonical_json_bytes(value)
+        except StrictIdentityError as exc:
+            raise StrictContractError("payload source is outside strict JSON") from exc
+        return cls(encoded.decode("utf-8"))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": CANONICAL_PAYLOAD_SCHEMA,
+            "canonical_json": self.canonical_json,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "CanonicalPayload":
+        obj = _obj(value, "CanonicalPayload")
+        _exact_fields(obj, {"schema_version", "canonical_json"}, "CanonicalPayload")
+        _fixed_str(
+            obj["schema_version"], CANONICAL_PAYLOAD_SCHEMA, "CanonicalPayload schema"
+        )
+        return cls(_str(obj["canonical_json"], "canonical_json"))  # type: ignore[arg-type]
+
+
+@dataclass(frozen=True)
+class ExactRational:
+    numerator: int
+    denominator: int = 1
+
+    def __post_init__(self) -> None:
+        numerator = _signed_int(self.numerator, "rational numerator")
+        denominator = _int(self.denominator, "rational denominator", minimum=1)
+        if (
+            abs(numerator).bit_length() > MAX_EXACT_RATIONAL_BITS
+            or denominator.bit_length() > MAX_EXACT_RATIONAL_BITS
+        ):
+            raise StrictContractError(
+                "exact rational exceeds the 8192-bit pre-reduction cap"
+            )
+        divisor = gcd(abs(numerator), denominator)
+        if numerator == 0:
+            denominator = 1
+        else:
+            numerator //= divisor
+            denominator //= divisor
+        object.__setattr__(self, "numerator", numerator)
+        object.__setattr__(self, "denominator", denominator)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": EXACT_RATIONAL_SCHEMA,
+            "numerator": str(self.numerator),
+            "denominator": str(self.denominator),
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "ExactRational":
+        obj = _obj(value, "ExactRational")
+        _exact_fields(
+            obj, {"schema_version", "numerator", "denominator"}, "ExactRational"
+        )
+        _fixed_str(obj["schema_version"], EXACT_RATIONAL_SCHEMA, "ExactRational schema")
+        numerator_text = obj["numerator"]
+        denominator_text = obj["denominator"]
+        if (
+            type(numerator_text) is not str
+            or _CANONICAL_SIGNED_DECIMAL_RE.fullmatch(numerator_text) is None
+        ):
+            raise StrictContractError("numerator is not a canonical decimal string")
+        if (
+            type(denominator_text) is not str
+            or _CANONICAL_POSITIVE_DECIMAL_RE.fullmatch(denominator_text) is None
+        ):
+            raise StrictContractError("denominator is not a canonical decimal string")
+        if (
+            len(numerator_text.removeprefix("-"))
+            > _MAX_EXACT_RATIONAL_DECIMAL_DIGITS
+            or len(denominator_text) > _MAX_EXACT_RATIONAL_DECIMAL_DIGITS
+        ):
+            raise StrictContractError(
+                "exact rational exceeds the 8192-bit pre-reduction cap"
+            )
+        numerator = int(numerator_text)
+        denominator = int(denominator_text)
+        result = cls(numerator, denominator)
+        if (
+            str(result.numerator) != numerator_text
+            or str(result.denominator) != denominator_text
+        ):
+            raise StrictContractError("rational payload is not reduced canonical form")
+        return result
+
+
+@dataclass(frozen=True)
+class SyntheticTotalizedState:
+    state_id: str
+    payload: CanonicalPayload
+    totalized_kind: TotalizedStatus
+    response_coordinates: tuple[ExactRational, ...]
+    frame_digest: str
+    expansion_status: SyntheticExpansionStatus = SyntheticExpansionStatus.SEALED
+    boundary_complete: bool = True
+    truncated: bool = False
+    live_handle: str = NOT_APPLICABLE
+
+    def __post_init__(self) -> None:
+        _str(self.state_id, "synthetic state_id")
+        if type(self.payload) is not CanonicalPayload:
+            raise StrictContractError("synthetic state payload must be canonical")
+        if type(self.totalized_kind) is not TotalizedStatus:
+            object.__setattr__(
+                self,
+                "totalized_kind",
+                _enum(TotalizedStatus, self.totalized_kind, "totalized_kind"),
+            )
+        if (
+            type(self.response_coordinates) is not tuple
+            or not all(
+                type(value) is ExactRational
+                for value in self.response_coordinates
+            )
+        ):
+            raise StrictContractError("response coordinates must be exact rationals")
+        object.__setattr__(
+            self, "frame_digest", _digest(self.frame_digest, "state frame_digest")
+        )
+        if type(self.expansion_status) is not SyntheticExpansionStatus:
+            object.__setattr__(
+                self,
+                "expansion_status",
+                _enum(
+                    SyntheticExpansionStatus,
+                    self.expansion_status,
+                    "synthetic expansion_status",
+                ),
+            )
+        _bool(self.boundary_complete, "boundary_complete")
+        _bool(self.truncated, "truncated")
+        _str(self.live_handle, "live_handle")
+
+    @property
+    def response_key(self) -> tuple[str, tuple[tuple[int, int], ...]]:
+        return (
+            self.totalized_kind.value,
+            tuple(
+                (value.numerator, value.denominator)
+                for value in self.response_coordinates
+            ),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": SYNTHETIC_TOTALIZED_STATE_SCHEMA,
+            "state_id": self.state_id,
+            "payload": self.payload.to_dict(),
+            "totalized_kind": self.totalized_kind.value,
+            "response_coordinates": [
+                value.to_dict() for value in self.response_coordinates
+            ],
+            "frame_digest": self.frame_digest,
+            "expansion_status": self.expansion_status.value,
+            "boundary_complete": self.boundary_complete,
+            "truncated": self.truncated,
+            "live_handle": self.live_handle,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "SyntheticTotalizedState":
+        obj = _obj(value, "SyntheticTotalizedState")
+        fields = {
+            "schema_version",
+            "state_id",
+            "payload",
+            "totalized_kind",
+            "response_coordinates",
+            "frame_digest",
+            "expansion_status",
+            "boundary_complete",
+            "truncated",
+            "live_handle",
+        }
+        _exact_fields(obj, fields, "SyntheticTotalizedState")
+        _fixed_str(
+            obj["schema_version"],
+            SYNTHETIC_TOTALIZED_STATE_SCHEMA,
+            "SyntheticTotalizedState schema",
+        )
+        return cls(
+            state_id=_str(obj["state_id"], "state_id"),  # type: ignore[arg-type]
+            payload=CanonicalPayload.from_dict(_obj(obj["payload"], "payload")),
+            totalized_kind=_enum(
+                TotalizedStatus, obj["totalized_kind"], "totalized_kind"
+            ),
+            response_coordinates=tuple(
+                ExactRational.from_dict(_obj(row, "response coordinate"))
+                for row in _list(
+                    obj["response_coordinates"], "response_coordinates"
+                )
+            ),
+            frame_digest=obj["frame_digest"],
+            expansion_status=_enum(
+                SyntheticExpansionStatus,
+                obj["expansion_status"],
+                "synthetic expansion_status",
+            ),
+            boundary_complete=_bool(obj["boundary_complete"], "boundary_complete"),
+            truncated=_bool(obj["truncated"], "truncated"),
+            live_handle=_str(obj["live_handle"], "live_handle"),  # type: ignore[arg-type]
+        )
+
+
+@dataclass(frozen=True)
+class SyntheticAction:
+    action_id: str
+    payload: CanonicalPayload
+
+    def __post_init__(self) -> None:
+        _str(self.action_id, "synthetic action_id")
+        if type(self.payload) is not CanonicalPayload:
+            raise StrictContractError("synthetic action payload must be canonical")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": SYNTHETIC_ACTION_SCHEMA,
+            "action_id": self.action_id,
+            "payload": self.payload.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "SyntheticAction":
+        obj = _obj(value, "SyntheticAction")
+        _exact_fields(obj, {"schema_version", "action_id", "payload"}, "SyntheticAction")
+        _fixed_str(
+            obj["schema_version"], SYNTHETIC_ACTION_SCHEMA, "SyntheticAction schema"
+        )
+        return cls(
+            action_id=_str(obj["action_id"], "action_id"),  # type: ignore[arg-type]
+            payload=CanonicalPayload.from_dict(_obj(obj["payload"], "payload")),
+        )
+
+
+@dataclass(frozen=True)
+class SyntheticTransitionRow:
+    source_state_id: str
+    action_id: str
+    target_state_id: str
+    transition_semantics_digest: str
+    censor: str = NOT_APPLICABLE
+
+    def __post_init__(self) -> None:
+        for name in ("source_state_id", "action_id", "target_state_id", "censor"):
+            _str(getattr(self, name), f"synthetic transition {name}")
+        object.__setattr__(
+            self,
+            "transition_semantics_digest",
+            _digest(
+                self.transition_semantics_digest,
+                "transition transition_semantics_digest",
+            ),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": SYNTHETIC_TRANSITION_ROW_SCHEMA,
+            "source_state_id": self.source_state_id,
+            "action_id": self.action_id,
+            "target_state_id": self.target_state_id,
+            "transition_semantics_digest": self.transition_semantics_digest,
+            "censor": self.censor,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "SyntheticTransitionRow":
+        obj = _obj(value, "SyntheticTransitionRow")
+        fields = {
+            "schema_version",
+            "source_state_id",
+            "action_id",
+            "target_state_id",
+            "transition_semantics_digest",
+            "censor",
+        }
+        _exact_fields(obj, fields, "SyntheticTransitionRow")
+        _fixed_str(
+            obj["schema_version"],
+            SYNTHETIC_TRANSITION_ROW_SCHEMA,
+            "SyntheticTransitionRow schema",
+        )
+        return cls(
+            source_state_id=_str(
+                obj["source_state_id"], "source_state_id"
+            ),  # type: ignore[arg-type]
+            action_id=_str(obj["action_id"], "action_id"),  # type: ignore[arg-type]
+            target_state_id=_str(
+                obj["target_state_id"], "target_state_id"
+            ),  # type: ignore[arg-type]
+            transition_semantics_digest=obj["transition_semantics_digest"],
+            censor=_str(obj["censor"], "censor"),  # type: ignore[arg-type]
+        )
+
+
+def _canonical_row_key(value: Any) -> bytes:
+    try:
+        return canonical_json_bytes(value.to_dict())
+    except (AttributeError, StrictIdentityError) as exc:
+        raise StrictContractError("finite snapshot member is not canonical") from exc
+
+
+@dataclass(frozen=True)
+class SyntheticFiniteSnapshot:
+    domain_id: ReachableDomainId
+    response_vocabulary_id: ResponseVocabularyId
+    observation_frame_id: ObservationFrameId
+    transition_semantics_id: SyntheticTransitionSemanticsId
+    evidence_profile: SyntheticEvidenceProfile
+    seed_state_ids: tuple[str, ...]
+    states: tuple[SyntheticTotalizedState, ...]
+    actions: tuple[SyntheticAction, ...]
+    transitions: tuple[SyntheticTransitionRow, ...]
+
+    def __post_init__(self) -> None:
+        if type(self.domain_id) is not ReachableDomainId:
+            raise StrictContractError("snapshot domain_id is not strict")
+        if type(self.response_vocabulary_id) is not ResponseVocabularyId:
+            raise StrictContractError("snapshot response vocabulary is not strict")
+        if type(self.observation_frame_id) is not ObservationFrameId:
+            raise StrictContractError("snapshot observation frame is not strict")
+        if type(self.transition_semantics_id) is not SyntheticTransitionSemanticsId:
+            raise StrictContractError("snapshot transition semantics are not strict")
+        if type(self.evidence_profile) is not SyntheticEvidenceProfile:
+            raise StrictContractError("snapshot evidence profile is not strict")
+        if type(self.seed_state_ids) is not tuple:
+            raise StrictContractError("snapshot seed_state_ids must be a tuple")
+        for name, values in (
+            ("states", self.states),
+            ("actions", self.actions),
+            ("transitions", self.transitions),
+        ):
+            if type(values) is not tuple:
+                raise StrictContractError(f"snapshot {name} must be a tuple")
+        n_states = len(self.states)
+        n_seeds = len(self.seed_state_ids)
+        n_actions = len(self.actions)
+        n_rows = len(self.transitions)
+        if n_states > MAX_SYNTHETIC_TOTALIZED_STATES:
+            raise StrictContractError("totalized state cap is violated before materialization")
+        if (
+            n_seeds < 1
+            or n_seeds > n_states
+            or n_seeds > MAX_SYNTHETIC_TOTALIZED_STATES
+        ):
+            raise StrictContractError("seed-count cap is violated before materialization")
+        if n_actions > MAX_SYNTHETIC_ACTIONS:
+            raise StrictContractError("synthetic action cap is violated before materialization")
+        if (
+            n_rows > MAX_SYNTHETIC_TRANSITION_ROWS
+            or n_states * n_actions > MAX_SYNTHETIC_TRANSITION_ROWS
+        ):
+            raise StrictContractError(
+                "synthetic transition-row cap is violated before materialization"
+            )
+        if not all(
+            type(value) is str and value for value in self.seed_state_ids
+        ):
+            raise StrictContractError("snapshot seed_state_ids must be a string tuple")
+        for name, values, cls in (
+            ("states", self.states, SyntheticTotalizedState),
+            ("actions", self.actions, SyntheticAction),
+            ("transitions", self.transitions, SyntheticTransitionRow),
+        ):
+            if not all(type(value) is cls for value in values):
+                raise StrictContractError(f"snapshot {name} have the wrong type")
+        object.__setattr__(self, "seed_state_ids", tuple(sorted(self.seed_state_ids)))
+        object.__setattr__(self, "states", tuple(sorted(self.states, key=_canonical_row_key)))
+        object.__setattr__(self, "actions", tuple(sorted(self.actions, key=_canonical_row_key)))
+        object.__setattr__(
+            self,
+            "transitions",
+            tuple(sorted(self.transitions, key=_canonical_row_key)),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": SYNTHETIC_FINITE_SNAPSHOT_SCHEMA,
+            "domain_id": self.domain_id.to_dict(),
+            "response_vocabulary_id": self.response_vocabulary_id.to_dict(),
+            "observation_frame_id": self.observation_frame_id.to_dict(),
+            "transition_semantics_id": self.transition_semantics_id.to_dict(),
+            "evidence_profile": self.evidence_profile.to_dict(),
+            "seed_state_ids": list(self.seed_state_ids),
+            "states": [value.to_dict() for value in self.states],
+            "actions": [value.to_dict() for value in self.actions],
+            "transitions": [value.to_dict() for value in self.transitions],
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "SyntheticFiniteSnapshot":
+        obj = _obj(value, "SyntheticFiniteSnapshot")
+        fields = {
+            "schema_version",
+            "domain_id",
+            "response_vocabulary_id",
+            "observation_frame_id",
+            "transition_semantics_id",
+            "evidence_profile",
+            "seed_state_ids",
+            "states",
+            "actions",
+            "transitions",
+        }
+        _exact_fields(obj, fields, "SyntheticFiniteSnapshot")
+        _fixed_str(
+            obj["schema_version"],
+            SYNTHETIC_FINITE_SNAPSHOT_SCHEMA,
+            "SyntheticFiniteSnapshot schema",
+        )
+        seed_rows = _list(obj["seed_state_ids"], "seed_state_ids")
+        state_rows = _list(obj["states"], "states")
+        action_rows = _list(obj["actions"], "actions")
+        transition_rows = _list(obj["transitions"], "transitions")
+        if len(state_rows) > MAX_SYNTHETIC_TOTALIZED_STATES:
+            raise StrictContractError("totalized state cap is violated before parsing")
+        if (
+            len(seed_rows) < 1
+            or len(seed_rows) > len(state_rows)
+            or len(seed_rows) > MAX_SYNTHETIC_TOTALIZED_STATES
+        ):
+            raise StrictContractError("seed-count cap is violated before parsing")
+        if len(action_rows) > MAX_SYNTHETIC_ACTIONS:
+            raise StrictContractError("synthetic action cap is violated before parsing")
+        if (
+            len(transition_rows) > MAX_SYNTHETIC_TRANSITION_ROWS
+            or len(state_rows) * len(action_rows)
+            > MAX_SYNTHETIC_TRANSITION_ROWS
+        ):
+            raise StrictContractError(
+                "synthetic transition-row cap is violated before parsing"
+            )
+        _require_strict_json(obj, "SyntheticFiniteSnapshot payload")
+        result = cls(
+            domain_id=ReachableDomainId.from_dict(_obj(obj["domain_id"], "domain_id")),
+            response_vocabulary_id=ResponseVocabularyId.from_dict(
+                _obj(obj["response_vocabulary_id"], "response_vocabulary_id")
+            ),
+            observation_frame_id=ObservationFrameId.from_dict(
+                _obj(obj["observation_frame_id"], "observation_frame_id")
+            ),
+            transition_semantics_id=SyntheticTransitionSemanticsId.from_dict(
+                _obj(obj["transition_semantics_id"], "transition_semantics_id")
+            ),
+            evidence_profile=SyntheticEvidenceProfile.from_dict(
+                _obj(obj["evidence_profile"], "evidence_profile")
+            ),
+            seed_state_ids=tuple(
+                _str(value, "seed_state_id")
+                for value in seed_rows
+            ),  # type: ignore[arg-type]
+            states=tuple(
+                SyntheticTotalizedState.from_dict(_obj(row, "state"))
+                for row in state_rows
+            ),
+            actions=tuple(
+                SyntheticAction.from_dict(_obj(row, "action"))
+                for row in action_rows
+            ),
+            transitions=tuple(
+                SyntheticTransitionRow.from_dict(_obj(row, "transition"))
+                for row in transition_rows
+            ),
+        )
+        if result.to_dict() != obj:
+            raise StrictContractError("synthetic snapshot arrays are not canonical")
+        return result
+
+
+EXACT_ADMISSION_CHECKS = (
+    "synthetic_evidence_scope",
+    "lean_fields_not_applicable",
+    "locality_claim_false",
+    "domain_digests_match_payload",
+    "totalized_state_cap",
+    "action_cap",
+    "transition_row_cap",
+    "unique_state_ids_and_payloads",
+    "unique_action_ids_and_payloads",
+    "exactly_one_closed_and_sink",
+    "seed_membership",
+    "response_arity_and_kind_tag",
+    "sealed_complete_nontruncated_states",
+    "typed_frame_and_semantics_bound",
+    "frame_and_semantics_uniform",
+    "censor_free_total_transition_table",
+    "all_successors_in_domain",
+    "terminal_absorption",
+    "open_states_seed_reachable",
+    "canonical_roundtrip",
+)
+
+
+@dataclass(frozen=True)
+class ExactAdmissionReport:
+    snapshot_sha256: str
+    totalized_state_count: int
+    concrete_state_count: int
+    action_count: int
+    transition_row_count: int
+    checks: tuple[str, ...] = EXACT_ADMISSION_CHECKS
+    evidence_scope: str = SYNTHETIC_EVIDENCE_SCOPE
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "snapshot_sha256",
+            _digest(self.snapshot_sha256, "snapshot_sha256"),
+        )
+        for name in (
+            "totalized_state_count",
+            "concrete_state_count",
+            "action_count",
+            "transition_row_count",
+        ):
+            _int(getattr(self, name), f"admission {name}")
+        if type(self.checks) is not tuple or not all(
+            type(check) is str for check in self.checks
+        ):
+            raise StrictContractError("exact admission checks must be an exact string tuple")
+        if self.checks != EXACT_ADMISSION_CHECKS:
+            raise StrictContractError("exact admission check set is incomplete or reordered")
+        _fixed_str(
+            self.evidence_scope,
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "admission report evidence_scope",
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": EXACT_ADMISSION_REPORT_SCHEMA,
+            "evidence_scope": self.evidence_scope,
+            "snapshot_sha256": self.snapshot_sha256,
+            "totalized_state_count": self.totalized_state_count,
+            "concrete_state_count": self.concrete_state_count,
+            "action_count": self.action_count,
+            "transition_row_count": self.transition_row_count,
+            "checks": list(self.checks),
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "ExactAdmissionReport":
+        obj = _obj(value, "ExactAdmissionReport")
+        fields = {
+            "schema_version",
+            "evidence_scope",
+            "snapshot_sha256",
+            "totalized_state_count",
+            "concrete_state_count",
+            "action_count",
+            "transition_row_count",
+            "checks",
+        }
+        _exact_fields(obj, fields, "ExactAdmissionReport")
+        _fixed_str(
+            obj["schema_version"],
+            EXACT_ADMISSION_REPORT_SCHEMA,
+            "ExactAdmissionReport schema",
+        )
+        return cls(
+            snapshot_sha256=obj["snapshot_sha256"],
+            totalized_state_count=_int(
+                obj["totalized_state_count"], "totalized_state_count"
+            ),
+            concrete_state_count=_int(
+                obj["concrete_state_count"], "concrete_state_count"
+            ),
+            action_count=_int(obj["action_count"], "action_count"),
+            transition_row_count=_int(
+                obj["transition_row_count"], "transition_row_count"
+            ),
+            checks=tuple(
+                _str(value, "admission check")
+                for value in _list(obj["checks"], "checks")
+            ),  # type: ignore[arg-type]
+            evidence_scope=_str(
+                obj["evidence_scope"], "evidence_scope"
+            ),  # type: ignore[arg-type]
+        )
+
+
+_EXACT_ADMISSION_TOKEN = object()
+
+
+@dataclass(frozen=True)
+class AdmittedExactFiniteSnapshot:
+    snapshot: SyntheticFiniteSnapshot
+    admission_report: ExactAdmissionReport
+    evidence_scope: str = SYNTHETIC_EVIDENCE_SCOPE
+    _gate_token: object = field(default=None, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if type(self) is not AdmittedExactFiniteSnapshot:
+            raise StrictContractError("admitted exact snapshot subclasses are forbidden")
+        if self._gate_token is not _EXACT_ADMISSION_TOKEN:
+            raise StrictContractError(
+                "exact finite snapshot must be constructed by the admission gate"
+            )
+        if type(self.snapshot) is not SyntheticFiniteSnapshot:
+            raise StrictContractError("admitted snapshot payload is not strict")
+        if type(self.admission_report) is not ExactAdmissionReport:
+            raise StrictContractError("admission report payload is not strict")
+        _fixed_str(
+            self.evidence_scope,
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "admitted snapshot evidence_scope",
+        )
+        # The token prevents ordinary direct construction, but it is not the
+        # soundness boundary.  Recompute every semantic admission obligation so
+        # even a forged/private `_from_gate` call cannot serialize an invalid
+        # table as exact.
+        from .adapters import validate_synthetic_finite_snapshot
+
+        expected_report = validate_synthetic_finite_snapshot(self.snapshot)
+        supplied_report_bytes = canonical_json_bytes(
+            ExactAdmissionReport.to_dict(self.admission_report)
+        )
+        expected_report_bytes = canonical_json_bytes(
+            ExactAdmissionReport.to_dict(expected_report)
+        )
+        if supplied_report_bytes != expected_report_bytes:
+            raise StrictContractError(
+                "admission report does not match pure snapshot validation"
+            )
+
+    @classmethod
+    def _from_gate(
+        cls,
+        snapshot: SyntheticFiniteSnapshot,
+        report: ExactAdmissionReport,
+    ) -> "AdmittedExactFiniteSnapshot":
+        if cls is not AdmittedExactFiniteSnapshot:
+            raise StrictContractError("polymorphic exact admission is forbidden")
+        return AdmittedExactFiniteSnapshot(
+            snapshot, report, _gate_token=_EXACT_ADMISSION_TOKEN
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": ADMITTED_EXACT_FINITE_SNAPSHOT_SCHEMA,
+            "evidence_scope": self.evidence_scope,
+            "snapshot": self.snapshot.to_dict(),
+            "admission_report": self.admission_report.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "AdmittedExactFiniteSnapshot":
+        if cls is not AdmittedExactFiniteSnapshot:
+            raise StrictContractError("polymorphic exact deserialization is forbidden")
+        obj = _obj(value, "AdmittedExactFiniteSnapshot")
+        fields = {
+            "schema_version",
+            "evidence_scope",
+            "snapshot",
+            "admission_report",
+        }
+        _exact_fields(obj, fields, "AdmittedExactFiniteSnapshot")
+        _fixed_str(
+            obj["schema_version"],
+            ADMITTED_EXACT_FINITE_SNAPSHOT_SCHEMA,
+            "AdmittedExactFiniteSnapshot schema",
+        )
+        _fixed_str(
+            obj["evidence_scope"],
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "admitted payload evidence_scope",
+        )
+        snapshot = SyntheticFiniteSnapshot.from_dict(
+            _obj(obj["snapshot"], "snapshot")
+        )
+        # Local import avoids making the contract module depend on its adapter.
+        from .adapters import ExactAdmissionCompletionGate
+
+        admitted = ExactAdmissionCompletionGate.admit(snapshot)
+        supplied_report = ExactAdmissionReport.from_dict(
+            _obj(obj["admission_report"], "admission_report")
+        )
+        _require_strict_json(obj, "AdmittedExactFiniteSnapshot payload")
+        supplied_report_bytes = canonical_json_bytes(
+            ExactAdmissionReport.to_dict(supplied_report)
+        )
+        admitted_report_bytes = canonical_json_bytes(
+            ExactAdmissionReport.to_dict(admitted.admission_report)
+        )
+        if supplied_report_bytes != admitted_report_bytes or admitted.to_dict() != obj:
+            raise StrictContractError("admitted snapshot does not match recomputed gate")
+        return admitted
+
+
 def canonical_contract_bytes(value: Any) -> bytes:
     """Serialize a strict contract or a plain strict-JSON value canonically."""
 
@@ -1869,31 +3058,59 @@ def canonical_contract_bytes(value: Any) -> bytes:
 
 
 __all__ = [
+    "ADMITTED_EXACT_FINITE_SNAPSHOT_SCHEMA",
     "ACTION_SYMBOL_SCHEMA",
     "BOUND_ACTION_SCHEMA",
+    "CANONICAL_PAYLOAD_SCHEMA",
     "CAP_SEMANTICS_SCHEMA",
     "CENSOR_SCHEMA",
     "DEBT_READOUT_SCHEMA",
     "EPISODE_BUDGET_SENTINEL",
+    "EXACT_ADMISSION_CHECKS",
+    "EXACT_ADMISSION_REPORT_SCHEMA",
     "EXACT_KERNEL_TRANSITION_CORE_SCHEMA",
+    "EXACT_RATIONAL_SCHEMA",
     "FIELD_COVERAGE_SCHEMA",
+    "MAX_EXACT_RATIONAL_BITS",
+    "MAX_SYNTHETIC_ACTIONS",
+    "MAX_SYNTHETIC_TOTALIZED_STATES",
+    "MAX_SYNTHETIC_TRANSITION_ROWS",
+    "NOT_APPLICABLE",
     "OBSERVATION_FRAME_SCHEMA",
+    "REACHABLE_DOMAIN_ID_SCHEMA",
     "REPLAY_COMPARABLE_SCHEMA",
     "REPLAY_VERIFICATION_SCHEMA",
+    "RESPONSE_VOCABULARY_ID_SCHEMA",
     "STATE_DELTA_SCHEMA",
+    "SYNTHETIC_ACTION_SCHEMA",
+    "SYNTHETIC_CLOSURE_POLICY",
+    "SYNTHETIC_EVIDENCE_PROFILE_SCHEMA",
+    "SYNTHETIC_EVIDENCE_SCOPE",
+    "SYNTHETIC_FIXTURE_ID_PREFIX",
+    "SYNTHETIC_FRAME_EXTRACTOR_VERSION",
+    "SYNTHETIC_FRAME_GRANULARITY",
+    "SYNTHETIC_FRAME_NORMALIZATION",
+    "SYNTHETIC_FINITE_SNAPSHOT_SCHEMA",
+    "SYNTHETIC_TOTALIZED_STATE_SCHEMA",
+    "SYNTHETIC_TRANSITION_ROW_SCHEMA",
+    "SYNTHETIC_TRANSITION_SEMANTICS_ID_SCHEMA",
     "TRANSITION_SEMANTICS_SCHEMA",
     "U05_PROBE_TRANSITION_SCHEMA",
     "U05_SEMANTICS_VERSION",
     "U05_TASK_SCHEMA",
+    "AdmittedExactFiniteSnapshot",
     "ActionSymbol",
     "BehavioralObservationKey",
     "BoundAction",
+    "CanonicalPayload",
     "CanonicalStateDelta",
     "CapSemantics",
     "Censor",
     "CensorKind",
     "DebtReadout",
+    "ExactAdmissionReport",
     "ExactKernelTransitionCore",
+    "ExactRational",
     "FieldCoverage",
     "FieldCoverageStatus",
     "ObservationFrameId",
@@ -1902,7 +3119,16 @@ __all__ = [
     "ReplayComparableResponse",
     "ReplayStatus",
     "ReplayVerification",
+    "ReachableDomainId",
+    "ResponseVocabularyId",
     "StrictContractError",
+    "SyntheticAction",
+    "SyntheticEvidenceProfile",
+    "SyntheticExpansionStatus",
+    "SyntheticFiniteSnapshot",
+    "SyntheticTotalizedState",
+    "SyntheticTransitionRow",
+    "SyntheticTransitionSemanticsId",
     "TargetSelector",
     "TotalizedStatus",
     "TransitionSemanticsId",

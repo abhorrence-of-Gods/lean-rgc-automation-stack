@@ -2,6 +2,9 @@
   "test_core.py": [
     "unit"
   ],
+  "test_odlrq_behavioral_partition.py": [
+    "unit"
+  ],
   "test_qgen.py": [
     "unit"
   ],
