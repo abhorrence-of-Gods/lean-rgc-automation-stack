@@ -14,6 +14,9 @@
   "test_odlrq_hankel_predictive.py": [
     "unit"
   ],
+  "test_odlrq_componentwise_window.py": [
+    "unit"
+  ],
   "test_qgen.py": [
     "unit"
   ],

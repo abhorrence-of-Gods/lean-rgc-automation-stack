@@ -2,8 +2,9 @@
 
 U05 contracts, finite-table admission, the source-bound exact behavioral
 partition capability, the synthetic finite tier firewall, and the bounded
-rational predictive development core are exported.  Learners, positive
-envelopes, and hard Lean certificates remain outside this milestone.
+rational predictive and componentwise-window development cores are exported.
+Learners, positive envelopes, and hard Lean certificates remain outside this
+milestone.
 """
 
 from .adapters import (
@@ -129,9 +130,29 @@ from .hankel_predictive import (
     make_response_atom_key,
     make_training_hankel_view,
 )
+from .componentwise_window import (
+    COMPONENTWISE_DIAGNOSTIC_TIER,
+    COMPONENTWISE_QUALIFICATION,
+    CONTINUATION_HORIZON,
+    DEBT_COORDINATE_NAMES,
+    D_START,
+    MAX_CONTINUATION_PAIRS,
+    MAX_REPORT_BYTES,
+    MAX_START_OCCURRENCES,
+    MAX_TRANSITION_WORK_UNITS,
+    ComponentwiseTaskSeed,
+    ComponentwiseWindowReport,
+    UniversalStatus,
+    analyze_componentwise_window,
+)
 
 __all__ = [
     "CERTIFIED_OPERATOR_TIER",
+    "COMPONENTWISE_DIAGNOSTIC_TIER",
+    "COMPONENTWISE_QUALIFICATION",
+    "CONTINUATION_HORIZON",
+    "DEBT_COORDINATE_NAMES",
+    "D_START",
     "EXACT_ADMISSION_CHECKS",
     "EXACT_PARTITION_VERIFICATION_CHECKS",
     "EXACT_OPERATOR_TIER",
@@ -146,6 +167,10 @@ __all__ = [
     "MAX_HANKEL_RANK",
     "MAX_HANKEL_ROWS",
     "MAX_HANKEL_WORK_UNITS",
+    "MAX_CONTINUATION_PAIRS",
+    "MAX_REPORT_BYTES",
+    "MAX_START_OCCURRENCES",
+    "MAX_TRANSITION_WORK_UNITS",
     "MAX_SIGNED_64",
     "MAX_TIER_FIREWALL_WORK_UNITS",
     "NOMINAL_OPERATOR_TIER",
@@ -167,6 +192,8 @@ __all__ = [
     "CensorKind",
     "CertifiedIntervalOperator",
     "ChannelResidualReport",
+    "ComponentwiseTaskSeed",
+    "ComponentwiseWindowReport",
     "DebtReadout",
     "ExactAdmissionCompletionGate",
     "ExactAdmissionReport",
@@ -219,6 +246,7 @@ __all__ = [
     "TrainingFootprint",
     "TrainingHankelView",
     "TrainingReadEvent",
+    "UniversalStatus",
     "U05ProbeTransition",
     "UppernessDomainEvidence",
     "UppernessDomainWitness",
@@ -244,4 +272,5 @@ __all__ = [
     "validate_synthetic_finite_snapshot",
     "verify_exact_partition",
     "verify_upperness_domain",
+    "analyze_componentwise_window",
 ]
