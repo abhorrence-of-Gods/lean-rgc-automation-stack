@@ -9,6 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Identity/governance tests intentionally verify first-parent commit
+          # topology.  A depth-one checkout cannot prove those obligations.
+          fetch-depth: 0
+          # Pull requests otherwise default to a synthetic merge commit, which
+          # is not the single-parent candidate topology being adjudicated.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
