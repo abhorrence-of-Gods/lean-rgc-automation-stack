@@ -1,0 +1,50 @@
+{
+  "schema": "uprime-kp3-d4-fresh-task-matrix-v1",
+  "tasks": [
+    {
+      "imports": [
+        "Lean"
+      ],
+      "max_heartbeats": 20000,
+      "prefix": "intro P\nintro h",
+      "statement": "forall P : Prop, P -> P /\\ True",
+      "task_id": "kp3d4_prop_true_pair"
+    },
+    {
+      "imports": [
+        "Lean"
+      ],
+      "max_heartbeats": 20000,
+      "prefix": "intro P\nintro Q\nintro hP\nintro hQ",
+      "statement": "forall P Q : Prop, P -> Q -> (P /\\ Q) /\\ True",
+      "task_id": "kp3d4_nested_pair_true"
+    },
+    {
+      "imports": [
+        "Lean"
+      ],
+      "max_heartbeats": 20000,
+      "prefix": "",
+      "statement": "True /\\ (True /\\ True)",
+      "task_id": "kp3d4_true_right_nested"
+    },
+    {
+      "imports": [
+        "Lean"
+      ],
+      "max_heartbeats": 20000,
+      "prefix": "",
+      "statement": "(True /\\ True) /\\ (True /\\ True)",
+      "task_id": "kp3d4_true_square"
+    },
+    {
+      "imports": [
+        "Lean"
+      ],
+      "max_heartbeats": 20000,
+      "prefix": "intro n",
+      "statement": "forall n : Nat, (n + 0) + 0 = n",
+      "task_id": "kp3d4_nat_double_zero"
+    }
+  ]
+}
