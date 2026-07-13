@@ -26,4 +26,6 @@ jobs:
       - name: Dead candidate ledger
         run: python scripts/check_dead_candidate_ledger.py
       - name: Test
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
         run: python -m pytest -q
