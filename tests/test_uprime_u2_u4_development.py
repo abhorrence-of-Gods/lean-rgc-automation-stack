@@ -768,10 +768,79 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
 
 def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     state = _validate_epoch_topology(CONTROL)
-    assert state["pending"] == "T0"
-    assert state["completed"] == []
-    assert state["corrections"] == 0
-    assert state["terminal"] is None
+    actual_interval = CONTROL["first_parent_after_a0"]
+    actual_rows = _revision_rows(CONTROL)
+    actual_dirty = _governed_dirty(CONTROL)
+    if len(actual_interval) == 1:
+        assert actual_dirty == BOOTSTRAP_PATHS
+        assert state["pending"] == "T0"
+        assert state["completed"] == []
+        assert state["corrections"] == 0
+        assert state["terminal"] is None
+    else:
+        post_t0_rows = actual_rows[3:]
+        committed_t0_correction = bool(
+            post_t0_rows
+            and _changed(post_t0_rows[0]) <= BOOTSTRAP_CONTROL_PATHS
+        )
+        if committed_t0_correction:
+            assert _changed(post_t0_rows[0]) == {IDENTITY_PATH, GUARD_PATH}
+        if not post_t0_rows:
+            if actual_dirty:
+                assert actual_dirty == {IDENTITY_PATH, GUARD_PATH}
+                assert state == {
+                    "completed": [],
+                    "counts": {name: 0 for name in STAGE_ORDER},
+                    "corrections": 0,
+                    "pending": "T0-correction",
+                    "terminal": None,
+                }
+            else:
+                assert state == {
+                    "completed": [],
+                    "counts": {name: 0 for name in STAGE_ORDER},
+                    "corrections": 0,
+                    "pending": None,
+                    "terminal": None,
+                }
+        elif committed_t0_correction and len(post_t0_rows) == 1:
+            if actual_dirty:
+                assert actual_dirty <= STAGE_ALLOWLISTS["E0"]
+                assert bool(actual_dirty & STAGE_MARKERS["E0"])
+                expected_pending = "E0"
+            else:
+                expected_pending = None
+            assert state == {
+                "completed": [],
+                "counts": {name: 0 for name in STAGE_ORDER},
+                "corrections": 1,
+                "pending": expected_pending,
+                "terminal": None,
+            }
+        elif committed_t0_correction and len(post_t0_rows) == 2:
+            assert _changed(post_t0_rows[1]) <= STAGE_ALLOWLISTS["E0"]
+            assert bool(_changed(post_t0_rows[1]) & STAGE_MARKERS["E0"])
+            if actual_dirty:
+                assert actual_dirty <= STAGE_ALLOWLISTS["E1"]
+                assert bool(actual_dirty & STAGE_MARKERS["E1"])
+                expected_pending = "E1"
+            else:
+                expected_pending = None
+            assert state == {
+                "completed": ["E0"],
+                "counts": {
+                    name: (1 if name == "E0" else 0)
+                    for name in STAGE_ORDER
+                },
+                "corrections": 1,
+                "pending": expected_pending,
+                "terminal": None,
+            }
+        else:
+            assert not committed_t0_correction or state["corrections"] == 1
+            assert state["completed"] == list(
+                STAGE_ORDER[: len(state["completed"])]
+            )
 
     def append_row(
         source: Mapping[str, Any],
@@ -800,19 +869,48 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         result["worktree_blobs"] = copy.deepcopy(tree)
         return result
 
+    pending_t0 = copy.deepcopy(CONTROL)
+    pending_t0["head"] = A2_COMMIT
+    pending_t0["first_parent_after_a0"] = [A2_COMMIT]
+    pending_t0["revisions"] = pending_t0["revisions"][:2]
+    pending_t0["status_paths"] = sorted(BOOTSTRAP_PATHS)
+    pending_t0["ci_setup_paths"] = []
+    pending_t0["worktree_blobs"] = copy.deepcopy(
+        pending_t0["revisions"][1]["tree_blobs"]
+    )
+    bootstrap_source = (
+        _blobs(_revision_rows(CONTROL)[2])
+        if len(actual_interval) >= 2
+        else _worktree_blobs(CONTROL)
+    )
+    for path in BOOTSTRAP_PATHS:
+        pending_t0["worktree_blobs"][path] = bootstrap_source[path]
+    pending_bootstrap = _validate_epoch_topology(pending_t0)
+    assert pending_bootstrap["pending"] == "T0"
+    assert pending_bootstrap["completed"] == []
+
     t0_commit = "10" * 20
     t0 = append_row(
-        CONTROL,
+        pending_t0,
         t0_commit,
         BOOTSTRAP_PATHS,
         {
-            path: _worktree_blobs(CONTROL)[path]
+            path: _worktree_blobs(pending_t0)[path]
             for path in BOOTSTRAP_PATHS
         },
     )
     committed = _validate_epoch_topology(t0)
     assert committed["completed"] == []
     assert committed["pending"] is None
+
+    pending_e0 = copy.deepcopy(t0)
+    pending_e0["status_paths"] = ["lean_rgc/odlrq/quotient_generator.py"]
+    pending_e0["worktree_blobs"][
+        "lean_rgc/odlrq/quotient_generator.py"
+    ] = "19" * 20
+    e0_pending_state = _validate_epoch_topology(pending_e0)
+    assert e0_pending_state["completed"] == []
+    assert e0_pending_state["pending"] == "E0"
 
     e0_commit = "20" * 20
     e0 = append_row(
@@ -830,7 +928,7 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
 
     attacks: list[dict[str, Any]] = []
 
-    missing_a2 = copy.deepcopy(CONTROL)
+    missing_a2 = copy.deepcopy(pending_t0)
     missing_a2["head"] = ANCHOR_COMMIT
     missing_a2["first_parent_after_a0"] = []
     missing_a2["revisions"] = missing_a2["revisions"][:1]
@@ -839,15 +937,15 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     )
     attacks.append(missing_a2)
 
-    wrong_a2_parent = copy.deepcopy(CONTROL)
+    wrong_a2_parent = copy.deepcopy(pending_t0)
     wrong_a2_parent["revisions"][1]["parents"] = [ANCHOR_PARENT]
     attacks.append(wrong_a2_parent)
-    changed_a2_document = copy.deepcopy(CONTROL)
+    changed_a2_document = copy.deepcopy(pending_t0)
     changed_a2_document["revisions"][1]["tree_blobs"][A2_DOCUMENT_PATH] = (
         "00" * 20
     )
     attacks.append(changed_a2_document)
-    merge_a2 = copy.deepcopy(CONTROL)
+    merge_a2 = copy.deepcopy(pending_t0)
     merge_a2["revisions"][1]["parents"].append("ff" * 20)
     attacks.append(merge_a2)
 
@@ -867,7 +965,7 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     ]
     reordered["head"] = A2_COMMIT
     attacks.append(reordered)
-    duplicate = copy.deepcopy(CONTROL)
+    duplicate = copy.deepcopy(pending_t0)
     duplicate["revisions"].append(copy.deepcopy(duplicate["revisions"][1]))
     attacks.append(duplicate)
 
@@ -898,11 +996,11 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     attacks.append(changed_e0_base)
 
     success_reopen = append_row(
-        CONTROL, "31" * 20, SUCCESS_TERMINAL_PATHS
+        pending_t0, "31" * 20, SUCCESS_TERMINAL_PATHS
     )
     attacks.append(success_reopen)
     other_failure = append_row(
-        CONTROL, "32" * 20, {FAILURE_CLOSEOUT_PATH}
+        pending_t0, "32" * 20, {FAILURE_CLOSEOUT_PATH}
     )
     attacks.append(other_failure)
     second_bootstrap = append_row(t0, "33" * 20, BOOTSTRAP_PATHS)
@@ -935,18 +1033,78 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         {"lean_rgc/odlrq/quotient_generator.py"},
     )
     attacks.append(correction_two)
-    t0_correction = append_row(t0, "45" * 20, {GUARD_PATH})
+    t0_correction = append_row(
+        t0, "45" * 20, {IDENTITY_PATH, GUARD_PATH}
+    )
+    clean_t0_correction = _validate_epoch_topology(t0_correction)
+    assert clean_t0_correction == {
+        "completed": [],
+        "counts": {name: 0 for name in STAGE_ORDER},
+        "corrections": 1,
+        "pending": None,
+        "terminal": None,
+    }
+    dirty_e0_after_correction = copy.deepcopy(t0_correction)
+    dirty_e0_after_correction["status_paths"] = [
+        "lean_rgc/odlrq/quotient_generator.py"
+    ]
+    dirty_e0_after_correction["worktree_blobs"][
+        "lean_rgc/odlrq/quotient_generator.py"
+    ] = "48" * 20
+    pending_e0_after_correction = _validate_epoch_topology(
+        dirty_e0_after_correction
+    )
+    assert pending_e0_after_correction == {
+        "completed": [],
+        "counts": {name: 0 for name in STAGE_ORDER},
+        "corrections": 1,
+        "pending": "E0",
+        "terminal": None,
+    }
     t0_correction_e0 = append_row(
         t0_correction,
         "46" * 20,
         {"lean_rgc/odlrq/quotient_generator.py"},
     )
+    committed_e0_after_correction = _validate_epoch_topology(t0_correction_e0)
+    assert committed_e0_after_correction == {
+        "completed": ["E0"],
+        "counts": {
+            name: (1 if name == "E0" else 0) for name in STAGE_ORDER
+        },
+        "corrections": 1,
+        "pending": None,
+        "terminal": None,
+    }
     shared_quota_reuse = append_row(
         t0_correction_e0,
         "47" * 20,
         {"lean_rgc/odlrq/quotient_generator.py"},
     )
     attacks.append(shared_quota_reuse)
+
+    wrong_correction_parent = copy.deepcopy(t0_correction)
+    wrong_correction_parent["revisions"][3]["parents"] = [A2_COMMIT]
+    attacks.append(wrong_correction_parent)
+    merge_correction = copy.deepcopy(t0_correction)
+    merge_correction["revisions"][3]["parents"].append("dd" * 20)
+    attacks.append(merge_correction)
+    non_immediate_correction = append_row(e0, "49" * 20, {GUARD_PATH})
+    attacks.append(non_immediate_correction)
+    for extra_path in (
+        BOOTSTRAP_DOCUMENT_PATH,
+        A2_DOCUMENT_PATH,
+        WORKFLOW_PATH,
+        MANIFEST_PATH,
+        "lean_rgc/odlrq/quotient_generator.py",
+        SUCCESS_CLOSEOUT_PATH,
+    ):
+        mixed_correction = append_row(
+            t0,
+            ("7" + str(len(attacks) % 10)) * 20,
+            {IDENTITY_PATH, GUARD_PATH, extra_path},
+        )
+        attacks.append(mixed_correction)
 
     through_s0 = t0
     for index, stage in enumerate(STAGE_ORDER[:-1], start=50):
