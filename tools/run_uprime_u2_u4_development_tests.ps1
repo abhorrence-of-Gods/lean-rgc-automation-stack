@@ -312,11 +312,13 @@ print(guard.encode_control_plane_attestation(value))
     [IO.File]::WriteAllText($controlPath, $control, [Text.UTF8Encoding]::new($false))
     $savedRepo = $env:UPRIME_U24_REPO
     $savedSite = $env:UPRIME_U24_USER_SITE
+    $controlPycachePrefix = Join-Path $runTemp "control-pycache"
+    if (Test-Path -LiteralPath $controlPycachePrefix) { throw "control pycache prefix is not empty" }
     try {
         $env:UPRIME_U24_REPO = $repoRoot
         $env:UPRIME_U24_USER_SITE = $userSite
         $env:UPRIME_U24_CONTROL_LANE = $Lane
-        $controlEncoded = (& $pythonPath -I -S $controlPath)
+        $controlEncoded = (& $pythonPath -I -S -X "pycache_prefix=$controlPycachePrefix" $controlPath)
         if ($LASTEXITCODE -ne 0) { throw "control-plane attestation failed" }
     }
     finally {
@@ -574,7 +576,9 @@ public static class U24Job {
     if ($null -eq ("U24Job" -as [type])) { Add-Type -TypeDefinition $jobSource -Language CSharp }
     $job = [U24Job]::Create($MemoryLimitBytes)
 
-    $arguments = @("-I", "-S", $bootstrapPath)
+    $childPycachePrefix = Join-Path $runTemp "child-pycache"
+    if (Test-Path -LiteralPath $childPycachePrefix) { throw "child pycache prefix is not empty" }
+    $arguments = @("-I", "-S", "-X", "pycache_prefix=$childPycachePrefix", $bootstrapPath)
     $startInfo = [Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $pythonPath
     $startInfo.Arguments = (($arguments | ForEach-Object { Quote-NativeArgument $_ }) -join " ")

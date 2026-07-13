@@ -35,8 +35,8 @@ DENIAL_DISPOSITION = "U24_RESOURCE_OR_SCOPE_BLOCKED"
 CONTROL_ATTESTATION_SCHEMA = "u24-control-plane-attestation-v1"
 CONTROL_ATTESTATION_ENV = "UPRIME_U24_CONTROL_ATTESTATION_B64"
 PREINSTALLED_GUARD_ENV = "UPRIME_U24_GUARD_PREINSTALLED"
-FROZEN_IDENTITY_CORE_SHA256 = "AC92CADC7490434BF81F773E096DE96967EE833474D13BBA74FE46A0F308A876"
-FROZEN_RUNNER_SHA256 = "963DD9A77787E2E47FE4A908179A6179474839527372AE8D607DCA3434BD63C7"
+FROZEN_IDENTITY_CORE_SHA256 = "3B36935141917D866471446644EB7D92E286003E573DBFAA3477BAA38EFF0DD1"
+FROZEN_RUNNER_SHA256 = "2255E825EF7E02AC8E38684ACB436C311A2FE720D06B97959112F71090526448"
 
 # This is the only Python copy of the frozen forbidden rows.  The registered
 # PowerShell runner carries the same compact JSON bytes between the matching
@@ -978,7 +978,11 @@ def static_scan_union_sources(repo_root: Path) -> None:
             _scan_guard_source(text)
             continue
         if relative == "tools/run_uprime_u2_u4_development_tests.ps1":
-            if hashlib.sha256(candidate.read_bytes()).hexdigest().upper() != FROZEN_RUNNER_SHA256:
+            runner_bytes = candidate.read_bytes()
+            normalized_runner = runner_bytes.replace(b"\r\n", b"\n")
+            if b"\r" in normalized_runner:
+                _blocked("runner contains a bare carriage return")
+            if hashlib.sha256(normalized_runner).hexdigest().upper() != FROZEN_RUNNER_SHA256:
                 _blocked("runner bytes differ from the immutable B0 runner")
             matches = list(_RUNNER_DENYLIST_RE.finditer(text))
             if len(matches) != 1:

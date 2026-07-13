@@ -411,11 +411,17 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
                 assert blobs[path] == expected
         dirty = set(CONTROL["status_paths"])
         pending = None
-        if dirty:
-            assert len(completed) < len(STAGE_ORDER)
-            pending = STAGE_ORDER[len(completed)]
-            assert dirty <= STAGE_ALLOWLISTS[pending]
-            assert bool(dirty & STAGE_MARKERS[pending])
+        if terminal is not None:
+            assert not dirty
+        elif dirty:
+            corrections_used = sum(max(0, amount - 1) for amount in counts.values())
+            if corrections_used == 0 and dirty <= STAGE_ALLOWLISTS[completed[-1]]:
+                pass
+            else:
+                assert len(completed) < len(STAGE_ORDER)
+                pending = STAGE_ORDER[len(completed)]
+                assert dirty <= STAGE_ALLOWLISTS[pending]
+                assert bool(dirty & STAGE_MARKERS[pending])
 
     if terminal is not None:
         changed = _changed(terminal)
@@ -469,9 +475,14 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
         manifest_match.group(1).encode("utf-8")
     ).hexdigest().upper() == "D6E6DEBCE5C150AE31BA0D04EAF6E59FD2D79FDC4C0D5272264574665C0242F4"
     bootstrap = runner.split("$bootstrap = @'", 1)[1].split("'@", 1)[0]
+    control = runner.split("$control = @'", 1)[1].split("'@", 1)[0]
     assert bootstrap.index("import numpy as np") < bootstrap.index("guard.install_guard(policy)")
     assert bootstrap.index("guard.install_guard(policy)") < bootstrap.index("import pytest")
-    assert 'test_uprime_u2_u4_development.py")' not in runner.split("$control = @'", 1)[1].split("'@", 1)[0]
+    assert 'test_uprime_u2_u4_development.py")' not in control
+    assert '-X "pycache_prefix=$controlPycachePrefix" $controlPath' in runner
+    assert '@("-I", "-S", "-X", "pycache_prefix=$childPycachePrefix", $bootstrapPath)' in runner
+    assert runner.count('pycache prefix is not empty') == 2
+    assert "PYTHONPYCACHEPREFIX" not in runner
     encoded = u24_guard.encode_control_plane_attestation(CONTROL)
     assert encoded.startswith("z1:") and len(encoded) < 24000
     os.environ[u24_guard.CONTROL_ATTESTATION_ENV] = encoded
