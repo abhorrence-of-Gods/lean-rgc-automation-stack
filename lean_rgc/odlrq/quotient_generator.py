@@ -11,8 +11,10 @@ from dataclasses import dataclass, field
 import hashlib
 from typing import Any, Mapping, Sequence
 
+from .adapters import ExactAdmissionCompletionGate
 from .behavioral_partition import VerifiedExactPartition, verify_exact_partition
 from .contracts import (
+    ExactRational,
     MAX_SYNTHETIC_ACTIONS,
     MAX_SYNTHETIC_TOTALIZED_STATES,
     MAX_SYNTHETIC_TRANSITION_ROWS,
@@ -58,6 +60,84 @@ NOMINAL_OPERATOR_TIER = "nominal_support_development"
 _EXACT_SEAL = object()
 _WITNESS_SEAL = object()
 _CERTIFIED_SEAL = object()
+
+_EXACT_QUOTIENT_COORDINATE_TERM_SCHEMA = (
+    "odlrq_exact_quotient_coordinate_term_v1"
+)
+_EXACT_QUOTIENT_TRANSFER_ROW_SCHEMA = "odlrq_exact_quotient_transfer_row_v1"
+_EXACT_QUOTIENT_COORDINATE_GENERATOR_SCHEMA = (
+    "odlrq_exact_quotient_coordinate_generator_v1"
+)
+_EXACT_QUOTIENT_DOMAIN_SCOPE = "declared_finite_totalized_snapshot_only"
+_EXACT_QUOTIENT_BASIS_CONVENTION = "block_basis_column_source_v1"
+_EXACT_QUOTIENT_GENERATOR_CONVENTION = "P_action_minus_identity_v1"
+_EXACT_QUOTIENT_SOURCE_SEAL_VERSION = (
+    "odlrq_exact_quotient_coordinate_source_seal_v1"
+)
+_MAX_EXACT_QUOTIENT_TERMS = 4_096
+_MAX_EXACT_RATIONAL_DECIMAL_DIGITS = 2_467
+_EXACT_QUOTIENT_GENERATOR_SEAL = object()
+
+_EXACT_QUOTIENT_TERM_FIELDS = (
+    "schema_version",
+    "evidence_scope",
+    "domain_scope",
+    "target_block_index",
+    "coefficient",
+)
+_EXACT_QUOTIENT_ROW_FIELDS = (
+    "schema_version",
+    "evidence_scope",
+    "domain_scope",
+    "source_block_index",
+    "action_id",
+    "action_sha256",
+    "structural_target_block_index",
+    "member_transition_count",
+    "member_transition_sha256",
+    "terms",
+)
+_EXACT_QUOTIENT_GENERATOR_FIELDS = (
+    "schema_version",
+    "evidence_scope",
+    "domain_scope",
+    "basis_convention",
+    "generator_convention",
+    "admission_report_sha256",
+    "snapshot_sha256",
+    "environment_digest",
+    "reachable_domain_sha256",
+    "domain_payload_digest",
+    "seed_set_digest",
+    "observation_frame_digest",
+    "transition_semantics_digest",
+    "response_vocabulary_digest",
+    "action_alphabet_digest",
+    "synthetic_evidence_profile_sha256",
+    "verified_partition_sha256",
+    "exact_operator_sha256",
+    "canonical_block_order_sha256",
+    "canonical_action_order_sha256",
+    "source_seal_sha256",
+    "totalized_state_count",
+    "block_count",
+    "action_count",
+    "canonical_block_indices",
+    "canonical_action_ids",
+    "row_count",
+    "term_count",
+    "member_action_witness_count",
+    "work_units",
+    "rows",
+)
+_EXACT_OPERATOR_MEMBER_ROW_FIELDS = (
+    "source_block_index",
+    "action_id",
+    "action_sha256",
+    "target_block_index",
+    "member_transition_count",
+    "member_transitions",
+)
 
 
 def _object(value: Mapping[str, Any] | Any, fields: set[str], where: str) -> dict[str, Any]:
@@ -133,6 +213,13 @@ def _digest(value: Any, where: str) -> str:
     return result
 
 
+def _canonical_digest(value: Any, where: str) -> str:
+    result = _digest(value, where)
+    if value != result:
+        raise StrictContractError(f"{where} must use canonical uppercase hex")
+    return result
+
+
 def _checked_add(total: int, units: int, where: str) -> int:
     _nonnegative_int(total, f"{where} total")
     _nonnegative_int(units, f"{where} units")
@@ -185,6 +272,37 @@ def _fresh_verified(source: VerifiedExactPartition) -> VerifiedExactPartition:
             "verified partition object does not match fresh independent verification"
         )
     return fresh
+
+
+def _fresh_exact_quotient_verified(
+    source: VerifiedExactPartition,
+) -> VerifiedExactPartition:
+    if type(source) is not VerifiedExactPartition:
+        raise StrictContractError(
+            "exact quotient generator requires an exact VerifiedExactPartition"
+        )
+    try:
+        fresh_admitted = ExactAdmissionCompletionGate.admit(source.admitted.snapshot)
+        if canonical_contract_bytes(
+            fresh_admitted.to_dict()
+        ) != canonical_contract_bytes(source.admitted.to_dict()):
+            raise StrictContractError(
+                "verified partition admitted source does not match fresh exact admission"
+            )
+        fresh = verify_exact_partition(fresh_admitted, source.certificate)
+        if canonical_contract_bytes(fresh.to_dict()) != canonical_contract_bytes(
+            source.to_dict()
+        ):
+            raise StrictContractError(
+                "verified partition source does not match fresh exact verification"
+            )
+        return fresh
+    except StrictContractError:
+        raise
+    except Exception as exc:
+        raise StrictContractError(
+            "exact quotient verified source cannot be freshly rederived"
+        ) from exc
 
 
 def _fresh_verified_digest(source: VerifiedExactPartition) -> str:
@@ -371,6 +489,870 @@ def export_exact_finite_operator(
     source: VerifiedExactPartition,
 ) -> ExactFiniteOperator:
     return ExactFiniteOperator.from_verified(source)
+
+
+@dataclass(frozen=True)
+class ExactQuotientCoordinateTerm:
+    target_block_index: int
+    coefficient: ExactRational
+    evidence_scope: str = field(default=SYNTHETIC_EVIDENCE_SCOPE, init=False)
+    domain_scope: str = field(default=_EXACT_QUOTIENT_DOMAIN_SCOPE, init=False)
+
+    def __post_init__(self) -> None:
+        if type(self) is not ExactQuotientCoordinateTerm:
+            raise StrictContractError(
+                "ExactQuotientCoordinateTerm subclasses are forbidden"
+            )
+        _nonnegative_int(
+            self.target_block_index, "exact quotient term target_block_index"
+        )
+        if type(self.coefficient) is not ExactRational:
+            raise StrictContractError(
+                "exact quotient term coefficient must be an ExactRational"
+            )
+        if self.coefficient.numerator == 0:
+            raise StrictContractError("exact quotient term coefficient must be nonzero")
+        if ExactRational.from_dict(self.coefficient.to_dict()) != self.coefficient:
+            raise StrictContractError(
+                "exact quotient term coefficient is not reduced canonical authority"
+            )
+        _fixed(
+            self.evidence_scope,
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "exact quotient term evidence_scope",
+        )
+        _fixed(
+            self.domain_scope,
+            _EXACT_QUOTIENT_DOMAIN_SCOPE,
+            "exact quotient term domain_scope",
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _EXACT_QUOTIENT_COORDINATE_TERM_SCHEMA,
+            "evidence_scope": self.evidence_scope,
+            "domain_scope": self.domain_scope,
+            "target_block_index": self.target_block_index,
+            "coefficient": self.coefficient.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(
+        cls, value: Mapping[str, Any]
+    ) -> "ExactQuotientCoordinateTerm":
+        if cls is not ExactQuotientCoordinateTerm:
+            raise StrictContractError(
+                "polymorphic exact quotient term parsing is forbidden"
+            )
+        obj = _object_without_set(
+            value, _EXACT_QUOTIENT_TERM_FIELDS, "ExactQuotientCoordinateTerm"
+        )
+        _fixed(
+            obj["schema_version"],
+            _EXACT_QUOTIENT_COORDINATE_TERM_SCHEMA,
+            "ExactQuotientCoordinateTerm schema",
+        )
+        _fixed(
+            obj["evidence_scope"],
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "exact quotient term evidence_scope",
+        )
+        _fixed(
+            obj["domain_scope"],
+            _EXACT_QUOTIENT_DOMAIN_SCOPE,
+            "exact quotient term domain_scope",
+        )
+        result = cls(
+            target_block_index=_nonnegative_int(
+                obj["target_block_index"],
+                "exact quotient term target_block_index",
+            ),
+            coefficient=ExactRational.from_dict(obj["coefficient"]),
+        )
+        if result.to_dict() != obj:
+            raise StrictContractError(
+                "ExactQuotientCoordinateTerm wire is not canonical"
+            )
+        return result
+
+
+def _expected_exact_quotient_terms(
+    source_block_index: int, structural_target_block_index: int
+) -> tuple[ExactQuotientCoordinateTerm, ...]:
+    if source_block_index == structural_target_block_index:
+        return ()
+    return tuple(
+        sorted(
+            (
+                ExactQuotientCoordinateTerm(
+                    source_block_index, ExactRational(-1)
+                ),
+                ExactQuotientCoordinateTerm(
+                    structural_target_block_index, ExactRational(1)
+                ),
+            ),
+            key=lambda term: term.target_block_index,
+        )
+    )
+
+
+@dataclass(frozen=True)
+class ExactQuotientTransferRow:
+    source_block_index: int
+    action_id: str
+    action_sha256: str
+    structural_target_block_index: int
+    member_transition_count: int
+    member_transition_sha256: str
+    terms: tuple[ExactQuotientCoordinateTerm, ...]
+    evidence_scope: str = field(default=SYNTHETIC_EVIDENCE_SCOPE, init=False)
+    domain_scope: str = field(default=_EXACT_QUOTIENT_DOMAIN_SCOPE, init=False)
+
+    def __post_init__(self) -> None:
+        if type(self) is not ExactQuotientTransferRow:
+            raise StrictContractError(
+                "ExactQuotientTransferRow subclasses are forbidden"
+            )
+        _nonnegative_int(
+            self.source_block_index, "exact quotient row source_block_index"
+        )
+        _string(self.action_id, "exact quotient row action_id")
+        _canonical_digest(self.action_sha256, "exact quotient row action_sha256")
+        _nonnegative_int(
+            self.structural_target_block_index,
+            "exact quotient row structural_target_block_index",
+        )
+        member_count = _nonnegative_int(
+            self.member_transition_count,
+            "exact quotient row member_transition_count",
+            upper=MAX_SYNTHETIC_TOTALIZED_STATES,
+        )
+        if member_count == 0:
+            raise StrictContractError(
+                "exact quotient row must retain a member transition"
+            )
+        _canonical_digest(
+            self.member_transition_sha256,
+            "exact quotient row member_transition_sha256",
+        )
+        if (
+            type(self.terms) is not tuple
+            or len(self.terms) > 2
+            or not all(type(term) is ExactQuotientCoordinateTerm for term in self.terms)
+        ):
+            raise StrictContractError(
+                "exact quotient row terms must be an exact bounded tuple"
+            )
+        expected_terms = _expected_exact_quotient_terms(
+            self.source_block_index, self.structural_target_block_index
+        )
+        if self.terms != expected_terms:
+            raise StrictContractError(
+                "exact quotient row terms do not equal P_action minus identity"
+            )
+        _fixed(
+            self.evidence_scope,
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "exact quotient row evidence_scope",
+        )
+        _fixed(
+            self.domain_scope,
+            _EXACT_QUOTIENT_DOMAIN_SCOPE,
+            "exact quotient row domain_scope",
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _EXACT_QUOTIENT_TRANSFER_ROW_SCHEMA,
+            "evidence_scope": self.evidence_scope,
+            "domain_scope": self.domain_scope,
+            "source_block_index": self.source_block_index,
+            "action_id": self.action_id,
+            "action_sha256": self.action_sha256,
+            "structural_target_block_index": self.structural_target_block_index,
+            "member_transition_count": self.member_transition_count,
+            "member_transition_sha256": self.member_transition_sha256,
+            "terms": [term.to_dict() for term in self.terms],
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "ExactQuotientTransferRow":
+        if cls is not ExactQuotientTransferRow:
+            raise StrictContractError(
+                "polymorphic exact quotient row parsing is forbidden"
+            )
+        obj = _object_without_set(
+            value, _EXACT_QUOTIENT_ROW_FIELDS, "ExactQuotientTransferRow"
+        )
+        raw_terms = _array(obj["terms"], "exact quotient row terms")
+        if len(raw_terms) > 2:
+            raise StrictContractError("exact quotient row has more than two terms")
+        _fixed(
+            obj["schema_version"],
+            _EXACT_QUOTIENT_TRANSFER_ROW_SCHEMA,
+            "ExactQuotientTransferRow schema",
+        )
+        _fixed(
+            obj["evidence_scope"],
+            SYNTHETIC_EVIDENCE_SCOPE,
+            "exact quotient row evidence_scope",
+        )
+        _fixed(
+            obj["domain_scope"],
+            _EXACT_QUOTIENT_DOMAIN_SCOPE,
+            "exact quotient row domain_scope",
+        )
+        result = cls(
+            source_block_index=_nonnegative_int(
+                obj["source_block_index"],
+                "exact quotient row source_block_index",
+            ),
+            action_id=_string(obj["action_id"], "exact quotient row action_id"),
+            action_sha256=_canonical_digest(
+                obj["action_sha256"], "exact quotient row action_sha256"
+            ),
+            structural_target_block_index=_nonnegative_int(
+                obj["structural_target_block_index"],
+                "exact quotient row structural_target_block_index",
+            ),
+            member_transition_count=_nonnegative_int(
+                obj["member_transition_count"],
+                "exact quotient row member_transition_count",
+                upper=MAX_SYNTHETIC_TOTALIZED_STATES,
+            ),
+            member_transition_sha256=_canonical_digest(
+                obj["member_transition_sha256"],
+                "exact quotient row member_transition_sha256",
+            ),
+            terms=tuple(
+                ExactQuotientCoordinateTerm.from_dict(term) for term in raw_terms
+            ),
+        )
+        if result.to_dict() != obj:
+            raise StrictContractError("ExactQuotientTransferRow wire is not canonical")
+        return result
+
+
+def _preflight_exact_quotient_generator_wire(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    obj = _object_without_set(
+        value,
+        _EXACT_QUOTIENT_GENERATOR_FIELDS,
+        "ExactQuotientCoordinateGenerator",
+    )
+    for field_name in (
+        "schema_version",
+        "evidence_scope",
+        "domain_scope",
+        "basis_convention",
+        "generator_convention",
+    ):
+        _string(obj[field_name], f"exact quotient {field_name}")
+    for field_name in (
+        "admission_report_sha256",
+        "snapshot_sha256",
+        "environment_digest",
+        "reachable_domain_sha256",
+        "domain_payload_digest",
+        "seed_set_digest",
+        "observation_frame_digest",
+        "transition_semantics_digest",
+        "response_vocabulary_digest",
+        "action_alphabet_digest",
+        "synthetic_evidence_profile_sha256",
+        "verified_partition_sha256",
+        "exact_operator_sha256",
+        "canonical_block_order_sha256",
+        "canonical_action_order_sha256",
+        "source_seal_sha256",
+    ):
+        digest = obj[field_name]
+        if type(digest) is not str or len(digest) != 64:
+            raise StrictContractError(
+                f"exact quotient {field_name} must be an exact 64-character string"
+            )
+    raw_block_indices = _array(
+        obj["canonical_block_indices"], "exact quotient canonical_block_indices"
+    )
+    raw_action_ids = _array(
+        obj["canonical_action_ids"], "exact quotient canonical_action_ids"
+    )
+    raw_rows = _array(obj["rows"], "exact quotient generator rows")
+    if len(raw_block_indices) > MAX_SYNTHETIC_TOTALIZED_STATES:
+        raise StrictContractError("exact quotient block-order cap is exceeded")
+    if len(raw_action_ids) > MAX_SYNTHETIC_ACTIONS:
+        raise StrictContractError("exact quotient action-order cap is exceeded")
+    if len(raw_rows) > MAX_SYNTHETIC_TRANSITION_ROWS:
+        raise StrictContractError("exact quotient row cap is exceeded")
+
+    for field_name in (
+        "totalized_state_count",
+        "block_count",
+        "action_count",
+        "row_count",
+        "term_count",
+        "member_action_witness_count",
+        "work_units",
+    ):
+        _nonnegative_int(obj[field_name], f"exact quotient {field_name}")
+    for block_index in raw_block_indices:
+        _nonnegative_int(block_index, "exact quotient canonical block index")
+    for action_id in raw_action_ids:
+        if type(action_id) is not str or not action_id:
+            raise StrictContractError(
+                "exact quotient canonical action IDs must be exact strings"
+            )
+
+    cumulative_terms = 0
+    for row_index, raw_row in enumerate(raw_rows):
+        row = _object_without_set(
+            raw_row,
+            _EXACT_QUOTIENT_ROW_FIELDS,
+            f"exact quotient row {row_index}",
+        )
+        for field_name in (
+            "schema_version",
+            "evidence_scope",
+            "domain_scope",
+            "action_id",
+        ):
+            _string(
+                row[field_name],
+                f"exact quotient row {row_index} {field_name}",
+            )
+        for field_name in ("action_sha256", "member_transition_sha256"):
+            digest = row[field_name]
+            if type(digest) is not str or len(digest) != 64:
+                raise StrictContractError(
+                    f"exact quotient row {row_index} {field_name} must be an exact "
+                    "64-character string"
+                )
+        for field_name in (
+            "source_block_index",
+            "structural_target_block_index",
+            "member_transition_count",
+        ):
+            _nonnegative_int(
+                row[field_name], f"exact quotient row {row_index} {field_name}"
+            )
+        raw_terms = _array(row["terms"], f"exact quotient row {row_index} terms")
+        if len(raw_terms) > 2:
+            raise StrictContractError("exact quotient row has more than two raw terms")
+        cumulative_terms += len(raw_terms)
+        if cumulative_terms > _MAX_EXACT_QUOTIENT_TERMS:
+            raise StrictContractError("exact quotient cumulative term cap is exceeded")
+        for term_index, raw_term in enumerate(raw_terms):
+            term = _object_without_set(
+                raw_term,
+                _EXACT_QUOTIENT_TERM_FIELDS,
+                f"exact quotient row {row_index} term {term_index}",
+            )
+            for field_name in ("schema_version", "evidence_scope", "domain_scope"):
+                _string(
+                    term[field_name],
+                    f"exact quotient row {row_index} term {term_index} {field_name}",
+                )
+            _nonnegative_int(
+                term["target_block_index"],
+                f"exact quotient row {row_index} term target_block_index",
+            )
+            rational = _object_without_set(
+                term["coefficient"],
+                ("schema_version", "numerator", "denominator"),
+                f"exact quotient row {row_index} term coefficient",
+            )
+            _string(
+                rational["schema_version"],
+                f"exact quotient row {row_index} term coefficient schema_version",
+            )
+            numerator = rational["numerator"]
+            denominator = rational["denominator"]
+            if type(numerator) is not str or type(denominator) is not str:
+                raise StrictContractError(
+                    "exact quotient rational decimal fields must be exact strings"
+                )
+            if (
+                len(numerator.removeprefix("-"))
+                > _MAX_EXACT_RATIONAL_DECIMAL_DIGITS
+                or len(denominator) > _MAX_EXACT_RATIONAL_DECIMAL_DIGITS
+            ):
+                raise StrictContractError(
+                    "exact quotient rational exceeds the decimal preflight cap"
+                )
+    return obj
+
+
+def _preflight_exact_quotient_dimensions(
+    fresh: VerifiedExactPartition,
+) -> tuple[int, int, int, int, int, int]:
+    snapshot = fresh.admitted.snapshot
+    certificate = fresh.certificate
+    totalized_state_count = len(snapshot.states)
+    block_count = len(certificate.final_blocks)
+    action_count = len(certificate.canonical_action_ids)
+    if not 3 <= totalized_state_count <= MAX_SYNTHETIC_TOTALIZED_STATES:
+        raise StrictContractError("exact quotient totalized-state cap is violated")
+    if not 1 <= block_count <= MAX_SYNTHETIC_TOTALIZED_STATES:
+        raise StrictContractError("exact quotient block cap is violated")
+    if not 1 <= action_count <= MAX_SYNTHETIC_ACTIONS:
+        raise StrictContractError("exact quotient action cap is violated")
+    row_count = _checked_product(block_count, action_count, "exact quotient rows")
+    member_action_witness_count = _checked_product(
+        totalized_state_count, action_count, "exact quotient member/action witnesses"
+    )
+    if row_count > MAX_SYNTHETIC_TRANSITION_ROWS:
+        raise StrictContractError("exact quotient row cap is violated")
+    if member_action_witness_count > MAX_SYNTHETIC_TRANSITION_ROWS:
+        raise StrictContractError("exact quotient member/action witness cap is violated")
+    maximum_term_count = _checked_product(row_count, 2, "exact quotient terms")
+    if maximum_term_count > _MAX_EXACT_QUOTIENT_TERMS:
+        raise StrictContractError("exact quotient term cap is violated")
+    upper_work = _checked_add(row_count, member_action_witness_count, "exact quotient work")
+    _checked_add(upper_work, maximum_term_count, "exact quotient work")
+    return (
+        totalized_state_count,
+        block_count,
+        action_count,
+        row_count,
+        member_action_witness_count,
+        maximum_term_count,
+    )
+
+
+def _derive_exact_quotient_generator_wire(
+    source: VerifiedExactPartition,
+) -> dict[str, Any]:
+    if type(source) is not VerifiedExactPartition:
+        raise StrictContractError(
+            "exact quotient generator requires an exact VerifiedExactPartition"
+        )
+    fresh = _fresh_exact_quotient_verified(source)
+    (
+        totalized_state_count,
+        block_count,
+        action_count,
+        row_count,
+        member_action_witness_count,
+        _maximum_term_count,
+    ) = _preflight_exact_quotient_dimensions(fresh)
+    exact = export_exact_finite_operator(fresh)
+    exact_wire = exact.to_dict()
+    snapshot = fresh.admitted.snapshot
+    certificate = fresh.certificate
+
+    snapshot_sha256 = _canonical_digest(
+        exact_wire["snapshot_sha256"], "exact quotient snapshot_sha256"
+    )
+    if snapshot_sha256 != fresh.admitted.admission_report.snapshot_sha256:
+        raise StrictContractError("exact quotient snapshot authority mismatch")
+    environment_digest = _canonical_digest(
+        snapshot.domain_id.environment_digest,
+        "exact quotient environment_digest",
+    )
+    domain_payload_digest = _canonical_digest(
+        exact_wire["domain_payload_digest"],
+        "exact quotient domain_payload_digest",
+    )
+    if domain_payload_digest != snapshot.domain_id.domain_payload_digest:
+        raise StrictContractError("exact quotient domain authority mismatch")
+    seed_set_digest = _canonical_digest(
+        snapshot.domain_id.seed_set_digest, "exact quotient seed_set_digest"
+    )
+    observation_frame_digest = _canonical_digest(
+        exact_wire["observation_frame_digest"],
+        "exact quotient observation_frame_digest",
+    )
+    if observation_frame_digest != snapshot.domain_id.frame_digest:
+        raise StrictContractError("exact quotient frame authority mismatch")
+    transition_semantics_digest = _canonical_digest(
+        exact_wire["transition_semantics_digest"],
+        "exact quotient transition_semantics_digest",
+    )
+    if transition_semantics_digest != snapshot.domain_id.transition_semantics_digest:
+        raise StrictContractError("exact quotient transition authority mismatch")
+    response_vocabulary_digest = _canonical_digest(
+        exact_wire["response_vocabulary_digest"],
+        "exact quotient response_vocabulary_digest",
+    )
+    if (
+        response_vocabulary_digest
+        != snapshot.response_vocabulary_id.vocabulary_digest
+    ):
+        raise StrictContractError("exact quotient vocabulary authority mismatch")
+    action_alphabet_digest = _canonical_digest(
+        exact_wire["action_alphabet_digest"],
+        "exact quotient action_alphabet_digest",
+    )
+    if action_alphabet_digest != snapshot.domain_id.action_alphabet_digest:
+        raise StrictContractError("exact quotient action authority mismatch")
+
+    if (
+        exact_wire["totalized_state_count"] != totalized_state_count
+        or exact_wire["block_count"] != block_count
+        or exact_wire["action_count"] != action_count
+    ):
+        raise StrictContractError("exact quotient dimension authority mismatch")
+    exact_blocks = _array(exact_wire["blocks"], "exact quotient exact blocks")
+    canonical_block_indices = [
+        _nonnegative_int(block["block_index"], "exact quotient block index")
+        for block in exact_blocks
+    ]
+    if canonical_block_indices != list(range(block_count)):
+        raise StrictContractError("exact quotient block order is not canonical")
+    exact_actions = _array(exact_wire["actions"], "exact quotient exact actions")
+    canonical_action_ids = [
+        _string(action["action_id"], "exact quotient action ID")
+        for action in exact_actions
+    ]
+    if canonical_action_ids != list(certificate.canonical_action_ids):
+        raise StrictContractError("exact quotient action order is not canonical")
+
+    exact_rows = _array(exact_wire["rows"], "exact quotient exact rows")
+    if len(exact_rows) != row_count:
+        raise StrictContractError("exact quotient exact row count mismatch")
+    rows: list[ExactQuotientTransferRow] = []
+    observed_member_witnesses = 0
+    observed_term_count = 0
+    for row_index, raw_row in enumerate(exact_rows):
+        exact_row = _object_without_set(
+            raw_row,
+            _EXACT_OPERATOR_MEMBER_ROW_FIELDS,
+            f"exact operator member row {row_index}",
+        )
+        expected_source = row_index // action_count
+        expected_action = canonical_action_ids[row_index % action_count]
+        source_block_index = _nonnegative_int(
+            exact_row["source_block_index"],
+            "exact quotient source_block_index",
+        )
+        action_id = _string(exact_row["action_id"], "exact quotient action_id")
+        action_sha256 = _canonical_digest(
+            exact_row["action_sha256"], "exact quotient action_sha256"
+        )
+        structural_target_block_index = _nonnegative_int(
+            exact_row["target_block_index"],
+            "exact quotient structural_target_block_index",
+        )
+        member_transition_count = _nonnegative_int(
+            exact_row["member_transition_count"],
+            "exact quotient member_transition_count",
+            upper=MAX_SYNTHETIC_TOTALIZED_STATES,
+        )
+        member_transitions = _array(
+            exact_row["member_transitions"],
+            "exact quotient member transitions",
+        )
+        if (
+            source_block_index != expected_source
+            or action_id != expected_action
+            or structural_target_block_index >= block_count
+            or member_transition_count != len(member_transitions)
+            or member_transition_count == 0
+        ):
+            raise StrictContractError("exact quotient member row authority mismatch")
+        terms = _expected_exact_quotient_terms(
+            source_block_index, structural_target_block_index
+        )
+        row = ExactQuotientTransferRow(
+            source_block_index=source_block_index,
+            action_id=action_id,
+            action_sha256=action_sha256,
+            structural_target_block_index=structural_target_block_index,
+            member_transition_count=member_transition_count,
+            member_transition_sha256=_sha256(exact_row),
+            terms=terms,
+        )
+        rows.append(row)
+        observed_member_witnesses = _checked_add(
+            observed_member_witnesses,
+            member_transition_count,
+            "exact quotient member/action witnesses",
+        )
+        observed_term_count = _checked_add(
+            observed_term_count, len(terms), "exact quotient terms"
+        )
+    if observed_member_witnesses != member_action_witness_count:
+        raise StrictContractError("exact quotient member/action witness total mismatch")
+    expected_term_count = 2 * sum(
+        row.source_block_index != row.structural_target_block_index for row in rows
+    )
+    if observed_term_count != expected_term_count:
+        raise StrictContractError("exact quotient nonzero term total mismatch")
+    work_units = _checked_add(row_count, member_action_witness_count, "exact quotient work")
+    work_units = _checked_add(work_units, observed_term_count, "exact quotient work")
+
+    admission_report_sha256 = _sha256(
+        fresh.admitted.admission_report.to_dict()
+    )
+    reachable_domain_sha256 = _sha256(snapshot.domain_id.to_dict())
+    synthetic_evidence_profile_sha256 = _sha256(
+        snapshot.evidence_profile.to_dict()
+    )
+    verified_partition_sha256 = _sha256(fresh.to_dict())
+    if verified_partition_sha256 != _canonical_digest(
+        exact_wire["verified_partition_sha256"],
+        "exact quotient verified_partition_sha256",
+    ):
+        raise StrictContractError("exact quotient partition authority mismatch")
+    exact_operator_sha256 = _sha256(exact_wire)
+    canonical_block_order_sha256 = _sha256({"blocks": exact_blocks})
+    canonical_action_order_sha256 = _sha256({"actions": exact_actions})
+    source_seal_sha256 = _sha256(
+        {
+            "seal_version": _EXACT_QUOTIENT_SOURCE_SEAL_VERSION,
+            "admission_report_sha256": admission_report_sha256,
+            "verified_partition_sha256": verified_partition_sha256,
+            "exact_operator_sha256": exact_operator_sha256,
+            "canonical_block_order_sha256": canonical_block_order_sha256,
+            "canonical_action_order_sha256": canonical_action_order_sha256,
+        }
+    )
+
+    return {
+        "schema_version": _EXACT_QUOTIENT_COORDINATE_GENERATOR_SCHEMA,
+        "evidence_scope": SYNTHETIC_EVIDENCE_SCOPE,
+        "domain_scope": _EXACT_QUOTIENT_DOMAIN_SCOPE,
+        "basis_convention": _EXACT_QUOTIENT_BASIS_CONVENTION,
+        "generator_convention": _EXACT_QUOTIENT_GENERATOR_CONVENTION,
+        "admission_report_sha256": admission_report_sha256,
+        "snapshot_sha256": snapshot_sha256,
+        "environment_digest": environment_digest,
+        "reachable_domain_sha256": reachable_domain_sha256,
+        "domain_payload_digest": domain_payload_digest,
+        "seed_set_digest": seed_set_digest,
+        "observation_frame_digest": observation_frame_digest,
+        "transition_semantics_digest": transition_semantics_digest,
+        "response_vocabulary_digest": response_vocabulary_digest,
+        "action_alphabet_digest": action_alphabet_digest,
+        "synthetic_evidence_profile_sha256": synthetic_evidence_profile_sha256,
+        "verified_partition_sha256": verified_partition_sha256,
+        "exact_operator_sha256": exact_operator_sha256,
+        "canonical_block_order_sha256": canonical_block_order_sha256,
+        "canonical_action_order_sha256": canonical_action_order_sha256,
+        "source_seal_sha256": source_seal_sha256,
+        "totalized_state_count": totalized_state_count,
+        "block_count": block_count,
+        "action_count": action_count,
+        "canonical_block_indices": canonical_block_indices,
+        "canonical_action_ids": canonical_action_ids,
+        "row_count": row_count,
+        "term_count": observed_term_count,
+        "member_action_witness_count": member_action_witness_count,
+        "work_units": work_units,
+        "rows": [row.to_dict() for row in rows],
+    }
+
+
+def _validate_exact_quotient_generator_wire(obj: dict[str, Any]) -> None:
+    _fixed(
+        obj["schema_version"],
+        _EXACT_QUOTIENT_COORDINATE_GENERATOR_SCHEMA,
+        "ExactQuotientCoordinateGenerator schema",
+    )
+    _fixed(
+        obj["evidence_scope"],
+        SYNTHETIC_EVIDENCE_SCOPE,
+        "exact quotient generator evidence_scope",
+    )
+    _fixed(
+        obj["domain_scope"],
+        _EXACT_QUOTIENT_DOMAIN_SCOPE,
+        "exact quotient generator domain_scope",
+    )
+    _fixed(
+        obj["basis_convention"],
+        _EXACT_QUOTIENT_BASIS_CONVENTION,
+        "exact quotient basis_convention",
+    )
+    _fixed(
+        obj["generator_convention"],
+        _EXACT_QUOTIENT_GENERATOR_CONVENTION,
+        "exact quotient generator_convention",
+    )
+    for field_name in (
+        "admission_report_sha256",
+        "snapshot_sha256",
+        "environment_digest",
+        "reachable_domain_sha256",
+        "domain_payload_digest",
+        "seed_set_digest",
+        "observation_frame_digest",
+        "transition_semantics_digest",
+        "response_vocabulary_digest",
+        "action_alphabet_digest",
+        "synthetic_evidence_profile_sha256",
+        "verified_partition_sha256",
+        "exact_operator_sha256",
+        "canonical_block_order_sha256",
+        "canonical_action_order_sha256",
+        "source_seal_sha256",
+    ):
+        _canonical_digest(obj[field_name], f"exact quotient {field_name}")
+
+    totalized_state_count = _nonnegative_int(
+        obj["totalized_state_count"], "exact quotient totalized_state_count"
+    )
+    block_count = _nonnegative_int(obj["block_count"], "exact quotient block_count")
+    action_count = _nonnegative_int(
+        obj["action_count"], "exact quotient action_count"
+    )
+    row_count = _nonnegative_int(obj["row_count"], "exact quotient row_count")
+    term_count = _nonnegative_int(obj["term_count"], "exact quotient term_count")
+    member_count = _nonnegative_int(
+        obj["member_action_witness_count"],
+        "exact quotient member_action_witness_count",
+    )
+    work_units = _nonnegative_int(
+        obj["work_units"],
+        "exact quotient work_units",
+        upper=MAX_TIER_FIREWALL_WORK_UNITS,
+    )
+    if (
+        not 3 <= totalized_state_count <= MAX_SYNTHETIC_TOTALIZED_STATES
+        or not 1 <= block_count <= MAX_SYNTHETIC_TOTALIZED_STATES
+        or not 1 <= action_count <= MAX_SYNTHETIC_ACTIONS
+        or row_count > MAX_SYNTHETIC_TRANSITION_ROWS
+        or term_count > _MAX_EXACT_QUOTIENT_TERMS
+        or member_count > MAX_SYNTHETIC_TRANSITION_ROWS
+    ):
+        raise StrictContractError("exact quotient wire dimensions exceed their caps")
+    raw_block_indices = _array(
+        obj["canonical_block_indices"], "exact quotient canonical_block_indices"
+    )
+    block_indices = [
+        _nonnegative_int(value, "exact quotient canonical block index")
+        for value in raw_block_indices
+    ]
+    if block_indices != list(range(block_count)):
+        raise StrictContractError("exact quotient wire block order is not canonical")
+    raw_action_ids = _array(
+        obj["canonical_action_ids"], "exact quotient canonical_action_ids"
+    )
+    action_ids = [
+        _string(value, "exact quotient canonical action ID")
+        for value in raw_action_ids
+    ]
+    if len(action_ids) != action_count or len(action_ids) != len(set(action_ids)):
+        raise StrictContractError("exact quotient wire action order is invalid")
+    raw_rows = _array(obj["rows"], "exact quotient generator rows")
+    rows = tuple(ExactQuotientTransferRow.from_dict(row) for row in raw_rows)
+    if len(rows) != row_count or row_count != block_count * action_count:
+        raise StrictContractError("exact quotient wire row count is invalid")
+    expected_keys = tuple(
+        (block_index, action_id)
+        for block_index in range(block_count)
+        for action_id in action_ids
+    )
+    actual_keys = tuple((row.source_block_index, row.action_id) for row in rows)
+    if actual_keys != expected_keys:
+        raise StrictContractError("exact quotient wire rows are reordered or duplicated")
+    if any(
+        row.structural_target_block_index >= block_count
+        or any(term.target_block_index >= block_count for term in row.terms)
+        for row in rows
+    ):
+        raise StrictContractError("exact quotient wire contains an out-of-range block")
+    observed_terms = sum(len(row.terms) for row in rows)
+    observed_members = sum(row.member_transition_count for row in rows)
+    if observed_terms != term_count or observed_members != member_count:
+        raise StrictContractError("exact quotient wire aggregate counts are invalid")
+    if work_units != row_count + term_count + member_count:
+        raise StrictContractError("exact quotient wire work formula is invalid")
+
+
+@dataclass(frozen=True, init=False)
+class ExactQuotientCoordinateGenerator:
+    _verified_source: VerifiedExactPartition = field(repr=False)
+    _source_seal_sha256: str = field(repr=False)
+    _construction_seal: object = field(default=None, repr=False, compare=False)
+
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+        raise StrictContractError(
+            "exact quotient generator has no public constructor"
+        )
+
+    def __post_init__(self) -> None:
+        if type(self) is not ExactQuotientCoordinateGenerator:
+            raise StrictContractError(
+                "ExactQuotientCoordinateGenerator subclasses are forbidden"
+            )
+        if self._construction_seal is not _EXACT_QUOTIENT_GENERATOR_SEAL:
+            raise StrictContractError(
+                "exact quotient generator requires the verified construction gate"
+            )
+        if type(self._verified_source) is not VerifiedExactPartition:
+            raise StrictContractError(
+                "exact quotient generator retained source is not exact"
+            )
+        _canonical_digest(
+            self._source_seal_sha256, "exact quotient generator source seal"
+        )
+
+    @classmethod
+    def from_dict(
+        cls, value: Mapping[str, Any], source: VerifiedExactPartition
+    ) -> "ExactQuotientCoordinateGenerator":
+        if cls is not ExactQuotientCoordinateGenerator:
+            raise StrictContractError(
+                "polymorphic exact quotient generator parsing is forbidden"
+            )
+        if type(source) is not VerifiedExactPartition:
+            raise StrictContractError(
+                "exact quotient generator parser requires an exact verified source"
+            )
+        obj = _preflight_exact_quotient_generator_wire(value)
+        expected_wire = _derive_exact_quotient_generator_wire(source)
+        _validate_exact_quotient_generator_wire(obj)
+        if canonical_contract_bytes(obj) != canonical_contract_bytes(expected_wire):
+            raise StrictContractError(
+                "exact quotient generator wire does not match retained authority"
+            )
+        return _construct_exact_quotient_coordinate_generator(source, expected_wire)
+
+    @property
+    def generator_sha256(self) -> str:
+        return _sha256(self.to_dict())
+
+    def to_dict(self) -> dict[str, Any]:
+        if self._construction_seal is not _EXACT_QUOTIENT_GENERATOR_SEAL:
+            raise StrictContractError("exact quotient generator construction seal changed")
+        wire = _derive_exact_quotient_generator_wire(self._verified_source)
+        if wire["source_seal_sha256"] != _canonical_digest(
+            self._source_seal_sha256, "exact quotient generator source seal"
+        ):
+            raise StrictContractError(
+                "exact quotient generator retained source was replaced or changed"
+            )
+        return wire
+
+
+def build_exact_quotient_coordinate_generator(
+    source: VerifiedExactPartition,
+) -> ExactQuotientCoordinateGenerator:
+    if type(source) is not VerifiedExactPartition:
+        raise StrictContractError(
+            "exact quotient generator requires an exact VerifiedExactPartition"
+        )
+    wire = _derive_exact_quotient_generator_wire(source)
+    return _construct_exact_quotient_coordinate_generator(source, wire)
+
+
+def _construct_exact_quotient_coordinate_generator(
+    source: VerifiedExactPartition, wire: Mapping[str, Any]
+) -> ExactQuotientCoordinateGenerator:
+    result = object.__new__(ExactQuotientCoordinateGenerator)
+    object.__setattr__(result, "_verified_source", source)
+    object.__setattr__(
+        result, "_source_seal_sha256", wire["source_seal_sha256"]
+    )
+    object.__setattr__(
+        result, "_construction_seal", _EXACT_QUOTIENT_GENERATOR_SEAL
+    )
+    result.__post_init__()
+    return result
 
 
 @dataclass(frozen=True)
@@ -1755,6 +2737,9 @@ __all__ = [
     "OBSERVED_OPERATOR_TIER",
     "CertifiedIntervalOperator",
     "ExactFiniteOperator",
+    "ExactQuotientCoordinateGenerator",
+    "ExactQuotientCoordinateTerm",
+    "ExactQuotientTransferRow",
     "IntervalCandidate",
     "IntervalTargetRow",
     "NominalOperator",
@@ -1762,6 +2747,7 @@ __all__ = [
     "UppernessDomainEvidence",
     "UppernessDomainWitness",
     "UppernessEvidenceRow",
+    "build_exact_quotient_coordinate_generator",
     "certify_interval_operator",
     "export_exact_finite_operator",
     "extend_interval_candidate",
