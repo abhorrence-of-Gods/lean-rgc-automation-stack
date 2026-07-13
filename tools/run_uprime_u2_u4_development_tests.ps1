@@ -277,6 +277,10 @@ tracked = (
     'docs/experiments/uprime_odlrq_u2_u4_development_reconstruction_amendment_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_reconstruction_closeout_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_reconstruction_failure_closeout_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r2_closeout_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r2_exact_admission_integration_amendment_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r2_failure_closeout_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md',
     'docs/experiments/uprime_odlrq_upper_stack_implementation_plan_and_u05_amendment_2026-07-11.md',
     'lean_rgc/evals/uprime_u2_u4_development.py', 'lean_rgc/odlrq/__init__.py',
     'lean_rgc/odlrq/certificates.py', 'lean_rgc/odlrq/contracts.py',
@@ -289,23 +293,29 @@ tracked = (
     'tests/uprime_u24_guard.py', 'tools/run_uprime_u2_u4_development_tests.ps1',
 )
 absent = (
+    'docs/experiments/uprime_odlrq_u2_u4_development_r2_closeout_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r2_exact_admission_integration_amendment_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r2_failure_closeout_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md',
     'lean_rgc/evals/uprime_u2_u4_development.py', 'lean_rgc/odlrq/certificates.py',
     'lean_rgc/odlrq/envelope.py', 'lean_rgc/odlrq/maxent.py',
     'lean_rgc/odlrq/selection.py', 'lean_rgc/odlrq/similarity.py',
     'tests/test_odlrq_envelope.py', 'tests/test_odlrq_maxent.py',
     'tests/test_odlrq_selection.py', 'tests/test_odlrq_similarity.py',
-    'tests/test_uprime_u2_u4_development.py', 'tests/uprime_u24_guard.py',
-    'tools/run_uprime_u2_u4_development_tests.ps1',
 )
 value = guard.load_control_plane_attestation(
     repo,
-    a0_commit='7377119962e07c9062ba46c2c0c2f0eb479060ef',
+    a0_commit='1d448a2322b639b462d8cda8d20b4aaa55be232f',
     identity_path='tests/test_uprime_u2_u4_development.py',
     tracked_paths=tracked,
     absent_at_a0=absent,
 )
 lane = os.environ["UPRIME_U24_CONTROL_LANE"]
 allowed_dirty = set(guard.UNION_SOURCE_PATHS)
+if lane == "B0":
+    allowed_dirty.add(
+        'docs/experiments/uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md'
+    )
 if lane in {"EMIT", "CLOSEOUT"}:
     allowed_dirty.update(guard.CLOSEOUT_ARTIFACTS)
 stage_dirty = guard.governed_status_paths(
@@ -402,7 +412,7 @@ receipt = os.environ.pop("UPRIME_U24_CHILD_RECEIPT")
 if lane in {"EMIT", "CLOSEOUT"}:
     control = guard.load_control_plane_attestation(
         repo,
-        a0_commit="7377119962e07c9062ba46c2c0c2f0eb479060ef",
+        a0_commit="1d448a2322b639b462d8cda8d20b4aaa55be232f",
         identity_path="tests/test_uprime_u2_u4_development.py",
         tracked_paths=(),
         absent_at_a0=(),
@@ -411,7 +421,7 @@ if lane in {"EMIT", "CLOSEOUT"}:
         raise RuntimeError("publication CONTROL head differs from source commit")
     interval = control["first_parent_after_a0"]
     revisions = {row["commit"]: row for row in control["revisions"]}
-    previous = "7377119962e07c9062ba46c2c0c2f0eb479060ef"
+    previous = "1d448a2322b639b462d8cda8d20b4aaa55be232f"
     for commit in interval:
         row = revisions[commit]
         if row["parents"] != [previous]:

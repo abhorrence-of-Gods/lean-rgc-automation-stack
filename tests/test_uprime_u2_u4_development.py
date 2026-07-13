@@ -15,14 +15,43 @@ import uprime_u24_guard as u24_guard
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-A1_COMMIT = "7377119962e07c9062ba46c2c0c2f0eb479060ef"
-A1_PARENT = "214dec3adb7841452fea19f7ae668d8e0f7520a1"
-A1_DOCUMENT_PATH = (
+ANCHOR_COMMIT = "1d448a2322b639b462d8cda8d20b4aaa55be232f"
+ANCHOR_PARENT = "48c9127b0cc6122af203869c656a78b9f2160293"
+ANCHOR_TREE = "4442cff7b0c84fd5d24dd4d68020f5afade9cd12"
+ANCHOR_FAILURE_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_reconstruction_failure_closeout_2026-07-13.md"
+)
+ANCHOR_FAILURE_BLOB = "8c1a048249b9ac2ddb0fa1ebc74eeac03fdd0692"
+ANCHOR_IDENTITY_BLOB = "b4e67b08c1d6695c90850317740b10dd9a6001b4"
+ANCHOR_GUARD_BLOB = "b877884528bc917c4cbeca48bd55223fe890f9e4"
+ANCHOR_RUNNER_BLOB = "61773201f5128d64dd9d17916f66c835569bf329"
+ANCHOR_MANIFEST_BLOB = "47997a9bd67f7ac2cf0cd9c7f654d8f069f925d8"
+ANCHOR_WORKFLOW_BLOB = "0349e9ca864b7e9e25064ab7fab5b6dc0665adee"
+
+LEGACY_A1_COMMIT = "7377119962e07c9062ba46c2c0c2f0eb479060ef"
+LEGACY_A1_DOCUMENT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_u2_u4_development_reconstruction_amendment_2026-07-13.md"
 )
-A1_DOCUMENT_BLOB = "77263bc28d74c698f616717dc147c58e8995d1bd"
-A1_MANIFEST_BLOB = "88eb765c7c0eb484825e39b956860621db71bc84"
+LEGACY_A1_DOCUMENT_BLOB = "77263bc28d74c698f616717dc147c58e8995d1bd"
+LEGACY_SUCCESS_CLOSEOUT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_reconstruction_closeout_2026-07-13.md"
+)
+HISTORICAL_IDENTITY_ADDITION = "7083e766acd2ba09b45ba3f47f65dc0b34317bd3"
+
+A2_COMMIT = "7c05c494ce79e84ffeb0d0c912ca3ba5f141f402"
+A2_DOCUMENT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r2_exact_admission_integration_amendment_2026-07-13.md"
+)
+A2_DOCUMENT_BLOB = "a6fb65eb7a3d52bfbae985eb6bf32bf5275ac3e1"
+BOOTSTRAP_DOCUMENT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md"
+)
+BOOTSTRAP_DOCUMENT_BLOB = "c5af0cc08a1a6e148d297f9bf06300ba169987eb"
 
 ACCEPTED_FAILURE_COMMIT = "214dec3adb7841452fea19f7ae668d8e0f7520a1"
 ACCEPTED_FAILURE_PATH = (
@@ -49,22 +78,23 @@ MANIFEST_PATH = "tests/tier_manifest.json"
 WORKFLOW_PATH = ".github/workflows/ci.yml"
 SUCCESS_CLOSEOUT_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_reconstruction_closeout_2026-07-13.md"
+    "uprime_odlrq_u2_u4_development_r2_closeout_2026-07-13.md"
 )
 FAILURE_CLOSEOUT_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_reconstruction_failure_closeout_2026-07-13.md"
+    "uprime_odlrq_u2_u4_development_r2_failure_closeout_2026-07-13.md"
 )
 
 FROZEN_REFS = {
-    "A1": "codex/uprime-u2-u4-development-r1-a0",
-    "build": "codex/uprime-u2-u4-development-r1-build",
-    "closeout": "codex/uprime-u2-u4-development-r1-closeout",
-    "failure": "codex/uprime-u2-u4-development-r1-failure-closeout",
+    "A2": "codex/uprime-u2-u4-development-r2-a0",
+    "T0": "codex/uprime-u2-u4-development-r2-topology-bootstrap",
+    "build": "codex/uprime-u2-u4-development-r2-build",
+    "closeout": "codex/uprime-u2-u4-development-r2-closeout",
+    "failure": "codex/uprime-u2-u4-development-r2-failure-closeout",
     "accepted": "codex/uprime-odlrq-plan",
 }
-STAGE_ORDER = ("B0", "E0", "E1", "E2", "ME0", "S0", "I0")
-MAX_BUILD_COMMITS = 8
+STAGE_ORDER = ("E0", "E1", "E2", "ME0", "S0", "I0")
+MAX_BUILD_COMMITS = 7
 MAX_CORRECTIONS = 1
 WALL_SECONDS = {
     "B0": 60,
@@ -78,13 +108,12 @@ WALL_SECONDS = {
     "CLOSEOUT": 60,
 }
 
-B0_PATHS = {
-    WORKFLOW_PATH,
+BOOTSTRAP_CONTROL_PATHS = {
     IDENTITY_PATH,
     GUARD_PATH,
     RUNNER_PATH,
-    MANIFEST_PATH,
 }
+BOOTSTRAP_PATHS = {BOOTSTRAP_DOCUMENT_PATH, *BOOTSTRAP_CONTROL_PATHS}
 BASE_BLOBS = {
     "lean_rgc/odlrq/contracts.py":
         "eca7d55bc7c2a7a08fbdc75c3b589f1972cd258f",
@@ -94,7 +123,13 @@ BASE_BLOBS = {
         "866df99205f5073335ea7304b0cc160ab657e8f5",
     "tests/test_odlrq_quotient_generator.py":
         "d014b0c9555ac5932827d86b6b92420849ed4973",
-    MANIFEST_PATH: A1_MANIFEST_BLOB,
+    MANIFEST_PATH: ANCHOR_MANIFEST_BLOB,
+}
+ANCHOR_CONTROL_BLOBS = {
+    IDENTITY_PATH: ANCHOR_IDENTITY_BLOB,
+    GUARD_PATH: ANCHOR_GUARD_BLOB,
+    RUNNER_PATH: ANCHOR_RUNNER_BLOB,
+    WORKFLOW_PATH: ANCHOR_WORKFLOW_BLOB,
 }
 AUTHORITY_BLOBS = {
     ORIGINAL_AUTHORITY_PATH: ORIGINAL_AUTHORITY_BLOB,
@@ -115,10 +150,11 @@ AUTHORITY_BLOBS = {
         "docs/experiments/"
         "uprime_odlrq_official_transport_v2_recovery_failure_closeout_2026-07-13.md"
     ): "d94d9890f0c0bdf90f1e47bf49f779c5fbb31928",
+    LEGACY_A1_DOCUMENT_PATH: LEGACY_A1_DOCUMENT_BLOB,
+    ANCHOR_FAILURE_PATH: ANCHOR_FAILURE_BLOB,
 }
 
 STAGE_ALLOWLISTS = {
-    "B0": B0_PATHS,
     "E0": {
         "lean_rgc/odlrq/quotient_generator.py",
         "lean_rgc/odlrq/__init__.py",
@@ -171,7 +207,6 @@ STAGE_MARKERS = {
     "I0": {"lean_rgc/evals/uprime_u2_u4_development.py"},
 }
 STAGE_MANIFEST_NODES = {
-    "B0": {IDENTITY_PATH.rsplit("/", 1)[1]},
     "E0": set(),
     "E1": {"test_odlrq_envelope.py"},
     "E2": {"test_odlrq_selection.py"},
@@ -180,9 +215,13 @@ STAGE_MANIFEST_NODES = {
     "I0": set(),
 }
 
-ABSENT_AT_A1 = tuple(
+ABSENT_AT_ANCHOR = tuple(
     sorted(
         {
+            A2_DOCUMENT_PATH,
+            BOOTSTRAP_DOCUMENT_PATH,
+            SUCCESS_CLOSEOUT_PATH,
+            FAILURE_CLOSEOUT_PATH,
             "lean_rgc/odlrq/envelope.py",
             "lean_rgc/odlrq/maxent.py",
             "lean_rgc/odlrq/similarity.py",
@@ -193,9 +232,6 @@ ABSENT_AT_A1 = tuple(
             "tests/test_odlrq_maxent.py",
             "tests/test_odlrq_similarity.py",
             "tests/test_odlrq_selection.py",
-            IDENTITY_PATH,
-            GUARD_PATH,
-            RUNNER_PATH,
         }
     )
 )
@@ -232,7 +268,9 @@ FAILURE_TERMINAL_PATHS = {FAILURE_CLOSEOUT_PATH}
 TRACKED_PATHS = tuple(
     sorted(
         {
-            A1_DOCUMENT_PATH,
+            A2_DOCUMENT_PATH,
+            BOOTSTRAP_DOCUMENT_PATH,
+            LEGACY_SUCCESS_CLOSEOUT_PATH,
             *BASE_BLOBS,
             *AUTHORITY_BLOBS,
             *UNION_ALLOWLIST,
@@ -248,10 +286,10 @@ TRACKED_PATHS = tuple(
 # read-only control plane; direct CI constructs it locally before test setup.
 CONTROL = u24_guard.load_control_plane_attestation(
     REPO_ROOT,
-    a0_commit=A1_COMMIT,
+    a0_commit=ANCHOR_COMMIT,
     identity_path=IDENTITY_PATH,
     tracked_paths=TRACKED_PATHS,
-    absent_at_a0=ABSENT_AT_A1,
+    absent_at_a0=ABSENT_AT_ANCHOR,
 )
 
 
@@ -266,15 +304,20 @@ def _u24_identity_semantic_guard():
         yield
 
 
-def _revision_rows() -> list[dict[str, Any]]:
-    rows = CONTROL["revisions"]
+def _revision_rows(
+    control: Mapping[str, Any] = CONTROL,
+) -> list[dict[str, Any]]:
+    rows = control["revisions"]
     assert type(rows) is list
     assert all(type(row) is dict for row in rows)
     return rows
 
 
-def _revision(commit: str) -> dict[str, Any]:
-    matches = [row for row in _revision_rows() if row.get("commit") == commit]
+def _revision(
+    commit: str,
+    control: Mapping[str, Any] = CONTROL,
+) -> dict[str, Any]:
+    matches = [row for row in _revision_rows(control) if row.get("commit") == commit]
     assert len(matches) == 1
     return matches[0]
 
@@ -293,58 +336,241 @@ def _blobs(row: Mapping[str, Any]) -> dict[str, str | None]:
     return value
 
 
-def _semantic_rows() -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-    interval = CONTROL["first_parent_after_a0"]
-    assert type(interval) is list and all(type(item) is str for item in interval)
-    rows = [_revision(commit) for commit in interval]
-    terminal = None
-    if rows and _changed(rows[-1]) in (SUCCESS_TERMINAL_PATHS, FAILURE_TERMINAL_PATHS):
-        terminal = rows.pop()
-    assert all(
-        _changed(row) not in (SUCCESS_TERMINAL_PATHS, FAILURE_TERMINAL_PATHS)
-        for row in rows
+def _worktree_blobs(control: Mapping[str, Any]) -> dict[str, str | None]:
+    value = control["worktree_blobs"]
+    assert type(value) is dict and set(value) == set(TRACKED_PATHS)
+    assert all(blob is None or type(blob) is str for blob in value.values())
+    return value
+
+
+def _governed_dirty(control: Mapping[str, Any]) -> set[str]:
+    return set(
+        u24_guard.governed_status_paths(
+            control["status_paths"], control["ci_setup_paths"]
+        )
     )
-    return rows, terminal
+
+
+def _assert_tree_transition(
+    previous: Mapping[str, Any], current: Mapping[str, Any]
+) -> None:
+    changed = _changed(current)
+    before = _blobs(previous)
+    after = _blobs(current)
+    for path in TRACKED_PATHS:
+        if path not in changed:
+            assert after[path] == before[path]
 
 
 def _classify_build_rows(
-    rows: list[dict[str, Any]],
-) -> tuple[list[str], dict[str, int]]:
-    assert rows
-    assert _changed(rows[0]) == B0_PATHS
-    completed: list[str] = ["B0"]
+    rows: list[dict[str, Any]], *, correction_used: int = 0
+) -> tuple[list[str], dict[str, int], int]:
+    completed: list[str] = []
     counts = {name: 0 for name in STAGE_ORDER}
-    counts["B0"] = 1
-    next_stage_index = 1
-    last_stage = "B0"
-    corrections = 0
+    next_stage_index = 0
+    last_stage: str | None = None
+    corrections = correction_used
 
-    for row in rows[1:]:
+    for row in rows:
         changed = _changed(row)
         assert changed
-        if next_stage_index < len(STAGE_ORDER):
-            candidate = STAGE_ORDER[next_stage_index]
-        else:
-            candidate = None
+        candidate = (
+            STAGE_ORDER[next_stage_index]
+            if next_stage_index < len(STAGE_ORDER)
+            else None
+        )
         if (
             candidate is not None
             and changed <= STAGE_ALLOWLISTS[candidate]
             and bool(changed & STAGE_MARKERS[candidate])
         ):
-            stage = candidate
-            completed.append(stage)
-            counts[stage] = 1
+            completed.append(candidate)
+            counts[candidate] = 1
             next_stage_index += 1
-            last_stage = stage
+            last_stage = candidate
             continue
 
+        assert last_stage is not None
         assert changed <= STAGE_ALLOWLISTS[last_stage]
         assert counts[last_stage] == 1
         counts[last_stage] = 2
         corrections += 1
         assert corrections <= MAX_CORRECTIONS
 
-    return completed, counts
+    return completed, counts, corrections
+
+
+def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
+    assert set(control) == {
+        "schema_version",
+        "head",
+        "is_shallow",
+        "status_paths",
+        "ci_setup_paths",
+        "identity_additions",
+        "first_parent_after_a0",
+        "revisions",
+        "worktree_blobs",
+        "absent_at_a0",
+        "a0_manifest",
+    }
+    assert control["schema_version"] == u24_guard.CONTROL_ATTESTATION_SCHEMA
+    assert control["is_shallow"] is False
+    assert control["identity_additions"] == [HISTORICAL_IDENTITY_ADDITION]
+    assert control["absent_at_a0"] == {
+        path: True for path in ABSENT_AT_ANCHOR
+    }
+    assert type(control["a0_manifest"]) is dict
+    assert control["ci_setup_paths"] in ([], list(u24_guard.CI_SETUP_PATHS))
+    assert set(control["ci_setup_paths"]) <= set(control["status_paths"])
+
+    interval = control["first_parent_after_a0"]
+    assert type(interval) is list and all(type(item) is str for item in interval)
+    assert len(interval) == len(set(interval))
+    revisions = _revision_rows(control)
+    commits = [row.get("commit") for row in revisions]
+    assert commits == [ANCHOR_COMMIT, *interval]
+    assert len(commits) == len(set(commits))
+    assert control["head"] == (interval[-1] if interval else ANCHOR_COMMIT)
+    assert interval and interval[0] == A2_COMMIT
+
+    anchor = revisions[0]
+    assert anchor["parents"] == [ANCHOR_PARENT]
+    assert _changed(anchor) == {ANCHOR_FAILURE_PATH}
+    anchor_blobs = _blobs(anchor)
+    assert anchor_blobs[ANCHOR_FAILURE_PATH] == ANCHOR_FAILURE_BLOB
+    for path, expected in {
+        **BASE_BLOBS,
+        **ANCHOR_CONTROL_BLOBS,
+        **AUTHORITY_BLOBS,
+    }.items():
+        assert anchor_blobs[path] == expected
+
+    a2 = revisions[1]
+    assert a2["commit"] == A2_COMMIT
+    assert a2["parents"] == [ANCHOR_COMMIT]
+    assert _changed(a2) == {A2_DOCUMENT_PATH}
+    _assert_tree_transition(anchor, a2)
+    a2_blobs = _blobs(a2)
+    assert a2_blobs[A2_DOCUMENT_PATH] == A2_DOCUMENT_BLOB
+    assert a2_blobs[BOOTSTRAP_DOCUMENT_PATH] is None
+    for path, expected in {
+        **BASE_BLOBS,
+        **ANCHOR_CONTROL_BLOBS,
+        **AUTHORITY_BLOBS,
+    }.items():
+        assert a2_blobs[path] == expected
+
+    for previous, current in zip(revisions, revisions[1:]):
+        assert current["parents"] == [previous["commit"]]
+        _assert_tree_transition(previous, current)
+
+    worktree = _worktree_blobs(control)
+    dirty = _governed_dirty(control)
+    head_blobs = _blobs(revisions[-1])
+    for path in TRACKED_PATHS:
+        if path not in dirty:
+            assert worktree[path] == head_blobs[path]
+
+    if len(interval) == 1:
+        assert control["head"] == A2_COMMIT
+        assert dirty == BOOTSTRAP_PATHS
+        assert worktree[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
+        assert all(worktree[path] is not None for path in BOOTSTRAP_PATHS)
+        return {
+            "completed": [],
+            "counts": {name: 0 for name in STAGE_ORDER},
+            "corrections": 0,
+            "pending": "T0",
+            "terminal": None,
+        }
+
+    t0 = revisions[2]
+    assert t0["parents"] == [A2_COMMIT]
+    assert _changed(t0) == BOOTSTRAP_PATHS
+    t0_blobs = _blobs(t0)
+    assert t0_blobs[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
+    for path in BOOTSTRAP_CONTROL_PATHS:
+        assert t0_blobs[path] is not None
+        assert t0_blobs[path] != ANCHOR_CONTROL_BLOBS[path]
+    for path, expected in {**BASE_BLOBS, **AUTHORITY_BLOBS}.items():
+        assert t0_blobs[path] == expected
+    assert t0_blobs[WORKFLOW_PATH] == ANCHOR_WORKFLOW_BLOB
+
+    remaining = revisions[3:]
+    corrections = 0
+    frozen_control_row = t0
+    if remaining and _changed(remaining[0]) <= BOOTSTRAP_CONTROL_PATHS:
+        assert _changed(remaining[0])
+        frozen_control_row = remaining.pop(0)
+        corrections = 1
+
+    terminal = None
+    if remaining and _changed(remaining[-1]) in (
+        SUCCESS_TERMINAL_PATHS,
+        FAILURE_TERMINAL_PATHS,
+    ):
+        terminal = remaining.pop()
+    assert all(
+        _changed(row) not in (SUCCESS_TERMINAL_PATHS, FAILURE_TERMINAL_PATHS)
+        for row in remaining
+    )
+    assert len(remaining) <= len(STAGE_ORDER) + MAX_CORRECTIONS - corrections
+    assert len(remaining) <= MAX_BUILD_COMMITS
+    completed, counts, corrections = _classify_build_rows(
+        remaining, correction_used=corrections
+    )
+    assert corrections <= MAX_CORRECTIONS
+
+    frozen_blobs = _blobs(frozen_control_row)
+    for row in [*remaining, *((terminal,) if terminal is not None else ())]:
+        blobs = _blobs(row)
+        for path in (GUARD_PATH, RUNNER_PATH, WORKFLOW_PATH):
+            assert blobs[path] == frozen_blobs[path]
+        assert blobs[A2_DOCUMENT_PATH] == A2_DOCUMENT_BLOB
+        assert blobs[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
+        for path, expected in AUTHORITY_BLOBS.items():
+            assert blobs[path] == expected
+
+    pending: str | None = None
+    if terminal is not None:
+        assert not dirty
+        if _changed(terminal) == SUCCESS_TERMINAL_PATHS:
+            assert completed == list(STAGE_ORDER)
+    elif dirty:
+        if (
+            corrections == 0
+            and not remaining
+            and dirty <= BOOTSTRAP_CONTROL_PATHS
+            and bool(dirty)
+        ):
+            pending = "T0-correction"
+        else:
+            assert not dirty & {GUARD_PATH, RUNNER_PATH, WORKFLOW_PATH}
+            next_stage = (
+                STAGE_ORDER[len(completed)]
+                if len(completed) < len(STAGE_ORDER)
+                else None
+            )
+            if (
+                next_stage is not None
+                and dirty <= STAGE_ALLOWLISTS[next_stage]
+                and bool(dirty & STAGE_MARKERS[next_stage])
+            ):
+                pending = next_stage
+            else:
+                assert corrections == 0 and completed
+                assert dirty <= STAGE_ALLOWLISTS[completed[-1]]
+                assert bool(dirty)
+                pending = completed[-1] + "-correction"
+
+    return {
+        "completed": completed,
+        "counts": counts,
+        "corrections": corrections,
+        "pending": pending,
+        "terminal": terminal,
+    }
 
 
 def _worktree_manifest() -> dict[str, list[str]]:
@@ -382,15 +608,17 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
         u24_guard.CI_SETUP_ROOT + name for name in setup_names
     )
     exact_setup = list(u24_guard.CI_SETUP_PATHS)
-    legal_b0_status = sorted([*exact_setup, *B0_PATHS])
+    legal_t0_status = sorted([*exact_setup, *BOOTSTRAP_PATHS])
     assert u24_guard.governed_status_paths([], []) == []
     assert u24_guard.governed_status_paths([WORKFLOW_PATH], []) == [WORKFLOW_PATH]
     assert u24_guard.governed_status_paths(exact_setup, exact_setup) == []
-    assert u24_guard.governed_status_paths(legal_b0_status, exact_setup) == sorted(B0_PATHS)
+    assert u24_guard.governed_status_paths(legal_t0_status, exact_setup) == sorted(
+        BOOTSTRAP_PATHS
+    )
     outside_status = sorted([*exact_setup, "unregistered-u24-dirt.txt"])
     governed_outside = u24_guard.governed_status_paths(outside_status, exact_setup)
     assert governed_outside == ["unregistered-u24-dirt.txt"]
-    assert not set(governed_outside) <= B0_PATHS
+    assert not set(governed_outside) <= BOOTSTRAP_PATHS
     invalid_setup_rows: tuple[list[Any], ...] = (
         exact_setup[:-1],
         sorted([*exact_setup, u24_guard.CI_SETUP_ROOT + "seventh.txt"]),
@@ -491,31 +719,40 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
     assert REJECTED_BUILD_COMMITS.isdisjoint(
         {row["commit"] for row in _revision_rows()}
     )
-    a1 = _revision(A1_COMMIT)
-    assert a1["parents"] == [A1_PARENT]
-    assert _changed(a1) == {A1_DOCUMENT_PATH}
-    blobs = _blobs(a1)
-    assert blobs[A1_DOCUMENT_PATH] == A1_DOCUMENT_BLOB
+    anchor = _revision(ANCHOR_COMMIT)
+    assert anchor["parents"] == [ANCHOR_PARENT]
+    assert _changed(anchor) == {ANCHOR_FAILURE_PATH}
+    blobs = _blobs(anchor)
+    assert blobs[ANCHOR_FAILURE_PATH] == ANCHOR_FAILURE_BLOB
     for path, expected in BASE_BLOBS.items():
+        assert blobs[path] == expected
+    for path, expected in ANCHOR_CONTROL_BLOBS.items():
         assert blobs[path] == expected
     for path, expected in AUTHORITY_BLOBS.items():
         assert blobs[path] == expected
-    assert A1_PARENT == ACCEPTED_FAILURE_COMMIT
+    a2 = _revision(A2_COMMIT)
+    assert a2["parents"] == [ANCHOR_COMMIT]
+    assert _changed(a2) == {A2_DOCUMENT_PATH}
+    assert _blobs(a2)[A2_DOCUMENT_PATH] == A2_DOCUMENT_BLOB
+    assert ANCHOR_TREE == "4442cff7b0c84fd5d24dd4d68020f5afade9cd12"
     assert ORIGINAL_AUTHORITY_COMMIT == "14234e209229931c00615d4b171620ec6d1bbbf5"
     assert ORIGINAL_AUTHORITY_PARENT == "78c12549eb188610977842edbc38e2723d469ba4"
     assert blobs[ACCEPTED_FAILURE_PATH] == ACCEPTED_FAILURE_BLOB
     assert blobs[ORIGINAL_AUTHORITY_PATH] == ORIGINAL_AUTHORITY_BLOB
-    assert CONTROL["absent_at_a0"] == {path: True for path in ABSENT_AT_A1}
+    assert CONTROL["absent_at_a0"] == {
+        path: True for path in ABSENT_AT_ANCHOR
+    }
     assert UNION_ALLOWLIST == EXPECTED_UNION_ALLOWLIST
     assert FROZEN_REFS == {
-        "A1": "codex/uprime-u2-u4-development-r1-a0",
-        "build": "codex/uprime-u2-u4-development-r1-build",
-        "closeout": "codex/uprime-u2-u4-development-r1-closeout",
-        "failure": "codex/uprime-u2-u4-development-r1-failure-closeout",
+        "A2": "codex/uprime-u2-u4-development-r2-a0",
+        "T0": "codex/uprime-u2-u4-development-r2-topology-bootstrap",
+        "build": "codex/uprime-u2-u4-development-r2-build",
+        "closeout": "codex/uprime-u2-u4-development-r2-closeout",
+        "failure": "codex/uprime-u2-u4-development-r2-failure-closeout",
         "accepted": "codex/uprime-odlrq-plan",
     }
-    assert STAGE_ORDER == ("B0", "E0", "E1", "E2", "ME0", "S0", "I0")
-    assert MAX_BUILD_COMMITS == 8 and MAX_CORRECTIONS == 1
+    assert STAGE_ORDER == ("E0", "E1", "E2", "ME0", "S0", "I0")
+    assert MAX_BUILD_COMMITS == 7 and MAX_CORRECTIONS == 1
     assert WALL_SECONDS == {
         "B0": 60,
         "E0": 60,
@@ -530,93 +767,239 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
 
 
 def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
-    head = CONTROL["head"]
-    additions = CONTROL["identity_additions"]
-    assert type(additions) is list and all(type(item) is str for item in additions)
-    rows, terminal = _semantic_rows()
-    previous = A1_COMMIT
-    for row in rows:
-        assert row["parents"] == [previous]
-        previous = row["commit"]
-    if terminal is not None:
-        assert terminal["parents"] == [previous]
+    state = _validate_epoch_topology(CONTROL)
+    assert state["pending"] == "T0"
+    assert state["completed"] == []
+    assert state["corrections"] == 0
+    assert state["terminal"] is None
 
-    governed_dirty = set(
-        u24_guard.governed_status_paths(
-            CONTROL["status_paths"], CONTROL["ci_setup_paths"]
-        )
+    def append_row(
+        source: Mapping[str, Any],
+        commit: str,
+        changed: set[str],
+        overrides: Mapping[str, str | None] | None = None,
+    ) -> dict[str, Any]:
+        result = copy.deepcopy(source)
+        previous = result["revisions"][-1]
+        tree = copy.deepcopy(previous["tree_blobs"])
+        replacements = {} if overrides is None else dict(overrides)
+        for path in changed:
+            if path in tree:
+                tree[path] = replacements.get(path, commit[:40])
+        row = {
+            "commit": commit,
+            "parents": [previous["commit"]],
+            "changed_paths": sorted(changed),
+            "tree_blobs": tree,
+        }
+        result["first_parent_after_a0"].append(commit)
+        result["revisions"].append(row)
+        result["head"] = commit
+        result["status_paths"] = []
+        result["ci_setup_paths"] = []
+        result["worktree_blobs"] = copy.deepcopy(tree)
+        return result
+
+    t0_commit = "10" * 20
+    t0 = append_row(
+        CONTROL,
+        t0_commit,
+        BOOTSTRAP_PATHS,
+        {
+            path: _worktree_blobs(CONTROL)[path]
+            for path in BOOTSTRAP_PATHS
+        },
     )
-    assert CONTROL["ci_setup_paths"] in ([], list(u24_guard.CI_SETUP_PATHS))
-    assert set(CONTROL["ci_setup_paths"]) <= set(CONTROL["status_paths"])
+    committed = _validate_epoch_topology(t0)
+    assert committed["completed"] == []
+    assert committed["pending"] is None
 
-    if head == A1_COMMIT:
-        assert additions == []
-        assert rows == [] and terminal is None
-        assert governed_dirty == B0_PATHS
-        assert all(CONTROL["worktree_blobs"][path] is not None for path in B0_PATHS)
-        completed = ["B0"]
-        pending = None
-    elif terminal is not None and not rows:
-        assert additions == []
-        assert _changed(terminal) == FAILURE_TERMINAL_PATHS
-        assert terminal["parents"] == [A1_COMMIT]
-        assert not governed_dirty
-        completed = []
-        pending = None
-    else:
-        assert len(additions) == 1
-        b0_commit = additions[0]
-        assert rows and rows[0]["commit"] == b0_commit
-        assert rows[0]["parents"] == [A1_COMMIT]
-        assert _changed(rows[0]) == B0_PATHS
-        assert len(rows) <= MAX_BUILD_COMMITS
-        completed, counts = _classify_build_rows(rows)
-        assert sum(counts.values()) == len(rows)
-        assert sum(max(0, amount - 1) for amount in counts.values()) <= MAX_CORRECTIONS
-        b0_rows = []
-        for row in rows:
-            if _changed(row) <= B0_PATHS:
-                b0_rows.append(row)
-                continue
-            break
-        b0_guard_blob = _blobs(b0_rows[-1])[GUARD_PATH]
-        b0_workflow_blob = _blobs(b0_rows[-1])[WORKFLOW_PATH]
-        assert type(b0_guard_blob) is str
-        assert type(b0_workflow_blob) is str
-        for row in rows[len(b0_rows):]:
-            assert _blobs(row)[GUARD_PATH] == b0_guard_blob
-            assert _blobs(row)[WORKFLOW_PATH] == b0_workflow_blob
-        for row in rows:
-            blobs = _blobs(row)
-            assert blobs[A1_DOCUMENT_PATH] == A1_DOCUMENT_BLOB
-            for path, expected in AUTHORITY_BLOBS.items():
-                assert blobs[path] == expected
-        dirty = governed_dirty
-        pending = None
-        if terminal is not None:
-            assert not dirty
-        elif dirty:
-            corrections_used = sum(max(0, amount - 1) for amount in counts.values())
-            if corrections_used == 0 and dirty <= STAGE_ALLOWLISTS[completed[-1]]:
-                pass
-            else:
-                assert len(completed) < len(STAGE_ORDER)
-                pending = STAGE_ORDER[len(completed)]
-                assert dirty <= STAGE_ALLOWLISTS[pending]
-                assert bool(dirty & STAGE_MARKERS[pending])
+    e0_commit = "20" * 20
+    e0 = append_row(
+        t0,
+        e0_commit,
+        {"lean_rgc/odlrq/quotient_generator.py"},
+    )
+    after_e0 = _validate_epoch_topology(e0)
+    assert after_e0["completed"] == ["E0"]
+    assert after_e0["counts"]["E0"] == 1
 
-    if terminal is not None:
-        changed = _changed(terminal)
-        assert changed in (SUCCESS_TERMINAL_PATHS, FAILURE_TERMINAL_PATHS)
-        if changed == SUCCESS_TERMINAL_PATHS:
-            assert completed == list(STAGE_ORDER)
+    def rejected(candidate: Mapping[str, Any]) -> None:
+        with pytest.raises((AssertionError, KeyError, TypeError, ValueError)):
+            _validate_epoch_topology(candidate)
+
+    attacks: list[dict[str, Any]] = []
+
+    missing_a2 = copy.deepcopy(CONTROL)
+    missing_a2["head"] = ANCHOR_COMMIT
+    missing_a2["first_parent_after_a0"] = []
+    missing_a2["revisions"] = missing_a2["revisions"][:1]
+    missing_a2["worktree_blobs"] = copy.deepcopy(
+        missing_a2["revisions"][0]["tree_blobs"]
+    )
+    attacks.append(missing_a2)
+
+    wrong_a2_parent = copy.deepcopy(CONTROL)
+    wrong_a2_parent["revisions"][1]["parents"] = [ANCHOR_PARENT]
+    attacks.append(wrong_a2_parent)
+    changed_a2_document = copy.deepcopy(CONTROL)
+    changed_a2_document["revisions"][1]["tree_blobs"][A2_DOCUMENT_PATH] = (
+        "00" * 20
+    )
+    attacks.append(changed_a2_document)
+    merge_a2 = copy.deepcopy(CONTROL)
+    merge_a2["revisions"][1]["parents"].append("ff" * 20)
+    attacks.append(merge_a2)
+
+    wrong_t0_parent = copy.deepcopy(t0)
+    wrong_t0_parent["revisions"][2]["parents"] = [ANCHOR_COMMIT]
+    attacks.append(wrong_t0_parent)
+    merge_t0 = copy.deepcopy(t0)
+    merge_t0["revisions"][2]["parents"].append("ee" * 20)
+    attacks.append(merge_t0)
+
+    reordered = copy.deepcopy(t0)
+    reordered["first_parent_after_a0"] = [t0_commit, A2_COMMIT]
+    reordered["revisions"] = [
+        reordered["revisions"][0],
+        reordered["revisions"][2],
+        reordered["revisions"][1],
+    ]
+    reordered["head"] = A2_COMMIT
+    attacks.append(reordered)
+    duplicate = copy.deepcopy(CONTROL)
+    duplicate["revisions"].append(copy.deepcopy(duplicate["revisions"][1]))
+    attacks.append(duplicate)
+
+    inserted = copy.deepcopy(t0)
+    inserted_row = copy.deepcopy(inserted["revisions"][1])
+    inserted_row["commit"] = "11" * 20
+    inserted_row["parents"] = [A2_COMMIT]
+    inserted_row["changed_paths"] = ["lean_rgc/odlrq/quotient_generator.py"]
+    inserted["revisions"][2]["parents"] = [inserted_row["commit"]]
+    inserted["revisions"].insert(2, inserted_row)
+    inserted["first_parent_after_a0"].insert(1, inserted_row["commit"])
+    attacks.append(inserted)
+
+    extra_t0_path = copy.deepcopy(t0)
+    extra_t0_path["revisions"][2]["changed_paths"].append(MANIFEST_PATH)
+    attacks.append(extra_t0_path)
+    changed_t0_document = copy.deepcopy(t0)
+    changed_t0_document["revisions"][2]["tree_blobs"][
+        BOOTSTRAP_DOCUMENT_PATH
+    ] = "00" * 20
+    changed_t0_document["worktree_blobs"][BOOTSTRAP_DOCUMENT_PATH] = "00" * 20
+    attacks.append(changed_t0_document)
+    changed_e0_base = copy.deepcopy(e0)
+    changed_e0_base["revisions"][-1]["tree_blobs"][
+        "lean_rgc/odlrq/contracts.py"
+    ] = "00" * 20
+    changed_e0_base["worktree_blobs"]["lean_rgc/odlrq/contracts.py"] = "00" * 20
+    attacks.append(changed_e0_base)
+
+    success_reopen = append_row(
+        CONTROL, "31" * 20, SUCCESS_TERMINAL_PATHS
+    )
+    attacks.append(success_reopen)
+    other_failure = append_row(
+        CONTROL, "32" * 20, {FAILURE_CLOSEOUT_PATH}
+    )
+    attacks.append(other_failure)
+    second_bootstrap = append_row(t0, "33" * 20, BOOTSTRAP_PATHS)
+    attacks.append(second_bootstrap)
+
+    failure_terminal = append_row(
+        e0, "34" * 20, FAILURE_TERMINAL_PATHS
+    )
+    post_terminal = append_row(
+        failure_terminal,
+        "35" * 20,
+        {"lean_rgc/odlrq/envelope.py"},
+    )
+    attacks.append(post_terminal)
+
+    skipped_e0 = append_row(
+        t0, "41" * 20, {"lean_rgc/odlrq/envelope.py"}
+    )
+    attacks.append(skipped_e0)
+    cross_stage_correction = append_row(
+        e0, "42" * 20, {"lean_rgc/odlrq/selection.py"}
+    )
+    attacks.append(cross_stage_correction)
+    correction_one = append_row(
+        e0, "43" * 20, {"lean_rgc/odlrq/quotient_generator.py"}
+    )
+    correction_two = append_row(
+        correction_one,
+        "44" * 20,
+        {"lean_rgc/odlrq/quotient_generator.py"},
+    )
+    attacks.append(correction_two)
+    t0_correction = append_row(t0, "45" * 20, {GUARD_PATH})
+    t0_correction_e0 = append_row(
+        t0_correction,
+        "46" * 20,
+        {"lean_rgc/odlrq/quotient_generator.py"},
+    )
+    shared_quota_reuse = append_row(
+        t0_correction_e0,
+        "47" * 20,
+        {"lean_rgc/odlrq/quotient_generator.py"},
+    )
+    attacks.append(shared_quota_reuse)
+
+    through_s0 = t0
+    for index, stage in enumerate(STAGE_ORDER[:-1], start=50):
+        through_s0 = append_row(
+            through_s0,
+            f"{index:02d}" * 20,
+            STAGE_MARKERS[stage],
+        )
+    dirty_pending_i0_runner = copy.deepcopy(through_s0)
+    pending_i0_paths = {RUNNER_PATH, *STAGE_MARKERS["I0"]}
+    dirty_pending_i0_runner["status_paths"] = sorted(pending_i0_paths)
+    for path in pending_i0_paths:
+        dirty_pending_i0_runner["worktree_blobs"][path] = "aa" * 20
+    attacks.append(dirty_pending_i0_runner)
+
+    through_i0 = append_row(
+        through_s0,
+        "60" * 20,
+        STAGE_MARKERS["I0"],
+    )
+    dirty_after_i0_runner = copy.deepcopy(through_i0)
+    dirty_after_i0_runner["status_paths"] = [RUNNER_PATH]
+    dirty_after_i0_runner["worktree_blobs"][RUNNER_PATH] = "bb" * 20
+    attacks.append(dirty_after_i0_runner)
+
+    for additions in ([], ["00" * 20], [HISTORICAL_IDENTITY_ADDITION] * 2):
+        forged = copy.deepcopy(CONTROL)
+        forged["identity_additions"] = additions
+        attacks.append(forged)
+    shallow = copy.deepcopy(CONTROL)
+    shallow["is_shallow"] = True
+    attacks.append(shallow)
+    wrong_head = copy.deepcopy(CONTROL)
+    wrong_head["head"] = ANCHOR_COMMIT
+    attacks.append(wrong_head)
+    omitted_interval = copy.deepcopy(t0)
+    omitted_interval["first_parent_after_a0"] = [A2_COMMIT]
+    attacks.append(omitted_interval)
+    malformed = copy.deepcopy(CONTROL)
+    malformed["unexpected"] = True
+    attacks.append(malformed)
+
+    for attack in attacks:
+        rejected(attack)
 
     baseline = CONTROL["a0_manifest"]
     assert type(baseline) is dict
     manifest = _worktree_manifest()
     for name, tiers in baseline.items():
         assert manifest[name] == tiers
-    manifest_stages = [*completed, *((pending,) if pending is not None else ())]
+    manifest_stages = [*state["completed"]]
+    if state["pending"] in STAGE_ORDER:
+        manifest_stages.append(state["pending"])
     expected_new = set().union(*(STAGE_MANIFEST_NODES[name] for name in manifest_stages))
     assert set(manifest) - set(baseline) == expected_new
     for name in expected_new:
@@ -679,15 +1062,129 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     assert '@("-I", "-S", "-X", "pycache_prefix=$childPycachePrefix", $bootstrapPath)' in runner
     assert runner.count('pycache prefix is not empty') == 2
     assert "PYTHONPYCACHEPREFIX" not in runner
+
+    def replace_exact(
+        value: str, old: str, new: str, expected_count: int
+    ) -> str:
+        assert value.count(old) == expected_count
+        return value.replace(old, new)
+
+    def git_blob_sha1(raw: bytes) -> str:
+        digest = __import__("hashlib").sha1()
+        digest.update(f"blob {len(raw)}\0".encode("ascii"))
+        digest.update(raw)
+        return digest.hexdigest()
+
+    guard_raw = (REPO_ROOT / GUARD_PATH).read_bytes().replace(b"\r\n", b"\n")
+    assert b"\r" not in guard_raw
+    guard_source = guard_raw.decode("utf-8")
+    anchor_identity_core_sha256 = (
+        "E18B8844D8E3274BA338621113FF405BE9805F73088B76920DDCBA219EBF9354"
+    )
+    anchor_runner_sha256 = (
+        "38A3C357413FC3444034556AA675D9723D2B22E0E2B5A519ABDE935E4BD60DD1"
+    )
+    assert u24_guard.FROZEN_IDENTITY_CORE_SHA256 != anchor_identity_core_sha256
+    assert u24_guard.FROZEN_RUNNER_SHA256 != anchor_runner_sha256
+    reconstructed_guard = replace_exact(
+        guard_source,
+        f'FROZEN_IDENTITY_CORE_SHA256 = "{u24_guard.FROZEN_IDENTITY_CORE_SHA256}"',
+        f'FROZEN_IDENTITY_CORE_SHA256 = "{anchor_identity_core_sha256}"',
+        1,
+    )
+    reconstructed_guard = replace_exact(
+        reconstructed_guard,
+        f'FROZEN_RUNNER_SHA256 = "{u24_guard.FROZEN_RUNNER_SHA256}"',
+        f'FROZEN_RUNNER_SHA256 = "{anchor_runner_sha256}"',
+        1,
+    )
+    reconstructed_guard = replace_exact(
+        reconstructed_guard,
+        "MAX_BUILD_COMMITS = 7",
+        "MAX_BUILD_COMMITS = 8",
+        1,
+    )
+    reconstructed_guard_bytes = reconstructed_guard.encode("utf-8")
+    assert __import__("hashlib").sha256(
+        reconstructed_guard_bytes
+    ).hexdigest().upper() == (
+        "34880CA312F411FB526843A16A4722D5A19EADEE04C25402977A962DA3F5717C"
+    )
+    assert git_blob_sha1(reconstructed_guard_bytes) == ANCHOR_GUARD_BLOB
+
+    runner_raw = (REPO_ROOT / RUNNER_PATH).read_bytes().replace(b"\r\n", b"\n")
+    assert b"\r" not in runner_raw
+    reconstructed_runner = runner_raw.decode("utf-8")
+    r2_documents = (
+        SUCCESS_CLOSEOUT_PATH,
+        A2_DOCUMENT_PATH,
+        FAILURE_CLOSEOUT_PATH,
+        BOOTSTRAP_DOCUMENT_PATH,
+    )
+    added_document_block = "".join(
+        f"    '{path}',\n" for path in r2_documents
+    )
+    reconstructed_runner = replace_exact(
+        reconstructed_runner, added_document_block, "", 2
+    )
+    current_absent_tail = (
+        "    'tests/test_odlrq_selection.py', 'tests/test_odlrq_similarity.py',\n"
+        ")"
+    )
+    anchor_absent_tail = (
+        "    'tests/test_odlrq_selection.py', 'tests/test_odlrq_similarity.py',\n"
+        "    'tests/test_uprime_u2_u4_development.py', 'tests/uprime_u24_guard.py',\n"
+        "    'tools/run_uprime_u2_u4_development_tests.ps1',\n"
+        ")"
+    )
+    reconstructed_runner = replace_exact(
+        reconstructed_runner, current_absent_tail, anchor_absent_tail, 1
+    )
+    t0_dirty_exception = (
+        'if lane == "B0":\n'
+        "    allowed_dirty.add(\n"
+        f"        '{BOOTSTRAP_DOCUMENT_PATH}'\n"
+        "    )\n"
+    )
+    reconstructed_runner = replace_exact(
+        reconstructed_runner, t0_dirty_exception, "", 1
+    )
+    reconstructed_runner = replace_exact(
+        reconstructed_runner, ANCHOR_COMMIT, LEGACY_A1_COMMIT, 3
+    )
+    reconstructed_runner_bytes = reconstructed_runner.encode("utf-8")
+    assert __import__("hashlib").sha256(
+        reconstructed_runner_bytes
+    ).hexdigest().upper() == anchor_runner_sha256
+    assert git_blob_sha1(reconstructed_runner_bytes) == ANCHOR_RUNNER_BLOB
+
+    identity_tree = __import__("ast").parse(
+        (REPO_ROOT / IDENTITY_PATH).read_text(encoding="utf-8")
+    )
+    identity_tests = [
+        node.name
+        for node in identity_tree.body
+        if isinstance(node, __import__("ast").FunctionDef)
+        and node.name.startswith("test_u24_")
+        and not node.name.startswith("test_u24_i0_")
+    ]
+    assert identity_tests == [
+        "test_u24_a0_anchor_authorities_and_nonexistence_are_frozen",
+        "test_u24_b0_anchor_contiguous_budget_and_terminal_topology",
+        "test_u24_denylist_static_scan_and_exact_runner_copy",
+        "test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import",
+        "test_u24_four_tier_public_wires_do_not_trust_tier_booleans",
+    ]
+
     encoded = u24_guard.encode_control_plane_attestation(CONTROL)
     assert encoded.startswith("z1:") and len(encoded) < 24000
     os.environ[u24_guard.CONTROL_ATTESTATION_ENV] = encoded
     assert u24_guard.load_control_plane_attestation(
         REPO_ROOT,
-        a0_commit=A1_COMMIT,
+        a0_commit=ANCHOR_COMMIT,
         identity_path=IDENTITY_PATH,
         tracked_paths=TRACKED_PATHS,
-        absent_at_a0=ABSENT_AT_A1,
+        absent_at_a0=ABSENT_AT_ANCHOR,
     ) == CONTROL
     for invalid_setup in (
         list(u24_guard.CI_SETUP_PATHS[:-1]),
