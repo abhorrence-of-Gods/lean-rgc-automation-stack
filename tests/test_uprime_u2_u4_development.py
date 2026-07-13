@@ -486,6 +486,7 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
                     )
             finally:
                 monkeypatch.undo()
+        residue_root.rename(temporary_root / "setup-residue-cleanup")
     assert CONTROL["is_shallow"] is False
     assert REJECTED_BUILD_COMMITS.isdisjoint(
         {row["commit"] for row in _revision_rows()}
