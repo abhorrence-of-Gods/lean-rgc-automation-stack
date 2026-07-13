@@ -364,6 +364,9 @@
   "test_uprime_k0_foundations.py": [
     "unit"
   ],
+  "test_uprime_official_transport_v2_smoke.py": [
+    "unit"
+  ],
   "test_uprime_u05_identity.py": [
     "unit"
   ],
