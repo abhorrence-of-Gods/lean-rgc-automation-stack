@@ -36,7 +36,7 @@ $RuntimeManifestCanonical = @'
 $RuntimeManifestCanonical = $RuntimeManifestCanonical.TrimEnd("`r", "`n")
 
 $Walls = @{
-    B0 = 60; E0 = 60; E1 = 120; E2 = 180; ME0 = 180
+    B0 = 60; E0 = 90; E1 = 120; E2 = 180; ME0 = 180
     S0 = 300; I0 = 900; EMIT = 900; CLOSEOUT = 60
 }
 $Dispositions = @{
@@ -277,10 +277,12 @@ tracked = (
     'docs/experiments/uprime_odlrq_u2_u4_development_reconstruction_amendment_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_reconstruction_closeout_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_reconstruction_failure_closeout_2026-07-13.md',
-    'docs/experiments/uprime_odlrq_u2_u4_development_r2_closeout_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_r2_exact_admission_integration_amendment_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_r2_failure_closeout_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r3_closeout_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r3_failure_closeout_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r3_stage_local_reentry_amendment_2026-07-13.md',
     'docs/experiments/uprime_odlrq_upper_stack_implementation_plan_and_u05_amendment_2026-07-11.md',
     'lean_rgc/evals/uprime_u2_u4_development.py', 'lean_rgc/odlrq/__init__.py',
     'lean_rgc/odlrq/certificates.py', 'lean_rgc/odlrq/contracts.py',
@@ -293,10 +295,9 @@ tracked = (
     'tests/uprime_u24_guard.py', 'tools/run_uprime_u2_u4_development_tests.ps1',
 )
 absent = (
-    'docs/experiments/uprime_odlrq_u2_u4_development_r2_closeout_2026-07-13.md',
-    'docs/experiments/uprime_odlrq_u2_u4_development_r2_exact_admission_integration_amendment_2026-07-13.md',
-    'docs/experiments/uprime_odlrq_u2_u4_development_r2_failure_closeout_2026-07-13.md',
-    'docs/experiments/uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r3_closeout_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r3_failure_closeout_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r3_stage_local_reentry_amendment_2026-07-13.md',
     'lean_rgc/evals/uprime_u2_u4_development.py', 'lean_rgc/odlrq/certificates.py',
     'lean_rgc/odlrq/envelope.py', 'lean_rgc/odlrq/maxent.py',
     'lean_rgc/odlrq/selection.py', 'lean_rgc/odlrq/similarity.py',
@@ -305,7 +306,7 @@ absent = (
 )
 value = guard.load_control_plane_attestation(
     repo,
-    a0_commit='1d448a2322b639b462d8cda8d20b4aaa55be232f',
+    a0_commit='cbc7377c588e024d17438beb83e444c515ff0172',
     identity_path='tests/test_uprime_u2_u4_development.py',
     tracked_paths=tracked,
     absent_at_a0=absent,
@@ -314,7 +315,7 @@ lane = os.environ["UPRIME_U24_CONTROL_LANE"]
 allowed_dirty = set(guard.UNION_SOURCE_PATHS)
 if lane == "B0":
     allowed_dirty.add(
-        'docs/experiments/uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md'
+        'docs/experiments/uprime_odlrq_u2_u4_development_r3_stage_local_reentry_amendment_2026-07-13.md'
     )
 if lane in {"EMIT", "CLOSEOUT"}:
     allowed_dirty.update(guard.CLOSEOUT_ARTIFACTS)
@@ -323,6 +324,199 @@ stage_dirty = guard.governed_status_paths(
 )
 if any(path not in allowed_dirty for path in stage_dirty):
     raise RuntimeError("unregistered dirty path exists before semantic import")
+semantic_markers = {
+    "E0": "lean_rgc/odlrq/quotient_generator.py",
+    "E1": "lean_rgc/odlrq/envelope.py",
+    "E2": "lean_rgc/odlrq/selection.py",
+    "ME0": "lean_rgc/odlrq/maxent.py",
+    "S0": "lean_rgc/odlrq/similarity.py",
+    "I0": "lean_rgc/evals/uprime_u2_u4_development.py",
+}
+semantic_order = tuple(semantic_markers)
+semantic_allowlists = {
+    "E0": {
+        "lean_rgc/odlrq/quotient_generator.py",
+        "lean_rgc/odlrq/__init__.py",
+        "tests/test_odlrq_quotient_generator.py",
+    },
+    "E1": {
+        "lean_rgc/odlrq/quotient_generator.py",
+        "lean_rgc/odlrq/envelope.py",
+        "lean_rgc/odlrq/__init__.py",
+        "tests/test_odlrq_quotient_generator.py",
+        "tests/test_odlrq_envelope.py",
+        "tests/tier_manifest.json",
+    },
+    "E2": {
+        "lean_rgc/odlrq/envelope.py",
+        "lean_rgc/odlrq/selection.py",
+        "lean_rgc/odlrq/certificates.py",
+        "lean_rgc/odlrq/__init__.py",
+        "tests/test_odlrq_envelope.py",
+        "tests/test_odlrq_selection.py",
+        "tests/tier_manifest.json",
+    },
+    "ME0": {
+        "lean_rgc/odlrq/maxent.py",
+        "lean_rgc/odlrq/__init__.py",
+        "tests/test_odlrq_maxent.py",
+        "tests/tier_manifest.json",
+    },
+    "S0": {
+        "lean_rgc/odlrq/similarity.py",
+        "lean_rgc/odlrq/__init__.py",
+        "tests/test_odlrq_similarity.py",
+        "tests/tier_manifest.json",
+    },
+    "I0": {
+        "lean_rgc/odlrq/certificates.py",
+        "lean_rgc/odlrq/__init__.py",
+        "lean_rgc/evals/uprime_u2_u4_development.py",
+        "tests/test_uprime_u2_u4_development.py",
+        "tests/tier_manifest.json",
+    },
+}
+bootstrap_correction_sets = {
+    frozenset({"tests/uprime_u24_guard.py"}),
+    frozenset({
+        "tests/test_uprime_u2_u4_development.py",
+        "tests/uprime_u24_guard.py",
+    }),
+    frozenset({
+        "tests/uprime_u24_guard.py",
+        "tools/run_uprime_u2_u4_development_tests.ps1",
+    }),
+    frozenset({
+        "tests/test_uprime_u2_u4_development.py",
+        "tests/uprime_u24_guard.py",
+        "tools/run_uprime_u2_u4_development_tests.ps1",
+    }),
+}
+if lane in semantic_markers:
+    accepted_result = guard._git(
+        repo,
+        "rev-parse",
+        "refs/heads/codex/uprime-odlrq-plan",
+        check=False,
+    )
+    if accepted_result.returncode != 0:
+        raise RuntimeError("semantic lane requires the local accepted branch")
+    accepted = accepted_result.stdout.decode("ascii").strip()
+    revisions = value.get("revisions")
+    if type(revisions) is not list or not revisions:
+        raise RuntimeError("semantic accepted-ref topology is malformed")
+    head_row = revisions[-1]
+    if type(head_row) is not dict or head_row.get("commit") != value.get("head"):
+        raise RuntimeError("semantic accepted-ref head is malformed")
+    head_parents = head_row.get("parents")
+    head_changed = head_row.get("changed_paths")
+    if (
+        type(head_parents) is not list
+        or not all(type(item) is str for item in head_parents)
+        or type(head_changed) is not list
+        or not all(type(item) is str for item in head_changed)
+    ):
+        raise RuntimeError("semantic accepted-ref row is malformed")
+    marker = semantic_markers[lane]
+    dirty_set = set(stage_dirty)
+    if stage_dirty:
+        if marker in head_changed:
+            current_is_correction = True
+            if len(head_parents) != 1:
+                raise RuntimeError("semantic correction parent is malformed")
+            expected_accepted = head_parents[0]
+        else:
+            current_is_correction = False
+            expected_accepted = value["head"]
+        if (
+            not dirty_set <= semantic_allowlists[lane]
+            or (not current_is_correction and marker not in dirty_set)
+        ):
+            raise RuntimeError("dirty semantic lane does not match its frozen stage")
+    else:
+        if len(revisions) < 2 or len(head_parents) != 1:
+            raise RuntimeError("clean semantic stage parent is malformed")
+        parent_row = revisions[-2]
+        if type(parent_row) is not dict or parent_row.get("commit") != head_parents[0]:
+            raise RuntimeError("clean semantic parent row is malformed")
+        parent_parents = parent_row.get("parents")
+        parent_changed = parent_row.get("changed_paths")
+        if (
+            type(parent_parents) is not list
+            or not all(type(item) is str for item in parent_parents)
+            or type(parent_changed) is not list
+            or not all(type(item) is str for item in parent_changed)
+        ):
+            raise RuntimeError("clean semantic parent data is malformed")
+        if marker in parent_changed:
+            current_is_correction = True
+            if len(parent_parents) != 1:
+                raise RuntimeError("clean semantic correction ancestry is malformed")
+            expected_accepted = parent_parents[0]
+        else:
+            current_is_correction = False
+            if marker not in head_changed:
+                raise RuntimeError("clean semantic stage marker is missing")
+            expected_accepted = head_parents[0]
+        if not head_changed or not set(head_changed) <= semantic_allowlists[lane]:
+            raise RuntimeError("clean semantic lane exceeds its frozen stage")
+    if accepted != expected_accepted:
+        raise RuntimeError("semantic lane requires accepted branch activation")
+    accepted_positions = [
+        index for index, row in enumerate(revisions)
+        if type(row) is dict and row.get("commit") == accepted
+    ]
+    if len(accepted_positions) != 1 or accepted_positions[0] < 1:
+        raise RuntimeError("accepted branch is outside the registered R3 epoch")
+    accepted_history = list(revisions[2:accepted_positions[0] + 1])
+    correction_used = False
+    if accepted_history:
+        first_changed = accepted_history[0].get("changed_paths")
+        if (
+            type(first_changed) is list
+            and frozenset(first_changed) in bootstrap_correction_sets
+        ):
+            accepted_history.pop(0)
+            correction_used = True
+    completed = []
+    last_stage = None
+    for row in accepted_history:
+        if type(row) is not dict:
+            raise RuntimeError("accepted semantic history row is malformed")
+        changed_value = row.get("changed_paths")
+        if (
+            type(changed_value) is not list
+            or not changed_value
+            or not all(type(item) is str for item in changed_value)
+            or len(changed_value) != len(set(changed_value))
+        ):
+            raise RuntimeError("accepted semantic history paths are malformed")
+        changed = set(changed_value)
+        candidate = (
+            semantic_order[len(completed)]
+            if len(completed) < len(semantic_order)
+            else None
+        )
+        if (
+            candidate is not None
+            and changed <= semantic_allowlists[candidate]
+            and semantic_markers[candidate] in changed
+        ):
+            completed.append(candidate)
+            last_stage = candidate
+            continue
+        if (
+            last_stage is None
+            or correction_used
+            or not changed <= semantic_allowlists[last_stage]
+        ):
+            raise RuntimeError("accepted branch skips or mutates a semantic stage")
+        correction_used = True
+    expected_prefix = list(semantic_order[:semantic_order.index(lane)])
+    if completed != expected_prefix:
+        raise RuntimeError("accepted branch has not completed the prior semantic stages")
+    if current_is_correction and correction_used:
+        raise RuntimeError("the shared R3 correction budget is already spent")
 print(guard.encode_control_plane_attestation(value))
 '@
     [IO.File]::WriteAllText($controlPath, $control, [Text.UTF8Encoding]::new($false))
@@ -348,6 +542,7 @@ print(guard.encode_control_plane_attestation(value))
     }
 
     $bootstrap = @'
+import ast
 import importlib.util
 import json
 import os
@@ -412,7 +607,7 @@ receipt = os.environ.pop("UPRIME_U24_CHILD_RECEIPT")
 if lane in {"EMIT", "CLOSEOUT"}:
     control = guard.load_control_plane_attestation(
         repo,
-        a0_commit="1d448a2322b639b462d8cda8d20b4aaa55be232f",
+        a0_commit="cbc7377c588e024d17438beb83e444c515ff0172",
         identity_path="tests/test_uprime_u2_u4_development.py",
         tracked_paths=(),
         absent_at_a0=(),
@@ -421,7 +616,7 @@ if lane in {"EMIT", "CLOSEOUT"}:
         raise RuntimeError("publication CONTROL head differs from source commit")
     interval = control["first_parent_after_a0"]
     revisions = {row["commit"]: row for row in control["revisions"]}
-    previous = "1d448a2322b639b462d8cda8d20b4aaa55be232f"
+    previous = "cbc7377c588e024d17438beb83e444c515ff0172"
     for commit in interval:
         row = revisions[commit]
         if row["parents"] != [previous]:
@@ -508,29 +703,221 @@ if lane == "CLOSEOUT":
 
 os.environ[guard.PREINSTALLED_GUARD_ENV] = "1"
 
-if lane == "B0":
+safe_type = type
+safe_compile = compile
+safe_ast_parse = ast.parse
+safe_module_type = types.ModuleType
+safe_module_getattribute = types.ModuleType.__getattribute__
+safe_function_type = types.FunctionType
+safe_function_getattribute = types.FunctionType.__getattribute__
+safe_code_type = types.CodeType
+safe_path_type = pathlib.Path
+safe_path_resolve = pathlib.Path.resolve
+e0_names = (
+    "test_e0_exact_coordinate_generator_matches_frozen_independent_oracle",
+    "test_e0_roundtrip_permutation_cancellation_and_terminal_rows",
+    "test_e0_wire_and_source_attacks_fail_closed",
+    "test_e0_capability_types_and_later_tiers_are_rejected",
+    "test_e0_public_surface_has_no_later_tier_tokens",
+    "test_read_only_bundle_cache_is_quarantined_from_mutation_tests",
+    "test_e0_scope_fields_fail_closed_at_every_wire_layer",
+    "test_e0_signed64_preflight_rejects_before_authority",
+    "test_e0_source_type_is_checked_before_attribute_access",
+)
+e0_source_path = None
+e0_source_resolved = None
+e0_node_by_name = {}
+e0_expected_codes = {}
+e0_monkeypatch_type = None
+if lane == "E0":
+    import pytest as e0_pytest
+
+    e0_monkeypatch_type = e0_pytest.MonkeyPatch
+    e0_source_path = repo / "tests" / "test_odlrq_quotient_generator.py"
+    e0_source_resolved = safe_path_resolve(e0_source_path)
+    e0_source = e0_source_path.read_text(encoding="utf-8")
+    e0_tree = safe_ast_parse(e0_source, filename=str(e0_source_path))
+    e0_nodes = [
+        node
+        for node in e0_tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name in e0_names
+    ]
+    if (
+        len(e0_nodes) != len(e0_names)
+        or {node.name for node in e0_nodes} != set(e0_names)
+        or any(
+            isinstance(node, ast.AsyncFunctionDef) or node.decorator_list
+            for node in e0_nodes
+        )
+    ):
+        raise RuntimeError("E0 direct-call functions must be unique undecorated definitions")
+    e0_node_by_name = {node.name: node for node in e0_nodes}
+    e0_compiled = safe_compile(
+        e0_source,
+        str(e0_source_path),
+        "exec",
+        dont_inherit=True,
+    )
+    e0_expected_codes = {
+        code.co_name: code
+        for code in e0_compiled.co_consts
+        if safe_type(code) is safe_code_type and code.co_name in e0_names
+    }
+    if set(e0_expected_codes) != set(e0_names):
+        raise RuntimeError("E0 source code-object set changed")
+
+if lane in {"B0", "E0"}:
     identity_path = repo / "tests" / "test_uprime_u2_u4_development.py"
     identity_spec = importlib.util.spec_from_file_location("u24_b0_identity", identity_path)
     if identity_spec is None or identity_spec.loader is None:
-        raise RuntimeError("B0 identity spec unavailable")
+        raise RuntimeError("B0/E0 identity spec unavailable")
     identity = importlib.util.module_from_spec(identity_spec)
     identity_spec.loader.exec_module(identity)
-    names = (
+    if safe_type(identity) is not safe_module_type:
+        raise RuntimeError("B0/E0 identity module type changed")
+    identity_dict = safe_module_getattribute(identity, "__dict__")
+    if (
+        "pytestmark" in identity_dict
+        or "pytest_plugins" in identity_dict
+        or identity_dict.get("__test__", True) is not True
+    ):
+        raise RuntimeError("B0/E0 identity module is marked, hidden, or plugin-modified")
+    identity_names = (
         "test_u24_a0_anchor_authorities_and_nonexistence_are_frozen",
         "test_u24_b0_anchor_contiguous_budget_and_terminal_topology",
         "test_u24_denylist_static_scan_and_exact_runner_copy",
         "test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import",
         "test_u24_four_tier_public_wires_do_not_trust_tier_booleans",
     )
-    discovered = tuple(sorted(name for name in vars(identity) if name.startswith("test_u24_")))
-    if discovered != tuple(sorted(names)):
-        raise RuntimeError("B0 identity function set changed")
-    for name in names:
-        function = getattr(identity, name)
-        if getattr(function, "pytestmark", ()) or getattr(function, "__wrapped__", None) is not None:
-            raise RuntimeError("B0 identity functions may not be skipped, marked, or wrapped")
-        function()
-    payload = {"artifact_sha256": None, "tests_passed": len(names)}
+    discovered = tuple(
+        sorted(name for name in identity_dict if name.startswith("test_u24_"))
+    )
+    if discovered != tuple(sorted(identity_names)):
+        raise RuntimeError("B0/E0 identity function set changed")
+    for name in identity_names:
+        function = identity_dict.get(name)
+        function_dict = (
+            safe_function_getattribute(function, "__dict__")
+            if safe_type(function) is safe_function_type
+            else {}
+        )
+        function_code = (
+            safe_function_getattribute(function, "__code__")
+            if safe_type(function) is safe_function_type
+            else None
+        )
+        if (
+            safe_type(function) is not safe_function_type
+            or function.__module__ != identity.__name__
+            or function.__name__ != name
+            or function.__qualname__ != name
+            or "pytestmark" in function_dict
+            or "__signature__" in function_dict
+            or function_dict.get("__test__", True) is not True
+            or function_dict.get("__wrapped__") is not None
+            or function_code.co_argcount != 0
+            or function_code.co_posonlyargcount != 0
+            or function_code.co_kwonlyargcount != 0
+            or function_code.co_flags & 0x2AC
+            or safe_function_getattribute(function, "__defaults__") is not None
+            or safe_function_getattribute(function, "__kwdefaults__") is not None
+        ):
+            raise RuntimeError(
+                "B0/E0 identity functions must be undecorated zero-argument functions"
+            )
+        if function() is not None:
+            raise RuntimeError("B0/E0 identity function returned a value")
+    if lane == "B0":
+        payload = {"artifact_sha256": None, "tests_passed": len(identity_names)}
+        with open(receipt, "x", encoding="ascii", newline="\n") as handle:
+            handle.write(json.dumps(payload, ensure_ascii=True, separators=(",", ":")) + "\n")
+        raise SystemExit(0)
+
+if lane == "E0":
+    quotient = sys.modules.get("test_odlrq_quotient_generator")
+    if safe_type(quotient) is not safe_module_type:
+        raise RuntimeError("E0 quotient-generator test module was not imported by identity")
+    quotient_dict = safe_module_getattribute(quotient, "__dict__")
+    if (
+        "pytestmark" in quotient_dict
+        or "pytest_plugins" in quotient_dict
+        or quotient_dict.get("__test__", True) is not True
+    ):
+        raise RuntimeError("E0 test module is marked, hidden, or plugin-modified")
+    discovered_e0 = tuple(
+        sorted(
+            name
+            for name in quotient_dict
+            if name.startswith("test_e0_")
+            or name == e0_names[5]
+        )
+    )
+    if discovered_e0 != tuple(sorted(e0_names)):
+        raise RuntimeError("E0 direct-call function set changed")
+
+    passed = len(identity_names)
+    for name in e0_names:
+        function = quotient_dict.get(name)
+        function_dict = (
+            safe_function_getattribute(function, "__dict__")
+            if safe_type(function) is safe_function_type
+            else {}
+        )
+        function_code = (
+            safe_function_getattribute(function, "__code__")
+            if safe_type(function) is safe_function_type
+            else None
+        )
+        if (
+            safe_type(function) is not safe_function_type
+            or function.__module__ != quotient.__name__
+            or function.__name__ != name
+            or function.__qualname__ != name
+            or "pytestmark" in function_dict
+            or "__signature__" in function_dict
+            or function_dict.get("__test__", True) is not True
+            or function_dict.get("__wrapped__") is not None
+        ):
+            raise RuntimeError("E0 direct-call function is marked, wrapped, or replaced")
+        node = e0_node_by_name[name]
+        if (
+            function_code.co_name != name
+            or function_code.co_firstlineno != node.lineno
+            or safe_path_resolve(safe_path_type(function_code.co_filename))
+            != e0_source_resolved
+            or function_code != e0_expected_codes[name]
+            or function.__globals__ is not quotient_dict
+            or function.__closure__ is not None
+        ):
+            raise RuntimeError("E0 runtime function is not its frozen source definition")
+        if (
+            function_code.co_posonlyargcount != 0
+            or function_code.co_kwonlyargcount != 0
+            or function_code.co_flags & 0x2AC
+            or function_code.co_argcount not in (0, 1)
+            or (
+                function_code.co_argcount == 1
+                and function_code.co_varnames[0] != "monkeypatch"
+            )
+            or safe_function_getattribute(function, "__defaults__") is not None
+            or safe_function_getattribute(function, "__kwdefaults__") is not None
+        ):
+            raise RuntimeError("E0 direct-call function parameterization changed")
+        if function_code.co_argcount == 1:
+            monkeypatch = e0_monkeypatch_type()
+            try:
+                result = function(monkeypatch)
+            finally:
+                monkeypatch.undo()
+        else:
+            result = function()
+        if result is not None:
+            raise RuntimeError("E0 direct-call function returned a value")
+        passed += 1
+    if passed != 14:
+        raise RuntimeError("E0 direct-call receipt count changed")
+    payload = {"artifact_sha256": None, "tests_passed": 14}
     with open(receipt, "x", encoding="ascii", newline="\n") as handle:
         handle.write(json.dumps(payload, ensure_ascii=True, separators=(",", ":")) + "\n")
     raise SystemExit(0)

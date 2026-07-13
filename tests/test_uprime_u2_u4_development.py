@@ -15,19 +15,23 @@ import uprime_u24_guard as u24_guard
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-ANCHOR_COMMIT = "1d448a2322b639b462d8cda8d20b4aaa55be232f"
-ANCHOR_PARENT = "48c9127b0cc6122af203869c656a78b9f2160293"
-ANCHOR_TREE = "4442cff7b0c84fd5d24dd4d68020f5afade9cd12"
+ANCHOR_COMMIT = "cbc7377c588e024d17438beb83e444c515ff0172"
+ANCHOR_PARENT = "de8d7e6e3f0cb41b514de25f6b3867bde49033f0"
+ANCHOR_TREE = "917225444c687aeeb801da72545622b95e39cb73"
 ANCHOR_FAILURE_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_reconstruction_failure_closeout_2026-07-13.md"
+    "uprime_odlrq_u2_u4_development_r2_failure_closeout_2026-07-13.md"
 )
-ANCHOR_FAILURE_BLOB = "8c1a048249b9ac2ddb0fa1ebc74eeac03fdd0692"
-ANCHOR_IDENTITY_BLOB = "b4e67b08c1d6695c90850317740b10dd9a6001b4"
-ANCHOR_GUARD_BLOB = "b877884528bc917c4cbeca48bd55223fe890f9e4"
-ANCHOR_RUNNER_BLOB = "61773201f5128d64dd9d17916f66c835569bf329"
+ANCHOR_FAILURE_BLOB = "7a05d80e8854eba26a3a634d345f7fde7a831359"
+ANCHOR_IDENTITY_BLOB = "fab3f0625770f02f27621d6da1fc787d61426a86"
+ANCHOR_GUARD_BLOB = "8d585c914ad75ee506ba97dcddfa16d6c2b78396"
+ANCHOR_RUNNER_BLOB = "33d29697f3966bbdc735c6e6639a97344081ef51"
 ANCHOR_MANIFEST_BLOB = "47997a9bd67f7ac2cf0cd9c7f654d8f069f925d8"
 ANCHOR_WORKFLOW_BLOB = "0349e9ca864b7e9e25064ab7fab5b6dc0665adee"
+
+ACCEPTED_BASE_COMMIT = ANCHOR_PARENT
+ACCEPTED_BASE_PARENT = "3970b4f505b842a76573329aaa526a1af08da7c4"
+ACCEPTED_BASE_TREE = "ceb94e0d87882249651de37cc1d94269b29787c8"
 
 LEGACY_A1_COMMIT = "7377119962e07c9062ba46c2c0c2f0eb479060ef"
 LEGACY_A1_DOCUMENT_PATH = (
@@ -39,19 +43,31 @@ LEGACY_SUCCESS_CLOSEOUT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_u2_u4_development_reconstruction_closeout_2026-07-13.md"
 )
+R1_FAILURE_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_reconstruction_failure_closeout_2026-07-13.md"
+)
+R1_FAILURE_BLOB = "8c1a048249b9ac2ddb0fa1ebc74eeac03fdd0692"
 HISTORICAL_IDENTITY_ADDITION = "7083e766acd2ba09b45ba3f47f65dc0b34317bd3"
 
-A2_COMMIT = "7c05c494ce79e84ffeb0d0c912ca3ba5f141f402"
-A2_DOCUMENT_PATH = (
+R2_A2_COMMIT = "7c05c494ce79e84ffeb0d0c912ca3ba5f141f402"
+R2_A2_DOCUMENT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_u2_u4_development_r2_exact_admission_integration_amendment_2026-07-13.md"
 )
-A2_DOCUMENT_BLOB = "a6fb65eb7a3d52bfbae985eb6bf32bf5275ac3e1"
-BOOTSTRAP_DOCUMENT_PATH = (
+R2_A2_DOCUMENT_BLOB = "a6fb65eb7a3d52bfbae985eb6bf32bf5275ac3e1"
+R2_BOOTSTRAP_COMMIT = "3970b4f505b842a76573329aaa526a1af08da7c4"
+R2_BOOTSTRAP_DOCUMENT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md"
 )
-BOOTSTRAP_DOCUMENT_BLOB = "c5af0cc08a1a6e148d297f9bf06300ba169987eb"
+R2_BOOTSTRAP_DOCUMENT_BLOB = "c5af0cc08a1a6e148d297f9bf06300ba169987eb"
+
+BOOTSTRAP_DOCUMENT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r3_stage_local_reentry_amendment_2026-07-13.md"
+)
+BOOTSTRAP_DOCUMENT_BLOB = "39d0b739954f7170ac4de8e5bda254df22328ae8"
 
 ACCEPTED_FAILURE_COMMIT = "214dec3adb7841452fea19f7ae668d8e0f7520a1"
 ACCEPTED_FAILURE_PATH = (
@@ -78,19 +94,18 @@ MANIFEST_PATH = "tests/tier_manifest.json"
 WORKFLOW_PATH = ".github/workflows/ci.yml"
 SUCCESS_CLOSEOUT_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_r2_closeout_2026-07-13.md"
+    "uprime_odlrq_u2_u4_development_r3_closeout_2026-07-13.md"
 )
 FAILURE_CLOSEOUT_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_r2_failure_closeout_2026-07-13.md"
+    "uprime_odlrq_u2_u4_development_r3_failure_closeout_2026-07-13.md"
 )
 
 FROZEN_REFS = {
-    "A2": "codex/uprime-u2-u4-development-r2-a0",
-    "T0": "codex/uprime-u2-u4-development-r2-topology-bootstrap",
-    "build": "codex/uprime-u2-u4-development-r2-build",
-    "closeout": "codex/uprime-u2-u4-development-r2-closeout",
-    "failure": "codex/uprime-u2-u4-development-r2-failure-closeout",
+    "bootstrap": "codex/uprime-u2-u4-development-r3-topology-bootstrap",
+    "build": "codex/uprime-u2-u4-development-r3-build",
+    "closeout": "codex/uprime-u2-u4-development-r3-closeout",
+    "failure": "codex/uprime-u2-u4-development-r3-failure-closeout",
     "accepted": "codex/uprime-odlrq-plan",
 }
 STAGE_ORDER = ("E0", "E1", "E2", "ME0", "S0", "I0")
@@ -98,7 +113,7 @@ MAX_BUILD_COMMITS = 7
 MAX_CORRECTIONS = 1
 WALL_SECONDS = {
     "B0": 60,
-    "E0": 60,
+    "E0": 90,
     "E1": 120,
     "E2": 180,
     "ME0": 180,
@@ -107,6 +122,24 @@ WALL_SECONDS = {
     "EMIT": 900,
     "CLOSEOUT": 60,
 }
+IDENTITY_TEST_NAMES = (
+    "test_u24_a0_anchor_authorities_and_nonexistence_are_frozen",
+    "test_u24_b0_anchor_contiguous_budget_and_terminal_topology",
+    "test_u24_denylist_static_scan_and_exact_runner_copy",
+    "test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import",
+    "test_u24_four_tier_public_wires_do_not_trust_tier_booleans",
+)
+E0_DIRECT_TEST_NAMES = (
+    "test_e0_exact_coordinate_generator_matches_frozen_independent_oracle",
+    "test_e0_roundtrip_permutation_cancellation_and_terminal_rows",
+    "test_e0_wire_and_source_attacks_fail_closed",
+    "test_e0_capability_types_and_later_tiers_are_rejected",
+    "test_e0_public_surface_has_no_later_tier_tokens",
+    "test_read_only_bundle_cache_is_quarantined_from_mutation_tests",
+    "test_e0_scope_fields_fail_closed_at_every_wire_layer",
+    "test_e0_signed64_preflight_rejects_before_authority",
+    "test_e0_source_type_is_checked_before_attribute_access",
+)
 
 BOOTSTRAP_CONTROL_PATHS = {
     IDENTITY_PATH,
@@ -114,6 +147,12 @@ BOOTSTRAP_CONTROL_PATHS = {
     RUNNER_PATH,
 }
 BOOTSTRAP_PATHS = {BOOTSTRAP_DOCUMENT_PATH, *BOOTSTRAP_CONTROL_PATHS}
+BOOTSTRAP_CORRECTION_PATH_SETS = (
+    frozenset({GUARD_PATH}),
+    frozenset({IDENTITY_PATH, GUARD_PATH}),
+    frozenset({RUNNER_PATH, GUARD_PATH}),
+    frozenset({IDENTITY_PATH, GUARD_PATH, RUNNER_PATH}),
+)
 BASE_BLOBS = {
     "lean_rgc/odlrq/contracts.py":
         "eca7d55bc7c2a7a08fbdc75c3b589f1972cd258f",
@@ -151,6 +190,9 @@ AUTHORITY_BLOBS = {
         "uprime_odlrq_official_transport_v2_recovery_failure_closeout_2026-07-13.md"
     ): "d94d9890f0c0bdf90f1e47bf49f779c5fbb31928",
     LEGACY_A1_DOCUMENT_PATH: LEGACY_A1_DOCUMENT_BLOB,
+    R1_FAILURE_PATH: R1_FAILURE_BLOB,
+    R2_A2_DOCUMENT_PATH: R2_A2_DOCUMENT_BLOB,
+    R2_BOOTSTRAP_DOCUMENT_PATH: R2_BOOTSTRAP_DOCUMENT_BLOB,
     ANCHOR_FAILURE_PATH: ANCHOR_FAILURE_BLOB,
 }
 
@@ -194,7 +236,6 @@ STAGE_ALLOWLISTS = {
         "lean_rgc/odlrq/__init__.py",
         "lean_rgc/evals/uprime_u2_u4_development.py",
         IDENTITY_PATH,
-        RUNNER_PATH,
         MANIFEST_PATH,
     },
 }
@@ -218,7 +259,6 @@ STAGE_MANIFEST_NODES = {
 ABSENT_AT_ANCHOR = tuple(
     sorted(
         {
-            A2_DOCUMENT_PATH,
             BOOTSTRAP_DOCUMENT_PATH,
             SUCCESS_CLOSEOUT_PATH,
             FAILURE_CLOSEOUT_PATH,
@@ -268,7 +308,6 @@ FAILURE_TERMINAL_PATHS = {FAILURE_CLOSEOUT_PATH}
 TRACKED_PATHS = tuple(
     sorted(
         {
-            A2_DOCUMENT_PATH,
             BOOTSTRAP_DOCUMENT_PATH,
             LEGACY_SUCCESS_CLOSEOUT_PATH,
             *BASE_BLOBS,
@@ -432,7 +471,7 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
     assert commits == [ANCHOR_COMMIT, *interval]
     assert len(commits) == len(set(commits))
     assert control["head"] == (interval[-1] if interval else ANCHOR_COMMIT)
-    assert interval and interval[0] == A2_COMMIT
+    assert not interval or interval[0] != ANCHOR_COMMIT
 
     anchor = revisions[0]
     assert anchor["parents"] == [ANCHOR_PARENT]
@@ -446,21 +485,6 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
     }.items():
         assert anchor_blobs[path] == expected
 
-    a2 = revisions[1]
-    assert a2["commit"] == A2_COMMIT
-    assert a2["parents"] == [ANCHOR_COMMIT]
-    assert _changed(a2) == {A2_DOCUMENT_PATH}
-    _assert_tree_transition(anchor, a2)
-    a2_blobs = _blobs(a2)
-    assert a2_blobs[A2_DOCUMENT_PATH] == A2_DOCUMENT_BLOB
-    assert a2_blobs[BOOTSTRAP_DOCUMENT_PATH] is None
-    for path, expected in {
-        **BASE_BLOBS,
-        **ANCHOR_CONTROL_BLOBS,
-        **AUTHORITY_BLOBS,
-    }.items():
-        assert a2_blobs[path] == expected
-
     for previous, current in zip(revisions, revisions[1:]):
         assert current["parents"] == [previous["commit"]]
         _assert_tree_transition(previous, current)
@@ -472,36 +496,42 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
         if path not in dirty:
             assert worktree[path] == head_blobs[path]
 
-    if len(interval) == 1:
-        assert control["head"] == A2_COMMIT
+    if not interval:
+        assert control["head"] == ANCHOR_COMMIT
         assert dirty == BOOTSTRAP_PATHS
         assert worktree[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
         assert all(worktree[path] is not None for path in BOOTSTRAP_PATHS)
+        assert all(
+            worktree[path] != anchor_blobs[path]
+            for path in BOOTSTRAP_CONTROL_PATHS
+        )
+        for path in TRACKED_PATHS:
+            if path not in BOOTSTRAP_PATHS:
+                assert worktree[path] == anchor_blobs[path]
         return {
             "completed": [],
             "counts": {name: 0 for name in STAGE_ORDER},
             "corrections": 0,
-            "pending": "T0",
+            "pending": "R3-bootstrap",
             "terminal": None,
         }
 
-    t0 = revisions[2]
-    assert t0["parents"] == [A2_COMMIT]
-    assert _changed(t0) == BOOTSTRAP_PATHS
-    t0_blobs = _blobs(t0)
-    assert t0_blobs[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
+    bootstrap = revisions[1]
+    assert bootstrap["parents"] == [ANCHOR_COMMIT]
+    assert _changed(bootstrap) == BOOTSTRAP_PATHS
+    bootstrap_blobs = _blobs(bootstrap)
+    assert bootstrap_blobs[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
     for path in BOOTSTRAP_CONTROL_PATHS:
-        assert t0_blobs[path] is not None
-        assert t0_blobs[path] != ANCHOR_CONTROL_BLOBS[path]
+        assert bootstrap_blobs[path] is not None
+        assert bootstrap_blobs[path] != ANCHOR_CONTROL_BLOBS[path]
     for path, expected in {**BASE_BLOBS, **AUTHORITY_BLOBS}.items():
-        assert t0_blobs[path] == expected
-    assert t0_blobs[WORKFLOW_PATH] == ANCHOR_WORKFLOW_BLOB
+        assert bootstrap_blobs[path] == expected
+    assert bootstrap_blobs[WORKFLOW_PATH] == ANCHOR_WORKFLOW_BLOB
 
-    remaining = revisions[3:]
+    remaining = revisions[2:]
     corrections = 0
-    frozen_control_row = t0
-    if remaining and _changed(remaining[0]) <= BOOTSTRAP_CONTROL_PATHS:
-        assert _changed(remaining[0])
+    frozen_control_row = bootstrap
+    if remaining and frozenset(_changed(remaining[0])) in BOOTSTRAP_CORRECTION_PATH_SETS:
         frozen_control_row = remaining.pop(0)
         corrections = 1
 
@@ -527,7 +557,6 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
         blobs = _blobs(row)
         for path in (GUARD_PATH, RUNNER_PATH, WORKFLOW_PATH):
             assert blobs[path] == frozen_blobs[path]
-        assert blobs[A2_DOCUMENT_PATH] == A2_DOCUMENT_BLOB
         assert blobs[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
         for path, expected in AUTHORITY_BLOBS.items():
             assert blobs[path] == expected
@@ -541,10 +570,9 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
         if (
             corrections == 0
             and not remaining
-            and dirty <= BOOTSTRAP_CONTROL_PATHS
-            and bool(dirty)
+            and frozenset(dirty) in BOOTSTRAP_CORRECTION_PATH_SETS
         ):
-            pending = "T0-correction"
+            pending = "R3-bootstrap-correction"
         else:
             assert not dirty & {GUARD_PATH, RUNNER_PATH, WORKFLOW_PATH}
             next_stage = (
@@ -730,11 +758,13 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
         assert blobs[path] == expected
     for path, expected in AUTHORITY_BLOBS.items():
         assert blobs[path] == expected
-    a2 = _revision(A2_COMMIT)
-    assert a2["parents"] == [ANCHOR_COMMIT]
-    assert _changed(a2) == {A2_DOCUMENT_PATH}
-    assert _blobs(a2)[A2_DOCUMENT_PATH] == A2_DOCUMENT_BLOB
-    assert ANCHOR_TREE == "4442cff7b0c84fd5d24dd4d68020f5afade9cd12"
+    assert blobs[BOOTSTRAP_DOCUMENT_PATH] is None
+    assert ANCHOR_TREE == "917225444c687aeeb801da72545622b95e39cb73"
+    assert ACCEPTED_BASE_COMMIT == "de8d7e6e3f0cb41b514de25f6b3867bde49033f0"
+    assert ACCEPTED_BASE_PARENT == "3970b4f505b842a76573329aaa526a1af08da7c4"
+    assert ACCEPTED_BASE_TREE == "ceb94e0d87882249651de37cc1d94269b29787c8"
+    assert R2_A2_COMMIT == "7c05c494ce79e84ffeb0d0c912ca3ba5f141f402"
+    assert R2_BOOTSTRAP_COMMIT == ACCEPTED_BASE_PARENT
     assert ORIGINAL_AUTHORITY_COMMIT == "14234e209229931c00615d4b171620ec6d1bbbf5"
     assert ORIGINAL_AUTHORITY_PARENT == "78c12549eb188610977842edbc38e2723d469ba4"
     assert blobs[ACCEPTED_FAILURE_PATH] == ACCEPTED_FAILURE_BLOB
@@ -742,20 +772,20 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
     assert CONTROL["absent_at_a0"] == {
         path: True for path in ABSENT_AT_ANCHOR
     }
+    assert CONTROL["identity_additions"] == [HISTORICAL_IDENTITY_ADDITION]
     assert UNION_ALLOWLIST == EXPECTED_UNION_ALLOWLIST
     assert FROZEN_REFS == {
-        "A2": "codex/uprime-u2-u4-development-r2-a0",
-        "T0": "codex/uprime-u2-u4-development-r2-topology-bootstrap",
-        "build": "codex/uprime-u2-u4-development-r2-build",
-        "closeout": "codex/uprime-u2-u4-development-r2-closeout",
-        "failure": "codex/uprime-u2-u4-development-r2-failure-closeout",
+        "bootstrap": "codex/uprime-u2-u4-development-r3-topology-bootstrap",
+        "build": "codex/uprime-u2-u4-development-r3-build",
+        "closeout": "codex/uprime-u2-u4-development-r3-closeout",
+        "failure": "codex/uprime-u2-u4-development-r3-failure-closeout",
         "accepted": "codex/uprime-odlrq-plan",
     }
     assert STAGE_ORDER == ("E0", "E1", "E2", "ME0", "S0", "I0")
     assert MAX_BUILD_COMMITS == 7 and MAX_CORRECTIONS == 1
     assert WALL_SECONDS == {
         "B0": 60,
-        "E0": 60,
+        "E0": 90,
         "E1": 120,
         "E2": 180,
         "ME0": 180,
@@ -768,79 +798,41 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
 
 def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     state = _validate_epoch_topology(CONTROL)
-    actual_interval = CONTROL["first_parent_after_a0"]
-    actual_rows = _revision_rows(CONTROL)
     actual_dirty = _governed_dirty(CONTROL)
-    if len(actual_interval) == 1:
+    assert state["completed"] == list(
+        STAGE_ORDER[: len(state["completed"])]
+    )
+    assert state["corrections"] in (0, 1)
+    assert state["pending"] in {
+        None,
+        "R3-bootstrap",
+        "R3-bootstrap-correction",
+        *STAGE_ORDER,
+        *(stage + "-correction" for stage in STAGE_ORDER),
+    }
+    if state["terminal"] is not None:
+        assert not actual_dirty
+        terminal_paths = _changed(state["terminal"])
+        assert terminal_paths in (SUCCESS_TERMINAL_PATHS, FAILURE_TERMINAL_PATHS)
+        if terminal_paths == SUCCESS_TERMINAL_PATHS:
+            assert state["completed"] == list(STAGE_ORDER)
+    elif state["pending"] == "R3-bootstrap":
         assert actual_dirty == BOOTSTRAP_PATHS
-        assert state["pending"] == "T0"
-        assert state["completed"] == []
-        assert state["corrections"] == 0
-        assert state["terminal"] is None
+        assert state["completed"] == [] and state["corrections"] == 0
+    elif state["pending"] == "R3-bootstrap-correction":
+        assert frozenset(actual_dirty) in BOOTSTRAP_CORRECTION_PATH_SETS
+        assert state["completed"] == [] and state["corrections"] == 0
+    elif state["pending"] in STAGE_ORDER:
+        stage = state["pending"]
+        assert actual_dirty <= STAGE_ALLOWLISTS[stage]
+        assert bool(actual_dirty & STAGE_MARKERS[stage])
+    elif state["pending"] is not None:
+        stage = state["pending"].removesuffix("-correction")
+        assert state["corrections"] == 0 and state["completed"]
+        assert stage == state["completed"][-1]
+        assert actual_dirty <= STAGE_ALLOWLISTS[stage]
     else:
-        post_t0_rows = actual_rows[3:]
-        committed_t0_correction = bool(
-            post_t0_rows
-            and _changed(post_t0_rows[0]) <= BOOTSTRAP_CONTROL_PATHS
-        )
-        if committed_t0_correction:
-            assert _changed(post_t0_rows[0]) == {IDENTITY_PATH, GUARD_PATH}
-        if not post_t0_rows:
-            if actual_dirty:
-                assert actual_dirty == {IDENTITY_PATH, GUARD_PATH}
-                assert state == {
-                    "completed": [],
-                    "counts": {name: 0 for name in STAGE_ORDER},
-                    "corrections": 0,
-                    "pending": "T0-correction",
-                    "terminal": None,
-                }
-            else:
-                assert state == {
-                    "completed": [],
-                    "counts": {name: 0 for name in STAGE_ORDER},
-                    "corrections": 0,
-                    "pending": None,
-                    "terminal": None,
-                }
-        elif committed_t0_correction and len(post_t0_rows) == 1:
-            if actual_dirty:
-                assert actual_dirty <= STAGE_ALLOWLISTS["E0"]
-                assert bool(actual_dirty & STAGE_MARKERS["E0"])
-                expected_pending = "E0"
-            else:
-                expected_pending = None
-            assert state == {
-                "completed": [],
-                "counts": {name: 0 for name in STAGE_ORDER},
-                "corrections": 1,
-                "pending": expected_pending,
-                "terminal": None,
-            }
-        elif committed_t0_correction and len(post_t0_rows) == 2:
-            assert _changed(post_t0_rows[1]) <= STAGE_ALLOWLISTS["E0"]
-            assert bool(_changed(post_t0_rows[1]) & STAGE_MARKERS["E0"])
-            if actual_dirty:
-                assert actual_dirty <= STAGE_ALLOWLISTS["E1"]
-                assert bool(actual_dirty & STAGE_MARKERS["E1"])
-                expected_pending = "E1"
-            else:
-                expected_pending = None
-            assert state == {
-                "completed": ["E0"],
-                "counts": {
-                    name: (1 if name == "E0" else 0)
-                    for name in STAGE_ORDER
-                },
-                "corrections": 1,
-                "pending": expected_pending,
-                "terminal": None,
-            }
-        else:
-            assert not committed_t0_correction or state["corrections"] == 1
-            assert state["completed"] == list(
-                STAGE_ORDER[: len(state["completed"])]
-            )
+        assert not actual_dirty
 
     def append_row(
         source: Mapping[str, Any],
@@ -869,24 +861,24 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         result["worktree_blobs"] = copy.deepcopy(tree)
         return result
 
+    actual_interval = CONTROL["first_parent_after_a0"]
+    actual_rows = _revision_rows(CONTROL)
+    bootstrap_source = (
+        _blobs(actual_rows[1]) if actual_interval else _worktree_blobs(CONTROL)
+    )
     pending_t0 = copy.deepcopy(CONTROL)
-    pending_t0["head"] = A2_COMMIT
-    pending_t0["first_parent_after_a0"] = [A2_COMMIT]
-    pending_t0["revisions"] = pending_t0["revisions"][:2]
+    pending_t0["head"] = ANCHOR_COMMIT
+    pending_t0["first_parent_after_a0"] = []
+    pending_t0["revisions"] = pending_t0["revisions"][:1]
     pending_t0["status_paths"] = sorted(BOOTSTRAP_PATHS)
     pending_t0["ci_setup_paths"] = []
     pending_t0["worktree_blobs"] = copy.deepcopy(
-        pending_t0["revisions"][1]["tree_blobs"]
-    )
-    bootstrap_source = (
-        _blobs(_revision_rows(CONTROL)[2])
-        if len(actual_interval) >= 2
-        else _worktree_blobs(CONTROL)
+        pending_t0["revisions"][0]["tree_blobs"]
     )
     for path in BOOTSTRAP_PATHS:
         pending_t0["worktree_blobs"][path] = bootstrap_source[path]
     pending_bootstrap = _validate_epoch_topology(pending_t0)
-    assert pending_bootstrap["pending"] == "T0"
+    assert pending_bootstrap["pending"] == "R3-bootstrap"
     assert pending_bootstrap["completed"] == []
 
     t0_commit = "10" * 20
@@ -928,62 +920,49 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
 
     attacks: list[dict[str, Any]] = []
 
-    missing_a2 = copy.deepcopy(pending_t0)
-    missing_a2["head"] = ANCHOR_COMMIT
-    missing_a2["first_parent_after_a0"] = []
-    missing_a2["revisions"] = missing_a2["revisions"][:1]
-    missing_a2["worktree_blobs"] = copy.deepcopy(
-        missing_a2["revisions"][0]["tree_blobs"]
-    )
-    attacks.append(missing_a2)
-
-    wrong_a2_parent = copy.deepcopy(pending_t0)
-    wrong_a2_parent["revisions"][1]["parents"] = [ANCHOR_PARENT]
-    attacks.append(wrong_a2_parent)
-    changed_a2_document = copy.deepcopy(pending_t0)
-    changed_a2_document["revisions"][1]["tree_blobs"][A2_DOCUMENT_PATH] = (
+    wrong_anchor_parent = copy.deepcopy(pending_t0)
+    wrong_anchor_parent["revisions"][0]["parents"] = ["00" * 20]
+    attacks.append(wrong_anchor_parent)
+    changed_anchor_blob = copy.deepcopy(pending_t0)
+    changed_anchor_blob["revisions"][0]["tree_blobs"][ANCHOR_FAILURE_PATH] = (
         "00" * 20
     )
-    attacks.append(changed_a2_document)
-    merge_a2 = copy.deepcopy(pending_t0)
-    merge_a2["revisions"][1]["parents"].append("ff" * 20)
-    attacks.append(merge_a2)
+    attacks.append(changed_anchor_blob)
+    expanded_anchor_change = copy.deepcopy(pending_t0)
+    expanded_anchor_change["revisions"][0]["changed_paths"].append(
+        "lean_rgc/odlrq/quotient_generator.py"
+    )
+    attacks.append(expanded_anchor_change)
+
+    clean_anchor_without_bootstrap = copy.deepcopy(pending_t0)
+    clean_anchor_without_bootstrap["status_paths"] = []
+    clean_anchor_without_bootstrap["worktree_blobs"] = copy.deepcopy(
+        clean_anchor_without_bootstrap["revisions"][0]["tree_blobs"]
+    )
+    attacks.append(clean_anchor_without_bootstrap)
 
     wrong_t0_parent = copy.deepcopy(t0)
-    wrong_t0_parent["revisions"][2]["parents"] = [ANCHOR_COMMIT]
+    wrong_t0_parent["revisions"][1]["parents"] = [ANCHOR_PARENT]
     attacks.append(wrong_t0_parent)
     merge_t0 = copy.deepcopy(t0)
-    merge_t0["revisions"][2]["parents"].append("ee" * 20)
+    merge_t0["revisions"][1]["parents"].append("ee" * 20)
     attacks.append(merge_t0)
 
-    reordered = copy.deepcopy(t0)
-    reordered["first_parent_after_a0"] = [t0_commit, A2_COMMIT]
-    reordered["revisions"] = [
-        reordered["revisions"][0],
-        reordered["revisions"][2],
-        reordered["revisions"][1],
-    ]
-    reordered["head"] = A2_COMMIT
-    attacks.append(reordered)
-    duplicate = copy.deepcopy(pending_t0)
-    duplicate["revisions"].append(copy.deepcopy(duplicate["revisions"][1]))
-    attacks.append(duplicate)
-
     inserted = copy.deepcopy(t0)
-    inserted_row = copy.deepcopy(inserted["revisions"][1])
+    inserted_row = copy.deepcopy(inserted["revisions"][0])
     inserted_row["commit"] = "11" * 20
-    inserted_row["parents"] = [A2_COMMIT]
+    inserted_row["parents"] = [ANCHOR_COMMIT]
     inserted_row["changed_paths"] = ["lean_rgc/odlrq/quotient_generator.py"]
-    inserted["revisions"][2]["parents"] = [inserted_row["commit"]]
-    inserted["revisions"].insert(2, inserted_row)
-    inserted["first_parent_after_a0"].insert(1, inserted_row["commit"])
+    inserted["revisions"][1]["parents"] = [inserted_row["commit"]]
+    inserted["revisions"].insert(1, inserted_row)
+    inserted["first_parent_after_a0"].insert(0, inserted_row["commit"])
     attacks.append(inserted)
 
     extra_t0_path = copy.deepcopy(t0)
-    extra_t0_path["revisions"][2]["changed_paths"].append(MANIFEST_PATH)
+    extra_t0_path["revisions"][1]["changed_paths"].append(MANIFEST_PATH)
     attacks.append(extra_t0_path)
     changed_t0_document = copy.deepcopy(t0)
-    changed_t0_document["revisions"][2]["tree_blobs"][
+    changed_t0_document["revisions"][1]["tree_blobs"][
         BOOTSTRAP_DOCUMENT_PATH
     ] = "00" * 20
     changed_t0_document["worktree_blobs"][BOOTSTRAP_DOCUMENT_PATH] = "00" * 20
@@ -994,24 +973,38 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     ] = "00" * 20
     changed_e0_base["worktree_blobs"]["lean_rgc/odlrq/contracts.py"] = "00" * 20
     attacks.append(changed_e0_base)
+    unregistered_dirty = copy.deepcopy(t0)
+    unregistered_dirty["status_paths"] = ["unregistered-r3-path.txt"]
+    attacks.append(unregistered_dirty)
 
-    success_reopen = append_row(
+    success_before_bootstrap = append_row(
         pending_t0, "31" * 20, SUCCESS_TERMINAL_PATHS
     )
-    attacks.append(success_reopen)
-    other_failure = append_row(
-        pending_t0, "32" * 20, {FAILURE_CLOSEOUT_PATH}
+    attacks.append(success_before_bootstrap)
+    failure_before_bootstrap = append_row(
+        pending_t0, "32" * 20, FAILURE_TERMINAL_PATHS
     )
-    attacks.append(other_failure)
+    attacks.append(failure_before_bootstrap)
     second_bootstrap = append_row(t0, "33" * 20, BOOTSTRAP_PATHS)
     attacks.append(second_bootstrap)
 
+    immediate_failure = append_row(t0, "34" * 20, FAILURE_TERMINAL_PATHS)
+    immediate_failure_state = _validate_epoch_topology(immediate_failure)
+    assert immediate_failure_state["completed"] == []
+    assert immediate_failure_state["corrections"] == 0
+    assert immediate_failure_state["pending"] is None
+    assert immediate_failure_state["terminal"]["commit"] == "34" * 20
+    attacks.append(append_row(t0, "36" * 20, SUCCESS_TERMINAL_PATHS))
+
     failure_terminal = append_row(
-        e0, "34" * 20, FAILURE_TERMINAL_PATHS
+        e0, "37" * 20, FAILURE_TERMINAL_PATHS
     )
+    after_e0_failure = _validate_epoch_topology(failure_terminal)
+    assert after_e0_failure["completed"] == ["E0"]
+    assert after_e0_failure["terminal"]["commit"] == "37" * 20
     post_terminal = append_row(
         failure_terminal,
-        "35" * 20,
+        "38" * 20,
         {"lean_rgc/odlrq/envelope.py"},
     )
     attacks.append(post_terminal)
@@ -1044,6 +1037,21 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         "pending": None,
         "terminal": None,
     }
+    correction_failure = append_row(
+        t0_correction, "65" * 20, FAILURE_TERMINAL_PATHS
+    )
+    correction_failure_state = _validate_epoch_topology(correction_failure)
+    assert correction_failure_state["completed"] == []
+    assert correction_failure_state["corrections"] == 1
+    assert correction_failure_state["pending"] is None
+    assert correction_failure_state["terminal"]["commit"] == "65" * 20
+    attacks.append(
+        append_row(
+            correction_failure,
+            "66" * 20,
+            {"lean_rgc/odlrq/quotient_generator.py"},
+        )
+    )
     dirty_e0_after_correction = copy.deepcopy(t0_correction)
     dirty_e0_after_correction["status_paths"] = [
         "lean_rgc/odlrq/quotient_generator.py"
@@ -1084,16 +1092,18 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     attacks.append(shared_quota_reuse)
 
     wrong_correction_parent = copy.deepcopy(t0_correction)
-    wrong_correction_parent["revisions"][3]["parents"] = [A2_COMMIT]
+    wrong_correction_parent["revisions"][2]["parents"] = [ANCHOR_COMMIT]
     attacks.append(wrong_correction_parent)
     merge_correction = copy.deepcopy(t0_correction)
-    merge_correction["revisions"][3]["parents"].append("dd" * 20)
+    merge_correction["revisions"][2]["parents"].append("dd" * 20)
     attacks.append(merge_correction)
+    attacks.append(append_row(t0, "48" * 20, {IDENTITY_PATH}))
+    attacks.append(append_row(t0, "49" * 20, {RUNNER_PATH}))
     non_immediate_correction = append_row(e0, "49" * 20, {GUARD_PATH})
     attacks.append(non_immediate_correction)
     for extra_path in (
         BOOTSTRAP_DOCUMENT_PATH,
-        A2_DOCUMENT_PATH,
+        R2_A2_DOCUMENT_PATH,
         WORKFLOW_PATH,
         MANIFEST_PATH,
         "lean_rgc/odlrq/quotient_generator.py",
@@ -1107,12 +1117,24 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         attacks.append(mixed_correction)
 
     through_s0 = t0
-    for index, stage in enumerate(STAGE_ORDER[:-1], start=50):
+    for prefix_length, (index, stage) in enumerate(
+        zip(range(50, 55), STAGE_ORDER[:-1]), start=1
+    ):
         through_s0 = append_row(
             through_s0,
             f"{index:02d}" * 20,
             STAGE_MARKERS[stage],
         )
+        prefix_failure = append_row(
+            through_s0,
+            f"{index + 30:02d}" * 20,
+            FAILURE_TERMINAL_PATHS,
+        )
+        prefix_failure_state = _validate_epoch_topology(prefix_failure)
+        assert prefix_failure_state["completed"] == list(
+            STAGE_ORDER[:prefix_length]
+        )
+        assert prefix_failure_state["terminal"]["commit"] == f"{index + 30:02d}" * 20
     dirty_pending_i0_runner = copy.deepcopy(through_s0)
     pending_i0_paths = {RUNNER_PATH, *STAGE_MARKERS["I0"]}
     dirty_pending_i0_runner["status_paths"] = sorted(pending_i0_paths)
@@ -1124,6 +1146,25 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         through_s0,
         "60" * 20,
         STAGE_MARKERS["I0"],
+    )
+    i0_failure = append_row(through_i0, "91" * 20, FAILURE_TERMINAL_PATHS)
+    i0_failure_state = _validate_epoch_topology(i0_failure)
+    assert i0_failure_state["completed"] == list(STAGE_ORDER)
+    assert i0_failure_state["terminal"]["commit"] == "91" * 20
+    successful_closeout = append_row(
+        through_i0, "61" * 20, SUCCESS_TERMINAL_PATHS
+    )
+    successful_state = _validate_epoch_topology(successful_closeout)
+    assert successful_state["completed"] == list(STAGE_ORDER)
+    assert successful_state["corrections"] == 0
+    assert successful_state["pending"] is None
+    assert successful_state["terminal"]["commit"] == "61" * 20
+    attacks.append(
+        append_row(
+            successful_closeout,
+            "62" * 20,
+            {"lean_rgc/odlrq/quotient_generator.py"},
+        )
     )
     dirty_after_i0_runner = copy.deepcopy(through_i0)
     dirty_after_i0_runner["status_paths"] = [RUNNER_PATH]
@@ -1138,11 +1179,16 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     shallow["is_shallow"] = True
     attacks.append(shallow)
     wrong_head = copy.deepcopy(CONTROL)
-    wrong_head["head"] = ANCHOR_COMMIT
+    wrong_head["head"] = "00" * 20
     attacks.append(wrong_head)
     omitted_interval = copy.deepcopy(t0)
-    omitted_interval["first_parent_after_a0"] = [A2_COMMIT]
+    omitted_interval["first_parent_after_a0"] = []
     attacks.append(omitted_interval)
+    duplicate_revision = copy.deepcopy(t0)
+    duplicate_revision["revisions"].append(
+        copy.deepcopy(duplicate_revision["revisions"][1])
+    )
+    attacks.append(duplicate_revision)
     malformed = copy.deepcopy(CONTROL)
     malformed["unexpected"] = True
     attacks.append(malformed)
@@ -1190,7 +1236,7 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     for literal in (
         '$MemoryLimitBytes = [uint64]2 * 1024 * 1024 * 1024',
         '$OutputLimitBytes = [int64]64 * 1024 * 1024',
-        'B0 = 60; E0 = 60; E1 = 120; E2 = 180; ME0 = 180',
+        'B0 = 60; E0 = 90; E1 = 120; E2 = 180; ME0 = 180',
         'S0 = 300; I0 = 900; EMIT = 900; CLOSEOUT = 60',
         'LimitFlags=0x8u|0x100u|0x200u|0x2000u',
         'ActiveProcessLimit=1',
@@ -1202,6 +1248,13 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
         'NUMEXPR_NUM_THREADS = "1"',
         'D6E6DEBCE5C150AE31BA0D04EAF6E59FD2D79FDC4C0D5272264574665C0242F4',
         'requested lane has not reached its frozen source marker',
+        'semantic lane requires accepted branch activation',
+        'accepted branch skips or mutates a semantic stage',
+        'accepted branch has not completed the prior semantic stages',
+        'the shared R3 correction budget is already spent',
+        'B0/E0 identity module is marked, hidden, or plugin-modified',
+        'E0 test module is marked, hidden, or plugin-modified',
+        'E0 runtime function is not its frozen source definition',
     ):
         assert runner.count(literal) >= 1
     manifest_match = __import__("re").search(
@@ -1214,12 +1267,71 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     bootstrap = runner.split("$bootstrap = @'", 1)[1].split("'@", 1)[0]
     control = runner.split("$control = @'", 1)[1].split("'@", 1)[0]
     assert bootstrap.index("import numpy as np") < bootstrap.index("guard.install_guard(policy)")
-    assert bootstrap.index("guard.install_guard(policy)") < bootstrap.index("import pytest")
+    e0_branch = 'if lane == "E0":'
+    assert bootstrap.count(e0_branch) == 2
+    assert bootstrap.index("guard.install_guard(policy)") < bootstrap.index(e0_branch)
+    assert bootstrap.index(e0_branch) < bootstrap.index("import pytest")
+    assert bootstrap.count("\nimport types\n") == 1
+    assert control.count('"refs/heads/codex/uprime-odlrq-plan"') == 1
+    assert control.count('semantic_markers = {') == 1
+    assert control.count('semantic_allowlists = {') == 1
+    assert control.count('expected_prefix = list(semantic_order[:semantic_order.index(lane)])') == 1
+    control_tree = __import__("ast").parse(control)
+    control_literals = {}
+    for node in control_tree.body:
+        if (
+            isinstance(node, __import__("ast").Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], __import__("ast").Name)
+            and node.targets[0].id in {"semantic_markers", "semantic_allowlists"}
+        ):
+            control_literals[node.targets[0].id] = __import__("ast").literal_eval(
+                node.value
+            )
+    assert control_literals == {
+        "semantic_markers": {
+            stage: next(iter(STAGE_MARKERS[stage])) for stage in STAGE_ORDER
+        },
+        "semantic_allowlists": STAGE_ALLOWLISTS,
+    }
+    assert control.count('if lane in semantic_markers:') == 1
+    assert bootstrap.count('"pytestmark" in identity_dict') == 1
+    assert bootstrap.count('"pytestmark" in quotient_dict') == 1
+    assert bootstrap.count('"pytestmark" in function_dict') == 2
+    assert bootstrap.count('"pytest_plugins" in identity_dict') == 1
+    assert bootstrap.count('"pytest_plugins" in quotient_dict') == 1
+    assert bootstrap.count('function_dict.get("__test__", True) is not True') == 2
+    assert bootstrap.count('"__signature__" in function_dict') == 2
+    assert bootstrap.count('function_code.co_flags & 0x2AC') == 2
+    assert bootstrap.count('safe_type(quotient) is not safe_module_type') == 1
+    assert bootstrap.count('function_code != e0_expected_codes[name]') == 1
+    assert bootstrap.count('function.__globals__ is not quotient_dict') == 1
+    for name in IDENTITY_TEST_NAMES:
+        assert bootstrap.count(name) == 1
+    for name in E0_DIRECT_TEST_NAMES:
+        assert bootstrap.count(name) == 1
+    for literal in (
+        "pytest.MonkeyPatch",
+        "monkeypatch.undo()",
+        'function_code.co_varnames[0] != "monkeypatch"',
+        "if passed != 14:",
+        'payload = {"artifact_sha256": None, "tests_passed": 14}',
+    ):
+        assert bootstrap.count(literal) >= 1
+    assert bootstrap.index(e0_branch) < bootstrap.index("pytest.main")
     assert 'test_uprime_u2_u4_development.py")' not in control
     assert '-X "pycache_prefix=$controlPycachePrefix" $controlPath' in runner
     assert '@("-I", "-S", "-X", "pycache_prefix=$childPycachePrefix", $bootstrapPath)' in runner
     assert runner.count('pycache prefix is not empty') == 2
     assert "PYTHONPYCACHEPREFIX" not in runner
+    assert runner.count(ANCHOR_COMMIT) == 3
+    assert runner.count(ANCHOR_FAILURE_PATH) == 1
+    assert runner.count(BOOTSTRAP_DOCUMENT_PATH) == 3
+    assert runner.count(SUCCESS_CLOSEOUT_PATH) == 2
+    assert runner.count(FAILURE_CLOSEOUT_PATH) == 2
+    assert runner.count(R2_A2_DOCUMENT_PATH) == 1
+    assert runner.count(R2_BOOTSTRAP_DOCUMENT_PATH) == 1
+    assert runner.count(R1_FAILURE_PATH) == 1
 
     def replace_exact(
         value: str, old: str, new: str, expected_count: int
@@ -1237,10 +1349,10 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     assert b"\r" not in guard_raw
     guard_source = guard_raw.decode("utf-8")
     anchor_identity_core_sha256 = (
-        "E18B8844D8E3274BA338621113FF405BE9805F73088B76920DDCBA219EBF9354"
+        "D9C078514414A2AEB0EC620BF930AFA0DC3B96A754976B8FC5F1C0B567D896CB"
     )
     anchor_runner_sha256 = (
-        "38A3C357413FC3444034556AA675D9723D2B22E0E2B5A519ABDE935E4BD60DD1"
+        "BCE39615C5392CEC48A3018AAC36C96AA249B515D9822C444438C1B060890B84"
     )
     assert u24_guard.FROZEN_IDENTITY_CORE_SHA256 != anchor_identity_core_sha256
     assert u24_guard.FROZEN_RUNNER_SHA256 != anchor_runner_sha256
@@ -1256,65 +1368,20 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
         f'FROZEN_RUNNER_SHA256 = "{anchor_runner_sha256}"',
         1,
     )
-    reconstructed_guard = replace_exact(
-        reconstructed_guard,
-        "MAX_BUILD_COMMITS = 7",
-        "MAX_BUILD_COMMITS = 8",
-        1,
-    )
     reconstructed_guard_bytes = reconstructed_guard.encode("utf-8")
     assert __import__("hashlib").sha256(
         reconstructed_guard_bytes
     ).hexdigest().upper() == (
-        "34880CA312F411FB526843A16A4722D5A19EADEE04C25402977A962DA3F5717C"
+        "EA7AC3B96019DBD4AB23515CDB1E2ED19CAA1AE632402F8BACE915F96621A4EC"
     )
     assert git_blob_sha1(reconstructed_guard_bytes) == ANCHOR_GUARD_BLOB
 
     runner_raw = (REPO_ROOT / RUNNER_PATH).read_bytes().replace(b"\r\n", b"\n")
     assert b"\r" not in runner_raw
-    reconstructed_runner = runner_raw.decode("utf-8")
-    r2_documents = (
-        SUCCESS_CLOSEOUT_PATH,
-        A2_DOCUMENT_PATH,
-        FAILURE_CLOSEOUT_PATH,
-        BOOTSTRAP_DOCUMENT_PATH,
-    )
-    added_document_block = "".join(
-        f"    '{path}',\n" for path in r2_documents
-    )
-    reconstructed_runner = replace_exact(
-        reconstructed_runner, added_document_block, "", 2
-    )
-    current_absent_tail = (
-        "    'tests/test_odlrq_selection.py', 'tests/test_odlrq_similarity.py',\n"
-        ")"
-    )
-    anchor_absent_tail = (
-        "    'tests/test_odlrq_selection.py', 'tests/test_odlrq_similarity.py',\n"
-        "    'tests/test_uprime_u2_u4_development.py', 'tests/uprime_u24_guard.py',\n"
-        "    'tools/run_uprime_u2_u4_development_tests.ps1',\n"
-        ")"
-    )
-    reconstructed_runner = replace_exact(
-        reconstructed_runner, current_absent_tail, anchor_absent_tail, 1
-    )
-    t0_dirty_exception = (
-        'if lane == "B0":\n'
-        "    allowed_dirty.add(\n"
-        f"        '{BOOTSTRAP_DOCUMENT_PATH}'\n"
-        "    )\n"
-    )
-    reconstructed_runner = replace_exact(
-        reconstructed_runner, t0_dirty_exception, "", 1
-    )
-    reconstructed_runner = replace_exact(
-        reconstructed_runner, ANCHOR_COMMIT, LEGACY_A1_COMMIT, 3
-    )
-    reconstructed_runner_bytes = reconstructed_runner.encode("utf-8")
-    assert __import__("hashlib").sha256(
-        reconstructed_runner_bytes
-    ).hexdigest().upper() == anchor_runner_sha256
-    assert git_blob_sha1(reconstructed_runner_bytes) == ANCHOR_RUNNER_BLOB
+    runner_sha256 = __import__("hashlib").sha256(runner_raw).hexdigest().upper()
+    assert runner_sha256 == u24_guard.FROZEN_RUNNER_SHA256
+    assert runner_sha256 != anchor_runner_sha256
+    assert git_blob_sha1(runner_raw) != ANCHOR_RUNNER_BLOB
 
     identity_tree = __import__("ast").parse(
         (REPO_ROOT / IDENTITY_PATH).read_text(encoding="utf-8")
@@ -1326,13 +1393,7 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
         and node.name.startswith("test_u24_")
         and not node.name.startswith("test_u24_i0_")
     ]
-    assert identity_tests == [
-        "test_u24_a0_anchor_authorities_and_nonexistence_are_frozen",
-        "test_u24_b0_anchor_contiguous_budget_and_terminal_topology",
-        "test_u24_denylist_static_scan_and_exact_runner_copy",
-        "test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import",
-        "test_u24_four_tier_public_wires_do_not_trust_tier_booleans",
-    ]
+    assert identity_tests == list(IDENTITY_TEST_NAMES)
 
     encoded = u24_guard.encode_control_plane_attestation(CONTROL)
     assert encoded.startswith("z1:") and len(encoded) < 24000
