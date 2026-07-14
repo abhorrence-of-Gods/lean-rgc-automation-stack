@@ -38,6 +38,11 @@ CERTIFIED_INTERVAL_OPERATOR_SCHEMA = "odlrq_certified_interval_operator_v1"
 OBSERVED_INTERVAL_OPERATOR_SCHEMA = "odlrq_observed_interval_operator_v1"
 NOMINAL_OPERATOR_SCHEMA = "odlrq_nominal_operator_v1"
 
+POSITIVE_FIBER_WEIGHTS_SCHEMA = "odlrq_positive_fiber_weights_v1"
+EXACT_FINITE_FIBER_LAW_SCHEMA = "odlrq_exact_finite_fiber_law_v1"
+WEIGHTED_COMPRESSION_SCHEMA = "odlrq_weighted_compression_v1"
+WEIGHTED_LIFTING_SCHEMA = "odlrq_weighted_lifting_v1"
+
 _INTERVAL_ROW_FIELDS = (
     "schema_version",
     "source_block_index",
@@ -76,7 +81,13 @@ _EXACT_QUOTIENT_SOURCE_SEAL_VERSION = (
 )
 _MAX_EXACT_QUOTIENT_TERMS = 4_096
 _MAX_EXACT_RATIONAL_DECIMAL_DIGITS = 2_467
+_MAX_FIBER_MEMBERS = 128
+_MAX_FIBER_BLOCKS = 64
 _EXACT_QUOTIENT_GENERATOR_SEAL = object()
+_POSITIVE_FIBER_WEIGHTS_SEAL = object()
+_EXACT_FINITE_FIBER_LAW_SEAL = object()
+_WEIGHTED_COMPRESSION_SEAL = object()
+_WEIGHTED_LIFTING_SEAL = object()
 
 _EXACT_QUOTIENT_TERM_FIELDS = (
     "schema_version",
@@ -455,7 +466,14 @@ class ExactFiniteOperator:
     def from_verified(cls, source: VerifiedExactPartition) -> "ExactFiniteOperator":
         if cls is not ExactFiniteOperator:
             raise StrictContractError("polymorphic exact export is forbidden")
-        seal = _fresh_verified_digest(source)
+        if type(source) is not VerifiedExactPartition:
+            raise StrictContractError(
+                "exact operator export requires an exact VerifiedExactPartition"
+            )
+        # __post_init__ is the single fresh admission for this typed export.
+        # Hashing the supplied immutable wire here gives it the comparison seal
+        # without running the identical verifier twice in one construction.
+        seal = _sha256(source.to_dict())
         return cls(source, seal, _construction_seal=_EXACT_SEAL)
 
     @classmethod
@@ -489,6 +507,37 @@ def export_exact_finite_operator(
     source: VerifiedExactPartition,
 ) -> ExactFiniteOperator:
     return ExactFiniteOperator.from_verified(source)
+
+
+def _fresh_exact_quotient_export(
+    source: VerifiedExactPartition,
+) -> tuple[
+    VerifiedExactPartition,
+    dict[str, Any],
+    tuple[int, int, int, int, int, int],
+]:
+    """Indivisibly reverify E0, construct its typed predecessor, and consume it."""
+
+    # No reusable token or arbitrary-fresh constructor exists: the stronger
+    # admission/partition verifier and the sealed capability construction are
+    # one local transaction over the caller-supplied retained source.
+    fresh = _fresh_exact_quotient_verified(source)
+    dimensions = _preflight_exact_quotient_dimensions(fresh)
+    exact = object.__new__(ExactFiniteOperator)
+    object.__setattr__(exact, "_verified_source", fresh)
+    object.__setattr__(exact, "_source_seal_sha256", _sha256(fresh.to_dict()))
+    object.__setattr__(exact, "_construction_seal", _EXACT_SEAL)
+    if (
+        type(exact) is not ExactFiniteOperator
+        or exact._construction_seal is not _EXACT_SEAL
+        or exact._verified_source is not fresh
+        or _canonical_digest(
+            exact._source_seal_sha256, "fresh exact export source seal"
+        )
+        != _sha256(fresh.to_dict())
+    ):
+        raise StrictContractError("fresh exact export capability construction failed")
+    return fresh, _derive_exact_wire_from_fresh(fresh), dimensions
 
 
 @dataclass(frozen=True)
@@ -929,7 +978,7 @@ def _derive_exact_quotient_generator_wire(
         raise StrictContractError(
             "exact quotient generator requires an exact VerifiedExactPartition"
         )
-    fresh = _fresh_exact_quotient_verified(source)
+    fresh, exact_wire, dimensions = _fresh_exact_quotient_export(source)
     (
         totalized_state_count,
         block_count,
@@ -937,9 +986,10 @@ def _derive_exact_quotient_generator_wire(
         row_count,
         member_action_witness_count,
         _maximum_term_count,
-    ) = _preflight_exact_quotient_dimensions(fresh)
-    exact = export_exact_finite_operator(fresh)
-    exact_wire = exact.to_dict()
+    ) = dimensions
+    # _fresh_exact_quotient_export has already transported this stronger fresh
+    # admission through a real sealed ExactFiniteOperator and consumed it in
+    # the same indivisible transaction.
     snapshot = fresh.admitted.snapshot
     certificate = fresh.certificate
 
@@ -1355,6 +1405,825 @@ def _construct_exact_quotient_coordinate_generator(
     return result
 
 
+def _rational_add(left: ExactRational, right: ExactRational) -> ExactRational:
+    if type(left) is not ExactRational or type(right) is not ExactRational:
+        raise StrictContractError("exact arithmetic requires ExactRational operands")
+    return ExactRational(
+        left.numerator * right.denominator
+        + right.numerator * left.denominator,
+        left.denominator * right.denominator,
+    )
+
+
+def _rational_multiply(left: ExactRational, right: ExactRational) -> ExactRational:
+    if type(left) is not ExactRational or type(right) is not ExactRational:
+        raise StrictContractError("exact arithmetic requires ExactRational operands")
+    return ExactRational(
+        left.numerator * right.numerator,
+        left.denominator * right.denominator,
+    )
+
+
+def _rational_divide(left: ExactRational, right: ExactRational) -> ExactRational:
+    if type(left) is not ExactRational or type(right) is not ExactRational:
+        raise StrictContractError("exact arithmetic requires ExactRational operands")
+    if right.numerator == 0:
+        raise StrictContractError("exact division by zero is forbidden")
+    sign = -1 if right.numerator < 0 else 1
+    return ExactRational(
+        sign * left.numerator * right.denominator,
+        left.denominator * abs(right.numerator),
+    )
+
+
+def _fresh_fiber_frame(
+    generator: ExactQuotientCoordinateGenerator,
+) -> dict[str, Any]:
+    """Re-derive the complete ordered member/block frame retained by E0."""
+
+    if type(generator) is not ExactQuotientCoordinateGenerator:
+        raise StrictContractError(
+            "fiber coordinates require an exact quotient coordinate generator"
+        )
+    # ``to_dict`` already performs the complete fresh E0 admission, partition,
+    # source-seal and wire rederivation.  Repeating that derivation twice here
+    # would make each E1 lookup cubic in nested certificate calls.
+    generator_wire = generator.to_dict()
+    fresh = generator._verified_source
+    if type(fresh) is not VerifiedExactPartition:
+        raise StrictContractError("fiber coordinate generator authority is stale")
+    blocks = tuple(
+        (
+            block.block_index,
+            tuple(sorted(block.member_state_ids)),
+        )
+        for block in fresh.certificate.final_blocks
+    )
+    if tuple(index for index, _members in blocks) != tuple(range(len(blocks))):
+        raise StrictContractError("fiber block order is not canonical")
+    members = tuple(member for _index, block in blocks for member in block)
+    if (
+        len(members) < 3
+        or len(members) > 128
+        or len(blocks) > 64
+        or len(members) != len(set(members))
+    ):
+        raise StrictContractError("fiber frame dimensions are outside frozen caps")
+    member_sha256 = {
+        state.state_id: _sha256(state.to_dict())
+        for state in fresh.admitted.snapshot.states
+    }
+    if set(member_sha256) != set(members):
+        raise StrictContractError("fiber frame member authority is incomplete")
+    return {
+        "generator_sha256": _sha256(generator_wire),
+        "reachable_domain_sha256": generator_wire["reachable_domain_sha256"],
+        "verified_partition_sha256": generator_wire["verified_partition_sha256"],
+        "canonical_block_order_sha256": generator_wire[
+            "canonical_block_order_sha256"
+        ],
+        "blocks": blocks,
+        "members": members,
+        "member_sha256": member_sha256,
+    }
+
+
+def _normalize_member_rationals(
+    frame: Mapping[str, Any], values: Any, where: str
+) -> tuple[ExactRational, ...]:
+    members = frame["members"]
+    if type(values) is dict:
+        if set(values) != set(members) or len(values) != len(members):
+            raise StrictContractError(f"{where} must cover every member exactly once")
+        ordered = tuple(values[member] for member in members)
+    elif type(values) in {tuple, list}:
+        if len(values) != len(members):
+            raise StrictContractError(f"{where} length does not match member order")
+        ordered = tuple(values)
+    else:
+        raise StrictContractError(
+            f"{where} must be an exact object or exact tuple/list"
+        )
+    for value in ordered:
+        if type(value) is not ExactRational:
+            raise StrictContractError(f"{where} values must be ExactRational")
+        if ExactRational.from_dict(value.to_dict()) != value:
+            raise StrictContractError(f"{where} contains noncanonical authority")
+    return ordered
+
+
+def _preflight_member_rational_input(
+    values: Any, where: str, *, strictly_positive: bool
+) -> None:
+    if type(values) is dict:
+        raw_values = values.values()
+    elif type(values) in {tuple, list}:
+        raw_values = values
+    else:
+        raise StrictContractError(
+            f"{where} must be an exact object or exact tuple/list"
+        )
+    if len(values) > _MAX_FIBER_MEMBERS:
+        raise StrictContractError(f"{where} exceeds the member preflight cap")
+    for value in raw_values:
+        if type(value) is not ExactRational:
+            raise StrictContractError(f"{where} values must be ExactRational")
+        if ExactRational.from_dict(value.to_dict()) != value:
+            raise StrictContractError(f"{where} contains noncanonical authority")
+        if strictly_positive and value.numerator <= 0:
+            raise StrictContractError(f"{where} values must be strictly positive")
+        if not strictly_positive and value.numerator < 0:
+            raise StrictContractError(f"{where} values must be nonnegative")
+
+
+def _member_value_wire(
+    frame: Mapping[str, Any], values: tuple[ExactRational, ...], value_name: str
+) -> list[dict[str, Any]]:
+    if len(values) != len(frame["members"]):
+        raise StrictContractError(f"{value_name} retained value count changed")
+    return [
+        {
+            "block_index": block_index,
+            "member_id": member,
+            "member_sha256": frame["member_sha256"][member],
+            value_name: values[position].to_dict(),
+        }
+        for position, member in enumerate(frame["members"])
+        for block_index, block_members in frame["blocks"]
+        if member in block_members
+    ]
+
+
+def _derive_positive_weights_wire(
+    generator: ExactQuotientCoordinateGenerator,
+    values: tuple[ExactRational, ...],
+) -> dict[str, Any]:
+    frame = _fresh_fiber_frame(generator)
+    return _derive_positive_weights_wire_from_frame(frame, values)
+
+
+def _derive_positive_weights_wire_from_frame(
+    frame: Mapping[str, Any],
+    values: tuple[ExactRational, ...],
+) -> dict[str, Any]:
+    canonical = _normalize_member_rationals(frame, values, "positive fiber weights")
+    if any(value.numerator <= 0 for value in canonical):
+        raise StrictContractError("every fiber weight must be strictly positive")
+    rows = _member_value_wire(frame, canonical, "weight")
+    return {
+        "schema_version": POSITIVE_FIBER_WEIGHTS_SCHEMA,
+        "evidence_scope": SYNTHETIC_EVIDENCE_SCOPE,
+        "generator_sha256": frame["generator_sha256"],
+        "reachable_domain_sha256": frame["reachable_domain_sha256"],
+        "verified_partition_sha256": frame["verified_partition_sha256"],
+        "canonical_block_order_sha256": frame["canonical_block_order_sha256"],
+        "member_count": len(frame["members"]),
+        "block_count": len(frame["blocks"]),
+        "rows": rows,
+    }
+
+
+@dataclass(frozen=True, init=False)
+class PositiveFiberWeights:
+    _generator: ExactQuotientCoordinateGenerator = field(repr=False)
+    _values: tuple[ExactRational, ...] = field(repr=False)
+    _value_seal_sha256: str = field(repr=False)
+    _construction_seal: object = field(default=None, repr=False, compare=False)
+
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+        raise StrictContractError("positive fiber weights have no public constructor")
+
+    def __post_init__(self) -> None:
+        if type(self) is not PositiveFiberWeights:
+            raise StrictContractError("PositiveFiberWeights subclasses are forbidden")
+        if self._construction_seal is not _POSITIVE_FIBER_WEIGHTS_SEAL:
+            raise StrictContractError("positive fiber weights require the sealed factory")
+        _canonical_digest(self._value_seal_sha256, "positive weight value seal")
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, Any],
+        generator: ExactQuotientCoordinateGenerator,
+    ) -> "PositiveFiberWeights":
+        if cls is not PositiveFiberWeights:
+            raise StrictContractError("polymorphic positive weight parsing is forbidden")
+        if type(value) is not dict:
+            raise StrictContractError("PositiveFiberWeights must be an exact object")
+        if type(generator) is not ExactQuotientCoordinateGenerator:
+            raise StrictContractError("PositiveFiberWeights parser requires an E0 generator")
+        fields = {
+            "schema_version", "evidence_scope", "generator_sha256",
+            "reachable_domain_sha256", "verified_partition_sha256",
+            "canonical_block_order_sha256", "member_count", "block_count", "rows",
+        }
+        obj = _object(value, fields, "PositiveFiberWeights")
+        if (
+            obj["schema_version"] != POSITIVE_FIBER_WEIGHTS_SCHEMA
+            or obj["evidence_scope"] != SYNTHETIC_EVIDENCE_SCOPE
+        ):
+            raise StrictContractError("PositiveFiberWeights schema/scope mismatch")
+        raw_rows = _array(obj["rows"], "positive weight rows")
+        if len(raw_rows) > _MAX_FIBER_MEMBERS:
+            raise StrictContractError("positive weight rows exceed the preflight cap")
+        _canonical_digest(obj["generator_sha256"], "positive weight generator SHA")
+        _canonical_digest(obj["reachable_domain_sha256"], "positive weight domain SHA")
+        _canonical_digest(obj["verified_partition_sha256"], "positive weight partition SHA")
+        _canonical_digest(obj["canonical_block_order_sha256"], "positive weight block-order SHA")
+        _nonnegative_int(obj["member_count"], "positive weight member count", upper=_MAX_FIBER_MEMBERS)
+        _nonnegative_int(obj["block_count"], "positive weight block count", upper=_MAX_FIBER_BLOCKS)
+        parsed: dict[str, ExactRational] = {}
+        for row in raw_rows:
+            exact = _object(
+                row,
+                {"block_index", "member_id", "member_sha256", "weight"},
+                "positive weight row",
+            )
+            _nonnegative_int(
+                exact["block_index"],
+                "positive weight block index",
+                upper=_MAX_FIBER_BLOCKS - 1,
+            )
+            member = _string(exact["member_id"], "positive weight member")
+            _canonical_digest(
+                exact["member_sha256"], "positive weight member SHA"
+            )
+            if member in parsed:
+                raise StrictContractError("positive weight member is duplicated")
+            parsed[member] = ExactRational.from_dict(exact["weight"])
+        frame = _fresh_fiber_frame(generator)
+        if len(raw_rows) != len(frame["members"]):
+            raise StrictContractError("positive weight row count changed")
+        canonical = _normalize_member_rationals(frame, parsed, "positive fiber weights")
+        expected_wire = _derive_positive_weights_wire_from_frame(frame, canonical)
+        if canonical_contract_bytes(obj) != canonical_contract_bytes(expected_wire):
+            raise StrictContractError("positive weight wire disagrees with authority")
+        return _construct_positive_fiber_weights(generator, canonical, expected_wire)
+
+    @property
+    def weights_sha256(self) -> str:
+        return _sha256(self.to_dict())
+
+    @property
+    def generator_sha256(self) -> str:
+        return self.to_dict()["generator_sha256"]
+
+    def weight_for(self, member_id: str) -> ExactRational:
+        member = _string(member_id, "fiber weight member_id")
+        wire = self.to_dict()
+        for row in wire["rows"]:
+            if row["member_id"] == member:
+                return ExactRational.from_dict(row["weight"])
+        raise StrictContractError("fiber weight member is outside the exact domain")
+
+    def to_dict(self) -> dict[str, Any]:
+        if self._construction_seal is not _POSITIVE_FIBER_WEIGHTS_SEAL:
+            raise StrictContractError("positive fiber weight construction seal changed")
+        wire = _derive_positive_weights_wire(self._generator, self._values)
+        if _sha256(wire) != _canonical_digest(
+            self._value_seal_sha256, "positive weight value seal"
+        ):
+            raise StrictContractError("positive fiber weights retained values changed")
+        return wire
+
+
+def make_positive_fiber_weights(
+    generator: ExactQuotientCoordinateGenerator, values: Any
+) -> PositiveFiberWeights:
+    _preflight_member_rational_input(
+        values, "positive fiber weights", strictly_positive=True
+    )
+    frame = _fresh_fiber_frame(generator)
+    canonical = _normalize_member_rationals(frame, values, "positive fiber weights")
+    wire = _derive_positive_weights_wire_from_frame(frame, canonical)
+    return _construct_positive_fiber_weights(generator, canonical, wire)
+
+
+def _construct_positive_fiber_weights(
+    generator: ExactQuotientCoordinateGenerator,
+    canonical: tuple[ExactRational, ...],
+    wire: Mapping[str, Any],
+) -> PositiveFiberWeights:
+    result = object.__new__(PositiveFiberWeights)
+    object.__setattr__(result, "_generator", generator)
+    object.__setattr__(result, "_values", canonical)
+    object.__setattr__(result, "_value_seal_sha256", _sha256(wire))
+    object.__setattr__(result, "_construction_seal", _POSITIVE_FIBER_WEIGHTS_SEAL)
+    result.__post_init__()
+    return result
+
+
+def _derive_fiber_law_wire(
+    generator: ExactQuotientCoordinateGenerator,
+    probabilities: tuple[ExactRational, ...],
+) -> dict[str, Any]:
+    frame = _fresh_fiber_frame(generator)
+    return _derive_fiber_law_wire_from_frame(frame, probabilities)
+
+
+def _derive_fiber_law_wire_from_frame(
+    frame: Mapping[str, Any],
+    probabilities: tuple[ExactRational, ...],
+) -> dict[str, Any]:
+    canonical = _normalize_member_rationals(
+        frame, probabilities, "exact finite fiber law"
+    )
+    if any(value.numerator < 0 for value in canonical):
+        raise StrictContractError("fiber probabilities must be nonnegative")
+    offset = 0
+    block_sums: list[dict[str, Any]] = []
+    for block_index, members in frame["blocks"]:
+        total = ExactRational(0)
+        for value in canonical[offset : offset + len(members)]:
+            total = _rational_add(total, value)
+        if total != ExactRational(1):
+            raise StrictContractError("fiber probabilities must sum exactly to one")
+        block_sums.append(
+            {"block_index": block_index, "probability_sum": total.to_dict()}
+        )
+        offset += len(members)
+    rows = _member_value_wire(frame, canonical, "probability")
+    return {
+        "schema_version": EXACT_FINITE_FIBER_LAW_SCHEMA,
+        "evidence_scope": SYNTHETIC_EVIDENCE_SCOPE,
+        "generator_sha256": frame["generator_sha256"],
+        "reachable_domain_sha256": frame["reachable_domain_sha256"],
+        "verified_partition_sha256": frame["verified_partition_sha256"],
+        "canonical_block_order_sha256": frame["canonical_block_order_sha256"],
+        "member_count": len(frame["members"]),
+        "block_count": len(frame["blocks"]),
+        "rows": rows,
+        "block_sums": block_sums,
+    }
+
+
+@dataclass(frozen=True, init=False)
+class ExactFiniteFiberLaw:
+    _generator: ExactQuotientCoordinateGenerator = field(repr=False)
+    _probabilities: tuple[ExactRational, ...] = field(repr=False)
+    _value_seal_sha256: str = field(repr=False)
+    _construction_seal: object = field(default=None, repr=False, compare=False)
+
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+        raise StrictContractError("exact finite fiber law has no public constructor")
+
+    def __post_init__(self) -> None:
+        if type(self) is not ExactFiniteFiberLaw:
+            raise StrictContractError("ExactFiniteFiberLaw subclasses are forbidden")
+        if self._construction_seal is not _EXACT_FINITE_FIBER_LAW_SEAL:
+            raise StrictContractError("exact finite fiber law requires the sealed factory")
+        _canonical_digest(self._value_seal_sha256, "fiber law value seal")
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, Any],
+        generator: ExactQuotientCoordinateGenerator,
+    ) -> "ExactFiniteFiberLaw":
+        if cls is not ExactFiniteFiberLaw or type(value) is not dict:
+            raise StrictContractError("strict ExactFiniteFiberLaw parsing is required")
+        if set(value) != {
+            "schema_version", "evidence_scope", "generator_sha256",
+            "reachable_domain_sha256", "verified_partition_sha256",
+            "canonical_block_order_sha256", "member_count", "block_count",
+            "rows", "block_sums",
+        } or value["schema_version"] != EXACT_FINITE_FIBER_LAW_SCHEMA or value["evidence_scope"] != SYNTHETIC_EVIDENCE_SCOPE:
+            raise StrictContractError("ExactFiniteFiberLaw outer fields/schema mismatch")
+        raw_rows = _array(value.get("rows"), "fiber law rows")
+        raw_sums = _array(value.get("block_sums"), "fiber law block sums")
+        if len(raw_rows) > _MAX_FIBER_MEMBERS or len(raw_sums) > _MAX_FIBER_BLOCKS:
+            raise StrictContractError("fiber law arrays exceed their preflight caps")
+        _canonical_digest(value["generator_sha256"], "fiber law generator SHA")
+        _canonical_digest(value["reachable_domain_sha256"], "fiber law domain SHA")
+        _canonical_digest(value["verified_partition_sha256"], "fiber law partition SHA")
+        _canonical_digest(value["canonical_block_order_sha256"], "fiber law block-order SHA")
+        _nonnegative_int(value["member_count"], "fiber law member count", upper=_MAX_FIBER_MEMBERS)
+        _nonnegative_int(value["block_count"], "fiber law block count", upper=_MAX_FIBER_BLOCKS)
+        parsed: dict[str, ExactRational] = {}
+        for row in raw_rows:
+            exact = _object(
+                row,
+                {"block_index", "member_id", "member_sha256", "probability"},
+                "fiber law row",
+            )
+            _nonnegative_int(
+                exact["block_index"],
+                "fiber law block index",
+                upper=_MAX_FIBER_BLOCKS - 1,
+            )
+            member = _string(exact["member_id"], "fiber law member")
+            _canonical_digest(exact["member_sha256"], "fiber law member SHA")
+            if member in parsed:
+                raise StrictContractError("fiber law member is duplicated")
+            parsed[member] = ExactRational.from_dict(exact["probability"])
+        seen_sum_indices: set[int] = set()
+        for row in raw_sums:
+            exact = _object(
+                row,
+                {"block_index", "probability_sum"},
+                "fiber law block-sum row",
+            )
+            block_index = _nonnegative_int(
+                exact["block_index"],
+                "fiber law block-sum index",
+                upper=_MAX_FIBER_BLOCKS - 1,
+            )
+            if block_index in seen_sum_indices:
+                raise StrictContractError("fiber law block-sum index is duplicated")
+            seen_sum_indices.add(block_index)
+            ExactRational.from_dict(exact["probability_sum"])
+        frame = _fresh_fiber_frame(generator)
+        if len(raw_rows) != len(frame["members"]) or len(raw_sums) != len(frame["blocks"]):
+            raise StrictContractError("fiber law row/block-sum count changed")
+        canonical = _normalize_member_rationals(frame, parsed, "exact finite fiber law")
+        expected_wire = _derive_fiber_law_wire_from_frame(frame, canonical)
+        if canonical_contract_bytes(value) != canonical_contract_bytes(expected_wire):
+            raise StrictContractError("fiber law wire disagrees with authority")
+        return _construct_exact_finite_fiber_law(generator, canonical, expected_wire)
+
+    @property
+    def law_sha256(self) -> str:
+        return _sha256(self.to_dict())
+
+    @property
+    def generator_sha256(self) -> str:
+        return self.to_dict()["generator_sha256"]
+
+    def probability_for(self, member_id: str) -> ExactRational:
+        member = _string(member_id, "fiber law member_id")
+        wire = self.to_dict()
+        for row in wire["rows"]:
+            if row["member_id"] == member:
+                return ExactRational.from_dict(row["probability"])
+        raise StrictContractError("fiber law member is outside the exact domain")
+
+    def to_dict(self) -> dict[str, Any]:
+        if self._construction_seal is not _EXACT_FINITE_FIBER_LAW_SEAL:
+            raise StrictContractError("fiber law construction seal changed")
+        wire = _derive_fiber_law_wire(self._generator, self._probabilities)
+        if _sha256(wire) != _canonical_digest(
+            self._value_seal_sha256, "fiber law value seal"
+        ):
+            raise StrictContractError("fiber law retained probabilities changed")
+        return wire
+
+
+def make_exact_finite_fiber_law(
+    generator: ExactQuotientCoordinateGenerator, probabilities: Any
+) -> ExactFiniteFiberLaw:
+    _preflight_member_rational_input(
+        probabilities, "exact finite fiber law", strictly_positive=False
+    )
+    frame = _fresh_fiber_frame(generator)
+    canonical = _normalize_member_rationals(
+        frame, probabilities, "exact finite fiber law"
+    )
+    wire = _derive_fiber_law_wire_from_frame(frame, canonical)
+    return _construct_exact_finite_fiber_law(generator, canonical, wire)
+
+
+def _construct_exact_finite_fiber_law(
+    generator: ExactQuotientCoordinateGenerator,
+    canonical: tuple[ExactRational, ...],
+    wire: Mapping[str, Any],
+) -> ExactFiniteFiberLaw:
+    result = object.__new__(ExactFiniteFiberLaw)
+    object.__setattr__(result, "_generator", generator)
+    object.__setattr__(result, "_probabilities", canonical)
+    object.__setattr__(result, "_value_seal_sha256", _sha256(wire))
+    object.__setattr__(result, "_construction_seal", _EXACT_FINITE_FIBER_LAW_SEAL)
+    result.__post_init__()
+    return result
+
+
+def _normalize_complete_vector(
+    keys: tuple[Any, ...], values: Any, where: str
+) -> tuple[ExactRational, ...]:
+    if type(values) is dict:
+        if set(values) != set(keys) or len(values) != len(keys):
+            raise StrictContractError(f"{where} must cover its exact domain")
+        ordered = tuple(values[key] for key in keys)
+    elif type(values) in {tuple, list}:
+        if len(values) != len(keys):
+            raise StrictContractError(f"{where} has the wrong dimension")
+        ordered = tuple(values)
+    else:
+        raise StrictContractError(f"{where} must be an exact object or tuple/list")
+    if not all(type(value) is ExactRational for value in ordered):
+        raise StrictContractError(f"{where} values must be ExactRational")
+    return ordered
+
+
+@dataclass(frozen=True, init=False)
+class WeightedCompression:
+    _weights: PositiveFiberWeights = field(repr=False)
+    _source_seal_sha256: str = field(repr=False)
+    _construction_seal: object = field(default=None, repr=False, compare=False)
+
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+        raise StrictContractError("weighted compression has no public constructor")
+
+    def __post_init__(self) -> None:
+        if type(self) is not WeightedCompression or self._construction_seal is not _WEIGHTED_COMPRESSION_SEAL:
+            raise StrictContractError("weighted compression requires the sealed factory")
+        _canonical_digest(self._source_seal_sha256, "weighted compression source seal")
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any], weights: PositiveFiberWeights) -> "WeightedCompression":
+        if cls is not WeightedCompression or type(value) is not dict:
+            raise StrictContractError("strict WeightedCompression parsing is required")
+        if set(value) != {
+            "schema_version", "evidence_scope", "generator_sha256",
+            "weights_sha256", "member_count", "block_count", "formula",
+        } or value["schema_version"] != WEIGHTED_COMPRESSION_SCHEMA or value["evidence_scope"] != SYNTHETIC_EVIDENCE_SCOPE or value["formula"] != "C_omega_column_source_v1":
+            raise StrictContractError("WeightedCompression outer fields/schema mismatch")
+        _canonical_digest(value["generator_sha256"], "weighted compression generator SHA")
+        _canonical_digest(value["weights_sha256"], "weighted compression weights SHA")
+        _nonnegative_int(value["member_count"], "weighted compression member count", upper=_MAX_FIBER_MEMBERS)
+        _nonnegative_int(value["block_count"], "weighted compression block count", upper=_MAX_FIBER_BLOCKS)
+        expected_wire = _derive_weighted_compression_wire(weights)
+        if canonical_contract_bytes(value) != canonical_contract_bytes(expected_wire):
+            raise StrictContractError("weighted compression wire disagrees with authority")
+        return _construct_weighted_compression(weights, expected_wire)
+
+    def compress(self, member_vector: Any) -> tuple[ExactRational, ...]:
+        if self._construction_seal is not _WEIGHTED_COMPRESSION_SEAL:
+            raise StrictContractError("weighted compression construction seal changed")
+        weights_wire = self._weights.to_dict()
+        wire = _derive_weighted_compression_wire_from_weights_wire(weights_wire)
+        if _sha256(wire) != _canonical_digest(
+            self._source_seal_sha256, "weighted compression source seal"
+        ):
+            raise StrictContractError("weighted compression retained authority changed")
+        rows = weights_wire["rows"]
+        members = tuple(row["member_id"] for row in rows)
+        values = _normalize_complete_vector(members, member_vector, "member vector")
+        result: list[ExactRational] = []
+        for block_index in range(weights_wire["block_count"]):
+            total = ExactRational(0)
+            for position, row in enumerate(rows):
+                if row["block_index"] != block_index:
+                    continue
+                total = _rational_add(
+                    total,
+                    _rational_multiply(
+                        self._weights._values[position], values[position]
+                    ),
+                )
+            result.append(total)
+        return tuple(result)
+
+    __call__ = compress
+
+    def to_dict(self) -> dict[str, Any]:
+        if self._construction_seal is not _WEIGHTED_COMPRESSION_SEAL:
+            raise StrictContractError("weighted compression construction seal changed")
+        wire = _derive_weighted_compression_wire(self._weights)
+        if _sha256(wire) != _canonical_digest(
+            self._source_seal_sha256, "weighted compression source seal"
+        ):
+            raise StrictContractError("weighted compression retained authority changed")
+        return wire
+
+
+def _derive_weighted_compression_wire(
+    weights: PositiveFiberWeights,
+) -> dict[str, Any]:
+    if type(weights) is not PositiveFiberWeights:
+        raise StrictContractError("weighted compression requires PositiveFiberWeights")
+    weights_wire = weights.to_dict()
+    return _derive_weighted_compression_wire_from_weights_wire(weights_wire)
+
+
+def _derive_weighted_compression_wire_from_weights_wire(
+    weights_wire: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "schema_version": WEIGHTED_COMPRESSION_SCHEMA,
+        "evidence_scope": SYNTHETIC_EVIDENCE_SCOPE,
+        "generator_sha256": weights_wire["generator_sha256"],
+        "weights_sha256": _sha256(weights_wire),
+        "member_count": weights_wire["member_count"],
+        "block_count": weights_wire["block_count"],
+        "formula": "C_omega_column_source_v1",
+    }
+
+
+def make_weighted_compression(weights: PositiveFiberWeights) -> WeightedCompression:
+    if type(weights) is not PositiveFiberWeights:
+        raise StrictContractError("weighted compression requires PositiveFiberWeights")
+    wire = _derive_weighted_compression_wire(weights)
+    return _construct_weighted_compression(weights, wire)
+
+
+def _construct_weighted_compression(
+    weights: PositiveFiberWeights, wire: Mapping[str, Any]
+) -> WeightedCompression:
+    result = object.__new__(WeightedCompression)
+    object.__setattr__(result, "_weights", weights)
+    object.__setattr__(result, "_source_seal_sha256", _sha256(wire))
+    object.__setattr__(result, "_construction_seal", _WEIGHTED_COMPRESSION_SEAL)
+    result.__post_init__()
+    return result
+
+
+@dataclass(frozen=True, init=False)
+class WeightedLifting:
+    _weights: PositiveFiberWeights = field(repr=False)
+    _law: ExactFiniteFiberLaw = field(repr=False)
+    _source_seal_sha256: str = field(repr=False)
+    _construction_seal: object = field(default=None, repr=False, compare=False)
+
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+        raise StrictContractError("weighted lifting has no public constructor")
+
+    def __post_init__(self) -> None:
+        if type(self) is not WeightedLifting or self._construction_seal is not _WEIGHTED_LIFTING_SEAL:
+            raise StrictContractError("weighted lifting requires the sealed factory")
+        _canonical_digest(self._source_seal_sha256, "weighted lifting source seal")
+
+    @classmethod
+    def from_dict(
+        cls, value: Mapping[str, Any], weights: PositiveFiberWeights, law: ExactFiniteFiberLaw
+    ) -> "WeightedLifting":
+        if cls is not WeightedLifting or type(value) is not dict:
+            raise StrictContractError("strict WeightedLifting parsing is required")
+        if set(value) != {
+            "schema_version", "evidence_scope", "generator_sha256",
+            "weights_sha256", "law_sha256", "member_count", "block_count",
+            "formula", "roundtrip_identity_checks",
+        } or value["schema_version"] != WEIGHTED_LIFTING_SCHEMA or value["evidence_scope"] != SYNTHETIC_EVIDENCE_SCOPE or value["formula"] != "L_mu_omega_column_source_v1":
+            raise StrictContractError("WeightedLifting outer fields/schema mismatch")
+        checks = _array(
+            value["roundtrip_identity_checks"],
+            "weighted lifting roundtrip checks",
+        )
+        if len(checks) > _MAX_FIBER_BLOCKS:
+            raise StrictContractError("weighted lifting checks exceed the preflight cap")
+        _canonical_digest(value["generator_sha256"], "weighted lifting generator SHA")
+        _canonical_digest(value["weights_sha256"], "weighted lifting weights SHA")
+        _canonical_digest(value["law_sha256"], "weighted lifting law SHA")
+        _nonnegative_int(value["member_count"], "weighted lifting member count", upper=_MAX_FIBER_MEMBERS)
+        _nonnegative_int(value["block_count"], "weighted lifting block count", upper=_MAX_FIBER_BLOCKS)
+        seen_indices: set[int] = set()
+        for row in checks:
+            exact = _object(
+                row,
+                {"block_index", "roundtrip_value"},
+                "weighted lifting roundtrip row",
+            )
+            block_index = _nonnegative_int(
+                exact["block_index"],
+                "weighted lifting roundtrip index",
+                upper=_MAX_FIBER_BLOCKS - 1,
+            )
+            if block_index in seen_indices:
+                raise StrictContractError("weighted lifting roundtrip index is duplicated")
+            seen_indices.add(block_index)
+            ExactRational.from_dict(exact["roundtrip_value"])
+        expected_wire = _derive_weighted_lifting_wire(weights, law)
+        if canonical_contract_bytes(value) != canonical_contract_bytes(expected_wire):
+            raise StrictContractError("weighted lifting wire disagrees with authority")
+        return _construct_weighted_lifting(weights, law, expected_wire)
+
+    def lift(self, block_vector: Any) -> tuple[ExactRational, ...]:
+        if self._construction_seal is not _WEIGHTED_LIFTING_SEAL:
+            raise StrictContractError("weighted lifting construction seal changed")
+        weights_wire, law_wire = _validated_weight_law_wires(
+            self._weights, self._law
+        )
+        wire = _derive_weighted_lifting_wire_from_wires(weights_wire, law_wire)
+        if _sha256(wire) != _canonical_digest(
+            self._source_seal_sha256, "weighted lifting source seal"
+        ):
+            raise StrictContractError("weighted lifting retained authority changed")
+        block_keys = tuple(range(weights_wire["block_count"]))
+        values = _normalize_complete_vector(block_keys, block_vector, "block vector")
+        result: list[ExactRational] = []
+        for block_index, block_value in enumerate(values):
+            for position, row in enumerate(weights_wire["rows"]):
+                if row["block_index"] != block_index:
+                    continue
+                probability = self._law._probabilities[position]
+                weight = self._weights._values[position]
+                result.append(
+                    _rational_divide(
+                        _rational_multiply(probability, block_value), weight
+                    )
+                )
+        return tuple(result)
+
+    __call__ = lift
+
+    def to_dict(self) -> dict[str, Any]:
+        if self._construction_seal is not _WEIGHTED_LIFTING_SEAL:
+            raise StrictContractError("weighted lifting construction seal changed")
+        wire = _derive_weighted_lifting_wire(self._weights, self._law)
+        if _sha256(wire) != _canonical_digest(
+            self._source_seal_sha256, "weighted lifting source seal"
+        ):
+            raise StrictContractError("weighted lifting retained authority changed")
+        return wire
+
+
+def _derive_weighted_lifting_wire(
+    weights: PositiveFiberWeights, law: ExactFiniteFiberLaw
+) -> dict[str, Any]:
+    if type(weights) is not PositiveFiberWeights or type(law) is not ExactFiniteFiberLaw:
+        raise StrictContractError("weighted lifting requires exact weights and fiber law")
+    weights_wire, law_wire = _validated_weight_law_wires(weights, law)
+    return _derive_weighted_lifting_wire_from_wires(weights_wire, law_wire)
+
+
+def _validated_weight_law_wires(
+    weights: PositiveFiberWeights, law: ExactFiniteFiberLaw
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Validate C/L inputs while sharing one exact frame when possible."""
+
+    if type(weights) is not PositiveFiberWeights or type(law) is not ExactFiniteFiberLaw:
+        raise StrictContractError("weighted lifting requires exact weights and fiber law")
+    weights.__post_init__()
+    law.__post_init__()
+    weights_frame = _fresh_fiber_frame(weights._generator)
+    law_frame = (
+        weights_frame
+        if law._generator is weights._generator
+        else _fresh_fiber_frame(law._generator)
+    )
+    weights_wire = _derive_positive_weights_wire_from_frame(
+        weights_frame, weights._values
+    )
+    if _sha256(weights_wire) != _canonical_digest(
+        weights._value_seal_sha256, "weighted lifting weight value seal"
+    ):
+        raise StrictContractError("weighted lifting weight authority changed")
+    law_wire = _derive_fiber_law_wire_from_frame(
+        law_frame, law._probabilities
+    )
+    if _sha256(law_wire) != _canonical_digest(
+        law._value_seal_sha256, "weighted lifting law value seal"
+    ):
+        raise StrictContractError("weighted lifting law authority changed")
+    return weights_wire, law_wire
+
+
+def _derive_weighted_lifting_wire_from_wires(
+    weights_wire: Mapping[str, Any], law_wire: Mapping[str, Any]
+) -> dict[str, Any]:
+    if weights_wire["generator_sha256"] != law_wire["generator_sha256"]:
+        raise StrictContractError("weighted lifting authorities use different frames")
+    weight_keys = tuple(
+        (row["block_index"], row["member_id"], row["member_sha256"])
+        for row in weights_wire["rows"]
+    )
+    law_keys = tuple(
+        (row["block_index"], row["member_id"], row["member_sha256"])
+        for row in law_wire["rows"]
+    )
+    if weight_keys != law_keys:
+        raise StrictContractError("weighted lifting authorities use different members")
+    # The law serializer independently proves an exact probability sum of one
+    # in every block.  Substitution in C_omega L_mu,omega cancels omega exactly.
+    block_basis_checks = [
+        {"block_index": block_index, "roundtrip_value": ExactRational(1).to_dict()}
+        for block_index in range(weights_wire["block_count"])
+    ]
+    return {
+        "schema_version": WEIGHTED_LIFTING_SCHEMA,
+        "evidence_scope": SYNTHETIC_EVIDENCE_SCOPE,
+        "generator_sha256": weights_wire["generator_sha256"],
+        "weights_sha256": _sha256(weights_wire),
+        "law_sha256": _sha256(law_wire),
+        "member_count": weights_wire["member_count"],
+        "block_count": weights_wire["block_count"],
+        "formula": "L_mu_omega_column_source_v1",
+        "roundtrip_identity_checks": block_basis_checks,
+    }
+
+
+def make_weighted_lifting(
+    weights: PositiveFiberWeights, law: ExactFiniteFiberLaw
+) -> WeightedLifting:
+    if type(weights) is not PositiveFiberWeights or type(law) is not ExactFiniteFiberLaw:
+        raise StrictContractError("weighted lifting requires exact weights and fiber law")
+    wire = _derive_weighted_lifting_wire(weights, law)
+    return _construct_weighted_lifting(weights, law, wire)
+
+
+def _construct_weighted_lifting(
+    weights: PositiveFiberWeights,
+    law: ExactFiniteFiberLaw,
+    wire: Mapping[str, Any],
+) -> WeightedLifting:
+    result = object.__new__(WeightedLifting)
+    object.__setattr__(result, "_weights", weights)
+    object.__setattr__(result, "_law", law)
+    object.__setattr__(result, "_source_seal_sha256", _sha256(wire))
+    object.__setattr__(result, "_construction_seal", _WEIGHTED_LIFTING_SEAL)
+    result.__post_init__()
+    return result
+
+
 @dataclass(frozen=True)
 class _ExactContext:
     wire: dict[str, Any]
@@ -1403,7 +2272,16 @@ def _scan_interval_targets(
     contains_exact = False
     previous: int | None = None
     for index, raw_target in enumerate(targets):
-        target = _signed64_target(raw_target, f"{where}[{index}]")
+        # Keep the signed-64 check before every comparison/domain lookup, but
+        # avoid allocating an indexed diagnostic string on the valid hot path.
+        if (
+            type(raw_target) is not int
+            or raw_target < 0
+            or raw_target > MAX_SIGNED_64
+        ):
+            target = _signed64_target(raw_target, f"{where}[{index}]")
+        else:
+            target = raw_target
         if previous is not None and target <= previous:
             if target == previous:
                 raise StrictContractError(f"{where} contains duplicates")
@@ -1887,6 +2765,21 @@ def _union_target_stats(
     return count, contains_exact
 
 
+def _contains_sorted_target(targets: tuple[int, ...], target: int) -> bool:
+    """Binary membership after the caller has exhaustively validated targets."""
+
+    lower = 0
+    upper = len(targets)
+    while lower < upper:
+        middle = (lower + upper) // 2
+        value = targets[middle]
+        if value < target:
+            lower = middle + 1
+        else:
+            upper = middle
+    return lower < len(targets) and targets[lower] == target
+
+
 def _merge_target_tuples(
     left: tuple[int, ...], right: tuple[int, ...]
 ) -> tuple[int, ...]:
@@ -1960,11 +2853,17 @@ def extend_interval_candidate(
         exact_target = _nonnegative_int(
             exact_row["target_block_index"], "candidate extension exact target"
         )
-        merged_count, contains_exact = _union_target_stats(
-            old_row.target_block_indices,
-            added_targets,
-            exact_target=exact_target,
-        )
+        if added_targets:
+            merged_count, contains_exact = _union_target_stats(
+                old_row.target_block_indices,
+                added_targets,
+                exact_target=exact_target,
+            )
+        else:
+            merged_count = len(old_row.target_block_indices)
+            contains_exact = _contains_sorted_target(
+                old_row.target_block_indices, exact_target
+            )
         target_cells = _checked_add(
             target_cells, merged_count, "candidate extension target cells"
         )
@@ -1977,7 +2876,7 @@ def extend_interval_candidate(
         raise StrictContractError(
             "candidate extension rows are duplicated, reordered, or unknown"
         )
-    _tier_work_units(
+    final_work = _tier_work_units(
         total_members=context.total_members,
         block_count=context.block_count,
         action_count=context.action_count,
@@ -1999,12 +2898,29 @@ def extend_interval_candidate(
             ):
                 added_targets = addition.target_block_indices
                 addition_index += 1
-        merged = _merge_target_tuples(old_row.target_block_indices, added_targets)
-        new_rows.append(
-            IntervalTargetRow(old_row.source_block_index, old_row.action_id, merged)
+        changed = bool(added_targets) and any(
+            not _contains_sorted_target(old_row.target_block_indices, target)
+            for target in added_targets
         )
-    return _make_interval_candidate_with_context(
-        context, tuple(new_rows), provenance_id=provenance_id
+        if changed:
+            merged = _merge_target_tuples(
+                old_row.target_block_indices, added_targets
+            )
+            new_rows.append(
+                IntervalTargetRow(
+                    old_row.source_block_index, old_row.action_id, merged
+                )
+            )
+        else:
+            new_rows.append(old_row)
+    # Both inputs were exhaustively validated before allocation, and
+    # `final_work` was computed over their exact union.  The strict dataclass
+    # constructor performs the one remaining exhaustive output scan.
+    return IntervalCandidate(
+        exact_operator_sha256=context.operator_sha256,
+        provenance_id=_string(provenance_id, "candidate provenance ID"),
+        rows=tuple(new_rows),
+        work_units=final_work,
     )
 
 
@@ -2281,8 +3197,18 @@ def _derive_witness_wire_with_context(
     candidate: IntervalCandidate,
     evidence: UppernessDomainEvidence,
 ) -> dict[str, Any]:
-    exact_wire = context.wire
     candidate_fresh = _fresh_candidate_with_context(candidate, context)
+    return _derive_witness_wire_from_fresh_candidate(
+        context, candidate_fresh, evidence
+    )
+
+
+def _derive_witness_wire_from_fresh_candidate(
+    context: _ExactContext,
+    candidate_fresh: IntervalCandidate,
+    evidence: UppernessDomainEvidence,
+) -> dict[str, Any]:
+    exact_wire = context.wire
     evidence_fresh = UppernessDomainEvidence.from_dict(evidence.to_dict())
     if evidence_fresh.exact_operator_sha256 != context.operator_sha256:
         raise StrictContractError("upperness evidence binds a different exact operator")
@@ -2416,24 +3342,7 @@ class UppernessDomainWitness:
         return _sha256(self.to_dict())
 
     def to_dict(self) -> dict[str, Any]:
-        if self._construction_seal is not _WITNESS_SEAL:
-            raise StrictContractError("upperness witness construction seal changed")
-        context = _exact_context(self._exact_source)
-        if context.operator_sha256 != _digest(
-            self._exact_seal_sha256, "witness exact seal"
-        ):
-            raise StrictContractError("witness exact source changed")
-        if self._candidate_source.candidate_sha256 != _digest(
-            self._candidate_seal_sha256, "witness candidate seal"
-        ):
-            raise StrictContractError("witness candidate source changed")
-        if _sha256(self._evidence_source.to_dict()) != _digest(
-            self._evidence_seal_sha256, "witness evidence seal"
-        ):
-            raise StrictContractError("witness evidence source changed")
-        return _derive_witness_wire_with_context(
-            context, self._candidate_source, self._evidence_source
-        )
+        return _validated_witness_wire(self)
 
 
 def verify_upperness_domain(
@@ -2444,6 +3353,52 @@ def verify_upperness_domain(
     return UppernessDomainWitness.verify(exact, candidate, evidence)
 
 
+def _validated_witness_wire(
+    witness: UppernessDomainWitness,
+    *,
+    shared_exact: ExactFiniteOperator | None = None,
+    shared_context: _ExactContext | None = None,
+    shared_candidate: IntervalCandidate | None = None,
+    shared_candidate_fresh: IntervalCandidate | None = None,
+) -> dict[str, Any]:
+    """Validate a witness, sharing only already-validated identical authorities."""
+
+    if type(witness) is not UppernessDomainWitness:
+        raise StrictContractError("certification requires a verified upperness witness")
+    if witness._construction_seal is not _WITNESS_SEAL:
+        raise StrictContractError("upperness witness construction seal changed")
+
+    if witness._exact_source is shared_exact and shared_context is not None:
+        context = shared_context
+    else:
+        context = _exact_context(witness._exact_source)
+    if context.operator_sha256 != _digest(
+        witness._exact_seal_sha256, "witness exact seal"
+    ):
+        raise StrictContractError("witness exact source changed")
+
+    if (
+        witness._candidate_source is shared_candidate
+        and shared_candidate_fresh is not None
+    ):
+        candidate_fresh = shared_candidate_fresh
+    else:
+        candidate_fresh = _fresh_candidate_with_context(
+            witness._candidate_source, context
+        )
+    if candidate_fresh.candidate_sha256 != _digest(
+        witness._candidate_seal_sha256, "witness candidate seal"
+    ):
+        raise StrictContractError("witness candidate source changed")
+    if _sha256(witness._evidence_source.to_dict()) != _digest(
+        witness._evidence_seal_sha256, "witness evidence seal"
+    ):
+        raise StrictContractError("witness evidence source changed")
+    return _derive_witness_wire_from_fresh_candidate(
+        context, candidate_fresh, witness._evidence_source
+    )
+
+
 def _derive_certified_wire(
     exact: ExactFiniteOperator,
     candidate: IntervalCandidate,
@@ -2452,9 +3407,13 @@ def _derive_certified_wire(
     context = _exact_context(exact)
     exact_wire = context.wire
     candidate_fresh = _fresh_candidate_with_context(candidate, context)
-    if type(witness) is not UppernessDomainWitness:
-        raise StrictContractError("certification requires a verified upperness witness")
-    witness_wire = witness.to_dict()
+    witness_wire = _validated_witness_wire(
+        witness,
+        shared_exact=exact,
+        shared_context=context,
+        shared_candidate=candidate,
+        shared_candidate_fresh=candidate_fresh,
+    )
     if witness_wire["exact_operator_sha256"] != context.operator_sha256:
         raise StrictContractError("witness binds a different exact operator")
     if witness_wire["candidate_sha256"] != candidate_fresh.candidate_sha256:
@@ -2744,6 +3703,10 @@ __all__ = [
     "IntervalTargetRow",
     "NominalOperator",
     "ObservedIntervalOperator",
+    "PositiveFiberWeights",
+    "ExactFiniteFiberLaw",
+    "WeightedCompression",
+    "WeightedLifting",
     "UppernessDomainEvidence",
     "UppernessDomainWitness",
     "UppernessEvidenceRow",
@@ -2752,5 +3715,9 @@ __all__ = [
     "export_exact_finite_operator",
     "extend_interval_candidate",
     "make_interval_candidate",
+    "make_positive_fiber_weights",
+    "make_exact_finite_fiber_law",
+    "make_weighted_compression",
+    "make_weighted_lifting",
     "verify_upperness_domain",
 ]

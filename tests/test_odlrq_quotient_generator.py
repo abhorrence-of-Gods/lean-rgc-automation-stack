@@ -486,17 +486,19 @@ def test_independent_upperness_and_certified_roundtrips_rederive_authority() -> 
     verified, exact, candidate, evidence, witness, certified = _read_only_bundle(
         overcover_first=True
     )
+    witness_wire = witness.to_dict()
+    certified_wire = certified.to_dict()
     assert len(evidence.rows) == 8
-    assert witness.to_dict()["covered_member_action_count"] == 8
-    assert certified.to_dict()["operator_tier"] == CERTIFIED_OPERATOR_TIER
+    assert witness_wire["covered_member_action_count"] == 8
+    assert certified_wire["operator_tier"] == CERTIFIED_OPERATOR_TIER
     assert CertifiedIntervalOperator.from_dict(
-        certified.to_dict(), exact, candidate, witness
-    ).to_dict() == certified.to_dict()
+        certified_wire, exact, candidate, witness
+    ).to_dict() == certified_wire
     assert UppernessDomainWitness.from_dict(
-        witness.to_dict(), exact, candidate, evidence
-    ).to_dict() == witness.to_dict()
-    assert "envelope" not in certified.to_dict()
-    assert "contraction" not in certified.to_dict()
+        witness_wire, exact, candidate, evidence
+    ).to_dict() == witness_wire
+    assert "envelope" not in certified_wire
+    assert "contraction" not in certified_wire
     assert _make_evidence(verified, exact, candidate).to_dict() == evidence.to_dict()
 
 
@@ -582,18 +584,19 @@ def test_candidate_extension_accepts_near_cap_noop_without_false_rejection(
 
 
 def test_witness_and_certified_serializers_reject_low_level_mutation() -> None:
-    _, exact, candidate, evidence, witness, certified = _bundle()
-    object.__setattr__(witness, "_candidate_seal_sha256", "00" * 32)
+    _, exact, candidate, evidence, witness, certified = _read_only_bundle()
+    attacked_witness = copy.copy(witness)
+    assert attacked_witness is not witness
+    object.__setattr__(attacked_witness, "_candidate_seal_sha256", "00" * 32)
     with pytest.raises(StrictContractError):
-        witness.to_dict()
+        attacked_witness.to_dict()
 
-    witness = verify_upperness_domain(exact, candidate, evidence)
-    certified = certify_interval_operator(exact, candidate, witness)
-    object.__setattr__(certified, "_witness_seal_sha256", "00" * 32)
+    attacked_certified = copy.copy(certified)
+    assert attacked_certified is not certified
+    object.__setattr__(attacked_certified, "_witness_seal_sha256", "00" * 32)
     with pytest.raises(StrictContractError):
-        certified.to_dict()
+        attacked_certified.to_dict()
 
-    witness = verify_upperness_domain(exact, candidate, evidence)
     payload = witness.to_dict()
     payload["unknown"] = True
     with pytest.raises(StrictContractError):
@@ -601,8 +604,12 @@ def test_witness_and_certified_serializers_reject_low_level_mutation() -> None:
 
 
 def test_nested_candidate_mutation_cannot_cross_the_tier_firewall() -> None:
-    _, exact, candidate, evidence, witness, _ = _bundle()
-    row = candidate.rows[0]
+    _, exact, retained_candidate, evidence, witness, _ = _read_only_bundle()
+    candidate = copy.copy(retained_candidate)
+    row = copy.copy(retained_candidate.rows[0])
+    assert candidate is not retained_candidate
+    assert row is not retained_candidate.rows[0]
+    object.__setattr__(candidate, "rows", (row,) + retained_candidate.rows[1:])
     for field_name, mutated_value in (
         ("target_block_indices", (False,)),
         ("target_block_indices", (0, 0)),
@@ -626,44 +633,54 @@ def test_capability_seals_and_retained_witness_sources_are_rechecked() -> None:
     with pytest.raises(StrictContractError, match="construction seal"):
         exact.to_dict()
 
-    _, exact, candidate, evidence, witness, certified = _bundle()
-    object.__setattr__(certified, "_construction_seal", None)
+    _, exact, candidate, _evidence, witness, certified = _read_only_bundle()
+    attacked_certified = copy.copy(certified)
+    assert attacked_certified is not certified
+    object.__setattr__(attacked_certified, "_construction_seal", None)
     with pytest.raises(StrictContractError, match="construction seal"):
-        certified.to_dict()
+        attacked_certified.to_dict()
 
-    object.__setattr__(witness, "_construction_seal", None)
+    attacked_witness = copy.copy(witness)
+    assert attacked_witness is not witness
+    object.__setattr__(attacked_witness, "_construction_seal", None)
     with pytest.raises(StrictContractError, match="construction seal"):
-        witness.to_dict()
+        attacked_witness.to_dict()
     with pytest.raises(StrictContractError, match="construction seal"):
-        certify_interval_operator(exact, candidate, witness)
+        certify_interval_operator(exact, candidate, attacked_witness)
 
-    _, exact, candidate, evidence, witness, _ = _bundle()
+    attacked_witness = copy.copy(witness)
+    assert attacked_witness is not witness
     object.__setattr__(
-        witness,
+        attacked_witness,
         "_exact_source",
         export_exact_finite_operator(_verified(perturb=True)),
     )
     with pytest.raises(StrictContractError):
-        witness.to_dict()
+        attacked_witness.to_dict()
     with pytest.raises(StrictContractError):
-        certify_interval_operator(exact, candidate, witness)
-    object.__setattr__(witness, "_exact_source", exact)
+        certify_interval_operator(exact, candidate, attacked_witness)
 
     other_candidate = make_interval_candidate(
         exact,
         _candidate_rows(exact, overcover_first=True),
         provenance_id="unit_cpu_survivor_other_candidate",
     )
-    object.__setattr__(witness, "_candidate_source", other_candidate)
+    attacked_witness = copy.copy(witness)
+    assert attacked_witness is not witness
+    object.__setattr__(attacked_witness, "_candidate_source", other_candidate)
     with pytest.raises(StrictContractError):
-        witness.to_dict()
+        attacked_witness.to_dict()
     with pytest.raises(StrictContractError):
-        certify_interval_operator(exact, candidate, witness)
+        certify_interval_operator(exact, candidate, attacked_witness)
 
 
 def test_independent_evidence_serializer_rejects_low_level_mutation() -> None:
-    _, _, _, evidence, _, _ = _bundle()
-    row = evidence.rows[0]
+    _, _, _, retained_evidence, _, _ = _read_only_bundle()
+    evidence = copy.copy(retained_evidence)
+    row = copy.copy(retained_evidence.rows[0])
+    assert evidence is not retained_evidence
+    assert row is not retained_evidence.rows[0]
+    object.__setattr__(evidence, "rows", (row,) + retained_evidence.rows[1:])
     original_target = row.concrete_target_block_index
     object.__setattr__(row, "concrete_target_block_index", False)
     with pytest.raises(StrictContractError):
@@ -700,7 +717,6 @@ def test_standalone_observed_and_nominal_tiers_have_no_promotion_surface() -> No
     assert NominalOperator.from_dict(nominal.to_dict()) == nominal
 
     forbidden = {
-        "FiberEnvelope",
         "derive_upperness_evidence",
         "witness_from_exact",
         "promote_observed",
@@ -708,10 +724,11 @@ def test_standalone_observed_and_nominal_tiers_have_no_promotion_surface() -> No
         "exact_to_observed",
         "certified_to_nominal",
     }
-    assert forbidden.isdisjoint(qg.__all__)
-    assert forbidden.isdisjoint(dir(qg))
     assert forbidden.isdisjoint(odlrq_package.__all__)
     assert forbidden.isdisjoint(dir(odlrq_package))
+    assert (forbidden | {"FiberEnvelope"}).isdisjoint(qg.__all__)
+    assert (forbidden | {"FiberEnvelope"}).isdisjoint(dir(qg))
+    assert "FiberEnvelope" in odlrq_package.__all__
     assert set(qg.__all__) <= set(odlrq_package.__all__)
     _, exact, candidate, *_ = _read_only_bundle()
     assert not hasattr(exact, "to_observed")
@@ -1505,5 +1522,32 @@ def test_read_only_bundle_cache_is_quarantined_from_mutation_tests() -> None:
         test_independent_evidence_serializer_rejects_low_level_mutation,
     )
     for test in mutation_tests:
-        assert "_bundle" in test.__code__.co_names
-        assert "_read_only_bundle" not in test.__code__.co_names
+        assert "_read_only_bundle" in test.__code__.co_names
+        assert "copy" in test.__code__.co_names
+        assert "_bundle" not in test.__code__.co_names
+    _, _exact, candidate, evidence, witness, certified = first
+    assert witness._candidate_source is candidate
+    assert witness._evidence_source is evidence
+    assert certified._candidate_source is candidate
+    assert certified._witness_source is witness
+    assert candidate.candidate_sha256 == witness._candidate_seal_sha256
+    assert hashlib.sha256(
+        canonical_contract_bytes(evidence.to_dict())
+    ).hexdigest().upper() == witness._evidence_seal_sha256
+
+
+def test_e1_weighted_coordinate_surface_is_explicit_and_sealed() -> None:
+    names = {
+        "PositiveFiberWeights",
+        "ExactFiniteFiberLaw",
+        "WeightedCompression",
+        "WeightedLifting",
+        "make_positive_fiber_weights",
+        "make_exact_finite_fiber_law",
+        "make_weighted_compression",
+        "make_weighted_lifting",
+    }
+    assert names <= set(qg.__all__)
+    assert names <= set(odlrq_package.__all__)
+    assert "FiberEnvelope" not in qg.__all__
+    assert "FiberEnvelope" in odlrq_package.__all__
