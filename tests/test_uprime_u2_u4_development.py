@@ -15,23 +15,23 @@ import uprime_u24_guard as u24_guard
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-ANCHOR_COMMIT = "773a4bae0ed6c88fe855d92a69a211f8834c688c"
-ANCHOR_PARENT = "80b09bc8eaae63739d2078b3f206e2fd31386ebc"
-ANCHOR_TREE = "457c91cc38f91880b019173b3d5c84d3b0b0eee9"
+ANCHOR_COMMIT = "b57ac55e823bc90a7d86f8b593249b70feeadaf1"
+ANCHOR_PARENT = "fbc1259dc276265a8949aad86d9e15b87e4a6dff"
+ANCHOR_TREE = "3fbb08d6e3d496460e97ca60b83c7667ec518480"
 ANCHOR_FAILURE_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_r3_failure_closeout_2026-07-13.md"
+    "uprime_odlrq_u2_u4_development_r4_failure_closeout_2026-07-14.md"
 )
-ANCHOR_FAILURE_BLOB = "95ec66bb4cddbf7471d017430e5f375e0dd3efe5"
-ANCHOR_IDENTITY_BLOB = "d794b19274e956aa3df2c9e6d5fc4dcba8dac046"
-ANCHOR_GUARD_BLOB = "fbc3ab1ac5d52aea7c68267a06f5b97ea5ec21f6"
-ANCHOR_RUNNER_BLOB = "fe5789e2a98e1921ba08182af20fd5b41796c987"
+ANCHOR_FAILURE_BLOB = "fc1f409d2150fcfd199383d6d881549ee81984e7"
+ANCHOR_IDENTITY_BLOB = "1e5b5607d9c66443e49206cf3d2c27fbf2b06178"
+ANCHOR_GUARD_BLOB = "39ab9f378da06d54580c99d73da726d78b543123"
+ANCHOR_RUNNER_BLOB = "7ab0d04eb2efd21be0bdcf54fcac9fcf21b11b96"
 ANCHOR_MANIFEST_BLOB = "47997a9bd67f7ac2cf0cd9c7f654d8f069f925d8"
 ANCHOR_WORKFLOW_BLOB = "0349e9ca864b7e9e25064ab7fab5b6dc0665adee"
 
 ACCEPTED_BASE_COMMIT = ANCHOR_PARENT
-ACCEPTED_BASE_PARENT = "4b0fa1ff2f701b1814a835d3b43f1251a92a3296"
-ACCEPTED_BASE_TREE = "c78afff73f3abf631861a5c4e84c020827099572"
+ACCEPTED_BASE_PARENT = "773a4bae0ed6c88fe855d92a69a211f8834c688c"
+ACCEPTED_BASE_TREE = "e17b8dd85e6ee4bf299c6dcfc491deb7119253c5"
 
 LEGACY_A1_COMMIT = "7377119962e07c9062ba46c2c0c2f0eb479060ef"
 LEGACY_A1_DOCUMENT_PATH = (
@@ -73,12 +73,55 @@ R3_SUCCESS_CLOSEOUT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_u2_u4_development_r3_closeout_2026-07-13.md"
 )
+R3_FAILURE_CLOSEOUT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r3_failure_closeout_2026-07-13.md"
+)
+R3_FAILURE_CLOSEOUT_BLOB = "95ec66bb4cddbf7471d017430e5f375e0dd3efe5"
 
-BOOTSTRAP_DOCUMENT_PATH = (
+R4_BOOTSTRAP_COMMIT = ANCHOR_PARENT
+R4_BOOTSTRAP_DOCUMENT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_u2_u4_development_r4_guard_canonicalization_reentry_amendment_2026-07-14.md"
 )
-BOOTSTRAP_DOCUMENT_BLOB = "384c203ebec46ec044b010bbd42e7543b6b163ac"
+R4_BOOTSTRAP_DOCUMENT_BLOB = "384c203ebec46ec044b010bbd42e7543b6b163ac"
+R4_SUCCESS_CLOSEOUT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r4_closeout_2026-07-14.md"
+)
+
+R5_AMENDMENT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r5_powershell51_decode_reentry_amendment_2026-07-14.md"
+)
+R5_AMENDMENT_BLOB = "a15d3e339d634f7dfe36e5c8b7a7595d39a2dbde"
+R5_FAILURE_CLOSEOUT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r5_failure_closeout_2026-07-14.md"
+)
+R5_FAILURE_CLOSEOUT_BLOB = "fca1d61127ded045275d1c40fe4a55815d389304"
+R5_SUCCESS_CLOSEOUT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r5_closeout_2026-07-14.md"
+)
+
+BOOTSTRAP_DOCUMENT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r6_static_scope_reentry_amendment_2026-07-14.md"
+)
+BOOTSTRAP_DOCUMENT_BLOB = "bde7e3456dcac6e699e983b84947d838bcee4d5d"
+BOOTSTRAP_EVIDENCE_BLOBS = {
+    R5_AMENDMENT_PATH: R5_AMENDMENT_BLOB,
+    R5_FAILURE_CLOSEOUT_PATH: R5_FAILURE_CLOSEOUT_BLOB,
+    BOOTSTRAP_DOCUMENT_PATH: BOOTSTRAP_DOCUMENT_BLOB,
+}
+BOOTSTRAP_EVIDENCE_BYTES = {
+    R5_AMENDMENT_PATH: 18061,
+    R5_FAILURE_CLOSEOUT_PATH: 7778,
+    BOOTSTRAP_DOCUMENT_PATH: 18638,
+}
+assert set(BOOTSTRAP_EVIDENCE_BYTES) == set(BOOTSTRAP_EVIDENCE_BLOBS)
+assert len(BOOTSTRAP_EVIDENCE_BLOBS) == 3
 
 ACCEPTED_FAILURE_COMMIT = "214dec3adb7841452fea19f7ae668d8e0f7520a1"
 ACCEPTED_FAILURE_PATH = (
@@ -105,18 +148,18 @@ MANIFEST_PATH = "tests/tier_manifest.json"
 WORKFLOW_PATH = ".github/workflows/ci.yml"
 SUCCESS_CLOSEOUT_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_r4_closeout_2026-07-14.md"
+    "uprime_odlrq_u2_u4_development_r6_closeout_2026-07-14.md"
 )
 FAILURE_CLOSEOUT_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_r4_failure_closeout_2026-07-14.md"
+    "uprime_odlrq_u2_u4_development_r6_failure_closeout_2026-07-14.md"
 )
 
 FROZEN_REFS = {
-    "bootstrap": "codex/uprime-u2-u4-development-r4-guard-bootstrap",
-    "build": "codex/uprime-u2-u4-development-r4-build",
-    "closeout": "codex/uprime-u2-u4-development-r4-closeout",
-    "failure": "codex/uprime-u2-u4-development-r4-failure-closeout",
+    "bootstrap": "codex/uprime-u2-u4-development-r6-static-scope-bootstrap",
+    "build": "codex/uprime-u2-u4-development-r6-build",
+    "closeout": "codex/uprime-u2-u4-development-r6-closeout",
+    "failure": "codex/uprime-u2-u4-development-r6-failure-closeout",
     "accepted": "codex/uprime-odlrq-plan",
 }
 STAGE_ORDER = ("E1", "E2", "ME0", "S0", "I0")
@@ -157,7 +200,7 @@ BOOTSTRAP_CONTROL_PATHS = {
     GUARD_PATH,
     RUNNER_PATH,
 }
-BOOTSTRAP_PATHS = {BOOTSTRAP_DOCUMENT_PATH, *BOOTSTRAP_CONTROL_PATHS}
+BOOTSTRAP_PATHS = {*BOOTSTRAP_EVIDENCE_BLOBS, *BOOTSTRAP_CONTROL_PATHS}
 BOOTSTRAP_CORRECTION_PATH_SETS = (
     frozenset({GUARD_PATH}),
     frozenset({IDENTITY_PATH, GUARD_PATH}),
@@ -205,6 +248,8 @@ AUTHORITY_BLOBS = {
     R2_A2_DOCUMENT_PATH: R2_A2_DOCUMENT_BLOB,
     R2_BOOTSTRAP_DOCUMENT_PATH: R2_BOOTSTRAP_DOCUMENT_BLOB,
     R3_BOOTSTRAP_DOCUMENT_PATH: R3_BOOTSTRAP_DOCUMENT_BLOB,
+    R3_FAILURE_CLOSEOUT_PATH: R3_FAILURE_CLOSEOUT_BLOB,
+    R4_BOOTSTRAP_DOCUMENT_PATH: R4_BOOTSTRAP_DOCUMENT_BLOB,
     ANCHOR_FAILURE_PATH: ANCHOR_FAILURE_BLOB,
 }
 
@@ -302,8 +347,10 @@ assert set(E1_FROZEN_BLOBS) == STAGE_ALLOWLISTS["E1"]
 ABSENT_AT_ANCHOR = tuple(
     sorted(
         {
-            BOOTSTRAP_DOCUMENT_PATH,
+            *BOOTSTRAP_EVIDENCE_BLOBS,
             R3_SUCCESS_CLOSEOUT_PATH,
+            R4_SUCCESS_CLOSEOUT_PATH,
+            R5_SUCCESS_CLOSEOUT_PATH,
             SUCCESS_CLOSEOUT_PATH,
             FAILURE_CLOSEOUT_PATH,
             "lean_rgc/odlrq/envelope.py",
@@ -352,8 +399,10 @@ FAILURE_TERMINAL_PATHS = {FAILURE_CLOSEOUT_PATH}
 TRACKED_PATHS = tuple(
     sorted(
         {
-            BOOTSTRAP_DOCUMENT_PATH,
+            *BOOTSTRAP_EVIDENCE_BLOBS,
             R3_SUCCESS_CLOSEOUT_PATH,
+            R4_SUCCESS_CLOSEOUT_PATH,
+            R5_SUCCESS_CLOSEOUT_PATH,
             LEGACY_SUCCESS_CLOSEOUT_PATH,
             *BASE_BLOBS,
             *AUTHORITY_BLOBS,
@@ -552,7 +601,8 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
     if not interval:
         assert control["head"] == ANCHOR_COMMIT
         assert dirty == BOOTSTRAP_PATHS
-        assert worktree[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
+        for path, expected in BOOTSTRAP_EVIDENCE_BLOBS.items():
+            assert worktree[path] == expected
         assert all(worktree[path] is not None for path in BOOTSTRAP_PATHS)
         assert all(
             worktree[path] != anchor_blobs[path]
@@ -565,7 +615,7 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
             "completed": [],
             "counts": {name: 0 for name in STAGE_ORDER},
             "corrections": 0,
-            "pending": "R4-bootstrap",
+            "pending": "R6-bootstrap",
             "terminal": None,
         }
 
@@ -573,7 +623,8 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
     assert bootstrap["parents"] == [ANCHOR_COMMIT]
     assert _changed(bootstrap) == BOOTSTRAP_PATHS
     bootstrap_blobs = _blobs(bootstrap)
-    assert bootstrap_blobs[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
+    for path, expected in BOOTSTRAP_EVIDENCE_BLOBS.items():
+        assert bootstrap_blobs[path] == expected
     for path in BOOTSTRAP_CONTROL_PATHS:
         assert bootstrap_blobs[path] is not None
         assert bootstrap_blobs[path] != ANCHOR_CONTROL_BLOBS[path]
@@ -610,7 +661,8 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
         blobs = _blobs(row)
         for path in (GUARD_PATH, RUNNER_PATH, WORKFLOW_PATH):
             assert blobs[path] == frozen_blobs[path]
-        assert blobs[BOOTSTRAP_DOCUMENT_PATH] == BOOTSTRAP_DOCUMENT_BLOB
+        for path, expected in BOOTSTRAP_EVIDENCE_BLOBS.items():
+            assert blobs[path] == expected
         for path, expected in AUTHORITY_BLOBS.items():
             assert blobs[path] == expected
 
@@ -625,7 +677,7 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
             and not remaining
             and frozenset(dirty) in BOOTSTRAP_CORRECTION_PATH_SETS
         ):
-            pending = "R4-bootstrap-correction"
+            pending = "R6-bootstrap-correction"
         else:
             assert not dirty & {GUARD_PATH, RUNNER_PATH, WORKFLOW_PATH}
             next_stage = (
@@ -904,14 +956,18 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
         assert blobs[path] == expected
     for path, expected in AUTHORITY_BLOBS.items():
         assert blobs[path] == expected
-    assert blobs[BOOTSTRAP_DOCUMENT_PATH] is None
-    assert ANCHOR_TREE == "457c91cc38f91880b019173b3d5c84d3b0b0eee9"
-    assert ACCEPTED_BASE_COMMIT == "80b09bc8eaae63739d2078b3f206e2fd31386ebc"
-    assert ACCEPTED_BASE_PARENT == "4b0fa1ff2f701b1814a835d3b43f1251a92a3296"
-    assert ACCEPTED_BASE_TREE == "c78afff73f3abf631861a5c4e84c020827099572"
+    for path in BOOTSTRAP_EVIDENCE_BLOBS:
+        assert blobs[path] is None
+    for path, expected in BOOTSTRAP_EVIDENCE_BYTES.items():
+        assert len((REPO_ROOT / path).read_bytes()) == expected
+    assert ANCHOR_TREE == "3fbb08d6e3d496460e97ca60b83c7667ec518480"
+    assert ACCEPTED_BASE_COMMIT == "fbc1259dc276265a8949aad86d9e15b87e4a6dff"
+    assert ACCEPTED_BASE_PARENT == "773a4bae0ed6c88fe855d92a69a211f8834c688c"
+    assert ACCEPTED_BASE_TREE == "e17b8dd85e6ee4bf299c6dcfc491deb7119253c5"
     assert R2_A2_COMMIT == "7c05c494ce79e84ffeb0d0c912ca3ba5f141f402"
     assert R2_BOOTSTRAP_COMMIT == "3970b4f505b842a76573329aaa526a1af08da7c4"
-    assert R3_BOOTSTRAP_COMMIT == ACCEPTED_BASE_PARENT
+    assert R3_BOOTSTRAP_COMMIT == "4b0fa1ff2f701b1814a835d3b43f1251a92a3296"
+    assert R4_BOOTSTRAP_COMMIT == ACCEPTED_BASE_COMMIT
     assert ORIGINAL_AUTHORITY_COMMIT == "14234e209229931c00615d4b171620ec6d1bbbf5"
     assert ORIGINAL_AUTHORITY_PARENT == "78c12549eb188610977842edbc38e2723d469ba4"
     assert blobs[ACCEPTED_FAILURE_PATH] == ACCEPTED_FAILURE_BLOB
@@ -922,10 +978,10 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
     assert CONTROL["identity_additions"] == [HISTORICAL_IDENTITY_ADDITION]
     assert UNION_ALLOWLIST == EXPECTED_UNION_ALLOWLIST
     assert FROZEN_REFS == {
-        "bootstrap": "codex/uprime-u2-u4-development-r4-guard-bootstrap",
-        "build": "codex/uprime-u2-u4-development-r4-build",
-        "closeout": "codex/uprime-u2-u4-development-r4-closeout",
-        "failure": "codex/uprime-u2-u4-development-r4-failure-closeout",
+        "bootstrap": "codex/uprime-u2-u4-development-r6-static-scope-bootstrap",
+        "build": "codex/uprime-u2-u4-development-r6-build",
+        "closeout": "codex/uprime-u2-u4-development-r6-closeout",
+        "failure": "codex/uprime-u2-u4-development-r6-failure-closeout",
         "accepted": "codex/uprime-odlrq-plan",
     }
     assert STAGE_ORDER == ("E1", "E2", "ME0", "S0", "I0")
@@ -952,8 +1008,8 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     assert state["corrections"] in (0, 1)
     assert state["pending"] in {
         None,
-        "R4-bootstrap",
-        "R4-bootstrap-correction",
+        "R6-bootstrap",
+        "R6-bootstrap-correction",
         *STAGE_ORDER,
         *(stage + "-correction" for stage in STAGE_ORDER),
     }
@@ -963,10 +1019,10 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         assert terminal_paths in (SUCCESS_TERMINAL_PATHS, FAILURE_TERMINAL_PATHS)
         if terminal_paths == SUCCESS_TERMINAL_PATHS:
             assert state["completed"] == list(STAGE_ORDER)
-    elif state["pending"] == "R4-bootstrap":
+    elif state["pending"] == "R6-bootstrap":
         assert actual_dirty == BOOTSTRAP_PATHS
         assert state["completed"] == [] and state["corrections"] == 0
-    elif state["pending"] == "R4-bootstrap-correction":
+    elif state["pending"] == "R6-bootstrap-correction":
         assert frozenset(actual_dirty) in BOOTSTRAP_CORRECTION_PATH_SETS
         assert state["completed"] == [] and state["corrections"] == 0
     elif state["pending"] in STAGE_ORDER:
@@ -1050,7 +1106,7 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     for path in BOOTSTRAP_PATHS:
         pending_t0["worktree_blobs"][path] = bootstrap_source[path]
     pending_bootstrap = _validate_epoch_topology(pending_t0)
-    assert pending_bootstrap["pending"] == "R4-bootstrap"
+    assert pending_bootstrap["pending"] == "R6-bootstrap"
     assert pending_bootstrap["completed"] == []
 
     t0_commit = "10" * 20
@@ -1148,12 +1204,41 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     extra_t0_path = copy.deepcopy(t0)
     extra_t0_path["revisions"][1]["changed_paths"].append(MANIFEST_PATH)
     attacks.append(extra_t0_path)
-    changed_t0_document = copy.deepcopy(t0)
-    changed_t0_document["revisions"][1]["tree_blobs"][
-        BOOTSTRAP_DOCUMENT_PATH
-    ] = "00" * 20
-    changed_t0_document["worktree_blobs"][BOOTSTRAP_DOCUMENT_PATH] = "00" * 20
-    attacks.append(changed_t0_document)
+    for index, evidence_path in enumerate(BOOTSTRAP_EVIDENCE_BLOBS):
+        missing_dirty_evidence = copy.deepcopy(pending_t0)
+        missing_dirty_evidence["status_paths"].remove(evidence_path)
+        attacks.append(missing_dirty_evidence)
+        missing_committed_evidence = copy.deepcopy(t0)
+        missing_committed_evidence["revisions"][1]["changed_paths"].remove(
+            evidence_path
+        )
+        attacks.append(missing_committed_evidence)
+        changed_t0_evidence = copy.deepcopy(t0)
+        changed_t0_evidence["revisions"][1]["tree_blobs"][evidence_path] = (
+            f"{index + 1:02x}" * 20
+        )
+        changed_t0_evidence["worktree_blobs"][evidence_path] = (
+            f"{index + 1:02x}" * 20
+        )
+        attacks.append(changed_t0_evidence)
+    first_evidence, second_evidence = tuple(BOOTSTRAP_EVIDENCE_BLOBS)[:2]
+    swapped_evidence = copy.deepcopy(t0)
+    first_blob = swapped_evidence["revisions"][1]["tree_blobs"][first_evidence]
+    second_blob = swapped_evidence["revisions"][1]["tree_blobs"][second_evidence]
+    swapped_evidence["revisions"][1]["tree_blobs"][first_evidence] = second_blob
+    swapped_evidence["revisions"][1]["tree_blobs"][second_evidence] = first_blob
+    swapped_evidence["worktree_blobs"] = copy.deepcopy(
+        swapped_evidence["revisions"][1]["tree_blobs"]
+    )
+    attacks.append(swapped_evidence)
+    document_only_bootstrap = append_row(
+        pending_t0, "12" * 20, set(BOOTSTRAP_EVIDENCE_BLOBS)
+    )
+    attacks.append(document_only_bootstrap)
+    control_only_bootstrap = append_row(
+        pending_t0, "13" * 20, BOOTSTRAP_CONTROL_PATHS
+    )
+    attacks.append(control_only_bootstrap)
     changed_e0_base = copy.deepcopy(e1)
     changed_e0_base["revisions"][-1]["tree_blobs"][
         "lean_rgc/odlrq/contracts.py"
@@ -1161,7 +1246,7 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     changed_e0_base["worktree_blobs"]["lean_rgc/odlrq/contracts.py"] = "00" * 20
     attacks.append(changed_e0_base)
     unregistered_dirty = copy.deepcopy(t0)
-    unregistered_dirty["status_paths"] = ["unregistered-r4-path.txt"]
+    unregistered_dirty["status_paths"] = ["unregistered-r6-path.txt"]
     attacks.append(unregistered_dirty)
 
     success_before_bootstrap = append_row(
@@ -1298,7 +1383,7 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     non_immediate_correction = append_row(e1, "49" * 20, {GUARD_PATH})
     attacks.append(non_immediate_correction)
     for extra_path in (
-        BOOTSTRAP_DOCUMENT_PATH,
+        *BOOTSTRAP_EVIDENCE_BLOBS,
         R2_A2_DOCUMENT_PATH,
         WORKFLOW_PATH,
         MANIFEST_PATH,
@@ -1451,7 +1536,8 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
         'semantic lane requires accepted branch activation',
         'accepted branch skips or mutates a semantic stage',
         'accepted branch has not completed the prior semantic stages',
-        'the shared R4 correction budget is already spent',
+        'accepted branch is outside the registered R6 epoch',
+        'the shared R6 correction budget is already spent',
         'E1 is an exact import and cannot be corrected',
         'E1 paths or Git blobs differ from the frozen import',
         'accepted E1 history differs from the frozen import',
@@ -1484,6 +1570,16 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     assert control.count('semantic_allowlists = {') == 1
     assert control.count('expected_prefix = list(semantic_order[:semantic_order.index(lane)])') == 1
     control_tree = __import__("ast").parse(control)
+    literal_update_sets = [
+        __import__("ast").literal_eval(node.args[0])
+        for node in __import__("ast").walk(control_tree)
+        if isinstance(node, __import__("ast").Call)
+        and isinstance(node.func, __import__("ast").Attribute)
+        and node.func.attr == "update"
+        and len(node.args) == 1
+        and isinstance(node.args[0], __import__("ast").Set)
+    ]
+    assert literal_update_sets == [set(BOOTSTRAP_EVIDENCE_BLOBS)]
     control_literals = {}
     for node in control_tree.body:
         if (
@@ -1514,6 +1610,7 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     assert e1_table_match is not None
     e1_rows = json.loads(e1_table_match.group(1))
     assert type(e1_rows) is list and len(e1_rows) == 6
+    assert [row["path"] for row in e1_rows] == list(E1_FROZEN_BLOBS)
     assert {row["path"] for row in e1_rows} == STAGE_ALLOWLISTS["E1"]
     for row in e1_rows:
         assert set(row) == {"blob", "bytes", "path", "sha256"}
@@ -1524,6 +1621,50 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
             "path": path,
             "sha256": E1_FROZEN_SHA256[path],
         }
+    decode_line = "$decodedE1Frozen = $E1FrozenCanonicalJson | ConvertFrom-Json"
+    materialize_line = "$e1Frozen = @($decodedE1Frozen)"
+    count_line = (
+        'if ($e1Frozen.Count -ne 6) '
+        '{ throw "E1 frozen byte table cardinality changed" }'
+    )
+    decode_block = (
+        "    " + decode_line + "\n"
+        "    " + materialize_line + "\n"
+        "    " + count_line + "\n"
+    )
+    e1_outer_branch = 'if ($Lane -eq "E1") {'
+    e1_outer_end = 'if ($Lane -in @("EMIT", "CLOSEOUT"))'
+    assert runner.count(decode_line) == 1
+    assert runner.count(materialize_line) == 1
+    assert runner.count(count_line) == 1
+    assert runner.count(decode_block) == 1
+    assert runner.count("$E1FrozenCanonicalJson | ConvertFrom-Json") == 1
+    assert runner.count("$decodedE1Frozen") == 2
+    assert runner.count("$decodedE1Frozen =") == 1
+    assert runner.count("$e1Frozen =") == 1
+    assert runner.count(e1_outer_branch) == 1
+    assert runner.count(e1_outer_end) == 1
+    assert "$e1Frozen = @($E1FrozenCanonicalJson | ConvertFrom-Json)" not in runner
+    assert runner.index(decode_line) < runner.index(materialize_line)
+    assert runner.index(materialize_line) < runner.index(count_line)
+    assert runner.index(count_line) < runner.index(e1_outer_branch)
+    assert runner.index(e1_outer_branch) < runner.index(e1_outer_end)
+    e1_outer_block = runner[
+        runner.index(e1_outer_branch):runner.index(e1_outer_end)
+    ]
+    resolve_literal = (
+        "Resolve-RegularFile -LiteralPath (Join-Path $repoRoot $relative)"
+    )
+    assert runner.count(resolve_literal) == 2
+    assert e1_outer_block.count(resolve_literal) == 1
+    for e1_unique_literal in (
+        "foreach ($entry in $e1Frozen)",
+        "Get-Item -LiteralPath $candidate -Force",
+        "Get-Sha256 -LiteralPath $candidate",
+        "hash-object $relative",
+    ):
+        assert runner.count(e1_unique_literal) == 1
+        assert e1_outer_block.count(e1_unique_literal) == 1
     assert control.count('if lane in semantic_markers:') == 1
     assert bootstrap.count('"pytestmark" in identity_dict') == 1
     assert bootstrap.count('"pytestmark" in quotient_dict') == 1
@@ -1572,6 +1713,12 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     assert runner.count(R2_BOOTSTRAP_DOCUMENT_PATH) == 1
     assert runner.count(R3_BOOTSTRAP_DOCUMENT_PATH) == 1
     assert runner.count(R3_SUCCESS_CLOSEOUT_PATH) == 2
+    assert runner.count(R3_FAILURE_CLOSEOUT_PATH) == 1
+    assert runner.count(R4_BOOTSTRAP_DOCUMENT_PATH) == 1
+    assert runner.count(R4_SUCCESS_CLOSEOUT_PATH) == 2
+    assert runner.count(R5_AMENDMENT_PATH) == 3
+    assert runner.count(R5_FAILURE_CLOSEOUT_PATH) == 3
+    assert runner.count(R5_SUCCESS_CLOSEOUT_PATH) == 2
     assert runner.count(R1_FAILURE_PATH) == 1
 
     def git_blob_sha1(raw: bytes) -> str:
@@ -1584,10 +1731,10 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     assert b"\r" not in guard_raw
     guard_source = guard_raw.decode("utf-8")
     anchor_identity_core_sha256 = (
-        "FA5B3088A205529D3BCFC29C41CC0F35F47538DD41564E310B600290532D5921"
+        "63BA64835344CA03DBBA7D50B817C5E4BE2E4159655B9CB325D2D1C5D7A2A97E"
     )
     anchor_runner_sha256 = (
-        "AD55DA26A8F8B776D3ACE3CC49C98330DBC040AE954B9820F2CE19B46DA33513"
+        "69D3F5E53FDC4ACEBC61D79AC53D4B318C35C9C2593A5B5C860205F7694F5C8E"
     )
     assert u24_guard.FROZEN_IDENTITY_CORE_SHA256 != anchor_identity_core_sha256
     assert u24_guard.FROZEN_RUNNER_SHA256 != anchor_runner_sha256
