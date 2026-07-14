@@ -15,23 +15,23 @@ import uprime_u24_guard as u24_guard
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-ANCHOR_COMMIT = "cbc7377c588e024d17438beb83e444c515ff0172"
-ANCHOR_PARENT = "de8d7e6e3f0cb41b514de25f6b3867bde49033f0"
-ANCHOR_TREE = "917225444c687aeeb801da72545622b95e39cb73"
+ANCHOR_COMMIT = "773a4bae0ed6c88fe855d92a69a211f8834c688c"
+ANCHOR_PARENT = "80b09bc8eaae63739d2078b3f206e2fd31386ebc"
+ANCHOR_TREE = "457c91cc38f91880b019173b3d5c84d3b0b0eee9"
 ANCHOR_FAILURE_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_r2_failure_closeout_2026-07-13.md"
+    "uprime_odlrq_u2_u4_development_r3_failure_closeout_2026-07-13.md"
 )
-ANCHOR_FAILURE_BLOB = "7a05d80e8854eba26a3a634d345f7fde7a831359"
-ANCHOR_IDENTITY_BLOB = "fab3f0625770f02f27621d6da1fc787d61426a86"
-ANCHOR_GUARD_BLOB = "8d585c914ad75ee506ba97dcddfa16d6c2b78396"
-ANCHOR_RUNNER_BLOB = "33d29697f3966bbdc735c6e6639a97344081ef51"
+ANCHOR_FAILURE_BLOB = "95ec66bb4cddbf7471d017430e5f375e0dd3efe5"
+ANCHOR_IDENTITY_BLOB = "d794b19274e956aa3df2c9e6d5fc4dcba8dac046"
+ANCHOR_GUARD_BLOB = "fbc3ab1ac5d52aea7c68267a06f5b97ea5ec21f6"
+ANCHOR_RUNNER_BLOB = "fe5789e2a98e1921ba08182af20fd5b41796c987"
 ANCHOR_MANIFEST_BLOB = "47997a9bd67f7ac2cf0cd9c7f654d8f069f925d8"
 ANCHOR_WORKFLOW_BLOB = "0349e9ca864b7e9e25064ab7fab5b6dc0665adee"
 
 ACCEPTED_BASE_COMMIT = ANCHOR_PARENT
-ACCEPTED_BASE_PARENT = "3970b4f505b842a76573329aaa526a1af08da7c4"
-ACCEPTED_BASE_TREE = "ceb94e0d87882249651de37cc1d94269b29787c8"
+ACCEPTED_BASE_PARENT = "4b0fa1ff2f701b1814a835d3b43f1251a92a3296"
+ACCEPTED_BASE_TREE = "c78afff73f3abf631861a5c4e84c020827099572"
 
 LEGACY_A1_COMMIT = "7377119962e07c9062ba46c2c0c2f0eb479060ef"
 LEGACY_A1_DOCUMENT_PATH = (
@@ -62,12 +62,23 @@ R2_BOOTSTRAP_DOCUMENT_PATH = (
     "uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md"
 )
 R2_BOOTSTRAP_DOCUMENT_BLOB = "c5af0cc08a1a6e148d297f9bf06300ba169987eb"
+R3_BOOTSTRAP_COMMIT = "4b0fa1ff2f701b1814a835d3b43f1251a92a3296"
 
-BOOTSTRAP_DOCUMENT_PATH = (
+R3_BOOTSTRAP_DOCUMENT_PATH = (
     "docs/experiments/"
     "uprime_odlrq_u2_u4_development_r3_stage_local_reentry_amendment_2026-07-13.md"
 )
-BOOTSTRAP_DOCUMENT_BLOB = "39d0b739954f7170ac4de8e5bda254df22328ae8"
+R3_BOOTSTRAP_DOCUMENT_BLOB = "39d0b739954f7170ac4de8e5bda254df22328ae8"
+R3_SUCCESS_CLOSEOUT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r3_closeout_2026-07-13.md"
+)
+
+BOOTSTRAP_DOCUMENT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_u2_u4_development_r4_guard_canonicalization_reentry_amendment_2026-07-14.md"
+)
+BOOTSTRAP_DOCUMENT_BLOB = "384c203ebec46ec044b010bbd42e7543b6b163ac"
 
 ACCEPTED_FAILURE_COMMIT = "214dec3adb7841452fea19f7ae668d8e0f7520a1"
 ACCEPTED_FAILURE_PATH = (
@@ -94,22 +105,22 @@ MANIFEST_PATH = "tests/tier_manifest.json"
 WORKFLOW_PATH = ".github/workflows/ci.yml"
 SUCCESS_CLOSEOUT_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_r3_closeout_2026-07-13.md"
+    "uprime_odlrq_u2_u4_development_r4_closeout_2026-07-14.md"
 )
 FAILURE_CLOSEOUT_PATH = (
     "docs/experiments/"
-    "uprime_odlrq_u2_u4_development_r3_failure_closeout_2026-07-13.md"
+    "uprime_odlrq_u2_u4_development_r4_failure_closeout_2026-07-14.md"
 )
 
 FROZEN_REFS = {
-    "bootstrap": "codex/uprime-u2-u4-development-r3-topology-bootstrap",
-    "build": "codex/uprime-u2-u4-development-r3-build",
-    "closeout": "codex/uprime-u2-u4-development-r3-closeout",
-    "failure": "codex/uprime-u2-u4-development-r3-failure-closeout",
+    "bootstrap": "codex/uprime-u2-u4-development-r4-guard-bootstrap",
+    "build": "codex/uprime-u2-u4-development-r4-build",
+    "closeout": "codex/uprime-u2-u4-development-r4-closeout",
+    "failure": "codex/uprime-u2-u4-development-r4-failure-closeout",
     "accepted": "codex/uprime-odlrq-plan",
 }
-STAGE_ORDER = ("E0", "E1", "E2", "ME0", "S0", "I0")
-MAX_BUILD_COMMITS = 7
+STAGE_ORDER = ("E1", "E2", "ME0", "S0", "I0")
+MAX_BUILD_COMMITS = 6
 MAX_CORRECTIONS = 1
 WALL_SECONDS = {
     "B0": 60,
@@ -157,11 +168,11 @@ BASE_BLOBS = {
     "lean_rgc/odlrq/contracts.py":
         "eca7d55bc7c2a7a08fbdc75c3b589f1972cd258f",
     "lean_rgc/odlrq/quotient_generator.py":
-        "e8d95082d2e47f0829d960321cc1d62bc686d7ac",
+        "6f2af348cfafe667955c08aa273c807b010a2698",
     "lean_rgc/odlrq/__init__.py":
-        "866df99205f5073335ea7304b0cc160ab657e8f5",
+        "6cb6e7904ad76cbf590df4e523d18e6fd24dcd04",
     "tests/test_odlrq_quotient_generator.py":
-        "d014b0c9555ac5932827d86b6b92420849ed4973",
+        "66da007454348ed62d7b346b719e2744ccb65fc5",
     MANIFEST_PATH: ANCHOR_MANIFEST_BLOB,
 }
 ANCHOR_CONTROL_BLOBS = {
@@ -193,15 +204,11 @@ AUTHORITY_BLOBS = {
     R1_FAILURE_PATH: R1_FAILURE_BLOB,
     R2_A2_DOCUMENT_PATH: R2_A2_DOCUMENT_BLOB,
     R2_BOOTSTRAP_DOCUMENT_PATH: R2_BOOTSTRAP_DOCUMENT_BLOB,
+    R3_BOOTSTRAP_DOCUMENT_PATH: R3_BOOTSTRAP_DOCUMENT_BLOB,
     ANCHOR_FAILURE_PATH: ANCHOR_FAILURE_BLOB,
 }
 
 STAGE_ALLOWLISTS = {
-    "E0": {
-        "lean_rgc/odlrq/quotient_generator.py",
-        "lean_rgc/odlrq/__init__.py",
-        "tests/test_odlrq_quotient_generator.py",
-    },
     "E1": {
         "lean_rgc/odlrq/quotient_generator.py",
         "lean_rgc/odlrq/envelope.py",
@@ -240,7 +247,6 @@ STAGE_ALLOWLISTS = {
     },
 }
 STAGE_MARKERS = {
-    "E0": {"lean_rgc/odlrq/quotient_generator.py"},
     "E1": {"lean_rgc/odlrq/envelope.py"},
     "E2": {"lean_rgc/odlrq/selection.py"},
     "ME0": {"lean_rgc/odlrq/maxent.py"},
@@ -248,18 +254,56 @@ STAGE_MARKERS = {
     "I0": {"lean_rgc/evals/uprime_u2_u4_development.py"},
 }
 STAGE_MANIFEST_NODES = {
-    "E0": set(),
     "E1": {"test_odlrq_envelope.py"},
     "E2": {"test_odlrq_selection.py"},
     "ME0": {"test_odlrq_maxent.py"},
     "S0": {"test_odlrq_similarity.py"},
     "I0": set(),
 }
+E1_FROZEN_BYTES = {
+    "lean_rgc/odlrq/quotient_generator.py": 153187,
+    "lean_rgc/odlrq/envelope.py": 87121,
+    "lean_rgc/odlrq/__init__.py": 13341,
+    "tests/test_odlrq_quotient_generator.py": 59547,
+    "tests/test_odlrq_envelope.py": 32675,
+    MANIFEST_PATH: 8827,
+}
+E1_FROZEN_SHA256 = {
+    "lean_rgc/odlrq/quotient_generator.py":
+        "21030E4DD3C392D5EA2A9DEA1D5A8354F57AFE1301A59CFA6B0A2CDEE199EF16",
+    "lean_rgc/odlrq/envelope.py":
+        "13C4F4D97AFFB363A1EC484BDDD870AF9FB88B0C0796D6728AC774DE941D5496",
+    "lean_rgc/odlrq/__init__.py":
+        "F968B3BC4EB945811E88553F118856658CE45D476B94860B56D7F39DBE90D752",
+    "tests/test_odlrq_quotient_generator.py":
+        "4D1FAF8C725BB2EA9FAD01E83A330C578B1ABE01840EAD263E98D174A84CA7C0",
+    "tests/test_odlrq_envelope.py":
+        "90580302C24F99B8CAF1500EF013296E214D2206F6C936D781BAA8E8A64832D5",
+    MANIFEST_PATH:
+        "D955F797DFA2F4C0943F5F385F9301CED0A9D592BE19D459BF5EB2BEEB657854",
+}
+E1_FROZEN_BLOBS = {
+    "lean_rgc/odlrq/quotient_generator.py":
+        "1e1576ad1f51ebf667bc55d159048c0ae6587524",
+    "lean_rgc/odlrq/envelope.py":
+        "0618f603b86eba3c61c9fb2e15c4edaacce44a14",
+    "lean_rgc/odlrq/__init__.py":
+        "f97272d5de222fb555a78639d66eb89e77e63d86",
+    "tests/test_odlrq_quotient_generator.py":
+        "400f630e10ddbd98657fd1b142c6b202a8656c7d",
+    "tests/test_odlrq_envelope.py":
+        "66f9be1a3c5455b822b229fc2024b9c58b768fff",
+    MANIFEST_PATH:
+        "8bb7810cc49b56aff3d7b18020dab475644911a2",
+}
+assert set(E1_FROZEN_BYTES) == set(E1_FROZEN_SHA256) == set(E1_FROZEN_BLOBS)
+assert set(E1_FROZEN_BLOBS) == STAGE_ALLOWLISTS["E1"]
 
 ABSENT_AT_ANCHOR = tuple(
     sorted(
         {
             BOOTSTRAP_DOCUMENT_PATH,
+            R3_SUCCESS_CLOSEOUT_PATH,
             SUCCESS_CLOSEOUT_PATH,
             FAILURE_CLOSEOUT_PATH,
             "lean_rgc/odlrq/envelope.py",
@@ -309,6 +353,7 @@ TRACKED_PATHS = tuple(
     sorted(
         {
             BOOTSTRAP_DOCUMENT_PATH,
+            R3_SUCCESS_CLOSEOUT_PATH,
             LEGACY_SUCCESS_CLOSEOUT_PATH,
             *BASE_BLOBS,
             *AUTHORITY_BLOBS,
@@ -364,6 +409,7 @@ def _revision(
 def _changed(row: Mapping[str, Any]) -> set[str]:
     value = row["changed_paths"]
     assert type(value) is list and all(type(path) is str for path in value)
+    assert value and len(value) == len(set(value))
     return set(value)
 
 
@@ -423,13 +469,20 @@ def _classify_build_rows(
             and changed <= STAGE_ALLOWLISTS[candidate]
             and bool(changed & STAGE_MARKERS[candidate])
         ):
+            if candidate == "E1":
+                assert changed == STAGE_ALLOWLISTS["E1"]
+                blobs = _blobs(row)
+                assert all(
+                    blobs[path] == expected
+                    for path, expected in E1_FROZEN_BLOBS.items()
+                )
             completed.append(candidate)
             counts[candidate] = 1
             next_stage_index += 1
             last_stage = candidate
             continue
 
-        assert last_stage is not None
+        assert last_stage is not None and last_stage != "E1"
         assert changed <= STAGE_ALLOWLISTS[last_stage]
         assert counts[last_stage] == 1
         counts[last_stage] = 2
@@ -512,7 +565,7 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
             "completed": [],
             "counts": {name: 0 for name in STAGE_ORDER},
             "corrections": 0,
-            "pending": "R3-bootstrap",
+            "pending": "R4-bootstrap",
             "terminal": None,
         }
 
@@ -572,7 +625,7 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
             and not remaining
             and frozenset(dirty) in BOOTSTRAP_CORRECTION_PATH_SETS
         ):
-            pending = "R3-bootstrap-correction"
+            pending = "R4-bootstrap-correction"
         else:
             assert not dirty & {GUARD_PATH, RUNNER_PATH, WORKFLOW_PATH}
             next_stage = (
@@ -585,9 +638,16 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
                 and dirty <= STAGE_ALLOWLISTS[next_stage]
                 and bool(dirty & STAGE_MARKERS[next_stage])
             ):
+                if next_stage == "E1":
+                    assert dirty == STAGE_ALLOWLISTS["E1"]
+                    assert all(
+                        worktree[path] == expected
+                        for path, expected in E1_FROZEN_BLOBS.items()
+                    )
                 pending = next_stage
             else:
                 assert corrections == 0 and completed
+                assert completed[-1] != "E1"
                 assert dirty <= STAGE_ALLOWLISTS[completed[-1]]
                 assert bool(dirty)
                 pending = completed[-1] + "-correction"
@@ -623,6 +683,92 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
     }
     assert CONTROL["schema_version"] == u24_guard.CONTROL_ATTESTATION_SCHEMA
     assert u24_guard.CONTROL_ATTESTATION_SCHEMA == "u24-control-plane-attestation-v2"
+    active_table = u24_guard._ACTIVE_CANONICAL_DENYLIST  # type: ignore[attr-defined]
+    table_type = u24_guard._CanonicalDenylistTable  # type: ignore[attr-defined]
+    assert type(active_table) is table_type
+    assert table_type.__dataclass_params__.frozen is True
+    assert u24_guard._ACTIVE_POLICY_FINGERPRINT == (  # type: ignore[attr-defined]
+        u24_guard.GuardMode.SEMANTIC,
+        REPO_ROOT,
+    )
+    assert u24_guard._ACTIVE_CANONICAL_DENYLIST_CONTENT == (  # type: ignore[attr-defined]
+        active_table.repo_root_key,
+        active_table.canonical_repo_root,
+        active_table.denylist_sha256,
+        active_table.rows,
+        active_table.emit_root,
+        active_table.closeout_artifacts,
+        active_table.scope_sha256,
+    )
+    assert active_table.repo_root_key == REPO_ROOT
+    assert active_table.canonical_repo_root == u24_guard._canonical_path(  # type: ignore[attr-defined]
+        REPO_ROOT, REPO_ROOT
+    )
+    assert active_table.denylist_sha256 == u24_guard.DENYLIST_SHA256
+    assert type(active_table.rows) is tuple
+    assert len(active_table.rows) == len(u24_guard.DENYLIST_ROWS)
+    assert all(type(row) is tuple and len(row) == 2 for row in active_table.rows)
+    assert type(active_table.closeout_artifacts) is tuple
+    assert len(active_table.closeout_artifacts) == len(
+        u24_guard.CLOSEOUT_ARTIFACTS
+    )
+    equivalent_table = u24_guard._build_canonical_denylist_table(  # type: ignore[attr-defined]
+        REPO_ROOT
+    )
+    assert equivalent_table == active_table
+    assert equivalent_table is not active_table
+    windows_absolute = __import__("re").compile(r"^[A-Za-z]:[/\\]")
+
+    def independently_canonicalize_constant(value: str) -> tuple[str, bool]:
+        prefix = value.endswith("/")
+        raw = value.rstrip("/")
+        candidate = (
+            raw
+            if windows_absolute.match(raw.replace("\\", "/"))
+            else str(REPO_ROOT / raw)
+        )
+        canonical = u24_guard._canonical_path(candidate, REPO_ROOT)  # type: ignore[attr-defined]
+        assert canonical is not None
+        return canonical, prefix
+
+    assert active_table.rows == tuple(
+        independently_canonicalize_constant(row)
+        for row in u24_guard.DENYLIST_ROWS
+    )
+    assert active_table.emit_root == independently_canonicalize_constant(
+        u24_guard.EMIT_ROOT
+    )[0]
+    assert active_table.closeout_artifacts == tuple(
+        independently_canonicalize_constant(path)[0]
+        for path in u24_guard.CLOSEOUT_ARTIFACTS
+    )
+
+    valid_table_fields = {
+        "repo_root_key": active_table.repo_root_key,
+        "canonical_repo_root": active_table.canonical_repo_root,
+        "denylist_sha256": active_table.denylist_sha256,
+        "rows": active_table.rows,
+        "emit_root": active_table.emit_root,
+        "closeout_artifacts": active_table.closeout_artifacts,
+    }
+    malformed_table_fields = (
+        {**valid_table_fields, "repo_root_key": Path("relative")},
+        {**valid_table_fields, "canonical_repo_root": ""},
+        {**valid_table_fields, "denylist_sha256": "0" * 63},
+        {**valid_table_fields, "rows": list(active_table.rows)},
+        {
+            **valid_table_fields,
+            "rows": ([active_table.rows[0][0], True], *active_table.rows[1:]),
+        },
+        {**valid_table_fields, "emit_root": ""},
+        {
+            **valid_table_fields,
+            "closeout_artifacts": list(active_table.closeout_artifacts),
+        },
+    )
+    for malformed_fields in malformed_table_fields:
+        with pytest.raises(TypeError):
+            table_type(**malformed_fields)
     assert u24_guard.CI_SETUP_ROOT == u24_guard.DENYLIST_ROWS[-1]
     setup_names = (
         "PKG-INFO",
@@ -759,12 +905,13 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
     for path, expected in AUTHORITY_BLOBS.items():
         assert blobs[path] == expected
     assert blobs[BOOTSTRAP_DOCUMENT_PATH] is None
-    assert ANCHOR_TREE == "917225444c687aeeb801da72545622b95e39cb73"
-    assert ACCEPTED_BASE_COMMIT == "de8d7e6e3f0cb41b514de25f6b3867bde49033f0"
-    assert ACCEPTED_BASE_PARENT == "3970b4f505b842a76573329aaa526a1af08da7c4"
-    assert ACCEPTED_BASE_TREE == "ceb94e0d87882249651de37cc1d94269b29787c8"
+    assert ANCHOR_TREE == "457c91cc38f91880b019173b3d5c84d3b0b0eee9"
+    assert ACCEPTED_BASE_COMMIT == "80b09bc8eaae63739d2078b3f206e2fd31386ebc"
+    assert ACCEPTED_BASE_PARENT == "4b0fa1ff2f701b1814a835d3b43f1251a92a3296"
+    assert ACCEPTED_BASE_TREE == "c78afff73f3abf631861a5c4e84c020827099572"
     assert R2_A2_COMMIT == "7c05c494ce79e84ffeb0d0c912ca3ba5f141f402"
-    assert R2_BOOTSTRAP_COMMIT == ACCEPTED_BASE_PARENT
+    assert R2_BOOTSTRAP_COMMIT == "3970b4f505b842a76573329aaa526a1af08da7c4"
+    assert R3_BOOTSTRAP_COMMIT == ACCEPTED_BASE_PARENT
     assert ORIGINAL_AUTHORITY_COMMIT == "14234e209229931c00615d4b171620ec6d1bbbf5"
     assert ORIGINAL_AUTHORITY_PARENT == "78c12549eb188610977842edbc38e2723d469ba4"
     assert blobs[ACCEPTED_FAILURE_PATH] == ACCEPTED_FAILURE_BLOB
@@ -775,14 +922,14 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
     assert CONTROL["identity_additions"] == [HISTORICAL_IDENTITY_ADDITION]
     assert UNION_ALLOWLIST == EXPECTED_UNION_ALLOWLIST
     assert FROZEN_REFS == {
-        "bootstrap": "codex/uprime-u2-u4-development-r3-topology-bootstrap",
-        "build": "codex/uprime-u2-u4-development-r3-build",
-        "closeout": "codex/uprime-u2-u4-development-r3-closeout",
-        "failure": "codex/uprime-u2-u4-development-r3-failure-closeout",
+        "bootstrap": "codex/uprime-u2-u4-development-r4-guard-bootstrap",
+        "build": "codex/uprime-u2-u4-development-r4-build",
+        "closeout": "codex/uprime-u2-u4-development-r4-closeout",
+        "failure": "codex/uprime-u2-u4-development-r4-failure-closeout",
         "accepted": "codex/uprime-odlrq-plan",
     }
-    assert STAGE_ORDER == ("E0", "E1", "E2", "ME0", "S0", "I0")
-    assert MAX_BUILD_COMMITS == 7 and MAX_CORRECTIONS == 1
+    assert STAGE_ORDER == ("E1", "E2", "ME0", "S0", "I0")
+    assert MAX_BUILD_COMMITS == 6 and MAX_CORRECTIONS == 1
     assert WALL_SECONDS == {
         "B0": 60,
         "E0": 90,
@@ -805,8 +952,8 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     assert state["corrections"] in (0, 1)
     assert state["pending"] in {
         None,
-        "R3-bootstrap",
-        "R3-bootstrap-correction",
+        "R4-bootstrap",
+        "R4-bootstrap-correction",
         *STAGE_ORDER,
         *(stage + "-correction" for stage in STAGE_ORDER),
     }
@@ -816,10 +963,10 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         assert terminal_paths in (SUCCESS_TERMINAL_PATHS, FAILURE_TERMINAL_PATHS)
         if terminal_paths == SUCCESS_TERMINAL_PATHS:
             assert state["completed"] == list(STAGE_ORDER)
-    elif state["pending"] == "R3-bootstrap":
+    elif state["pending"] == "R4-bootstrap":
         assert actual_dirty == BOOTSTRAP_PATHS
         assert state["completed"] == [] and state["corrections"] == 0
-    elif state["pending"] == "R3-bootstrap-correction":
+    elif state["pending"] == "R4-bootstrap-correction":
         assert frozenset(actual_dirty) in BOOTSTRAP_CORRECTION_PATH_SETS
         assert state["completed"] == [] and state["corrections"] == 0
     elif state["pending"] in STAGE_ORDER:
@@ -833,6 +980,23 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         assert actual_dirty <= STAGE_ALLOWLISTS[stage]
     else:
         assert not actual_dirty
+
+    head_changed = _changed(_revision_rows(CONTROL)[-1])
+    e1_worktree_must_be_exact = state["pending"] == "E1" or (
+        state["terminal"] is None
+        and state["pending"] is None
+        and bool(state["completed"])
+        and state["completed"][-1] == "E1"
+        and head_changed == STAGE_ALLOWLISTS["E1"]
+    )
+    if e1_worktree_must_be_exact:
+        for path in sorted(STAGE_ALLOWLISTS["E1"]):
+            raw = (REPO_ROOT / path).read_bytes()
+            assert len(raw) == E1_FROZEN_BYTES[path]
+            assert __import__("hashlib").sha256(raw).hexdigest().upper() == (
+                E1_FROZEN_SHA256[path]
+            )
+            assert _worktree_blobs(CONTROL)[path] == E1_FROZEN_BLOBS[path]
 
     def append_row(
         source: Mapping[str, Any],
@@ -861,6 +1025,14 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
         result["worktree_blobs"] = copy.deepcopy(tree)
         return result
 
+    def append_e1(source: Mapping[str, Any], commit: str) -> dict[str, Any]:
+        return append_row(
+            source,
+            commit,
+            set(STAGE_ALLOWLISTS["E1"]),
+            E1_FROZEN_BLOBS,
+        )
+
     actual_interval = CONTROL["first_parent_after_a0"]
     actual_rows = _revision_rows(CONTROL)
     bootstrap_source = (
@@ -878,7 +1050,7 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     for path in BOOTSTRAP_PATHS:
         pending_t0["worktree_blobs"][path] = bootstrap_source[path]
     pending_bootstrap = _validate_epoch_topology(pending_t0)
-    assert pending_bootstrap["pending"] == "R3-bootstrap"
+    assert pending_bootstrap["pending"] == "R4-bootstrap"
     assert pending_bootstrap["completed"] == []
 
     t0_commit = "10" * 20
@@ -895,30 +1067,45 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     assert committed["completed"] == []
     assert committed["pending"] is None
 
-    pending_e0 = copy.deepcopy(t0)
-    pending_e0["status_paths"] = ["lean_rgc/odlrq/quotient_generator.py"]
-    pending_e0["worktree_blobs"][
-        "lean_rgc/odlrq/quotient_generator.py"
-    ] = "19" * 20
-    e0_pending_state = _validate_epoch_topology(pending_e0)
-    assert e0_pending_state["completed"] == []
-    assert e0_pending_state["pending"] == "E0"
+    pending_e1 = copy.deepcopy(t0)
+    pending_e1["status_paths"] = sorted(STAGE_ALLOWLISTS["E1"])
+    for path, expected in E1_FROZEN_BLOBS.items():
+        pending_e1["worktree_blobs"][path] = expected
+    e1_pending_state = _validate_epoch_topology(pending_e1)
+    assert e1_pending_state["completed"] == []
+    assert e1_pending_state["pending"] == "E1"
 
-    e0_commit = "20" * 20
-    e0 = append_row(
-        t0,
-        e0_commit,
-        {"lean_rgc/odlrq/quotient_generator.py"},
-    )
-    after_e0 = _validate_epoch_topology(e0)
-    assert after_e0["completed"] == ["E0"]
-    assert after_e0["counts"]["E0"] == 1
+    e1_commit = "20" * 20
+    e1 = append_e1(t0, e1_commit)
+    after_e1 = _validate_epoch_topology(e1)
+    assert after_e1["completed"] == ["E1"]
+    assert after_e1["counts"]["E1"] == 1
 
     def rejected(candidate: Mapping[str, Any]) -> None:
         with pytest.raises((AssertionError, KeyError, TypeError, ValueError)):
             _validate_epoch_topology(candidate)
 
     attacks: list[dict[str, Any]] = []
+
+    missing_e1_path = append_row(
+        t0,
+        "21" * 20,
+        set(STAGE_ALLOWLISTS["E1"]) - {MANIFEST_PATH},
+        E1_FROZEN_BLOBS,
+    )
+    attacks.append(missing_e1_path)
+    altered_e1_blob = append_e1(t0, "22" * 20)
+    altered_e1_blob["revisions"][-1]["tree_blobs"][
+        "lean_rgc/odlrq/envelope.py"
+    ] = "00" * 20
+    altered_e1_blob["worktree_blobs"]["lean_rgc/odlrq/envelope.py"] = "00" * 20
+    attacks.append(altered_e1_blob)
+    pending_missing_e1 = copy.deepcopy(pending_e1)
+    pending_missing_e1["status_paths"].remove(MANIFEST_PATH)
+    attacks.append(pending_missing_e1)
+    pending_altered_e1 = copy.deepcopy(pending_e1)
+    pending_altered_e1["worktree_blobs"]["lean_rgc/odlrq/envelope.py"] = "00" * 20
+    attacks.append(pending_altered_e1)
 
     wrong_anchor_parent = copy.deepcopy(pending_t0)
     wrong_anchor_parent["revisions"][0]["parents"] = ["00" * 20]
@@ -967,14 +1154,14 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     ] = "00" * 20
     changed_t0_document["worktree_blobs"][BOOTSTRAP_DOCUMENT_PATH] = "00" * 20
     attacks.append(changed_t0_document)
-    changed_e0_base = copy.deepcopy(e0)
+    changed_e0_base = copy.deepcopy(e1)
     changed_e0_base["revisions"][-1]["tree_blobs"][
         "lean_rgc/odlrq/contracts.py"
     ] = "00" * 20
     changed_e0_base["worktree_blobs"]["lean_rgc/odlrq/contracts.py"] = "00" * 20
     attacks.append(changed_e0_base)
     unregistered_dirty = copy.deepcopy(t0)
-    unregistered_dirty["status_paths"] = ["unregistered-r3-path.txt"]
+    unregistered_dirty["status_paths"] = ["unregistered-r4-path.txt"]
     attacks.append(unregistered_dirty)
 
     success_before_bootstrap = append_row(
@@ -997,11 +1184,11 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     attacks.append(append_row(t0, "36" * 20, SUCCESS_TERMINAL_PATHS))
 
     failure_terminal = append_row(
-        e0, "37" * 20, FAILURE_TERMINAL_PATHS
+        e1, "37" * 20, FAILURE_TERMINAL_PATHS
     )
-    after_e0_failure = _validate_epoch_topology(failure_terminal)
-    assert after_e0_failure["completed"] == ["E0"]
-    assert after_e0_failure["terminal"]["commit"] == "37" * 20
+    after_e1_failure = _validate_epoch_topology(failure_terminal)
+    assert after_e1_failure["completed"] == ["E1"]
+    assert after_e1_failure["terminal"]["commit"] == "37" * 20
     post_terminal = append_row(
         failure_terminal,
         "38" * 20,
@@ -1009,23 +1196,39 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     )
     attacks.append(post_terminal)
 
-    skipped_e0 = append_row(
-        t0, "41" * 20, {"lean_rgc/odlrq/envelope.py"}
+    skipped_e1 = append_row(
+        t0, "41" * 20, {"lean_rgc/odlrq/selection.py"}
     )
-    attacks.append(skipped_e0)
+    attacks.append(skipped_e1)
     cross_stage_correction = append_row(
-        e0, "42" * 20, {"lean_rgc/odlrq/selection.py"}
+        e1, "42" * 20, {"lean_rgc/odlrq/maxent.py"}
     )
     attacks.append(cross_stage_correction)
     correction_one = append_row(
-        e0, "43" * 20, {"lean_rgc/odlrq/quotient_generator.py"}
+        e1, "43" * 20, {"lean_rgc/odlrq/envelope.py"}
     )
+    attacks.append(correction_one)
     correction_two = append_row(
         correction_one,
         "44" * 20,
-        {"lean_rgc/odlrq/quotient_generator.py"},
+        {"lean_rgc/odlrq/envelope.py"},
     )
     attacks.append(correction_two)
+    e2_for_correction = append_row(
+        e1, "67" * 20, STAGE_MARKERS["E2"]
+    )
+    e2_correction = append_row(
+        e2_for_correction, "68" * 20, {"lean_rgc/odlrq/envelope.py"}
+    )
+    e2_correction_state = _validate_epoch_topology(e2_correction)
+    assert e2_correction_state["completed"] == ["E1", "E2"]
+    assert e2_correction_state["counts"]["E2"] == 2
+    assert e2_correction_state["corrections"] == 1
+    attacks.append(
+        append_row(
+            e2_correction, "69" * 20, {"lean_rgc/odlrq/envelope.py"}
+        )
+    )
     t0_correction = append_row(
         t0, "45" * 20, {IDENTITY_PATH, GUARD_PATH}
     )
@@ -1052,42 +1255,35 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
             {"lean_rgc/odlrq/quotient_generator.py"},
         )
     )
-    dirty_e0_after_correction = copy.deepcopy(t0_correction)
-    dirty_e0_after_correction["status_paths"] = [
-        "lean_rgc/odlrq/quotient_generator.py"
-    ]
-    dirty_e0_after_correction["worktree_blobs"][
-        "lean_rgc/odlrq/quotient_generator.py"
-    ] = "48" * 20
-    pending_e0_after_correction = _validate_epoch_topology(
-        dirty_e0_after_correction
+    dirty_e1_after_correction = copy.deepcopy(t0_correction)
+    dirty_e1_after_correction["status_paths"] = sorted(STAGE_ALLOWLISTS["E1"])
+    for path, expected in E1_FROZEN_BLOBS.items():
+        dirty_e1_after_correction["worktree_blobs"][path] = expected
+    pending_e1_after_correction = _validate_epoch_topology(
+        dirty_e1_after_correction
     )
-    assert pending_e0_after_correction == {
+    assert pending_e1_after_correction == {
         "completed": [],
         "counts": {name: 0 for name in STAGE_ORDER},
         "corrections": 1,
-        "pending": "E0",
+        "pending": "E1",
         "terminal": None,
     }
-    t0_correction_e0 = append_row(
-        t0_correction,
-        "46" * 20,
-        {"lean_rgc/odlrq/quotient_generator.py"},
-    )
-    committed_e0_after_correction = _validate_epoch_topology(t0_correction_e0)
-    assert committed_e0_after_correction == {
-        "completed": ["E0"],
+    t0_correction_e1 = append_e1(t0_correction, "46" * 20)
+    committed_e1_after_correction = _validate_epoch_topology(t0_correction_e1)
+    assert committed_e1_after_correction == {
+        "completed": ["E1"],
         "counts": {
-            name: (1 if name == "E0" else 0) for name in STAGE_ORDER
+            name: (1 if name == "E1" else 0) for name in STAGE_ORDER
         },
         "corrections": 1,
         "pending": None,
         "terminal": None,
     }
     shared_quota_reuse = append_row(
-        t0_correction_e0,
+        t0_correction_e1,
         "47" * 20,
-        {"lean_rgc/odlrq/quotient_generator.py"},
+        {"lean_rgc/odlrq/envelope.py"},
     )
     attacks.append(shared_quota_reuse)
 
@@ -1099,7 +1295,7 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     attacks.append(merge_correction)
     attacks.append(append_row(t0, "48" * 20, {IDENTITY_PATH}))
     attacks.append(append_row(t0, "49" * 20, {RUNNER_PATH}))
-    non_immediate_correction = append_row(e0, "49" * 20, {GUARD_PATH})
+    non_immediate_correction = append_row(e1, "49" * 20, {GUARD_PATH})
     attacks.append(non_immediate_correction)
     for extra_path in (
         BOOTSTRAP_DOCUMENT_PATH,
@@ -1120,10 +1316,14 @@ def test_u24_b0_anchor_contiguous_budget_and_terminal_topology() -> None:
     for prefix_length, (index, stage) in enumerate(
         zip(range(50, 55), STAGE_ORDER[:-1]), start=1
     ):
-        through_s0 = append_row(
-            through_s0,
-            f"{index:02d}" * 20,
-            STAGE_MARKERS[stage],
+        through_s0 = (
+            append_e1(through_s0, f"{index:02d}" * 20)
+            if stage == "E1"
+            else append_row(
+                through_s0,
+                f"{index:02d}" * 20,
+                STAGE_MARKERS[stage],
+            )
         )
         prefix_failure = append_row(
             through_s0,
@@ -1251,7 +1451,14 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
         'semantic lane requires accepted branch activation',
         'accepted branch skips or mutates a semantic stage',
         'accepted branch has not completed the prior semantic stages',
-        'the shared R3 correction budget is already spent',
+        'the shared R4 correction budget is already spent',
+        'E1 is an exact import and cannot be corrected',
+        'E1 paths or Git blobs differ from the frozen import',
+        'accepted E1 history differs from the frozen import',
+        'E1 worktree bytes differ from the frozen import',
+        'E1 worktree Git blob differs from the frozen import',
+        '$ExpectedGuardCoreSha256 = "',
+        'guard canonical core differs from the runner binding',
         'B0/E0 identity module is marked, hidden, or plugin-modified',
         'E0 test module is marked, hidden, or plugin-modified',
         'E0 runtime function is not its frozen source definition',
@@ -1283,17 +1490,40 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
             isinstance(node, __import__("ast").Assign)
             and len(node.targets) == 1
             and isinstance(node.targets[0], __import__("ast").Name)
-            and node.targets[0].id in {"semantic_markers", "semantic_allowlists"}
+            and node.targets[0].id in {
+                "e1_frozen_blobs",
+                "semantic_markers",
+                "semantic_allowlists",
+            }
         ):
             control_literals[node.targets[0].id] = __import__("ast").literal_eval(
                 node.value
             )
     assert control_literals == {
+        "e1_frozen_blobs": E1_FROZEN_BLOBS,
         "semantic_markers": {
             stage: next(iter(STAGE_MARKERS[stage])) for stage in STAGE_ORDER
         },
         "semantic_allowlists": STAGE_ALLOWLISTS,
     }
+    e1_table_match = __import__("re").search(
+        r"\$E1FrozenCanonicalJson = @'\n(.*?)\n'@",
+        runner,
+        __import__("re").S,
+    )
+    assert e1_table_match is not None
+    e1_rows = json.loads(e1_table_match.group(1))
+    assert type(e1_rows) is list and len(e1_rows) == 6
+    assert {row["path"] for row in e1_rows} == STAGE_ALLOWLISTS["E1"]
+    for row in e1_rows:
+        assert set(row) == {"blob", "bytes", "path", "sha256"}
+        path = row["path"]
+        assert row == {
+            "blob": E1_FROZEN_BLOBS[path],
+            "bytes": E1_FROZEN_BYTES[path],
+            "path": path,
+            "sha256": E1_FROZEN_SHA256[path],
+        }
     assert control.count('if lane in semantic_markers:') == 1
     assert bootstrap.count('"pytestmark" in identity_dict') == 1
     assert bootstrap.count('"pytestmark" in quotient_dict') == 1
@@ -1319,6 +1549,15 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     ):
         assert bootstrap.count(literal) >= 1
     assert bootstrap.index(e0_branch) < bootstrap.index("pytest.main")
+    assert runner.count('if code == 0 and lane == "E1" and audit.passed != 48:') == 1
+    assert runner.count(
+        'E1 = @("tests/test_odlrq_quotient_generator.py", '
+        '"tests/test_odlrq_envelope.py", '
+        '"tests/test_uprime_u2_u4_development.py")'
+    ) == 1
+    assert runner.count(
+        'E1 = @("lean_rgc/odlrq/envelope.py", "class FiberEnvelope")'
+    ) == 1
     assert 'test_uprime_u2_u4_development.py")' not in control
     assert '-X "pycache_prefix=$controlPycachePrefix" $controlPath' in runner
     assert '@("-I", "-S", "-X", "pycache_prefix=$childPycachePrefix", $bootstrapPath)' in runner
@@ -1331,13 +1570,9 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     assert runner.count(FAILURE_CLOSEOUT_PATH) == 2
     assert runner.count(R2_A2_DOCUMENT_PATH) == 1
     assert runner.count(R2_BOOTSTRAP_DOCUMENT_PATH) == 1
+    assert runner.count(R3_BOOTSTRAP_DOCUMENT_PATH) == 1
+    assert runner.count(R3_SUCCESS_CLOSEOUT_PATH) == 2
     assert runner.count(R1_FAILURE_PATH) == 1
-
-    def replace_exact(
-        value: str, old: str, new: str, expected_count: int
-    ) -> str:
-        assert value.count(old) == expected_count
-        return value.replace(old, new)
 
     def git_blob_sha1(raw: bytes) -> str:
         digest = __import__("hashlib").sha1()
@@ -1349,38 +1584,57 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
     assert b"\r" not in guard_raw
     guard_source = guard_raw.decode("utf-8")
     anchor_identity_core_sha256 = (
-        "D9C078514414A2AEB0EC620BF930AFA0DC3B96A754976B8FC5F1C0B567D896CB"
+        "FA5B3088A205529D3BCFC29C41CC0F35F47538DD41564E310B600290532D5921"
     )
     anchor_runner_sha256 = (
-        "BCE39615C5392CEC48A3018AAC36C96AA249B515D9822C444438C1B060890B84"
+        "AD55DA26A8F8B776D3ACE3CC49C98330DBC040AE954B9820F2CE19B46DA33513"
     )
     assert u24_guard.FROZEN_IDENTITY_CORE_SHA256 != anchor_identity_core_sha256
     assert u24_guard.FROZEN_RUNNER_SHA256 != anchor_runner_sha256
-    reconstructed_guard = replace_exact(
+    binding_pattern = r'(?m)^FROZEN_RUNNER_SHA256 = "[0-9A-F]{64}"$'
+    binding_matches = list(__import__("re").finditer(binding_pattern, guard_source))
+    assert len(binding_matches) == 1
+    guard_core_source = __import__("re").sub(
+        binding_pattern,
+        'FROZEN_RUNNER_SHA256 = "' + "0" * 64 + '"',
         guard_source,
-        f'FROZEN_IDENTITY_CORE_SHA256 = "{u24_guard.FROZEN_IDENTITY_CORE_SHA256}"',
-        f'FROZEN_IDENTITY_CORE_SHA256 = "{anchor_identity_core_sha256}"',
-        1,
     )
-    reconstructed_guard = replace_exact(
-        reconstructed_guard,
-        f'FROZEN_RUNNER_SHA256 = "{u24_guard.FROZEN_RUNNER_SHA256}"',
-        f'FROZEN_RUNNER_SHA256 = "{anchor_runner_sha256}"',
-        1,
+    guard_core_sha256 = __import__("hashlib").sha256(
+        guard_core_source.encode("utf-8")
+    ).hexdigest().upper()
+    expected_core_match = __import__("re").search(
+        r'^\$ExpectedGuardCoreSha256 = "([0-9A-F]{64})"$',
+        runner,
+        __import__("re").M,
     )
-    reconstructed_guard_bytes = reconstructed_guard.encode("utf-8")
+    assert expected_core_match is not None
+    assert expected_core_match.group(1) == guard_core_sha256
+    binding_only_change = __import__("re").sub(
+        binding_pattern,
+        'FROZEN_RUNNER_SHA256 = "' + "1" * 64 + '"',
+        guard_source,
+    )
+    binding_only_core = __import__("re").sub(
+        binding_pattern,
+        'FROZEN_RUNNER_SHA256 = "' + "0" * 64 + '"',
+        binding_only_change,
+    )
     assert __import__("hashlib").sha256(
-        reconstructed_guard_bytes
-    ).hexdigest().upper() == (
-        "EA7AC3B96019DBD4AB23515CDB1E2ED19CAA1AE632402F8BACE915F96621A4EC"
-    )
-    assert git_blob_sha1(reconstructed_guard_bytes) == ANCHOR_GUARD_BLOB
+        binding_only_core.encode("utf-8")
+    ).hexdigest().upper() == guard_core_sha256
+    assert __import__("hashlib").sha256(
+        (guard_core_source + "\n# mutation").encode("utf-8")
+    ).hexdigest().upper() != guard_core_sha256
+    assert git_blob_sha1(guard_raw) != ANCHOR_GUARD_BLOB
 
     runner_raw = (REPO_ROOT / RUNNER_PATH).read_bytes().replace(b"\r\n", b"\n")
     assert b"\r" not in runner_raw
     runner_sha256 = __import__("hashlib").sha256(runner_raw).hexdigest().upper()
     assert runner_sha256 == u24_guard.FROZEN_RUNNER_SHA256
     assert runner_sha256 != anchor_runner_sha256
+    assert __import__("hashlib").sha256(
+        runner_raw + b"\n# mutation"
+    ).hexdigest().upper() != u24_guard.FROZEN_RUNNER_SHA256
     assert git_blob_sha1(runner_raw) != ANCHOR_RUNNER_BLOB
 
     identity_tree = __import__("ast").parse(
@@ -1423,6 +1677,449 @@ def test_u24_denylist_static_scan_and_exact_runner_copy() -> None:
 def test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import() -> None:
     policy = u24_guard.GuardPolicy(u24_guard.GuardMode.SEMANTIC, REPO_ROOT)
     u24_guard.require_active_guard(policy)
+    table = u24_guard._ACTIVE_CANONICAL_DENYLIST  # type: ignore[attr-defined]
+    assert table is not None
+    emit = u24_guard.GuardPolicy(u24_guard.GuardMode.EMIT, REPO_ROOT)
+    closeout = u24_guard.GuardPolicy(u24_guard.GuardMode.CLOSEOUT, REPO_ROOT)
+    assert u24_guard._active_canonical_denylist(policy) is table  # type: ignore[attr-defined]
+    assert u24_guard._active_canonical_denylist(emit) is table  # type: ignore[attr-defined]
+    assert u24_guard._active_canonical_denylist(closeout) is table  # type: ignore[attr-defined]
+    different_root = u24_guard.GuardPolicy(
+        u24_guard.GuardMode.SEMANTIC, REPO_ROOT.parent
+    )
+    with pytest.raises(
+        u24_guard.U24ResourceOrScopeBlocked,
+        match=u24_guard.DENIAL_DISPOSITION,
+    ):
+        u24_guard._active_canonical_denylist(different_root)  # type: ignore[attr-defined]
+
+    canonical_calls: list[object] = []
+    original_canonical_path = u24_guard._canonical_path  # type: ignore[attr-defined]
+    monkeypatch = pytest.MonkeyPatch()
+
+    def counted_canonical_path(raw: object, root: Path) -> str | None:
+        canonical_calls.append(raw)
+        return original_canonical_path(raw, root)
+
+    monkeypatch.setattr(u24_guard, "_canonical_path", counted_canonical_path)
+    monkeypatch.setattr(
+        u24_guard,
+        "_canonical_row",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("installed denylist rows were recanonicalized")
+        ),
+    )
+    try:
+        candidate = REPO_ROOT / "pyproject.toml"
+        u24_guard._check_path(policy, candidate, read=True)  # type: ignore[attr-defined]
+        u24_guard._check_path(policy, candidate, read=True)  # type: ignore[attr-defined]
+        assert canonical_calls == [str(candidate), str(candidate)]
+    finally:
+        monkeypatch.undo()
+
+    class MutablePathLike:
+        def __init__(self, values: tuple[str, str]) -> None:
+            self.values = values
+            self.calls = 0
+
+        def __fspath__(self) -> str:
+            value = self.values[min(self.calls, len(self.values) - 1)]
+            self.calls += 1
+            return value
+
+    mutable = MutablePathLike(
+        (
+            str(REPO_ROOT / "pyproject.toml"),
+            str(REPO_ROOT / u24_guard.DENYLIST_ROWS[0] / "retargeted.json"),
+        )
+    )
+    u24_guard._check_path(policy, mutable, read=True)  # type: ignore[attr-defined]
+    with pytest.raises(
+        u24_guard.U24ResourceOrScopeBlocked,
+        match=u24_guard.DENIAL_DISPOSITION,
+    ):
+        u24_guard._check_path(policy, mutable, read=True)  # type: ignore[attr-defined]
+    assert mutable.calls == 2
+
+    class WrapperFlipPathLike:
+        def __init__(self, values: tuple[str, str]) -> None:
+            self.values = values
+            self.calls = 0
+
+        def __fspath__(self) -> str:
+            value = self.values[min(self.calls, len(self.values) - 1)]
+            self.calls += 1
+            return value
+
+    safe_a = REPO_ROOT / "pyproject.toml"
+    safe_b = REPO_ROOT / "README.md"
+    expected_safe_a = os.stat(safe_a)
+    expected_safe_b = os.stat(safe_b)
+    assert expected_safe_a.st_size != expected_safe_b.st_size
+    wrapper_flip = WrapperFlipPathLike((str(safe_a), str(safe_b)))
+    observed_safe_a = os.stat(wrapper_flip)
+    assert wrapper_flip.calls == 1
+    assert observed_safe_a.st_size == expected_safe_a.st_size
+
+    original_rows = table.rows
+
+    class RowMutatingPathLike:
+        def __fspath__(self) -> str:
+            object.__setattr__(table, "rows", ())
+            return str(
+                REPO_ROOT
+                / u24_guard.DENYLIST_ROWS[0]
+                / "row-mutation-attack.json"
+            )
+
+    try:
+        with pytest.raises(
+            u24_guard.U24ResourceOrScopeBlocked,
+            match=u24_guard.DENIAL_DISPOSITION,
+        ):
+            u24_guard._check_path(  # type: ignore[attr-defined]
+                policy, RowMutatingPathLike(), read=True
+            )
+    finally:
+        object.__setattr__(table, "rows", original_rows)
+    u24_guard.require_active_guard(policy)
+
+    original_mode = policy.mode
+
+    class ModeMutatingPathLike:
+        def __fspath__(self) -> str:
+            object.__setattr__(policy, "mode", u24_guard.GuardMode.EMIT)
+            return str(REPO_ROOT / u24_guard.CLOSEOUT_ARTIFACTS[0])
+
+    try:
+        with pytest.raises(
+            u24_guard.U24ResourceOrScopeBlocked,
+            match=u24_guard.DENIAL_DISPOSITION,
+        ):
+            u24_guard._check_path(  # type: ignore[attr-defined]
+                policy, ModeMutatingPathLike(), write=True
+            )
+    finally:
+        object.__setattr__(policy, "mode", original_mode)
+    u24_guard.require_active_guard(policy)
+
+    safe_canonical = original_canonical_path(
+        REPO_ROOT / "pyproject.toml", REPO_ROOT
+    )
+    denied_canonical = table.rows[0][0].rstrip("/") + "/retargeted.json"
+    retarget_calls = 0
+
+    def retargeted_canonical_path(_raw: object, _root: Path) -> str:
+        nonlocal retarget_calls
+        retarget_calls += 1
+        return safe_canonical if retarget_calls == 1 else denied_canonical
+
+    retarget = pytest.MonkeyPatch()
+    retarget.setattr(u24_guard, "_canonical_path", retargeted_canonical_path)
+    try:
+        operand = "same-lexical-operand"
+        u24_guard._check_path(policy, operand, read=True)  # type: ignore[attr-defined]
+        with pytest.raises(
+            u24_guard.U24ResourceOrScopeBlocked,
+            match=u24_guard.DENIAL_DISPOSITION,
+        ):
+            u24_guard._check_path(policy, operand, read=True)  # type: ignore[attr-defined]
+        assert retarget_calls == 2
+    finally:
+        retarget.undo()
+
+    relative_base = REPO_ROOT
+
+    def based_canonical_path(raw: object, _root: Path) -> str | None:
+        return original_canonical_path(relative_base / os.fspath(raw), REPO_ROOT)
+
+    cwd_attack = pytest.MonkeyPatch()
+    cwd_attack.setattr(u24_guard, "_canonical_path", based_canonical_path)
+    try:
+        spelling = "same-relative-name"
+        u24_guard._check_path(policy, spelling, read=True)  # type: ignore[attr-defined]
+        relative_base = REPO_ROOT / u24_guard.DENYLIST_ROWS[0]
+        with pytest.raises(
+            u24_guard.U24ResourceOrScopeBlocked,
+            match=u24_guard.DENIAL_DISPOSITION,
+        ):
+            u24_guard._check_path(policy, spelling, read=True)  # type: ignore[attr-defined]
+    finally:
+        cwd_attack.undo()
+
+    artifact = REPO_ROOT / u24_guard.CLOSEOUT_ARTIFACTS[0]
+    emit_root = REPO_ROOT / u24_guard.EMIT_ROOT
+    artifact_sibling = emit_root / "unregistered-eighth.json"
+    prefix_confusable = Path(str(artifact) + ".extra")
+    with pytest.raises(
+        u24_guard.U24ResourceOrScopeBlocked,
+        match=u24_guard.DENIAL_DISPOSITION,
+    ):
+        u24_guard._check_path(policy, artifact, read=True)  # type: ignore[attr-defined]
+    u24_guard._check_path(emit, artifact, write=True)  # type: ignore[attr-defined]
+    u24_guard._check_path(closeout, artifact, read=True)  # type: ignore[attr-defined]
+    for attack_policy, flags in (
+        (emit, {"read": True}),
+        (emit, {"read": True, "write": True}),
+        (emit, {"write": True, "enumerate_directory": True}),
+        (emit, {"read": True, "enumerate_directory": True}),
+        (closeout, {"write": True}),
+        (closeout, {"read": True, "write": True}),
+        (closeout, {"read": True, "enumerate_directory": True}),
+    ):
+        with pytest.raises(
+            u24_guard.U24ResourceOrScopeBlocked,
+            match=u24_guard.DENIAL_DISPOSITION,
+        ):
+            u24_guard._check_path(attack_policy, artifact, **flags)  # type: ignore[attr-defined]
+    for attack_policy in (emit, closeout):
+        for raw, flags in (
+            (emit_root, {"read": True}),
+            (artifact_sibling, {"write": True}),
+            (prefix_confusable, {"write": True}),
+        ):
+            with pytest.raises(
+                u24_guard.U24ResourceOrScopeBlocked,
+                match=u24_guard.DENIAL_DISPOSITION,
+            ):
+                u24_guard._check_path(attack_policy, raw, **flags)  # type: ignore[attr-defined]
+
+    table_shape_before = (
+        table.rows,
+        table.closeout_artifacts,
+        tuple(table.__dict__),
+        tuple(table.__dict__.values()),
+    )
+    for index in range(128):
+        u24_guard._check_path(  # type: ignore[attr-defined]
+            policy, REPO_ROOT / f"safe-caller-path-{index}", read=True
+        )
+    for descriptor in (0, 1, 2, 2**31 - 1):
+        u24_guard._check_path(policy, descriptor, read=True)  # type: ignore[attr-defined]
+    assert (
+        table.rows,
+        table.closeout_artifacts,
+        tuple(table.__dict__),
+        tuple(table.__dict__.values()),
+    ) == table_shape_before
+
+    assert Path.cwd().resolve() == REPO_ROOT
+    canonical_root = table.canonical_repo_root.rstrip("/")
+    for denied, prefix in table.rows:
+        aliases = {denied, denied.swapcase()}
+        if denied.startswith(canonical_root + "/"):
+            aliases.add(os.path.relpath(denied, canonical_root))
+        if os.name == "nt":
+            aliases.add(denied.replace("/", "\\"))
+        for alias in aliases:
+            with pytest.raises(
+                u24_guard.U24ResourceOrScopeBlocked,
+                match=u24_guard.DENIAL_DISPOSITION,
+            ):
+                u24_guard._check_path(policy, alias, read=True)  # type: ignore[attr-defined]
+        descendant = denied.rstrip("/") + "/descendant"
+        descendant_denied = any(
+            row_prefix
+            and (
+                descendant == row_path
+                or descendant.startswith(row_path.rstrip("/") + "/")
+            )
+            for row_path, row_prefix in table.rows
+        )
+        if prefix or descendant_denied:
+            with pytest.raises(
+                u24_guard.U24ResourceOrScopeBlocked,
+                match=u24_guard.DENIAL_DISPOSITION,
+            ):
+                u24_guard._check_path(  # type: ignore[attr-defined]
+                    policy, descendant, read=True
+                )
+        else:
+            u24_guard._check_path(policy, descendant, read=True)  # type: ignore[attr-defined]
+
+    nested = u24_guard.install_guard(policy)
+    assert nested._owns_installation is False
+    assert u24_guard._ACTIVE_CANONICAL_DENYLIST is table  # type: ignore[attr-defined]
+    nested.close()
+    assert u24_guard._ACTIVE_CANONICAL_DENYLIST is table  # type: ignore[attr-defined]
+    with pytest.raises(
+        u24_guard.U24ResourceOrScopeBlocked,
+        match=u24_guard.DENIAL_DISPOSITION,
+    ):
+        u24_guard.install_guard(emit)
+
+    table_type = type(table)
+    first_path, first_prefix = table.rows[0]
+    corrupted_tables = (
+        table_type(
+            repo_root_key=table.repo_root_key,
+            canonical_repo_root=table.canonical_repo_root,
+            denylist_sha256="0" * 64,
+            rows=table.rows,
+            emit_root=table.emit_root,
+            closeout_artifacts=table.closeout_artifacts,
+        ),
+        table_type(
+            repo_root_key=table.repo_root_key,
+            canonical_repo_root=table.canonical_repo_root,
+            denylist_sha256=table.denylist_sha256,
+            rows=tuple(reversed(table.rows)),
+            emit_root=table.emit_root,
+            closeout_artifacts=table.closeout_artifacts,
+        ),
+        table_type(
+            repo_root_key=table.repo_root_key,
+            canonical_repo_root=table.canonical_repo_root,
+            denylist_sha256=table.denylist_sha256,
+            rows=((first_path, not first_prefix), *table.rows[1:]),
+            emit_root=table.emit_root,
+            closeout_artifacts=table.closeout_artifacts,
+        ),
+        table_type(
+            repo_root_key=table.repo_root_key,
+            canonical_repo_root=table.canonical_repo_root + "/wrong-root",
+            denylist_sha256=table.denylist_sha256,
+            rows=table.rows,
+            emit_root=table.emit_root,
+            closeout_artifacts=table.closeout_artifacts,
+        ),
+        table_type(
+            repo_root_key=table.repo_root_key,
+            canonical_repo_root=table.canonical_repo_root,
+            denylist_sha256=table.denylist_sha256,
+            rows=table.rows,
+            emit_root=table.emit_root + "/wrong-root",
+            closeout_artifacts=table.closeout_artifacts,
+        ),
+        table_type(
+            repo_root_key=table.repo_root_key,
+            canonical_repo_root=table.canonical_repo_root,
+            denylist_sha256=table.denylist_sha256,
+            rows=table.rows,
+            emit_root=table.emit_root,
+            closeout_artifacts=tuple(reversed(table.closeout_artifacts)),
+        ),
+    )
+    for corrupted_table in corrupted_tables:
+        u24_guard._ACTIVE_CANONICAL_DENYLIST = corrupted_table  # type: ignore[attr-defined]
+        try:
+            with pytest.raises(
+                u24_guard.U24ResourceOrScopeBlocked,
+                match=u24_guard.DENIAL_DISPOSITION,
+            ):
+                u24_guard._active_canonical_denylist(policy)  # type: ignore[attr-defined]
+        finally:
+            u24_guard._ACTIVE_CANONICAL_DENYLIST = table  # type: ignore[attr-defined]
+
+    def fresh_equivalent_table() -> object:
+        return table_type(
+            repo_root_key=table.repo_root_key,
+            canonical_repo_root=table.canonical_repo_root,
+            denylist_sha256=table.denylist_sha256,
+            rows=table.rows,
+            emit_root=table.emit_root,
+            closeout_artifacts=table.closeout_artifacts,
+        )
+
+    rollback = pytest.MonkeyPatch()
+    rollback.setattr(u24_guard, "_ACTIVE_POLICY", None)
+    rollback.setattr(u24_guard, "_ACTIVE_POLICY_FINGERPRINT", None)
+    rollback.setattr(u24_guard, "_ACTIVE_PATCHES", None)
+    rollback.setattr(u24_guard, "_ACTIVE_CANONICAL_DENYLIST", None)
+    rollback.setattr(u24_guard, "_ACTIVE_CANONICAL_DENYLIST_CONTENT", None)
+    rollback.setattr(
+        u24_guard, "_ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256", None
+    )
+    rollback.setattr(u24_guard, "_ACTIVE_CANONICAL_DENYLIST_TOKEN", None)
+    rollback.setattr(
+        u24_guard, "_build_canonical_denylist_table", lambda _root: fresh_equivalent_table()
+    )
+    rollback.setattr(
+        u24_guard,
+        "_install_path_wrappers",
+        lambda _policy, _patches: (_ for _ in ()).throw(
+            RuntimeError("synthetic install failure")
+        ),
+    )
+    try:
+        with pytest.raises(RuntimeError, match="synthetic install failure"):
+            u24_guard.install_guard(policy)
+        assert u24_guard._ACTIVE_POLICY is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_POLICY_FINGERPRINT is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_PATCHES is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST_CONTENT is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256 is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST_TOKEN is None  # type: ignore[attr-defined]
+    finally:
+        rollback.undo()
+    assert u24_guard._ACTIVE_CANONICAL_DENYLIST is table  # type: ignore[attr-defined]
+
+    reinstall = pytest.MonkeyPatch()
+    reinstall.setattr(u24_guard, "_ACTIVE_POLICY", None)
+    reinstall.setattr(u24_guard, "_ACTIVE_POLICY_FINGERPRINT", None)
+    reinstall.setattr(u24_guard, "_ACTIVE_PATCHES", None)
+    reinstall.setattr(u24_guard, "_ACTIVE_CANONICAL_DENYLIST", None)
+    reinstall.setattr(u24_guard, "_ACTIVE_CANONICAL_DENYLIST_CONTENT", None)
+    reinstall.setattr(
+        u24_guard, "_ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256", None
+    )
+    reinstall.setattr(u24_guard, "_ACTIVE_CANONICAL_DENYLIST_TOKEN", None)
+    reinstall.setattr(
+        u24_guard, "_build_canonical_denylist_table", lambda _root: fresh_equivalent_table()
+    )
+    reinstall.setattr(u24_guard, "_install_path_wrappers", lambda *_args: None)
+    reinstall.setattr(u24_guard, "_install_capability_wrappers", lambda *_args: None)
+    try:
+        damaged_handle = u24_guard.install_guard(policy)
+        u24_guard._ACTIVE_CANONICAL_DENYLIST = None  # type: ignore[attr-defined]
+        with pytest.raises(RuntimeError, match="guard installation identity changed"):
+            damaged_handle.close()
+        assert u24_guard._ACTIVE_POLICY is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_POLICY_FINGERPRINT is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_PATCHES is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST_CONTENT is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256 is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST_TOKEN is None  # type: ignore[attr-defined]
+        retry_handle = u24_guard.install_guard(policy)
+        retry_table = u24_guard._ACTIVE_CANONICAL_DENYLIST  # type: ignore[attr-defined]
+        assert retry_table == table and retry_table is not table
+        retry_handle.close()
+        assert u24_guard._ACTIVE_POLICY is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_POLICY_FINGERPRINT is None  # type: ignore[attr-defined]
+        first_handle = u24_guard.install_guard(policy)
+        first_table = u24_guard._ACTIVE_CANONICAL_DENYLIST  # type: ignore[attr-defined]
+        first_handle.close()
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST is None  # type: ignore[attr-defined]
+        second_handle = u24_guard.install_guard(policy)
+        second_table = u24_guard._ACTIVE_CANONICAL_DENYLIST  # type: ignore[attr-defined]
+        assert second_table == first_table == table
+        assert second_table is not first_table
+        first_handle.close()
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST is second_table  # type: ignore[attr-defined]
+        u24_guard._ACTIVE_CANONICAL_DENYLIST = first_table  # type: ignore[attr-defined]
+        try:
+            with pytest.raises(
+                u24_guard.U24ResourceOrScopeBlocked,
+                match=u24_guard.DENIAL_DISPOSITION,
+            ):
+                u24_guard._active_canonical_denylist(policy)  # type: ignore[attr-defined]
+        finally:
+            u24_guard._ACTIVE_CANONICAL_DENYLIST = second_table  # type: ignore[attr-defined]
+        second_handle.close()
+        assert u24_guard._ACTIVE_POLICY is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_POLICY_FINGERPRINT is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_PATCHES is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST_CONTENT is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256 is None  # type: ignore[attr-defined]
+        assert u24_guard._ACTIVE_CANONICAL_DENYLIST_TOKEN is None  # type: ignore[attr-defined]
+    finally:
+        reinstall.undo()
+    u24_guard.require_active_guard(policy)
+    assert u24_guard._ACTIVE_CANONICAL_DENYLIST is table  # type: ignore[attr-defined]
+
     blocked_path = REPO_ROOT / u24_guard.DENYLIST_ROWS[0] / "never-read.json"
     with pytest.raises(u24_guard.U24ResourceOrScopeBlocked, match=u24_guard.DENIAL_DISPOSITION):
         open(blocked_path, "rb")
@@ -1464,7 +2161,6 @@ def test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import() -> 
         with pytest.raises(u24_guard.U24ResourceOrScopeBlocked, match=u24_guard.DENIAL_DISPOSITION):
             sys.modules["nt"].open(blocked_path, os.O_RDONLY)
 
-    emit = u24_guard.GuardPolicy(u24_guard.GuardMode.EMIT, REPO_ROOT)
     u24_guard._check_path(  # type: ignore[attr-defined]
         emit, REPO_ROOT / u24_guard.EMIT_ROOT, write=True
     )

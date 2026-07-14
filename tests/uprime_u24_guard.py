@@ -19,7 +19,7 @@ import stat
 import subprocess
 import sys
 import zlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from types import ModuleType
 from typing import Any, Callable, Iterable, Mapping, Sequence
@@ -36,8 +36,8 @@ DENIAL_DISPOSITION = "U24_RESOURCE_OR_SCOPE_BLOCKED"
 CONTROL_ATTESTATION_SCHEMA = "u24-control-plane-attestation-v2"
 CONTROL_ATTESTATION_ENV = "UPRIME_U24_CONTROL_ATTESTATION_B64"
 PREINSTALLED_GUARD_ENV = "UPRIME_U24_GUARD_PREINSTALLED"
-FROZEN_IDENTITY_CORE_SHA256 = "FA5B3088A205529D3BCFC29C41CC0F35F47538DD41564E310B600290532D5921"
-FROZEN_RUNNER_SHA256 = "AD55DA26A8F8B776D3ACE3CC49C98330DBC040AE954B9820F2CE19B46DA33513"
+FROZEN_IDENTITY_CORE_SHA256 = "63BA64835344CA03DBBA7D50B817C5E4BE2E4159655B9CB325D2D1C5D7A2A97E"
+FROZEN_RUNNER_SHA256 = "69D3F5E53FDC4ACEBC61D79AC53D4B318C35C9C2593A5B5C860205F7694F5C8E"
 FROZEN_WORKFLOW_SHA256 = "7879CC590945366A356DDEAE2B38480E5434048BFBCEC7E37848D443EA528D3B"
 
 # This is the only Python copy of the frozen forbidden rows.  The registered
@@ -234,6 +234,175 @@ def _is_at_or_below(path: str, root: str) -> bool:
     return path == root or path.startswith(root.rstrip("/") + "/")
 
 
+@dataclass(frozen=True)
+class _CanonicalDenylistTable:
+    repo_root_key: Path
+    canonical_repo_root: str
+    denylist_sha256: str
+    rows: tuple[tuple[str, bool], ...]
+    emit_root: str
+    closeout_artifacts: tuple[str, ...]
+    scope_sha256: str = field(init=False)
+    _installation_token: object = field(
+        default_factory=object, init=False, compare=False, repr=False
+    )
+
+    def __post_init__(self) -> None:
+        if (
+            type(self.repo_root_key) is not type(Path())
+            or not self.repo_root_key.is_absolute()
+        ):
+            raise TypeError("canonical denylist root key must be an absolute strict Path")
+        if type(self.canonical_repo_root) is not str or not self.canonical_repo_root:
+            raise TypeError("canonical denylist root must be a nonempty string")
+        if type(self.denylist_sha256) is not str or not re.fullmatch(
+            r"[0-9A-F]{64}", self.denylist_sha256
+        ):
+            raise TypeError("canonical denylist digest must be uppercase SHA-256")
+        if type(self.rows) is not tuple or len(self.rows) != len(DENYLIST_ROWS):
+            raise TypeError("canonical denylist rows must be a complete tuple")
+        if any(
+            type(row) is not tuple
+            or len(row) != 2
+            or type(row[0]) is not str
+            or not row[0]
+            or type(row[1]) is not bool
+            for row in self.rows
+        ):
+            raise TypeError("canonical denylist row shape is invalid")
+        if type(self.emit_root) is not str or not self.emit_root:
+            raise TypeError("canonical EMIT root must be a nonempty string")
+        if (
+            type(self.closeout_artifacts) is not tuple
+            or len(self.closeout_artifacts) != len(CLOSEOUT_ARTIFACTS)
+            or any(
+                type(path) is not str or not path
+                for path in self.closeout_artifacts
+            )
+        ):
+            raise TypeError("canonical CLOSEOUT artifacts must be a complete tuple")
+        scope = {
+            "canonical_repo_root": self.canonical_repo_root,
+            "closeout_artifacts": list(self.closeout_artifacts),
+            "denylist_sha256": self.denylist_sha256,
+            "emit_root": self.emit_root,
+            "repo_root_key": str(self.repo_root_key),
+            "rows": [[path, prefix] for path, prefix in self.rows],
+            "schema_version": "u24-canonical-denylist-scope-v1",
+        }
+        scope_bytes = json.dumps(
+            scope, ensure_ascii=True, sort_keys=True, separators=(",", ":")
+        ).encode("ascii")
+        object.__setattr__(
+            self,
+            "scope_sha256",
+            hashlib.sha256(scope_bytes).hexdigest().upper(),
+        )
+
+
+def _build_canonical_denylist_table(repo_root: Path) -> _CanonicalDenylistTable:
+    """Build one installation-local table before any denial patch is active."""
+
+    canonical_bytes = json.dumps(
+        DENYLIST_ROWS, ensure_ascii=True, separators=(",", ":")
+    ).encode("ascii")
+    if canonical_bytes != DENYLIST_CANONICAL_BYTES:
+        _blocked("denylist rows no longer match the frozen canonical bytes")
+    denylist_sha256 = hashlib.sha256(canonical_bytes).hexdigest().upper()
+    if denylist_sha256 != DENYLIST_SHA256:
+        _blocked("denylist rows no longer match the frozen digest")
+
+    canonical_repo_root = _canonical_path(repo_root, repo_root)
+    if canonical_repo_root is None:
+        _blocked("repository root cannot be canonicalized")
+    rows = tuple(_canonical_row(row, repo_root) for row in DENYLIST_ROWS)
+    emit_root, _emit_prefix = _canonical_row(EMIT_ROOT, repo_root)
+    closeout_artifacts = tuple(
+        _canonical_row(item, repo_root)[0] for item in CLOSEOUT_ARTIFACTS
+    )
+    if (
+        any(not denied for denied, _prefix in rows)
+        or not emit_root
+        or any(not path for path in closeout_artifacts)
+    ):
+        _blocked("guard paths cannot be canonicalized")
+
+    return _CanonicalDenylistTable(
+        repo_root_key=Path(repo_root),
+        canonical_repo_root=canonical_repo_root,
+        denylist_sha256=denylist_sha256,
+        rows=rows,
+        emit_root=emit_root,
+        closeout_artifacts=closeout_artifacts,
+    )
+
+
+def _canonical_denylist_content(table: _CanonicalDenylistTable) -> tuple[Any, ...]:
+    return (
+        table.repo_root_key,
+        table.canonical_repo_root,
+        table.denylist_sha256,
+        table.rows,
+        table.emit_root,
+        table.closeout_artifacts,
+        table.scope_sha256,
+    )
+
+
+def _active_canonical_denylist(policy: GuardPolicy) -> _CanonicalDenylistTable:
+    fingerprint = _ACTIVE_POLICY_FINGERPRINT
+    active_policy = _ACTIVE_POLICY
+    if (
+        fingerprint is None
+        or active_policy is None
+        or type(active_policy) is not GuardPolicy
+        or active_policy.mode is not fingerprint[0]
+        or active_policy.repo_root != fingerprint[1]
+    ):
+        _blocked("active guard policy differs from its installation fingerprint")
+    if type(policy) is not GuardPolicy or type(policy.mode) is not GuardMode:
+        _blocked("path classifier policy is not strict")
+    table = _ACTIVE_CANONICAL_DENYLIST
+    if table is None:
+        _blocked("canonical denylist table is not active")
+    if (
+        _ACTIVE_CANONICAL_DENYLIST_TOKEN is None
+        or table._installation_token is not _ACTIVE_CANONICAL_DENYLIST_TOKEN
+        or _ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256 is None
+        or table.scope_sha256 != _ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256
+    ):
+        _blocked("canonical denylist installation binding differs")
+    content = _ACTIVE_CANONICAL_DENYLIST_CONTENT
+    if (
+        content is None
+        or table.repo_root_key != content[0]
+        or table.canonical_repo_root != content[1]
+        or table.denylist_sha256 != content[2]
+        or table.rows is not content[3]
+        or table.emit_root != content[4]
+        or table.closeout_artifacts is not content[5]
+        or table.scope_sha256 != content[6]
+    ):
+        _blocked("canonical denylist content differs from its installation snapshot")
+    if policy.repo_root != table.repo_root_key:
+        _blocked("guard policy root differs from the active root key")
+    if table.denylist_sha256 != DENYLIST_SHA256:
+        _blocked("active canonical denylist digest differs")
+    return table
+
+
+def _materialize_path_operand(raw: Any) -> str | bytes | int:
+    if type(raw) is int:
+        return raw
+    try:
+        value = os.fspath(raw)
+    except TypeError:
+        _blocked("path operand is not a strict filesystem value")
+    if type(value) not in (str, bytes):
+        _blocked("path operand is not a strict filesystem string")
+    return value
+
+
 def _check_path(
     policy: GuardPolicy,
     raw: Any,
@@ -241,40 +410,52 @@ def _check_path(
     read: bool = False,
     write: bool = False,
     enumerate_directory: bool = False,
-) -> None:
-    path = _canonical_path(raw, policy.repo_root)
+) -> str | bytes | int:
+    table = _active_canonical_denylist(policy)
+    mode = policy.mode
+    repo_root = policy.repo_root
+    rows = table.rows
+    emit_root = table.emit_root
+    closeout_artifacts = table.closeout_artifacts
+    stable = _materialize_path_operand(raw)
+    path = _canonical_path(stable, repo_root)
+    if (
+        _active_canonical_denylist(policy) is not table
+        or policy.mode is not mode
+        or policy.repo_root != repo_root
+        or table.rows is not rows
+        or table.emit_root != emit_root
+        or table.closeout_artifacts is not closeout_artifacts
+    ):
+        _blocked("guard authority changed during path materialization")
     if path is None:
-        return
+        return stable
     matched = False
-    for row in DENYLIST_ROWS:
-        denied, prefix = _canonical_row(row, policy.repo_root)
+    for denied, prefix in rows:
         if (prefix and _is_at_or_below(path, denied)) or (not prefix and path == denied):
             matched = True
             break
     if not matched:
-        return
+        return stable
 
-    emit_root = _canonical_path(EMIT_ROOT, policy.repo_root)
-    assert emit_root is not None
-    if policy.mode is GuardMode.EMIT and _is_at_or_below(path, emit_root):
-        writable = {
-            _canonical_path(item, policy.repo_root) for item in CLOSEOUT_ARTIFACTS
-        }
+    if mode is GuardMode.EMIT and _is_at_or_below(path, emit_root):
         if (
             write
             and not read
             and not enumerate_directory
-            and (path == emit_root or path in writable)
+            and (path == emit_root or path in closeout_artifacts)
         ):
-            return
+            return stable
         _blocked("EMIT may create its root and write only the seven exact artifacts")
 
-    if policy.mode is GuardMode.CLOSEOUT:
-        readable = {
-            _canonical_path(item, policy.repo_root) for item in CLOSEOUT_ARTIFACTS
-        }
-        if path in readable and read and not write and not enumerate_directory:
-            return
+    if mode is GuardMode.CLOSEOUT:
+        if (
+            path in closeout_artifacts
+            and read
+            and not write
+            and not enumerate_directory
+        ):
+            return stable
         _blocked("CLOSEOUT may read only the seven exact artifact files")
 
     _blocked(f"forbidden path access: {raw!s}")
@@ -304,7 +485,12 @@ class _PatchBook:
 
 
 _ACTIVE_POLICY: GuardPolicy | None = None
+_ACTIVE_POLICY_FINGERPRINT: tuple[GuardMode, Path] | None = None
 _ACTIVE_PATCHES: _PatchBook | None = None
+_ACTIVE_CANONICAL_DENYLIST: _CanonicalDenylistTable | None = None
+_ACTIVE_CANONICAL_DENYLIST_CONTENT: tuple[Any, ...] | None = None
+_ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256: str | None = None
+_ACTIVE_CANONICAL_DENYLIST_TOKEN: object | None = None
 _AUDIT_HOOK_INSTALLED = False
 
 
@@ -315,17 +501,47 @@ class GuardHandle:
     _closed: bool = False
 
     def close(self) -> None:
-        global _ACTIVE_PATCHES, _ACTIVE_POLICY
+        global _ACTIVE_CANONICAL_DENYLIST, _ACTIVE_CANONICAL_DENYLIST_CONTENT
+        global _ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256
+        global _ACTIVE_CANONICAL_DENYLIST_TOKEN, _ACTIVE_PATCHES, _ACTIVE_POLICY
+        global _ACTIVE_POLICY_FINGERPRINT
         if self._closed:
             return
-        self._closed = True
         if not self._owns_installation:
+            self._closed = True
             return
-        if _ACTIVE_POLICY != self.policy or _ACTIVE_PATCHES is None:
+        installation_changed = (
+            _ACTIVE_POLICY != self.policy
+            or _ACTIVE_PATCHES is None
+            or _ACTIVE_CANONICAL_DENYLIST is None
+            or _ACTIVE_CANONICAL_DENYLIST_CONTENT is None
+            or _ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256 is None
+            or _ACTIVE_CANONICAL_DENYLIST_TOKEN is None
+            or _ACTIVE_POLICY_FINGERPRINT is None
+        )
+        if not installation_changed:
+            try:
+                installation_changed = (
+                    _active_canonical_denylist(self.policy)
+                    is not _ACTIVE_CANONICAL_DENYLIST
+                )
+            except U24ResourceOrScopeBlocked:
+                installation_changed = True
+        patches = _ACTIVE_PATCHES
+        try:
+            if patches is not None:
+                patches.restore()
+        finally:
+            _ACTIVE_CANONICAL_DENYLIST = None
+            _ACTIVE_CANONICAL_DENYLIST_CONTENT = None
+            _ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256 = None
+            _ACTIVE_CANONICAL_DENYLIST_TOKEN = None
+            _ACTIVE_PATCHES = None
+            _ACTIVE_POLICY = None
+            _ACTIVE_POLICY_FINGERPRINT = None
+            self._closed = True
+        if installation_changed:
             raise RuntimeError("guard installation identity changed")
-        _ACTIVE_PATCHES.restore()
-        _ACTIVE_PATCHES = None
-        _ACTIVE_POLICY = None
 
     def __enter__(self) -> "GuardHandle":
         return self
@@ -385,32 +601,32 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
     ) -> Any:
         if type(mode) is not str:
             _blocked("file mode is not a strict string")
-        _check_path(
+        stable = _check_path(
             policy,
             file,
             read="r" in mode or "+" in mode,
             write=any(flag in mode for flag in "wax+"),
         )
-        return real_builtin_open(file, mode, *args, **kwargs)
+        return real_builtin_open(stable, mode, *args, **kwargs)
 
     def guarded_io_open(
         file: Any, mode: str = "r", *args: Any, **kwargs: Any
     ) -> Any:
         if type(mode) is not str:
             _blocked("file mode is not a strict string")
-        _check_path(
+        stable = _check_path(
             policy,
             file,
             read="r" in mode or "+" in mode,
             write=any(flag in mode for flag in "wax+"),
         )
-        return real_io_open(file, mode, *args, **kwargs)
+        return real_io_open(stable, mode, *args, **kwargs)
 
     def guarded_os_open(path: Any, flags: int, *args: Any, **kwargs: Any) -> int:
         if type(flags) is not int:
             _blocked("os.open flags are not a strict integer")
         access = flags & getattr(os, "O_ACCMODE", 3)
-        _check_path(
+        stable = _check_path(
             policy,
             path,
             read=access != getattr(os, "O_WRONLY", 1),
@@ -425,7 +641,7 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
                 )
             ),
         )
-        return real_os_open(path, flags, *args, **kwargs)
+        return real_os_open(stable, flags, *args, **kwargs)
 
     patches.set(builtins, "open", guarded_open)
     patches.set(io, "open", guarded_io_open)
@@ -447,25 +663,31 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
         if not hasattr(owner, name):
             continue
         original = getattr(owner, name)
+        path_method = owner is Path
 
         def guarded_read(
-            path: Any, *args: Any, __original: Callable[..., Any] = original, **kwargs: Any
+            path: Any,
+            *args: Any,
+            __original: Callable[..., Any] = original,
+            __path_method: bool = path_method,
+            **kwargs: Any,
         ) -> Any:
-            _check_path(policy, path, read=True)
-            return __original(path, *args, **kwargs)
+            stable = _check_path(policy, path, read=True)
+            operand = Path(stable) if __path_method else stable
+            return __original(operand, *args, **kwargs)
 
         patches.set(owner, name, guarded_read)
 
     real_path_open = Path.open
 
     def guarded_path_open(path: Path, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
-        _check_path(
+        stable = _check_path(
             policy,
             path,
             read="r" in mode or "+" in mode,
             write=any(flag in mode for flag in "wax+"),
         )
-        return real_path_open(path, mode, *args, **kwargs)
+        return real_path_open(Path(stable), mode, *args, **kwargs)
 
     patches.set(Path, "open", guarded_path_open)
 
@@ -480,12 +702,20 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
         if not hasattr(owner, name):
             continue
         original = getattr(owner, name)
+        path_method = owner is Path
 
         def guarded_enumeration(
-            path: Any, *args: Any, __original: Callable[..., Any] = original, **kwargs: Any
+            path: Any,
+            *args: Any,
+            __original: Callable[..., Any] = original,
+            __path_method: bool = path_method,
+            **kwargs: Any,
         ) -> Any:
-            _check_path(policy, path, read=True, enumerate_directory=True)
-            return __original(path, *args, **kwargs)
+            stable = _check_path(
+                policy, path, read=True, enumerate_directory=True
+            )
+            operand = Path(stable) if __path_method else stable
+            return __original(operand, *args, **kwargs)
 
         patches.set(owner, name, guarded_enumeration)
 
@@ -505,12 +735,18 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
         if not hasattr(owner, name):
             continue
         original = getattr(owner, name)
+        path_method = owner is Path
 
         def guarded_mutation(
-            path: Any, *args: Any, __original: Callable[..., Any] = original, **kwargs: Any
+            path: Any,
+            *args: Any,
+            __original: Callable[..., Any] = original,
+            __path_method: bool = path_method,
+            **kwargs: Any,
         ) -> Any:
-            _check_path(policy, path, write=True)
-            return __original(path, *args, **kwargs)
+            stable = _check_path(policy, path, write=True)
+            operand = Path(stable) if __path_method else stable
+            return __original(operand, *args, **kwargs)
 
         patches.set(owner, name, guarded_mutation)
 
@@ -523,17 +759,20 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
         if not hasattr(owner, name):
             continue
         original = getattr(owner, name)
+        path_method = owner is Path
 
         def guarded_move(
             source: Any,
             target: Any,
             *args: Any,
             __original: Callable[..., Any] = original,
+            __path_method: bool = path_method,
             **kwargs: Any,
         ) -> Any:
-            _check_path(policy, source, write=True)
-            _check_path(policy, target, write=True)
-            return __original(source, target, *args, **kwargs)
+            stable_source = _check_path(policy, source, write=True)
+            stable_target = _check_path(policy, target, write=True)
+            source_operand = Path(stable_source) if __path_method else stable_source
+            return __original(source_operand, stable_target, *args, **kwargs)
 
         patches.set(owner, name, guarded_move)
 
@@ -548,8 +787,8 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
         def guarded_nt_read(
             path: Any, *args: Any, __original: Callable[..., Any] = original, **kwargs: Any
         ) -> Any:
-            _check_path(policy, path, read=True)
-            return __original(path, *args, **kwargs)
+            stable = _check_path(policy, path, read=True)
+            return __original(stable, *args, **kwargs)
 
         patches.set(_nt, name, guarded_nt_read)
     for name in ("listdir", "scandir"):
@@ -563,8 +802,10 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
             __original: Callable[..., Any] = original,
             **kwargs: Any,
         ) -> Any:
-            _check_path(policy, path, read=True, enumerate_directory=True)
-            return __original(path, *args, **kwargs)
+            stable = _check_path(
+                policy, path, read=True, enumerate_directory=True
+            )
+            return __original(stable, *args, **kwargs)
 
         patches.set(_nt, name, guarded_nt_enumeration)
     for name in ("mkdir", "remove", "unlink", "rmdir"):
@@ -575,8 +816,8 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
         def guarded_nt_mutation(
             path: Any, *args: Any, __original: Callable[..., Any] = original, **kwargs: Any
         ) -> Any:
-            _check_path(policy, path, write=True)
-            return __original(path, *args, **kwargs)
+            stable = _check_path(policy, path, write=True)
+            return __original(stable, *args, **kwargs)
 
         patches.set(_nt, name, guarded_nt_mutation)
     for name in ("rename", "replace", "link", "symlink"):
@@ -591,20 +832,21 @@ def _install_path_wrappers(policy: GuardPolicy, patches: _PatchBook) -> None:
             __original: Callable[..., Any] = original,
             **kwargs: Any,
         ) -> Any:
-            _check_path(policy, source, read=True, write=True)
-            _check_path(policy, target, write=True)
-            return __original(source, target, *args, **kwargs)
+            stable_source = _check_path(policy, source, read=True, write=True)
+            stable_target = _check_path(policy, target, write=True)
+            return __original(stable_source, stable_target, *args, **kwargs)
 
         patches.set(_nt, name, guarded_nt_pair)
     if _nt is not None and hasattr(_nt, "chdir"):
         original_nt_chdir = _nt.chdir
 
         def guarded_nt_chdir(path: Any) -> None:
+            stable = _check_path(policy, path)
             current = _canonical_path(os.getcwd(), policy.repo_root)
-            target = _canonical_path(path, policy.repo_root)
+            target = _canonical_path(stable, policy.repo_root)
             if target != current:
                 _blocked("changing the semantic child working directory is forbidden")
-            original_nt_chdir(path)
+            original_nt_chdir(stable)
 
         patches.set(_nt, "chdir", guarded_nt_chdir)
 
@@ -652,11 +894,15 @@ def _install_capability_wrappers(patches: _PatchBook) -> None:
     original_chdir = os.chdir
 
     def guarded_chdir(path: Any) -> None:
+        policy = _ACTIVE_POLICY
+        if policy is None:
+            _blocked("changing directory requires an active guard")
+        stable = _check_path(policy, path)
         current = _canonical_path(os.getcwd(), Path(os.getcwd()))
-        target = _canonical_path(path, Path(os.getcwd()))
+        target = _canonical_path(stable, Path(os.getcwd()))
         if target != current:
             _blocked("changing the semantic child working directory is forbidden")
-        original_chdir(path)
+        original_chdir(stable)
 
     patches.set(os, "chdir", guarded_chdir)
     patches.set(
@@ -719,17 +965,30 @@ def _install_capability_wrappers(patches: _PatchBook) -> None:
 
 
 def install_guard(policy: GuardPolicy) -> GuardHandle:
-    global _ACTIVE_PATCHES, _ACTIVE_POLICY, _AUDIT_HOOK_INSTALLED
+    global _ACTIVE_CANONICAL_DENYLIST, _ACTIVE_CANONICAL_DENYLIST_CONTENT
+    global _ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256
+    global _ACTIVE_CANONICAL_DENYLIST_TOKEN, _ACTIVE_PATCHES, _ACTIVE_POLICY
+    global _ACTIVE_POLICY_FINGERPRINT, _AUDIT_HOOK_INSTALLED
     if type(policy) is not GuardPolicy:
         raise TypeError("guard policy must be strict")
     if _ACTIVE_POLICY is not None:
         if _ACTIVE_POLICY != policy:
             _blocked("a different guard policy is already active")
+        _active_canonical_denylist(policy)
         return GuardHandle(policy, _owns_installation=False)
 
+    # Canonicalize the root, denylist, and the two mode-specific exception
+    # sets exactly once for this installation.  This runs before policy state,
+    # wrappers, or the process audit hook can observe an active guard.
+    table = _build_canonical_denylist_table(policy.repo_root)
     patches = _PatchBook()
     _ACTIVE_POLICY = policy
+    _ACTIVE_POLICY_FINGERPRINT = (policy.mode, policy.repo_root)
     _ACTIVE_PATCHES = patches
+    _ACTIVE_CANONICAL_DENYLIST = table
+    _ACTIVE_CANONICAL_DENYLIST_CONTENT = _canonical_denylist_content(table)
+    _ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256 = table.scope_sha256
+    _ACTIVE_CANONICAL_DENYLIST_TOKEN = table._installation_token
     try:
         _install_path_wrappers(policy, patches)
         _install_capability_wrappers(patches)
@@ -737,16 +996,32 @@ def install_guard(policy: GuardPolicy) -> GuardHandle:
             sys.addaudithook(_audit_hook)
             _AUDIT_HOOK_INSTALLED = True
     except BaseException:
-        patches.restore()
-        _ACTIVE_POLICY = None
-        _ACTIVE_PATCHES = None
+        try:
+            patches.restore()
+        finally:
+            _ACTIVE_CANONICAL_DENYLIST = None
+            _ACTIVE_CANONICAL_DENYLIST_CONTENT = None
+            _ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256 = None
+            _ACTIVE_CANONICAL_DENYLIST_TOKEN = None
+            _ACTIVE_PATCHES = None
+            _ACTIVE_POLICY = None
+            _ACTIVE_POLICY_FINGERPRINT = None
         raise
     return GuardHandle(policy, _owns_installation=True)
 
 
 def require_active_guard(policy: GuardPolicy) -> None:
-    if _ACTIVE_POLICY != policy or _ACTIVE_PATCHES is None:
+    if (
+        _ACTIVE_POLICY != policy
+        or _ACTIVE_POLICY_FINGERPRINT is None
+        or _ACTIVE_PATCHES is None
+        or _ACTIVE_CANONICAL_DENYLIST is None
+        or _ACTIVE_CANONICAL_DENYLIST_CONTENT is None
+        or _ACTIVE_CANONICAL_DENYLIST_SCOPE_SHA256 is None
+        or _ACTIVE_CANONICAL_DENYLIST_TOKEN is None
+    ):
         _blocked("the required denial guard is not active")
+    _active_canonical_denylist(policy)
 
 
 def guard_is_active() -> bool:
@@ -1261,7 +1536,7 @@ def static_scan_union_sources(repo_root: Path) -> None:
                 "test_u24_denylist_static_scan_and_exact_runner_copy",
                 "runner.count(literal)",
                 "STAGE_ALLOWLISTS",
-                "MAX_BUILD_COMMITS = 7",
+                "MAX_BUILD_COMMITS = 6",
                 "MAX_CORRECTIONS = 1",
             ):
                 if required not in text:

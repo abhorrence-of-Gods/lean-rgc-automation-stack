@@ -29,11 +29,16 @@ $ExpectedMultiarraySha256 = "3F8A35487C05180F4F6B6168165935C99FAE6F14264A443FB66
 $ExpectedLinalgSha256 = "5B7F5ECB0970EE956E36608D4F1ED405C0B688691E99C05F5F314C2F053DBA10"
 $ExpectedOpenBlasSha256 = "860D95B1C38E637CE4509F5FA24FBF2A98BA8696F9F3D28BF184BEE74AD9A325"
 $RuntimeIdentitySha256 = "D6E6DEBCE5C150AE31BA0D04EAF6E59FD2D79FDC4C0D5272264574665C0242F4"
+$ExpectedGuardCoreSha256 = "1892E78B2102AA8C2452CE40006FBB2694710D4FCDEA153EF89554A174BAFB45"
 $ReceiptSchema = "u24-lane-receipt-v1"
 $RuntimeManifestCanonical = @'
 {"blas":"scipy-openblas-0.3.30-USE64BITINT-Haswell","linalg_path":"C:\\Users\\yusei\\AppData\\Roaming\\Python\\Python313\\site-packages\\numpy\\linalg\\_umath_linalg.cp313-win_amd64.pyd","linalg_sha256":"5B7F5ECB0970EE956E36608D4F1ED405C0B688691E99C05F5F314C2F053DBA10","multiarray_path":"C:\\Users\\yusei\\AppData\\Roaming\\Python\\Python313\\site-packages\\numpy\\_core\\_multiarray_umath.cp313-win_amd64.pyd","multiarray_sha256":"3F8A35487C05180F4F6B6168165935C99FAE6F14264A443FB665C5CB07FA2725","numpy_version":"2.3.3","openblas_path":"C:\\Users\\yusei\\AppData\\Roaming\\Python\\Python313\\site-packages\\numpy.libs\\libscipy_openblas64_-860d95b1c38e637ce4509f5fa24fbf2a.dll","openblas_sha256":"860D95B1C38E637CE4509F5FA24FBF2A98BA8696F9F3D28BF184BEE74AD9A325","python_path":"C:\\Python313\\python.exe","python_sha256":"D932E5E2F324D57F392E8FD063DCF6D0185BE8A664C57C6D24E7762ED02C28CA","python_version":"3.13.7","threads":{"MKL_NUM_THREADS":"1","NUMEXPR_NUM_THREADS":"1","OMP_NUM_THREADS":"1","OPENBLAS_NUM_THREADS":"1"}}
 '@
 $RuntimeManifestCanonical = $RuntimeManifestCanonical.TrimEnd("`r", "`n")
+$E1FrozenCanonicalJson = @'
+[{"blob":"1e1576ad1f51ebf667bc55d159048c0ae6587524","bytes":153187,"path":"lean_rgc/odlrq/quotient_generator.py","sha256":"21030E4DD3C392D5EA2A9DEA1D5A8354F57AFE1301A59CFA6B0A2CDEE199EF16"},{"blob":"0618f603b86eba3c61c9fb2e15c4edaacce44a14","bytes":87121,"path":"lean_rgc/odlrq/envelope.py","sha256":"13C4F4D97AFFB363A1EC484BDDD870AF9FB88B0C0796D6728AC774DE941D5496"},{"blob":"f97272d5de222fb555a78639d66eb89e77e63d86","bytes":13341,"path":"lean_rgc/odlrq/__init__.py","sha256":"F968B3BC4EB945811E88553F118856658CE45D476B94860B56D7F39DBE90D752"},{"blob":"400f630e10ddbd98657fd1b142c6b202a8656c7d","bytes":59547,"path":"tests/test_odlrq_quotient_generator.py","sha256":"4D1FAF8C725BB2EA9FAD01E83A330C578B1ABE01840EAD263E98D174A84CA7C0"},{"blob":"66f9be1a3c5455b822b229fc2024b9c58b768fff","bytes":32675,"path":"tests/test_odlrq_envelope.py","sha256":"90580302C24F99B8CAF1500EF013296E214D2206F6C936D781BAA8E8A64832D5"},{"blob":"8bb7810cc49b56aff3d7b18020dab475644911a2","bytes":8827,"path":"tests/tier_manifest.json","sha256":"D955F797DFA2F4C0943F5F385F9301CED0A9D592BE19D459BF5EB2BEEB657854"}]
+'@
+$E1FrozenCanonicalJson = $E1FrozenCanonicalJson.TrimEnd("`r", "`n")
 
 $Walls = @{
     B0 = 60; E0 = 90; E1 = 120; E2 = 180; ME0 = 180
@@ -112,6 +117,32 @@ function Get-Sha256Text {
     finally { $sha.Dispose() }
 }
 
+function Get-GuardCoreSha256 {
+    param([Parameter(Mandatory = $true)][string] $LiteralPath)
+    $raw = [IO.File]::ReadAllBytes($LiteralPath)
+    $text = [Text.UTF8Encoding]::new($false, $true).GetString($raw)
+    $hasUtf8Bom = (
+        $raw.Length -ge 3 -and
+        $raw[0] -eq 0xEF -and
+        $raw[1] -eq 0xBB -and
+        $raw[2] -eq 0xBF
+    )
+    if ($hasUtf8Bom -or $text.Contains("`r")) {
+        throw "guard source is not strict BOM-free UTF-8 LF text"
+    }
+    $pattern = '(?m)^FROZEN_RUNNER_SHA256 = "[0-9A-F]{64}"$'
+    $matches = [Text.RegularExpressions.Regex]::Matches($text, $pattern)
+    if ($matches.Count -ne 1) {
+        throw "guard source runner binding is not unique"
+    }
+    $canonical = [Text.RegularExpressions.Regex]::Replace(
+        $text,
+        $pattern,
+        ('FROZEN_RUNNER_SHA256 = "' + ('0' * 64) + '"')
+    )
+    return Get-Sha256Text -Text $canonical
+}
+
 function Quote-NativeArgument {
     param([Parameter(Mandatory = $true)][string] $Value)
     if ($Value.IndexOf([char]0) -ge 0 -or $Value.Contains("`r") -or
@@ -165,8 +196,39 @@ try {
     foreach ($marker in @(".git", "pyproject.toml", "lean_rgc", "tests")) {
         if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $marker))) { throw "repository marker missing: $marker" }
     }
+    $guardSourcePath = Resolve-RegularFile -LiteralPath (Join-Path $repoRoot "tests\uprime_u24_guard.py") -RequiredRoot $repoRoot
+    if ((Get-GuardCoreSha256 -LiteralPath $guardSourcePath) -cne $ExpectedGuardCoreSha256) {
+        throw "guard canonical core differs from the runner binding"
+    }
     $headCommit = (& git -C $repoRoot --no-replace-objects rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0 -or $headCommit -cnotmatch '^[0-9a-f]{40}$') { throw "commit identity unavailable" }
+    if ($Lane -eq "E1") {
+        $e1Frozen = @($E1FrozenCanonicalJson | ConvertFrom-Json)
+        if ($e1Frozen.Count -ne 6) { throw "E1 frozen byte table cardinality changed" }
+        $seenE1Paths = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        foreach ($entry in $e1Frozen) {
+            $properties = @($entry.PSObject.Properties.Name | Sort-Object)
+            if (($properties -join ",") -cne "blob,bytes,path,sha256") {
+                throw "E1 frozen byte table schema changed"
+            }
+            $relative = [string]$entry.path
+            if (-not $seenE1Paths.Add($relative)) { throw "E1 frozen byte table path duplicated" }
+            if ([string]$entry.blob -cnotmatch '^[0-9a-f]{40}$' -or
+                [string]$entry.sha256 -cnotmatch '^[0-9A-F]{64}$' -or
+                [int64]$entry.bytes -le 0) {
+                throw "E1 frozen byte table value is malformed"
+            }
+            $candidate = Resolve-RegularFile -LiteralPath (Join-Path $repoRoot $relative) -RequiredRoot $repoRoot
+            if ((Get-Item -LiteralPath $candidate -Force).Length -ne [int64]$entry.bytes -or
+                (Get-Sha256 -LiteralPath $candidate) -cne [string]$entry.sha256) {
+                throw "E1 worktree bytes differ from the frozen import"
+            }
+            $observedBlob = (& git -C $repoRoot --no-replace-objects hash-object $relative).Trim()
+            if ($LASTEXITCODE -ne 0 -or $observedBlob -cne [string]$entry.blob) {
+                throw "E1 worktree Git blob differs from the frozen import"
+            }
+        }
+    }
     if ($Lane -in @("EMIT", "CLOSEOUT")) {
         $acceptedCommit = (& git -C $repoRoot --no-replace-objects rev-parse refs/heads/codex/uprime-odlrq-plan).Trim()
         if ($LASTEXITCODE -ne 0 -or $acceptedCommit -cne $headCommit) {
@@ -278,11 +340,13 @@ tracked = (
     'docs/experiments/uprime_odlrq_u2_u4_development_reconstruction_closeout_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_reconstruction_failure_closeout_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_r2_exact_admission_integration_amendment_2026-07-13.md',
-    'docs/experiments/uprime_odlrq_u2_u4_development_r2_failure_closeout_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_r2_topology_bootstrap_amendment_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_r3_closeout_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_r3_failure_closeout_2026-07-13.md',
     'docs/experiments/uprime_odlrq_u2_u4_development_r3_stage_local_reentry_amendment_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r4_closeout_2026-07-14.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r4_failure_closeout_2026-07-14.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r4_guard_canonicalization_reentry_amendment_2026-07-14.md',
     'docs/experiments/uprime_odlrq_upper_stack_implementation_plan_and_u05_amendment_2026-07-11.md',
     'lean_rgc/evals/uprime_u2_u4_development.py', 'lean_rgc/odlrq/__init__.py',
     'lean_rgc/odlrq/certificates.py', 'lean_rgc/odlrq/contracts.py',
@@ -296,8 +360,9 @@ tracked = (
 )
 absent = (
     'docs/experiments/uprime_odlrq_u2_u4_development_r3_closeout_2026-07-13.md',
-    'docs/experiments/uprime_odlrq_u2_u4_development_r3_failure_closeout_2026-07-13.md',
-    'docs/experiments/uprime_odlrq_u2_u4_development_r3_stage_local_reentry_amendment_2026-07-13.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r4_closeout_2026-07-14.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r4_failure_closeout_2026-07-14.md',
+    'docs/experiments/uprime_odlrq_u2_u4_development_r4_guard_canonicalization_reentry_amendment_2026-07-14.md',
     'lean_rgc/evals/uprime_u2_u4_development.py', 'lean_rgc/odlrq/certificates.py',
     'lean_rgc/odlrq/envelope.py', 'lean_rgc/odlrq/maxent.py',
     'lean_rgc/odlrq/selection.py', 'lean_rgc/odlrq/similarity.py',
@@ -306,7 +371,7 @@ absent = (
 )
 value = guard.load_control_plane_attestation(
     repo,
-    a0_commit='cbc7377c588e024d17438beb83e444c515ff0172',
+    a0_commit='773a4bae0ed6c88fe855d92a69a211f8834c688c',
     identity_path='tests/test_uprime_u2_u4_development.py',
     tracked_paths=tracked,
     absent_at_a0=absent,
@@ -315,7 +380,7 @@ lane = os.environ["UPRIME_U24_CONTROL_LANE"]
 allowed_dirty = set(guard.UNION_SOURCE_PATHS)
 if lane == "B0":
     allowed_dirty.add(
-        'docs/experiments/uprime_odlrq_u2_u4_development_r3_stage_local_reentry_amendment_2026-07-13.md'
+        'docs/experiments/uprime_odlrq_u2_u4_development_r4_guard_canonicalization_reentry_amendment_2026-07-14.md'
     )
 if lane in {"EMIT", "CLOSEOUT"}:
     allowed_dirty.update(guard.CLOSEOUT_ARTIFACTS)
@@ -324,8 +389,15 @@ stage_dirty = guard.governed_status_paths(
 )
 if any(path not in allowed_dirty for path in stage_dirty):
     raise RuntimeError("unregistered dirty path exists before semantic import")
+e1_frozen_blobs = {
+    "lean_rgc/odlrq/quotient_generator.py": "1e1576ad1f51ebf667bc55d159048c0ae6587524",
+    "lean_rgc/odlrq/envelope.py": "0618f603b86eba3c61c9fb2e15c4edaacce44a14",
+    "lean_rgc/odlrq/__init__.py": "f97272d5de222fb555a78639d66eb89e77e63d86",
+    "tests/test_odlrq_quotient_generator.py": "400f630e10ddbd98657fd1b142c6b202a8656c7d",
+    "tests/test_odlrq_envelope.py": "66f9be1a3c5455b822b229fc2024b9c58b768fff",
+    "tests/tier_manifest.json": "8bb7810cc49b56aff3d7b18020dab475644911a2",
+}
 semantic_markers = {
-    "E0": "lean_rgc/odlrq/quotient_generator.py",
     "E1": "lean_rgc/odlrq/envelope.py",
     "E2": "lean_rgc/odlrq/selection.py",
     "ME0": "lean_rgc/odlrq/maxent.py",
@@ -334,11 +406,6 @@ semantic_markers = {
 }
 semantic_order = tuple(semantic_markers)
 semantic_allowlists = {
-    "E0": {
-        "lean_rgc/odlrq/quotient_generator.py",
-        "lean_rgc/odlrq/__init__.py",
-        "tests/test_odlrq_quotient_generator.py",
-    },
     "E1": {
         "lean_rgc/odlrq/quotient_generator.py",
         "lean_rgc/odlrq/envelope.py",
@@ -460,6 +527,22 @@ if lane in semantic_markers:
             expected_accepted = head_parents[0]
         if not head_changed or not set(head_changed) <= semantic_allowlists[lane]:
             raise RuntimeError("clean semantic lane exceeds its frozen stage")
+    if lane == "E1":
+        if current_is_correction:
+            raise RuntimeError("E1 is an exact import and cannot be corrected")
+        observed_e1_paths = dirty_set if stage_dirty else set(head_changed)
+        observed_e1_blobs = (
+            value.get("worktree_blobs") if stage_dirty else head_row.get("tree_blobs")
+        )
+        if (
+            observed_e1_paths != set(e1_frozen_blobs)
+            or type(observed_e1_blobs) is not dict
+            or any(
+                observed_e1_blobs.get(path) != expected
+                for path, expected in e1_frozen_blobs.items()
+            )
+        ):
+            raise RuntimeError("E1 paths or Git blobs differ from the frozen import")
     if accepted != expected_accepted:
         raise RuntimeError("semantic lane requires accepted branch activation")
     accepted_positions = [
@@ -467,7 +550,7 @@ if lane in semantic_markers:
         if type(row) is dict and row.get("commit") == accepted
     ]
     if len(accepted_positions) != 1 or accepted_positions[0] < 1:
-        raise RuntimeError("accepted branch is outside the registered R3 epoch")
+        raise RuntimeError("accepted branch is outside the registered R4 epoch")
     accepted_history = list(revisions[2:accepted_positions[0] + 1])
     correction_used = False
     if accepted_history:
@@ -502,11 +585,25 @@ if lane in semantic_markers:
             and changed <= semantic_allowlists[candidate]
             and semantic_markers[candidate] in changed
         ):
+            if candidate == "E1":
+                tree_blobs = row.get("tree_blobs")
+                if (
+                    changed != set(e1_frozen_blobs)
+                    or type(tree_blobs) is not dict
+                    or any(
+                        tree_blobs.get(path) != expected
+                        for path, expected in e1_frozen_blobs.items()
+                    )
+                ):
+                    raise RuntimeError(
+                        "accepted E1 history differs from the frozen import"
+                    )
             completed.append(candidate)
             last_stage = candidate
             continue
         if (
             last_stage is None
+            or last_stage == "E1"
             or correction_used
             or not changed <= semantic_allowlists[last_stage]
         ):
@@ -516,7 +613,7 @@ if lane in semantic_markers:
     if completed != expected_prefix:
         raise RuntimeError("accepted branch has not completed the prior semantic stages")
     if current_is_correction and correction_used:
-        raise RuntimeError("the shared R3 correction budget is already spent")
+        raise RuntimeError("the shared R4 correction budget is already spent")
 print(guard.encode_control_plane_attestation(value))
 '@
     [IO.File]::WriteAllText($controlPath, $control, [Text.UTF8Encoding]::new($false))
@@ -607,7 +704,7 @@ receipt = os.environ.pop("UPRIME_U24_CHILD_RECEIPT")
 if lane in {"EMIT", "CLOSEOUT"}:
     control = guard.load_control_plane_attestation(
         repo,
-        a0_commit="cbc7377c588e024d17438beb83e444c515ff0172",
+        a0_commit="773a4bae0ed6c88fe855d92a69a211f8834c688c",
         identity_path="tests/test_uprime_u2_u4_development.py",
         tracked_paths=(),
         absent_at_a0=(),
@@ -616,7 +713,7 @@ if lane in {"EMIT", "CLOSEOUT"}:
         raise RuntimeError("publication CONTROL head differs from source commit")
     interval = control["first_parent_after_a0"]
     revisions = {row["commit"]: row for row in control["revisions"]}
-    previous = "cbc7377c588e024d17438beb83e444c515ff0172"
+    previous = "773a4bae0ed6c88fe855d92a69a211f8834c688c"
     for commit in interval:
         row = revisions[commit]
         if row["parents"] != [previous]:
@@ -950,6 +1047,8 @@ code = int(pytest.main([
     *tests,
 ], plugins=[audit]))
 if code == 0 and (audit.passed <= 0 or audit.skipped or audit.xfailed or audit.deselected):
+    code = 66
+if code == 0 and lane == "E1" and audit.passed != 48:
     code = 66
 payload = {"artifact_sha256": None, "tests_passed": audit.passed}
 with open(receipt, "x", encoding="ascii", newline="\n") as handle:
