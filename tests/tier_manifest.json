@@ -23,6 +23,9 @@
   "test_odlrq_envelope.py": [
     "unit"
   ],
+  "test_odlrq_selection.py": [
+    "unit"
+  ],
   "test_odlrq_hankel_predictive.py": [
     "unit"
   ],
