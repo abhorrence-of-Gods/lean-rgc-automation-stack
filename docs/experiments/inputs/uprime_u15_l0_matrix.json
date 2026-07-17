@@ -1,0 +1,775 @@
+{
+  "schema_version": "lean-rgc-uprime-u15-l0-matrix-v1",
+  "evidence_scope": "synthetic_development",
+  "evidence_tier": "NOMINAL_DIAGNOSTIC_ONLY",
+  "matrix_id": "uprime-u15-l0-public-synthetic-locality-cegar-20260717-v1",
+  "parent_identity": {
+    "commit": "f1df8dd5d92706d907091e6add463fb6c9ca7130",
+    "tree": "c15e50c683263b50c8ddf371938785d03353b1fc"
+  },
+  "input_policy": {
+    "visibility": "public_synthetic",
+    "feature_time_direction": "before_only",
+    "oracle_kind": "access_gated_per_instance_exact_rational_table",
+    "heldout_access_rule": "no_heldout_carrier_snapshot_or_response_table_is_opened_until_one_global_barrier_commits_the_complete_eight_family_map_of_both_locality_and_baseline_schedule_digests",
+    "heldout_access_payload": "both_full_response_table_and_seeded_counterexample_pairs_are_sealed",
+    "family_exact_partition_access": "verification_only_never_available_to_the_learner_or_candidate_order_builder",
+    "family_label_feature_access": false,
+    "protected_endpoint_access": false,
+    "external_task_access": false,
+    "llm_access": false,
+    "network_access": false
+  },
+  "caps": {
+    "max_families": 8,
+    "max_instances_per_family": 3,
+    "max_regions": 16,
+    "max_region_nodes": 12,
+    "max_region_edges": 24,
+    "max_response_coordinates": 8,
+    "max_identifier_utf8_bytes": 128,
+    "max_input_exact_rational_bits": 256,
+    "max_intermediate_exact_rational_bits": 4096,
+    "max_object_wire_bytes": 1048576,
+    "max_json_depth": 16,
+    "max_json_array_length": 256,
+    "max_json_object_keys": 64,
+    "exact_treewidth_cap": 8,
+    "max_query_count": 16,
+    "max_action_word_depth": 3,
+    "max_oracle_response_cells": 256,
+    "max_snapshot_totalized_states": 128,
+    "max_snapshot_transition_rows": 2048,
+    "global_behavior_dimension": 16,
+    "cap_check_order": "reject_or_abstain_before_graph_snapshot_or_candidate_materialization",
+    "stage_wall_seconds": 120
+  },
+  "response_space": {
+    "coordinate_ids": ["observable_delta", "return_memory"],
+    "coordinate_count": 2,
+    "scalar_encoding": "lean-rgc-odlrq-exact-rational-v1",
+    "full_table_resolution": "for_each_instance_region_query_use_the_unique_override_else_the_instance_default",
+    "missing_or_duplicate_override_policy": "contract_fail"
+  },
+  "candidate_semantics": {
+    "schema_version": "lean-rgc-uprime-u15-l0-candidate-v1",
+    "candidate_fields": ["schema_version", "family_id", "instance_id", "left_region_id", "right_region_id", "full_query_row"],
+    "region_pair": "canonical_unordered_pair_sorted_by_utf8_region_id_bytes",
+    "candidate_universe": "all_canonical_unordered_region_pairs_cross_complete_query_catalog_for_the_instance",
+    "budget_unit": "one_candidate_observation",
+    "per_family_schedule_length": "min(16,number_of_unique_canonical_unordered_region_pair_query_candidates)",
+    "candidate_repetition_allowed": false,
+    "sixteenth_observation_status": "NORMAL_BUDGET_COMPLETE",
+    "seventeenth_observation_status": "CONTRACT_FAIL",
+    "universe_exhaustion_status": "UNIVERSE_EXHAUSTED_PLATEAU",
+    "universe_exhaustion_semantics": "right_pad_partition_loss_and_cost_at_final_value_through_t_16_without_abstention_censor_or_coverage_loss",
+    "candidate_observation_response_cells": 4,
+    "query_catalog_enumeration_consumes_budget": false,
+    "query_id_enumeration_consumes_budget": false,
+    "selection_order": "score_desc_then_cost_asc_then_canonical_full_candidate_bytes_asc",
+    "baseline_order": "canonical_full_candidate_bytes_asc",
+    "canonical_full_candidate_bytes": "strict_canonical_json_bytes_of_all_candidate_fields_including_the_complete_query_row"
+  },
+  "cost_semantics": {
+    "cost_id": "candidate-response-cells-plus-candidate-word-work-v1",
+    "response_cell_count_formula": "2_regions * 2_response_coordinates",
+    "word_work_formula": "2_regions * (action_word_length + closing_context_action_count)",
+    "total_cost_formula": "response_cell_count + word_work",
+    "wall_time_is_a_cost_input": false,
+    "caller_supplied_cost_allowed": false
+  },
+  "action_catalog": [
+    {
+      "schema_version": "lean-rgc-odlrq-action-symbol-v1",
+      "action_id": "unit_cpu_survivor_u15_l0_a",
+      "opcode": "constructor",
+      "target_selector": "first",
+      "premise_slot_rule_id": null,
+      "premise_selector_ordinal": null,
+      "expected_normalized_type_pattern": null,
+      "global_constant": null,
+      "opaque_hyperedge_source": null,
+      "opaque_hyperedge_digest": null,
+      "cap_profile_id": "u05-hb-20000-cache-bypass-v1"
+    },
+    {
+      "schema_version": "lean-rgc-odlrq-action-symbol-v1",
+      "action_id": "unit_cpu_survivor_u15_l0_b",
+      "opcode": "constructor",
+      "target_selector": "last",
+      "premise_slot_rule_id": null,
+      "premise_selector_ordinal": null,
+      "expected_normalized_type_pattern": null,
+      "global_constant": null,
+      "opaque_hyperedge_source": null,
+      "opaque_hyperedge_digest": null,
+      "cap_profile_id": "u05-hb-20000-cache-bypass-v1"
+    },
+    {
+      "schema_version": "lean-rgc-odlrq-action-symbol-v1",
+      "action_id": "unit_cpu_survivor_u15_l0_ghost_store",
+      "opcode": "constructor",
+      "target_selector": "first",
+      "premise_slot_rule_id": null,
+      "premise_selector_ordinal": null,
+      "expected_normalized_type_pattern": null,
+      "global_constant": null,
+      "opaque_hyperedge_source": null,
+      "opaque_hyperedge_digest": null,
+      "cap_profile_id": "u05-hb-20000-cache-bypass-v1"
+    },
+    {
+      "schema_version": "lean-rgc-odlrq-action-symbol-v1",
+      "action_id": "unit_cpu_survivor_u15_l0_reveal",
+      "opcode": "constructor",
+      "target_selector": "last",
+      "premise_slot_rule_id": null,
+      "premise_selector_ordinal": null,
+      "expected_normalized_type_pattern": null,
+      "global_constant": null,
+      "opaque_hyperedge_source": null,
+      "opaque_hyperedge_digest": null,
+      "cap_profile_id": "u05-hb-20000-cache-bypass-v1"
+    },
+    {
+      "schema_version": "lean-rgc-odlrq-action-symbol-v1",
+      "action_id": "unit_cpu_survivor_u15_l0_close",
+      "opcode": "constructor",
+      "target_selector": "first",
+      "premise_slot_rule_id": null,
+      "premise_selector_ordinal": null,
+      "expected_normalized_type_pattern": null,
+      "global_constant": null,
+      "opaque_hyperedge_source": null,
+      "opaque_hyperedge_digest": null,
+      "cap_profile_id": "u05-hb-20000-cache-bypass-v1"
+    }
+  ],
+  "closing_context_catalog": [
+    {
+      "closing_context_id": "observe_two_coordinate_response",
+      "ordered_action_ids": [],
+      "response_coordinate_ids": ["observable_delta", "return_memory"]
+    }
+  ],
+  "query_catalog": [
+    {"query_id": "q_a", "action_word": ["unit_cpu_survivor_u15_l0_a"], "closing_context_id": "observe_two_coordinate_response", "derived_cost": {"response_cells": 4, "word_work": 2, "total": 6}},
+    {"query_id": "q_b", "action_word": ["unit_cpu_survivor_u15_l0_b"], "closing_context_id": "observe_two_coordinate_response", "derived_cost": {"response_cells": 4, "word_work": 2, "total": 6}},
+    {"query_id": "q_ghost_store", "action_word": ["unit_cpu_survivor_u15_l0_ghost_store"], "closing_context_id": "observe_two_coordinate_response", "derived_cost": {"response_cells": 4, "word_work": 2, "total": 6}},
+    {"query_id": "q_reveal", "action_word": ["unit_cpu_survivor_u15_l0_reveal"], "closing_context_id": "observe_two_coordinate_response", "derived_cost": {"response_cells": 4, "word_work": 2, "total": 6}},
+    {"query_id": "q_ghost_store_reveal", "action_word": ["unit_cpu_survivor_u15_l0_ghost_store", "unit_cpu_survivor_u15_l0_reveal"], "closing_context_id": "observe_two_coordinate_response", "derived_cost": {"response_cells": 4, "word_work": 4, "total": 8}},
+    {"query_id": "q_a_b", "action_word": ["unit_cpu_survivor_u15_l0_a", "unit_cpu_survivor_u15_l0_b"], "closing_context_id": "observe_two_coordinate_response", "derived_cost": {"response_cells": 4, "word_work": 4, "total": 8}},
+    {"query_id": "q_b_a", "action_word": ["unit_cpu_survivor_u15_l0_b", "unit_cpu_survivor_u15_l0_a"], "closing_context_id": "observe_two_coordinate_response", "derived_cost": {"response_cells": 4, "word_work": 4, "total": 8}},
+    {"query_id": "q_close", "action_word": ["unit_cpu_survivor_u15_l0_close"], "closing_context_id": "observe_two_coordinate_response", "derived_cost": {"response_cells": 4, "word_work": 2, "total": 6}}
+  ],
+  "mechanical_snapshot_binding": {
+    "binding_id": "u15-l0-exact-response-to-admitted-synthetic-snapshot-v2",
+    "snapshot_scope": "one_snapshot_per_instance",
+    "train_snapshot_materialization_timing": "allowed_before_global_schedule_digest_barrier_commit",
+    "heldout_snapshot_materialization_timing": "only_after_global_eight_family_two_method_schedule_digest_map_commit",
+    "synthetic_action_id_rule": "outer_SyntheticAction.action_id_equals_inner_complete_ActionSymbol.action_id",
+    "synthetic_action_payload_rule": "CanonicalPayload.canonical_json_is_canonical_json_of_the_complete_inner_ActionSymbol_row",
+    "required_action_id_prefix": "unit_cpu_survivor_u15_l0_",
+    "environment_digest_rule": "uppercase_hex_SHA256(UTF8(\"u15-l0-environment-v1|\" + matrix_id + \"|\" + instance_id))",
+    "response_vocabulary_id_rule": "construct_ResponseVocabularyId_from_the_exact_ordered_response_space.coordinate_ids_using_the_existing_contract_factory",
+    "observation_frame_id_rule": "call_existing_make_synthetic_observation_frame_id_with_the_derived_environment_digest_and_ResponseVocabularyId",
+    "transition_semantics_id_rule": "call_existing_make_synthetic_transition_semantics_id_with_the_five_outer_SyntheticAction_objects_whose_CanonicalPayloads_are_the_complete_inner_ActionSymbol_wires_plus_the_ResponseVocabularyId",
+    "stored_digest_rule": "every_stored_frame_or_transition_semantics_digest_is_recomputed_from_the_existing_factory_output_and_equality_checked",
+    "adapter_contract_change_allowed": false,
+    "source_state_id_rule": "unit_cpu_survivor_u15_l0__instance_id__region_id__query_id__source",
+    "intermediate_state_id_rule": "unit_cpu_survivor_u15_l0__instance_id__region_id__query_id__word_position_decimal",
+    "terminal_state_id_rule": "unit_cpu_survivor_u15_l0__instance_id__region_id__query_id__terminal",
+    "closed_state_id_rule": "unit_cpu_survivor_u15_l0__instance_id__closed",
+    "sink_state_id_rule": "unit_cpu_survivor_u15_l0__instance_id__sink",
+    "canonical_payload_schema": "lean-rgc-odlrq-canonical-payload-v1",
+    "source_payload_instantiation": "CanonicalPayload.from_value({kind:u15_l0_source,instance_id:actual_instance_id,region_id:actual_region_id,query_id:actual_query_id})",
+    "intermediate_payload_instantiation": "CanonicalPayload.from_value({kind:u15_l0_intermediate,instance_id:actual_instance_id,region_id:actual_region_id,query_id:actual_query_id,word_position_decimal:canonical_decimal_string_of_actual_actions_consumed})",
+    "terminal_payload_instantiation": "CanonicalPayload.from_value({kind:u15_l0_terminal,instance_id:actual_instance_id,region_id:actual_region_id,query_id:actual_query_id})",
+    "closed_payload_instantiation": "CanonicalPayload.from_value({kind:u15_l0_closed,instance_id:actual_instance_id})",
+    "sink_payload_instantiation": "CanonicalPayload.from_value({kind:u15_l0_sink,instance_id:actual_instance_id})",
+    "payload_wire_rule": "serialize_each_instantiated_CanonicalPayload_with_CanonicalPayload.to_dict",
+    "payload_uniqueness_rule": "the_actual_identifier_values_and_kind_jointly_make_every_nonabsorber_payload_unique_and_make_closed_and_sink_unique_per_instance",
+    "seed_state_ids": "exactly_all_per_instance_region_query_source_state_ids",
+    "source_intermediate_terminal_status": "open",
+    "closed_status": "closed",
+    "sink_status": "sink",
+    "source_intermediate_closed_sink_response": "exact_two_coordinate_zero_vector",
+    "terminal_response_rule": "resolved_exact_per_instance_response_vector",
+    "word_position_rule": "source_precedes_position_1_and_each_intermediate_position_is_the_number_of_actions_already_consumed",
+    "matching_action_rule": "the_next_action_id_in_the_full_query_row_advances_source_or_intermediate_to_the_next_intermediate_or_terminal",
+    "off_word_action_rule": "every_nonmatching_action_from_source_or_intermediate_transitions_to_sink",
+    "terminal_transition_rule": "every_action_from_an_open_terminal_transitions_to_closed",
+    "absorber_transition_rule": "closed_and_sink_self_loop_for_every_action",
+    "transition_table_rule": "materialize_the_full_canonical_state_cross_five_action_table",
+    "state_sort_rule": "existing_SyntheticFiniteSnapshot_order_ascending_canonical_json_bytes_of_state.to_dict",
+    "action_sort_rule": "existing_SyntheticFiniteSnapshot_order_ascending_canonical_json_bytes_of_action.to_dict",
+    "transition_row_sort_rule": "existing_SyntheticFiniteSnapshot_order_ascending_canonical_json_bytes_of_transition.to_dict",
+    "expected_max_state_count_at_four_regions": 78,
+    "expected_max_transition_row_count_at_four_regions": 390,
+    "admission_requirement": "build_and_admit_strict_synthetic_finite_snapshot_before_any_query_score",
+    "verified_snapshot_partition_scope": "all_composite_source_intermediate_terminal_closed_and_sink_states",
+    "verified_block_index_rule": "use_existing_behavioral_partition_canonical_state_payload_byte_block_order_and_the_verifier_issued_zero_based_block_indices_without_reindexing",
+    "terminal_block_map": "map_every_resolved_instance_region_query_terminal_state_to_its_verifier_issued_snapshot_partition_block_index",
+    "exact_terminal_inequality_rule": "a_region_pair_query_inequality_is_supported_only_when_exact_terminal_coordinate_payloads_are_unequal_and_the_two_terminal_states_map_to_distinct_verified_blocks",
+    "region_ground_truth_projection": "family_exact_partition_is_independent_and_valid_only_when_all_query_terminal_block_signature_vectors_are_equal_within_each_declared_region_block_and_distinct_across_declared_region_blocks",
+    "nonprojecting_states": ["source", "intermediate", "closed", "sink"],
+    "orphan_response_rows_allowed": false
+  },
+  "before_feature_derivation": {
+    "target_site_kind": "node_kind_of_target_node_id",
+    "radius": "maximum_finite_undirected_shortest_path_distance_from_target_node_id_to_any_template_node",
+    "boundary_port_kind_count_rows": "count_boundary_ports_by_kind_and_sort_rows_by_utf8_kind_bytes",
+    "separator_deletion": "delete_exactly_separator_node_ids_and_all_incident_edges",
+    "component_size_profile_after_separator_deletion": "remaining_undirected_connected_component_sizes_sorted_ascending",
+    "family_id_or_family_role_is_a_feature": false
+  },
+  "before_graph_templates": [
+    {
+      "template_id": "single_goal_rank0",
+      "nodes": [{"node_id": "g0", "node_kind": "goal"}],
+      "edges": [],
+      "boundary_ports": [],
+      "separator_node_ids": [],
+      "target_node_id": "g0",
+      "expected_features": {"node_kind_counts": {"goal": 1}, "boundary_port_kind_count_rows": [], "shared_mvar_degree_multiset": [], "component_size_profile_after_separator_deletion": [1], "articulation_count": 0, "cycle_rank": 0, "exact_treewidth": 0, "radius": 0, "target_site_kind": "goal"}
+    },
+    {
+      "template_id": "path_shared_rank1",
+      "nodes": [{"node_id": "g0", "node_kind": "goal"}, {"node_id": "m0", "node_kind": "shared_mvar"}, {"node_id": "g1", "node_kind": "goal"}],
+      "edges": [{"source": "g0", "target": "m0", "edge_kind": "incidence"}, {"source": "m0", "target": "g1", "edge_kind": "incidence"}],
+      "boundary_ports": [{"port_id": "p0", "kind": "shared_mvar_interface", "attached_node_id": "m0"}],
+      "separator_node_ids": ["m0"],
+      "target_node_id": "g0",
+      "expected_features": {"node_kind_counts": {"goal": 2, "shared_mvar": 1}, "boundary_port_kind_count_rows": [{"kind": "shared_mvar_interface", "count": 1}], "shared_mvar_degree_multiset": [2], "component_size_profile_after_separator_deletion": [1, 1], "articulation_count": 1, "cycle_rank": 0, "exact_treewidth": 1, "radius": 2, "target_site_kind": "goal"}
+    },
+    {
+      "template_id": "cycle_shared_rank2",
+      "nodes": [{"node_id": "g0", "node_kind": "goal"}, {"node_id": "m0", "node_kind": "shared_mvar"}, {"node_id": "g1", "node_kind": "goal"}, {"node_id": "m1", "node_kind": "shared_mvar"}],
+      "edges": [{"source": "g0", "target": "m0", "edge_kind": "incidence"}, {"source": "m0", "target": "g1", "edge_kind": "incidence"}, {"source": "g1", "target": "m1", "edge_kind": "incidence"}, {"source": "m1", "target": "g0", "edge_kind": "incidence"}],
+      "boundary_ports": [{"port_id": "p0", "kind": "shared_mvar_interface", "attached_node_id": "m0"}, {"port_id": "p1", "kind": "shared_mvar_interface", "attached_node_id": "m1"}],
+      "separator_node_ids": ["m0", "m1"],
+      "target_node_id": "g0",
+      "expected_features": {"node_kind_counts": {"goal": 2, "shared_mvar": 2}, "boundary_port_kind_count_rows": [{"kind": "shared_mvar_interface", "count": 2}], "shared_mvar_degree_multiset": [2, 2], "component_size_profile_after_separator_deletion": [1, 1], "articulation_count": 0, "cycle_rank": 1, "exact_treewidth": 2, "radius": 2, "target_site_kind": "goal"}
+    },
+    {
+      "template_id": "goal_context_edge",
+      "nodes": [{"node_id": "g0", "node_kind": "goal"}, {"node_id": "c0", "node_kind": "context"}],
+      "edges": [{"source": "g0", "target": "c0", "edge_kind": "uses"}],
+      "boundary_ports": [],
+      "separator_node_ids": [],
+      "target_node_id": "g0",
+      "expected_features": {"node_kind_counts": {"context": 1, "goal": 1}, "boundary_port_kind_count_rows": [], "shared_mvar_degree_multiset": [], "component_size_profile_after_separator_deletion": [2], "articulation_count": 0, "cycle_rank": 0, "exact_treewidth": 1, "radius": 1, "target_site_kind": "goal"}
+    },
+    {
+      "template_id": "goal_context_triangle",
+      "nodes": [{"node_id": "g0", "node_kind": "goal"}, {"node_id": "c0", "node_kind": "context"}, {"node_id": "c1", "node_kind": "context"}],
+      "edges": [{"source": "g0", "target": "c0", "edge_kind": "uses"}, {"source": "c0", "target": "c1", "edge_kind": "shares"}, {"source": "c1", "target": "g0", "edge_kind": "uses"}],
+      "boundary_ports": [],
+      "separator_node_ids": [],
+      "target_node_id": "g0",
+      "expected_features": {"node_kind_counts": {"context": 2, "goal": 1}, "boundary_port_kind_count_rows": [], "shared_mvar_degree_multiset": [], "component_size_profile_after_separator_deletion": [3], "articulation_count": 0, "cycle_rank": 1, "exact_treewidth": 2, "radius": 1, "target_site_kind": "goal"}
+    },
+    {
+      "template_id": "plain_path3",
+      "nodes": [{"node_id": "g0", "node_kind": "goal"}, {"node_id": "c0", "node_kind": "context"}, {"node_id": "c1", "node_kind": "context"}],
+      "edges": [{"source": "g0", "target": "c0", "edge_kind": "uses"}, {"source": "c0", "target": "c1", "edge_kind": "shares"}],
+      "boundary_ports": [],
+      "separator_node_ids": [],
+      "target_node_id": "g0",
+      "expected_features": {"node_kind_counts": {"context": 2, "goal": 1}, "boundary_port_kind_count_rows": [], "shared_mvar_degree_multiset": [], "component_size_profile_after_separator_deletion": [3], "articulation_count": 1, "cycle_rank": 0, "exact_treewidth": 1, "radius": 2, "target_site_kind": "goal"}
+    }
+  ],
+  "families": [
+    {
+      "family_id": "separator_rank0",
+      "family_role": "separator_rank0_cost_rank_reversal",
+      "regions": [
+        {"region_id": "sr0_left", "before_graph_template_id": "single_goal_rank0", "node_relabeling": {"g0": "left_goal"}},
+        {"region_id": "sr0_right", "before_graph_template_id": "single_goal_rank0", "node_relabeling": {"g0": "right_goal"}}
+      ],
+      "initial_partition": [["sr0_left", "sr0_right"]],
+      "exact_partition": [["sr0_left"], ["sr0_right"]],
+      "instances": [
+        {
+          "instance_id": "separator_rank0__train",
+          "stratum": "train",
+          "response_access": "available_before_candidate_order_seal",
+          "full_response_table": {
+            "default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}],
+            "overrides": [
+              {"region_id": "sr0_right", "query_id": "q_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]},
+              {"region_id": "sr0_right", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "4", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}
+            ]
+          },
+          "seeded_counterexample_pairs": [{"left_region_id": "sr0_left", "right_region_id": "sr0_right", "query_id": "q_a"}]
+        },
+        {
+          "instance_id": "separator_rank0__heldout_alpha",
+          "stratum": "heldout",
+          "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {
+            "default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}],
+            "overrides": [
+              {"region_id": "sr0_right", "query_id": "q_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]},
+              {"region_id": "sr0_right", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "5", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}
+            ]
+          },
+          "seeded_counterexample_pairs": [{"left_region_id": "sr0_left", "right_region_id": "sr0_right", "query_id": "q_b"}]
+        },
+        {
+          "instance_id": "separator_rank0__heldout_beta",
+          "stratum": "heldout",
+          "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {
+            "default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}],
+            "overrides": [
+              {"region_id": "sr0_right", "query_id": "q_close", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "2"}]},
+              {"region_id": "sr0_right", "query_id": "q_ghost_store_reveal", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-3", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "1"}]}
+            ]
+          },
+          "seeded_counterexample_pairs": [{"left_region_id": "sr0_left", "right_region_id": "sr0_right", "query_id": "q_close"}]
+        }
+      ],
+      "family_assertions": ["separator_rank_equals_0", "at_least_one_instance_has_higher_cost_candidate_ranked_above_a_lower_cost_candidate"]
+    },
+    {
+      "family_id": "separator_rank1",
+      "family_role": "separator_rank1",
+      "regions": [
+        {"region_id": "sr1_left", "before_graph_template_id": "path_shared_rank1", "node_relabeling": {"g0": "l_goal0", "m0": "l_shared", "g1": "l_goal1"}},
+        {"region_id": "sr1_middle", "before_graph_template_id": "path_shared_rank1", "node_relabeling": {"g0": "m_goal0", "m0": "m_shared", "g1": "m_goal1"}},
+        {"region_id": "sr1_right", "before_graph_template_id": "path_shared_rank1", "node_relabeling": {"g0": "r_goal0", "m0": "r_shared", "g1": "r_goal1"}}
+      ],
+      "initial_partition": [["sr1_left", "sr1_middle", "sr1_right"]],
+      "exact_partition": [["sr1_left", "sr1_right"], ["sr1_middle"]],
+      "instances": [
+        {
+          "instance_id": "separator_rank1__train", "stratum": "train", "response_access": "available_before_candidate_order_seal",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "sr1_middle", "query_id": "q_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "2"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "sr1_left", "right_region_id": "sr1_middle", "query_id": "q_b"}]
+        },
+        {
+          "instance_id": "separator_rank1__heldout_alpha", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "sr1_middle", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "3"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "5"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "sr1_left", "right_region_id": "sr1_middle", "query_id": "q_a_b"}]
+        },
+        {
+          "instance_id": "separator_rank1__heldout_beta", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "sr1_middle", "query_id": "q_close", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-3", "denominator": "4"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "7"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "sr1_left", "right_region_id": "sr1_middle", "query_id": "q_close"}]
+        }
+      ],
+      "family_assertions": ["separator_rank_equals_1", "left_and_right_have_identical_terminal_block_signatures"]
+    },
+    {
+      "family_id": "separator_rank2",
+      "family_role": "separator_rank2",
+      "regions": [
+        {"region_id": "sr2_zero", "before_graph_template_id": "cycle_shared_rank2", "node_relabeling": {"g0": "z_goal0", "m0": "z_shared0", "g1": "z_goal1", "m1": "z_shared1"}},
+        {"region_id": "sr2_one", "before_graph_template_id": "cycle_shared_rank2", "node_relabeling": {"g0": "o_goal0", "m0": "o_shared0", "g1": "o_goal1", "m1": "o_shared1"}},
+        {"region_id": "sr2_two", "before_graph_template_id": "cycle_shared_rank2", "node_relabeling": {"g0": "t_goal0", "m0": "t_shared0", "g1": "t_goal1", "m1": "t_shared1"}}
+      ],
+      "initial_partition": [["sr2_zero", "sr2_one", "sr2_two"]],
+      "exact_partition": [["sr2_zero"], ["sr2_one"], ["sr2_two"]],
+      "instances": [
+        {
+          "instance_id": "separator_rank2__train", "stratum": "train", "response_access": "available_before_candidate_order_seal",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "sr2_one", "query_id": "q_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "sr2_two", "query_id": "q_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "sr2_zero", "right_region_id": "sr2_one", "query_id": "q_a"}, {"left_region_id": "sr2_zero", "right_region_id": "sr2_two", "query_id": "q_b"}]
+        },
+        {
+          "instance_id": "separator_rank2__heldout_alpha", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "sr2_one", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "3", "denominator": "2"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "sr2_two", "query_id": "q_close", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "3"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "sr2_zero", "right_region_id": "sr2_one", "query_id": "q_b_a"}, {"left_region_id": "sr2_zero", "right_region_id": "sr2_two", "query_id": "q_close"}]
+        },
+        {
+          "instance_id": "separator_rank2__heldout_beta", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "sr2_one", "query_id": "q_ghost_store_reveal", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "2"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "sr2_two", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-2", "denominator": "1"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "sr2_zero", "right_region_id": "sr2_one", "query_id": "q_ghost_store_reveal"}, {"left_region_id": "sr2_zero", "right_region_id": "sr2_two", "query_id": "q_a_b"}]
+        }
+      ],
+      "family_assertions": ["separator_rank_equals_2", "all_three_terminal_block_signature_vectors_are_distinct"]
+    },
+    {
+      "family_id": "delayed_effect",
+      "family_role": "length_two_delayed_effect",
+      "regions": [
+        {"region_id": "delay_zero", "before_graph_template_id": "goal_context_edge", "node_relabeling": {"g0": "dz_goal", "c0": "dz_context"}},
+        {"region_id": "delay_return", "before_graph_template_id": "goal_context_edge", "node_relabeling": {"g0": "dr_goal", "c0": "dr_context"}}
+      ],
+      "initial_partition": [["delay_zero", "delay_return"]],
+      "exact_partition": [["delay_zero"], ["delay_return"]],
+      "instances": [
+        {
+          "instance_id": "delayed_effect__train", "stratum": "train", "response_access": "available_before_candidate_order_seal",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "delay_return", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "3", "denominator": "2"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "delay_zero", "right_region_id": "delay_return", "query_id": "q_a_b"}]
+        },
+        {
+          "instance_id": "delayed_effect__heldout_alpha", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "delay_return", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "5", "denominator": "3"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "delay_zero", "right_region_id": "delay_return", "query_id": "q_b_a"}]
+        },
+        {
+          "instance_id": "delayed_effect__heldout_beta", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "delay_return", "query_id": "q_ghost_store_reveal", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-4", "denominator": "3"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "delay_zero", "right_region_id": "delay_return", "query_id": "q_ghost_store_reveal"}]
+        }
+      ],
+      "family_assertions": ["all_length_one_queries_are_zero", "every_instance_has_a_distinguishing_length_two_query"]
+    },
+    {
+      "family_id": "ghost_memory",
+      "family_role": "direct_zero_return_memory",
+      "regions": [
+        {"region_id": "ghost_zero", "before_graph_template_id": "goal_context_edge", "node_relabeling": {"g0": "gz_goal", "c0": "gz_context"}},
+        {"region_id": "ghost_return", "before_graph_template_id": "goal_context_edge", "node_relabeling": {"g0": "gr_goal", "c0": "gr_context"}}
+      ],
+      "initial_partition": [["ghost_zero", "ghost_return"]],
+      "exact_partition": [["ghost_zero"], ["ghost_return"]],
+      "instances": [
+        {
+          "instance_id": "ghost_memory__train", "stratum": "train", "response_access": "available_before_candidate_order_seal",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "ghost_return", "query_id": "q_ghost_store_reveal", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "ghost_zero", "right_region_id": "ghost_return", "query_id": "q_ghost_store_reveal"}]
+        },
+        {
+          "instance_id": "ghost_memory__heldout_alpha", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "ghost_return", "query_id": "q_ghost_store_reveal", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "4"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "1"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "ghost_zero", "right_region_id": "ghost_return", "query_id": "q_ghost_store_reveal"}]
+        },
+        {
+          "instance_id": "ghost_memory__heldout_beta", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "ghost_return", "query_id": "q_ghost_store_reveal", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "3"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "1"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "ghost_zero", "right_region_id": "ghost_return", "query_id": "q_ghost_store_reveal"}]
+        }
+      ],
+      "family_assertions": ["q_ghost_store_is_zero_for_every_region_and_instance", "q_reveal_is_zero_for_every_region_and_instance", "q_ghost_store_reveal_is_distinguishing", "ghost_store_action_must_remain_in_catalog"]
+    },
+    {
+      "family_id": "noncommutativity",
+      "family_role": "ordered_action_word_noncommutativity",
+      "regions": [
+        {"region_id": "order_left", "before_graph_template_id": "goal_context_triangle", "node_relabeling": {"g0": "ol_goal", "c0": "ol_context0", "c1": "ol_context1"}},
+        {"region_id": "order_right", "before_graph_template_id": "goal_context_triangle", "node_relabeling": {"g0": "or_goal", "c0": "or_context0", "c1": "or_context1"}}
+      ],
+      "initial_partition": [["order_left", "order_right"]],
+      "exact_partition": [["order_left"], ["order_right"]],
+      "instances": [
+        {
+          "instance_id": "noncommutativity__train", "stratum": "train", "response_access": "available_before_candidate_order_seal",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "order_left", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "order_left", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}]}, {"region_id": "order_right", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}]}, {"region_id": "order_right", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "order_left", "right_region_id": "order_right", "query_id": "q_a_b"}]
+        },
+        {
+          "instance_id": "noncommutativity__heldout_alpha", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "order_left", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "2"}]}, {"region_id": "order_left", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "3", "denominator": "2"}]}, {"region_id": "order_right", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "3", "denominator": "2"}]}, {"region_id": "order_right", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "2"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "order_left", "right_region_id": "order_right", "query_id": "q_a_b"}]
+        },
+        {
+          "instance_id": "noncommutativity__heldout_beta", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "order_left", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "3"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-2", "denominator": "1"}]}, {"region_id": "order_left", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "3"}]}, {"region_id": "order_right", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "3"}]}, {"region_id": "order_right", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "3"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-2", "denominator": "1"}]}]},
+          "seeded_counterexample_pairs": [{"left_region_id": "order_left", "right_region_id": "order_right", "query_id": "q_a_b"}]
+        }
+      ],
+      "family_assertions": ["q_a_b_and_q_b_a_remain_distinct_ordered_queries", "every_instance_exhibits_noncommutativity"]
+    },
+    {
+      "family_id": "bisimilar",
+      "family_role": "bisimilar_no_gain_control",
+      "regions": [
+        {"region_id": "bisimilar_left", "before_graph_template_id": "plain_path3", "node_relabeling": {"g0": "bl_goal", "c0": "bl_context0", "c1": "bl_context1"}},
+        {"region_id": "bisimilar_right", "before_graph_template_id": "plain_path3", "node_relabeling": {"g0": "br_goal", "c0": "br_context0", "c1": "br_context1"}}
+      ],
+      "initial_partition": [["bisimilar_left", "bisimilar_right"]],
+      "exact_partition": [["bisimilar_left", "bisimilar_right"]],
+      "instances": [
+        {
+          "instance_id": "bisimilar__train", "stratum": "train", "response_access": "available_before_candidate_order_seal",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": []},
+          "seeded_counterexample_pairs": []
+        },
+        {
+          "instance_id": "bisimilar__heldout_alpha", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "bisimilar_left", "query_id": "q_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "2"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "bisimilar_right", "query_id": "q_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "2"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "bisimilar_left", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "3"}]}, {"region_id": "bisimilar_right", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "3"}]}]},
+          "seeded_counterexample_pairs": []
+        },
+        {
+          "instance_id": "bisimilar__heldout_beta", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "bisimilar_left", "query_id": "q_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "3"}]}, {"region_id": "bisimilar_right", "query_id": "q_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "3"}]}, {"region_id": "bisimilar_left", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "2"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "bisimilar_right", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "2"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}]},
+          "seeded_counterexample_pairs": []
+        }
+      ],
+      "family_assertions": ["every_query_response_is_equal_across_the_two_regions_within_each_instance", "absence_of_counterexample_never_merges_or_promotes_tier"]
+    },
+    {
+      "family_id": "relabel",
+      "family_role": "node_relabel_duplicate_control",
+      "regions": [
+        {"region_id": "relabel_class0_original", "before_graph_template_id": "single_goal_rank0", "node_relabeling": {"g0": "original_single_goal"}},
+        {"region_id": "relabel_class0_permuted", "before_graph_template_id": "single_goal_rank0", "node_relabeling": {"g0": "permuted_single_goal"}},
+        {"region_id": "relabel_class1_original", "before_graph_template_id": "goal_context_edge", "node_relabeling": {"g0": "original_edge_goal", "c0": "original_edge_context"}},
+        {"region_id": "relabel_class1_permuted", "before_graph_template_id": "goal_context_edge", "node_relabeling": {"g0": "permuted_edge_goal", "c0": "permuted_edge_context"}}
+      ],
+      "initial_partition": [["relabel_class0_original", "relabel_class0_permuted"], ["relabel_class1_original", "relabel_class1_permuted"]],
+      "exact_partition": [["relabel_class0_original", "relabel_class0_permuted"], ["relabel_class1_original", "relabel_class1_permuted"]],
+      "instances": [
+        {
+          "instance_id": "relabel__train", "stratum": "train", "response_access": "available_before_candidate_order_seal",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "relabel_class1_original", "query_id": "q_close", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "2"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "3"}]}, {"region_id": "relabel_class1_permuted", "query_id": "q_close", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "2"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "3"}]}]},
+          "seeded_counterexample_pairs": []
+        },
+        {
+          "instance_id": "relabel__heldout_alpha", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "relabel_class0_original", "query_id": "q_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "5"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "relabel_class0_permuted", "query_id": "q_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "5"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "relabel_class1_original", "query_id": "q_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "5"}]}, {"region_id": "relabel_class1_permuted", "query_id": "q_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "5"}]}]},
+          "seeded_counterexample_pairs": []
+        },
+        {
+          "instance_id": "relabel__heldout_beta", "stratum": "heldout", "response_access": "sealed_until_global_eight_family_two_method_schedule_digest_map_committed",
+          "full_response_table": {"default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}], "overrides": [{"region_id": "relabel_class0_original", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "4"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "relabel_class0_permuted", "query_id": "q_a_b", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "4"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}]}, {"region_id": "relabel_class1_original", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-3", "denominator": "7"}]}, {"region_id": "relabel_class1_permuted", "query_id": "q_b_a", "response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-3", "denominator": "7"}]}]},
+          "seeded_counterexample_pairs": []
+        }
+      ],
+      "family_assertions": ["initial_partition_equals_exact_feature_partition", "no_cross_feature_seeded_counterexample", "paired_relabels_have_equal_full_terminal_block_signatures_within_each_instance", "the_two_feature_class_signatures_are_distinct_within_each_instance"]
+    }
+  ],
+  "instance_protocol": {
+    "required_per_family": {"train": 1, "heldout": 2},
+    "required_instance_suffixes": ["__train", "__heldout_alpha", "__heldout_beta"],
+    "shared_query_catalog": true,
+    "shared_candidate_universe_rule": true,
+    "shared_initial_partition_under_instance_identity": true,
+    "shared_candidate_observation_budget": 16,
+    "train_response_access": "before_global_schedule_digest_barrier_commit",
+    "heldout_response_access": "only_after_global_eight_family_two_method_schedule_digest_map_commit",
+    "heldout_fixed_denominator": 16,
+    "global_p0_barrier": "after_both_train_only_schedules_and_the_complete_eight_family_two_method_schedule_digest_map_are_sealed_strictly_open_admit_and_verify_every_heldout_snapshot_then_seal_each_of_the_sixteen_exact_P0_partitions_full_covariances_digests_and_trace_losses_before_t0_reporting_or_either_heldout_schedule_application",
+    "pre_p0_failure_rule": "any_cap_schema_kind_admission_response_censor_or_resource_failure_before_all_sixteen_exact_P0_rows_are_sealed_is_global_PREREQUISITE_BLOCKED_with_no_partial_denominator",
+    "post_p0_abstentions_remain_in_denominator_at_last_exact_partition_covariance_and_loss": true
+  },
+  "cegar_semantics": {
+    "proposal_tier": "NOMINAL_DIAGNOSTIC_ONLY",
+    "hard_eligible": false,
+    "query_kind": "congruence_separator_only",
+    "refinement_rule": "exact_counterexample_adds_must_not_link_and_monotonically_splits",
+    "equal_response_rule": "record_equality_without_merge_or_tier_promotion",
+    "no_counterexample_rule": "retain_partition_and_nominal_tier",
+    "public_merge_mutator_allowed": false,
+    "ghost_pruning_allowed": false
+  },
+  "learner_recurrence": {
+    "adaptation_data": "train_instance_only",
+    "initial_partition_P0": "family_initial_partition_induced_only_by_frozen_before_features",
+    "step_candidate_set": "every_unobserved_full_train_candidate_in_the_family_candidate_universe",
+    "step_score_recomputation": "recompute_J_of_candidate_given_current_P_t_for_every_unobserved_candidate_using_the_full_16_dimensional_train_behavior_vectors",
+    "step_selection": "maximum_score_then_minimum_cost_then_ascending_canonical_full_train_candidate_bytes",
+    "step_observation": "observe_only_the_selected_query_specific_exact_two_coordinate_train_response_for_the_selected_region_pair",
+    "step_refinement": "if_the_selected_pair_is_in_one_current_block_and_its_two_exact_coordinates_are_unequal_add_the_exact_must_not_link_split_else_leave_partition_unchanged",
+    "step_removal": "remove_the_selected_full_candidate_whether_or_not_it_refines",
+    "termination": "repeat_until_min_16_or_candidate_universe_exhaustion",
+    "schedule_digest": "uppercase_hex_SHA256_of_strict_canonical_json_bytes_of_the_ordered_full_train_candidate_row_array",
+    "global_schedule_digest_barrier": "strict_canonical_json_object_keyed_in_evaluation.fixed_denominator_family_ids_order_each_value_containing_locality_schedule_sha256_and_baseline_schedule_sha256_is_committed_before_any_heldout_access",
+    "heldout_application": "after_the_global_schedule_digest_barrier_commit_replace_only_train_instance_id_with_the_target_heldout_instance_id_and_preserve_region_pair_and_complete_query_row_order",
+    "heldout_adaptation_allowed": false,
+    "baseline_construction": "one_shot_ascending_canonical_full_train_candidate_bytes_without_adaptation_then_the_same_instance_id_substitution_for_heldout"
+  },
+  "objective": {
+    "loss_id": "exact-full-conditional-covariance-trace-v1",
+    "global_behavior_vector": "for_each_region_and_instance_canonical_concatenation_of_all_eight_query_response_vectors_in_query_catalog_order_and_each_query_in_closing_context_coordinate_order",
+    "global_behavior_dimension": 16,
+    "partition_covariance": "construct_the_full_exact_16_by_16_within_partition_conditional_covariance_matrix",
+    "instance_trace_loss": "V_all_of_partition_equals_the_exact_trace_of_the_full_16_by_16_within_partition_conditional_covariance_matrix",
+    "covariance_computation_requirement": "compute_every_full_exact_16_by_16_covariance_before_its_trace_and_digest_and_never_replace_it_with_a_diagonal_computation",
+    "covariance_digest_rule": "uppercase_hex_SHA256_of_strict_canonical_json_bytes_of_the_16_rows_each_containing_16_canonical_ExactRational_cells",
+    "family_covariance_at_t": "elementwise_exact_arithmetic_mean_of_the_two_heldout_16_by_16_instance_covariance_matrices_for_the_family_and_method_at_t_explicitly_not_a_pooled_covariance",
+    "family_covariance_trace_at_t": "exact_arithmetic_mean_of_the_two_heldout_instance_covariance_traces_and_exactly_equal_to_the_trace_of_family_covariance_at_t",
+    "result_covariance_storage": "for_each_method_instance_checkpoint_and_each_method_family_checkpoint_store_partition_or_family_binding_candidate_prefix_binding_covariance_sha256_and_canonical_ExactRational_trace_but_not_the_256_cells",
+    "verifier_recomputation": "recompute_every_instance_full_matrix_digest_and_trace_from_the_frozen_response_table_and_bound_partition_then_recompute_every_family_elementwise_mean_matrix_digest_and_trace_and_require_exact_equality",
+    "result_object_wire_cap_bytes": 1048576,
+    "family_loss_at_t": "exact_mean_of_the_two_heldout_instance_trace_losses_at_t",
+    "overall_loss_at_t": "exact_equal_mean_of_all_sixteen_heldout_instance_trace_losses_at_t",
+    "pooling_across_instances_or_families_allowed": false,
+    "diagonal_only_approximation_allowed": false,
+    "candidate_refinement_rule": "candidate_pair_query_refines_the_partition_only_when_its_query_specific_exact_two_coordinate_observations_distinguish_the_pair",
+    "query_gain": "V_all_before_refinement_minus_V_all_after_candidate_induced_refinement",
+    "query_score": "query_gain_divided_by_mechanically_derived_candidate_cost"
+  },
+  "evaluation": {
+    "heldout_family_ids": ["separator_rank0", "separator_rank1", "separator_rank2", "delayed_effect", "ghost_memory", "noncommutativity", "bisimilar", "relabel"],
+    "fixed_denominator_family_ids": ["separator_rank0", "separator_rank1", "separator_rank2", "delayed_effect", "ghost_memory", "noncommutativity", "bisimilar", "relabel"],
+    "heldout_instance_count": 16,
+    "p0_precondition": "after_the_global_train_schedule_digest_barrier_all_sixteen_strictly_admitted_and_verified_heldout_instances_have_exact_sealed_P0_partition_full_covariance_digest_and_trace_before_any_heldout_schedule_application",
+    "p0_imputation_or_substitution_allowed": false,
+    "full_curve_budget_axis": {"first_t": 0, "last_t": 16, "point_count": 17},
+    "schedule_length_per_family": "min(16,number_of_unique_canonical_unordered_region_pair_query_candidates)",
+    "schedule_repeats_allowed": false,
+    "short_schedule_padding": "for_every_t_after_schedule_exhaustion_through_16_repeat_final_partition_loss_and_cost_with_UNIVERSE_EXHAUSTED_PLATEAU",
+    "universe_exhausted_plateau_is_abstention": false,
+    "universe_exhausted_plateau_is_censor": false,
+    "universe_exhausted_plateau_reduces_coverage": false,
+    "frozen_matrix_censor_count": 0,
+    "post_p0_censor_introduction_allowed": false,
+    "reporting_checkpoints": [0, 1, 2, 4, 8, 16],
+    "aulc": {
+      "arithmetic": "exact_rational",
+      "rectangle_rule": "left",
+      "formula": "sum_over_t_0_through_15_of_overall_equal_instance_mean_loss_L_t",
+      "included_t_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "reporting_checkpoints_are_only_a_subset_not_the_integration_grid": true
+    },
+    "baseline": {
+      "baseline_id": "canonical-full-candidate-bytes-order-v1",
+      "same_initial_partition": true,
+      "same_complete_candidate_universe": true,
+      "same_candidate_observation_budget": true,
+      "same_caps": true,
+      "one_candidate_observation_per_budget_step": true
+    },
+    "primary_endpoint": "deterministic_exact_paired_overall_loss_curve_and_left_rectangle_aulc",
+    "primary_inference": "deterministic_no_resampling",
+    "result_storage_rule": "lossless_covariance_reference_by_sha256_plus_exact_trace_and_partition_candidate_bindings_with_verifier_full_matrix_recomputation",
+    "full_covariance_cells_serialized_in_result": false,
+    "support_clauses": [
+      "locality_loss_no_greater_than_baseline_for_every_t_from_0_through_16",
+      "locality_loss_no_greater_than_baseline_at_every_reporting_checkpoint",
+      "coverage_numerators_equal_between_locality_and_baseline",
+      "censor_counts_equal_between_locality_and_baseline",
+      "locality_abstention_count_no_greater_than_baseline",
+      "every_frozen_seeded_pair_on_all_eight_train_and_sixteen_heldout_instances_is_separated_by_the_locality_partition_at_t16",
+      "locality_loss_strictly_less_than_baseline_for_at_least_one_t_from_0_through_16"
+    ],
+    "cluster_bootstrap": {
+      "role": "diagnostic_only",
+      "diagnostic_statistic": "paired_baseline_AULC_minus_locality_AULC_as_an_exact_rational_family_aggregate",
+      "resampling_unit": "equal_family_aggregate_each_defined_as_the_mean_of_two_heldout_instances",
+      "seed": 2026071701,
+      "replicates": 10000,
+      "interval": "two_sided_percentile_95",
+      "draw_bytes_rule": "for_replicate_r_0_through_9999_and_draw_k_0_through_7_compute_SHA256_of_UTF8_u15-l0-bootstrap-v1_pipe_decimal_seed_pipe_decimal_r_pipe_decimal_k",
+      "family_index_rule": "unsigned_big_endian_first_8_digest_bytes_mod_8",
+      "family_index_mapping": "zero_based_index_into_evaluation.fixed_denominator_family_ids_in_its_frozen_array_order_without_resorting",
+      "sampling_rule": "sample_the_indexed_equal_family_aggregate_with_replacement_for_eight_draws",
+      "replicate_statistic": "exact_rational_mean_of_the_eight_sampled_family_aggregates",
+      "replicate_sort_rule": "ascending_exact_rational_value_then_replicate_index_for_equal_values",
+      "lower_order_statistic_zero_based": 249,
+      "upper_order_statistic_zero_based": 9749,
+      "percentile_convention": "nearest_rank_with_the_frozen_zero_based_order_statistics",
+      "random_module_allowed": false,
+      "floating_point_allowed": false,
+      "may_change_primary_disposition": false
+    }
+  },
+  "gate_semantics": {
+    "contract_fail_conditions": [
+      "after_or_audit_or_future_feature_access",
+      "any_heldout_access_before_global_eight_family_two_method_schedule_digest_map_commit",
+      "nonmonotone_refinement",
+      "ghost_action_pruning",
+      "nominal_to_hard_tier_conversion",
+      "action_catalog_or_matrix_digest_mismatch",
+      "outer_inner_action_id_mismatch",
+      "caller_supplied_or_wall_time_cost",
+      "response_row_without_admitted_snapshot_terminal_binding",
+      "region_ground_truth_projection_signature_violation",
+      "unequal_exact_terminal_payloads_without_distinct_verified_blocks",
+      "seventeenth_candidate_observation_attempt",
+      "repeated_candidate_observation_attempt"
+    ],
+    "prerequisite_block_conditions": ["global_preflight_frozen_fixture_mechanically_required_snapshot_states_or_rows_exceed_its_declared_global_cap", "any_frozen_fixture_cap_schema_kind_admission_response_censor_or_resource_failure_prevents_all_sixteen_exact_P0_rows_from_being_sealed"],
+    "paired_evaluation_abstain_conditions": ["post_P0_stage_wall_or_resource_exceeded"],
+    "public_non_evaluation_abstain_conditions": ["unseen_runtime_input_region_or_treewidth_or_oracle_cell_or_snapshot_cap_exceeded", "unseen_runtime_input_schema_or_kind", "unseen_runtime_input_censored_observation"],
+    "abstain_carry_forward_rule": "paired_evaluation_ABSTAIN_is_legal_only_after_the_global_P0_barrier_and_retains_the_instances_last_exact_partition_full_covariance_digest_and_trace_in_the_fixed_denominator",
+    "cap_scope_precedence": "frozen_fixture_compatibility_and_all_sixteen_exact_P0_rows_are_global_preconditions;_only_after_that_barrier_can_a_paired_stage_failure_be_ABSTAIN_and_a_public_unseen_input_ABSTAIN_is_outside_the_frozen_denominator",
+    "gain_support_conditions": [
+      "every_frozen_seeded_pair_on_all_eight_train_and_sixteen_heldout_instances_is_separated_by_the_locality_partition_at_t16_whether_by_its_own_query_or_another_verified_split",
+      "ghost_store_remains_in_the_action_catalog",
+      "all_sixteen_heldout_instances_remain_in_the_fixed_denominator",
+      "locality_loss_no_greater_than_baseline_for_every_t_from_0_through_16",
+      "locality_loss_no_greater_than_baseline_at_every_reporting_checkpoint",
+      "coverage_numerators_equal_between_locality_and_baseline",
+      "censor_counts_equal_between_locality_and_baseline",
+      "locality_abstention_count_no_greater_than_baseline",
+      "locality_loss_strictly_less_than_baseline_for_at_least_one_t_from_0_through_16"
+    ],
+    "no_clear_seed_condition": "every_frozen_seeded_pair_on_all_eight_train_and_sixteen_heldout_instances_is_separated_by_the_locality_partition_at_t16",
+    "policy_miss_rule": "if_an_available_frozen_seeded_pair_remains_co_blocked_in_the_locality_partition_at_t16_the_disposition_is_DEGRADED_never_PREREQUISITE_BLOCKED_ABSTAIN_or_NO_CLEAR;literal_selection_of_the_seed_query_is_not_required_if_another_verified_split_separates_the_pair"
+  },
+  "disposition_rules": {
+    "precedence": ["L0_EXECUTION_FAILED", "L0_PREREQUISITE_BLOCKED", "L0_SYNTHETIC_CEGAR_DEGRADED", "L0_SYNTHETIC_CEGAR_GAIN_OBSERVED", "L0_SYNTHETIC_CEGAR_NO_CLEAR_GAIN"],
+    "L0_EXECUTION_FAILED": "contract_integrity_digest_access_gate_or_runtime_execution_failure",
+    "L0_PREREQUISITE_BLOCKED": "global_preflight_or_strict_materialization_finds_that_a_frozen_fixture_cap_schema_kind_admission_response_censor_or_resource_prerequisite_prevents_all_sixteen_exact_P0_rows_from_being_sealed",
+    "L0_SYNTHETIC_CEGAR_DEGRADED": "valid_execution_but_locality_loss_exceeds_baseline_at_any_t_or_locality_abstention_count_exceeds_baseline_or_any_frozen_seeded_pair_remains_co_blocked_in_the_locality_partition_at_t16",
+    "L0_SYNTHETIC_CEGAR_GAIN_OBSERVED": "valid_execution_and_every_gain_support_condition_is_true",
+    "L0_SYNTHETIC_CEGAR_NO_CLEAR_GAIN": "valid_seed_complete_execution_with_equal_denominators_no_greater_loss_at_every_t_and_no_greater_abstention_but_no_t_has_strict_loss_improvement"
+  },
+  "reachability_control_fixture": {
+    "scope": "test_only_derivation_never_primary_data",
+    "strictness_rule": "every_control_uses_the_same_strict_input_parser_verifier_and_disposition_precedence_and_no_control_bypasses_a_gate",
+    "family_ids": ["reachability_control_0", "reachability_control_1", "reachability_control_2", "reachability_control_3", "reachability_control_4", "reachability_control_5", "reachability_control_6", "reachability_control_7"],
+    "regions": ["control_left", "control_right"],
+    "initial_partition": [["control_left", "control_right"]],
+    "exact_partition_for_distinguishing_variants": [["control_left"], ["control_right"]],
+    "instances_per_family": ["train", "heldout_alpha", "heldout_beta"],
+    "default_response_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}],
+    "train_right_override_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "0", "denominator": "1"}],
+    "heldout_alpha_right_override_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "1", "denominator": "1"}],
+    "heldout_beta_right_override_vector": [{"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "-1", "denominator": "1"}, {"schema_version": "lean-rgc-odlrq-exact-rational-v1", "numerator": "2", "denominator": "1"}],
+    "canonical_query_order_for_the_sole_region_pair": ["q_a_b", "q_a", "q_b_a", "q_b", "q_close", "q_ghost_store_reveal", "q_ghost_store", "q_reveal"],
+    "fixed_denominator": "eight_equal_families_and_sixteen_heldout_instances",
+    "coverage_censor_abstention_rule": "both_methods_observe_the_same_schedule_length_with_full_coverage_zero_censors_and_zero_abstentions"
+  },
+  "disposition_reachability_controls": [
+    {
+      "variant_id": "gain_reachable",
+      "control_mutation": "for_every_control_family_and_instance_override_only_control_right_at_q_reveal_with_the_corresponding_frozen_vector_and_seed_control_left_control_right_q_reveal",
+      "mechanical_proof": "q_reveal_is_the_canonical_eighth_candidate_but_the_sole_positive_gain_candidate_so_locality_splits_at_t1_baseline_at_t8_then_both_right_pad_equal_through_t16",
+      "required_curve_relation": "locality_no_greater_at_every_t_and_strictly_less_for_t1_through_t7",
+      "expected_disposition": "L0_SYNTHETIC_CEGAR_GAIN_OBSERVED",
+      "included_in_primary_endpoint": false
+    },
+    {
+      "variant_id": "no_clear_gain_reachable",
+      "control_mutation": "use_the_same_two_regions_with_one_exact_bisimilar_block_no_seeded_pairs_and_all_train_and_heldout_response_tables_equal_to_the_frozen_zero_default",
+      "mechanical_proof": "both_complete_schedules_preserve_the_same_zero_loss_one_block_partition_all_seeds_are_vacuously_satisfied_and_every_curve_point_is_equal",
+      "expected_disposition": "L0_SYNTHETIC_CEGAR_NO_CLEAR_GAIN",
+      "included_in_primary_endpoint": false
+    },
+    {
+      "variant_id": "degraded_reachable",
+      "control_mutation": "for_every_control_family_and_instance_override_only_control_right_at_q_a_b_with_the_corresponding_frozen_vector_and_seed_control_left_control_right_q_a_b_then_select_candidates_by_score_ascending_cost_ascending_full_bytes",
+      "mechanical_proof": "baseline_observes_canonical_first_q_a_b_at_t1_while_the_adversarial_policy_observes_the_seven_zero_gain_candidates_first_and_q_a_b_at_t8",
+      "expected_disposition": "L0_SYNTHETIC_CEGAR_DEGRADED",
+      "included_in_primary_endpoint": false
+    },
+    {
+      "variant_id": "prerequisite_blocked_reachable",
+      "control_mutation": "declare_the_test_only_global_frozen_fixture_max_snapshot_transition_rows_cap_as_199_while_that_same_frozen_two_region_fixture_mechanically_requires_200_rows",
+      "mechanical_proof": "strict_input_parsing_succeeds_and_global_preflight_detects_frozen_fixture_cap_incompatibility_before_any_instance_runtime_or_response_materialization_so_the_runtime_abstain_branch_is_unreachable",
+      "diagnostic_reason": "GLOBAL_PREFLIGHT_FROZEN_FIXTURE_SNAPSHOT_ROW_CAP_INCOMPATIBILITY",
+      "expected_disposition": "L0_PREREQUISITE_BLOCKED",
+      "included_in_primary_endpoint": false
+    },
+    {
+      "variant_id": "execution_failed_reachable",
+      "control_mutation": "after_a_valid_gain_control_execution_flip_the_first_hex_nibble_of_one_result_covariance_sha256_without_changing_the_recomputed_covariance_or_trace",
+      "mechanical_proof": "strict_result_shape_and_hex_parse_succeed_but_verifier_recomputation_detects_digest_inequality_after_execution_has_started",
+      "expected_disposition": "L0_EXECUTION_FAILED",
+      "included_in_primary_endpoint": false
+    }
+  ],
+  "allowed_dispositions": [
+    "L0_SYNTHETIC_CEGAR_GAIN_OBSERVED",
+    "L0_SYNTHETIC_CEGAR_NO_CLEAR_GAIN",
+    "L0_SYNTHETIC_CEGAR_DEGRADED",
+    "L0_PREREQUISITE_BLOCKED",
+    "L0_EXECUTION_FAILED"
+  ],
+  "nonclaims": [
+    "This matrix does not establish an exact locality quotient.",
+    "This matrix does not promote any learned partition, query, witness, or report above the nominal tier.",
+    "Absence of a counterexample is not evidence of equality, lumpability, memory loss, or safety.",
+    "The frozen oracle tables are synthetic and are not evidence about protected tasks, pilot tasks, Lean RPC behavior, or LLM behavior.",
+    "No hard, robust, MaxEnt, envelope, similarity, production-ranking, GPU, SSH, continuous-time, gradient, or parallel claim is evaluated here.",
+    "Any non-gain, degraded, blocked, or execution-failed disposition leaves the accepted I0 hard line unchanged."
+  ]
+}
