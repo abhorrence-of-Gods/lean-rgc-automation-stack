@@ -29,6 +29,9 @@
   "test_odlrq_maxent.py": [
     "unit"
   ],
+  "test_odlrq_similarity.py": [
+    "unit"
+  ],
   "test_odlrq_hankel_predictive.py": [
     "unit"
   ],
