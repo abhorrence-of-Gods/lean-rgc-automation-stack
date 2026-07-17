@@ -8,7 +8,10 @@ generic matrix, envelope, cocycle, memory, or production-Lean admission API.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 import hashlib
+from math import gcd
+import re
 from typing import Any
 
 from .adapters import (
@@ -2742,6 +2745,1361 @@ def bound_e2_finite_return_memory(
     return _construct_return_memory(restriction, split)
 
 
+# ---------------------------------------------------------------------------
+# I0: strict typed hard/nominal pipeline integration.
+#
+# This layer intentionally lives beside the E2 certificates because the
+# frozen I0 endpoint composes E0/E1/E2/S0 authorities.  Its private manifest,
+# coverage, arithmetic-row, and report carriers are implementation details;
+# only the seven names added to ``__all__`` below are package API.
+
+
+class PipelineEvidenceTier(str, Enum):
+    EXACT = "EXACT"
+    EXACT_DECLARED_SYNTHETIC = "EXACT_DECLARED_SYNTHETIC"
+    CERTIFIED_SYNTHETIC = "CERTIFIED_SYNTHETIC"
+    NOMINAL_DIAGNOSTIC_ONLY = "NOMINAL_DIAGNOSTIC_ONLY"
+
+
+class PipelineDisposition(str, Enum):
+    PASS = "PASS"
+    FAIL_HARD_BOUND_EXCEEDED = "FAIL_HARD_BOUND_EXCEEDED"
+    ABSTAIN_INCOMPLETE_COVERAGE = "ABSTAIN_INCOMPLETE_COVERAGE"
+
+
+_I0_FACTOR_SCHEMA = "odlrq.i0.typed-pipeline-factor.v1"
+_I0_NOMINAL_SCHEMA = "odlrq.i0.nominal-pipeline-addendum.v1"
+_I0_COVERAGE_SCHEMA = "odlrq.i0.pipeline-coverage.v1"
+_I0_PROPAGATED_SCHEMA = "odlrq.i0.propagated-epsilon-term.v1"
+_I0_TOTAL_SCHEMA = "odlrq.i0.typed-diagnostic-total.v1"
+_I0_BINDING_SCHEMA = "odlrq.i0.candidate-authority-binding.v1"
+_I0_MANIFEST_SCHEMA = "odlrq.i0.candidate-authority-manifest.v1"
+_I0_IDENTITY_SCHEMA = "odlrq.i0.authority-identity.v1"
+_I0_REPORT_SCHEMA = "odlrq.i0.pipeline-verification-report.v1"
+_I0_BOUND_SCHEMA = "odlrq.i0.typed-pipeline-bound.v1"
+
+_I0_NORM_ID = "weighted_l1_exact_rational_v1"
+_I0_HARD_COVERAGE_SCOPE = "I0_HARD_DOMAIN_CHAIN"
+_I0_S0_COVERAGE_SCOPE = "S0_DECLARED_SIMILARITY_DOMAIN"
+_I0_NOMINAL_COVERAGE_SCOPE = "E2_CANDIDATE_UNIVERSE_SUPPORT"
+_I0_VERIFICATION_DISPOSITION = "CPU_SYNTHETIC_TYPED_PIPELINE_BOUND_VERIFIED"
+
+_I0_DOMAINS = (
+    "u24.declared_finite_totalized_snapshot.v1",
+    "u24.exact_quotient_coordinates.v1",
+    "u24.positive_finite_fiber_envelope.v1",
+    "u24.certified_finite_horizon_support_profile.v1",
+    "u24.certified_finite_level_similarity_profile.v1",
+)
+_I0_NOMINAL_CODOMAIN = "u24.nominal_fixed_support_law.v1"
+_I0_STAGES = ("E0", "E1", "E2", "S0")
+_I0_FACTOR_BINDINGS = (
+    ("E0.pipeline_source_generator", "E0.pipeline_target_generator"),
+    ("E1.accepted_qualification_envelope", "E2.m0_parent_envelope"),
+    ("E2.p1_cocycle", "E2.p2_cocycle", "E2.return_memory", "E2.support_token"),
+    ("S0.positive_core",),
+)
+
+_I0_ACCEPTED_E1_COMMIT = "6fb35aa229fc60e2220cbb68c1e7fff2ce64f199"
+_I0_ACCEPTED_E1_TREE = "b3fc7f21b6420e718eb954be0c1b5affca65d263"
+_I0_ACCEPTED_E2_COMMIT = "7a8b28872439dd61d40174c2500c5990790002be"
+_I0_ACCEPTED_E2_TREE = "d54ed9fab52da4929843fabdeb3c1e1920994f6a"
+_I0_ACCEPTED_ME0_COMMIT = "28749bf2f0fc67bc55a24e9e07fc03ad6c66b98d"
+_I0_ACCEPTED_ME0_TREE = "a3b3513ca93430c9f15e5bd90888e81b0af1ff9c"
+_I0_ACCEPTED_S0_COMMIT = "2376aca8209c38a3a94dfa872334073d86dc4909"
+_I0_ACCEPTED_S0_TREE = "4b3a2c8b3f3364c411b5444885102035ff3a821f"
+
+_I0_FULL_RUNTIME_SHA256 = "F20A2C1A6556EAAC5371C7438A5F588A3F7E5A76282E2F500614B2E43FF6C05A"
+_I0_S0_RUNTIME_SHA256 = "88FE6E69BB6B0E7BFE2C1C6EB220F420ECA0BE25826D48A90BD318641F3E89C9"
+
+_I0_S0_AUTHORITY_IDENTITY = (
+    "48e8aa4b2a50d93367027d3c924944c160ef806a",
+    "28749bf2f0fc67bc55a24e9e07fc03ad6c66b98d",
+    "docs/experiments/uprime_odlrq_post_me0_s0_i0_authority_2026-07-17.md",
+    "f137a5c4f8411e2b68d6c88d6a6d09683a766aa2",
+    "29557149691",
+    "87811636093",
+)
+_I0_ACTIVATION_IDENTITY = (
+    "2e6d0b64a88877dd1f1bd87718186c3ac040c2a4",
+    _I0_ACCEPTED_S0_COMMIT,
+    "docs/experiments/uprime_odlrq_post_s0_i0_activation_2026-07-17.md",
+    "a2e7642e132226e50f7f238a7c6fa708f8492ec9",
+    "29561412405",
+    "87824486788",
+)
+
+_I0_MAX_WIRE_BYTES = 1_048_576
+_I0_MAX_DEPTH = 16
+_I0_MAX_ARRAY = 256
+_I0_MAX_KEYS = 64
+_I0_MAX_NODES = 8_192
+_I0_MAX_STRING_BYTES = 4_096
+_I0_MAX_ID_BYTES = 128
+_I0_INPUT_BITS = 256
+_I0_INTERMEDIATE_BITS = 4_096
+_I0_SIGNED64_MAX = 2**63 - 1
+_I0_HEX40 = re.compile(r"[0-9a-f]{40}\Z")
+_I0_HEX64 = re.compile(r"[0-9A-F]{64}\Z")
+
+
+def _i0_instance(value: Any, expected: type[Any], fields: tuple[str, ...], where: str) -> Any:
+    if type(value) is not expected:
+        raise StrictContractError(f"{where} must have exact type {expected.__name__}")
+    if type(getattr(value, "__dict__", None)) is not dict or tuple(vars(value)) != fields:
+        raise StrictContractError(f"{where} instance layout or serializer was changed")
+    return value
+
+
+def _i0_wire_preflight(value: Any, where: str) -> None:
+    nodes = 0
+    active: set[int] = set()
+
+    def visit(item: Any, depth: int) -> None:
+        nonlocal nodes
+        if depth > _I0_MAX_DEPTH:
+            raise StrictContractError(f"{where} exceeds JSON depth {_I0_MAX_DEPTH}")
+        nodes += 1
+        if nodes > _I0_MAX_NODES:
+            raise StrictContractError(f"{where} exceeds structural node cap")
+        if item is None or type(item) in (bool, int, str):
+            if type(item) is int and not (-2**63 <= item <= _I0_SIGNED64_MAX):
+                raise StrictContractError(f"{where} integer is outside signed-64")
+            if type(item) is str:
+                try:
+                    encoded = item.encode("utf-8", errors="strict")
+                except UnicodeEncodeError as exc:
+                    raise StrictContractError(f"{where} contains invalid UTF-8") from exc
+                if len(encoded) > _I0_MAX_STRING_BYTES:
+                    raise StrictContractError(f"{where} contains an over-cap string")
+            return
+        if type(item) not in (dict, list):
+            raise StrictContractError(f"{where} is outside strict JSON")
+        identity = id(item)
+        if identity in active:
+            raise StrictContractError(f"{where} contains a cycle")
+        active.add(identity)
+        if type(item) is list:
+            if len(item) > _I0_MAX_ARRAY:
+                raise StrictContractError(f"{where} contains an over-cap array")
+            for child in item:
+                visit(child, depth + 1)
+        else:
+            if len(item) > _I0_MAX_KEYS:
+                raise StrictContractError(f"{where} contains an over-cap object")
+            for key, child in item.items():
+                if type(key) is not str:
+                    raise StrictContractError(f"{where} contains a non-string key")
+                try:
+                    encoded = key.encode("utf-8", errors="strict")
+                except UnicodeEncodeError as exc:
+                    raise StrictContractError(f"{where} contains an invalid key") from exc
+                if len(encoded) > _I0_MAX_STRING_BYTES:
+                    raise StrictContractError(f"{where} contains an over-cap key")
+                nodes += 1
+                if nodes > _I0_MAX_NODES:
+                    raise StrictContractError(f"{where} exceeds structural node cap")
+                visit(child, depth + 1)
+        active.remove(identity)
+
+    visit(value, 0)
+    try:
+        encoded = canonical_contract_bytes(value)
+    except Exception as exc:
+        if isinstance(exc, StrictContractError):
+            raise
+        raise StrictContractError(f"{where} is not canonical JSON") from exc
+    if len(encoded) > _I0_MAX_WIRE_BYTES:
+        raise StrictContractError(f"{where} exceeds one MiB")
+
+
+def _i0_object(value: Any, fields: tuple[str, ...], where: str) -> dict[str, Any]:
+    if type(value) is not dict or tuple(value) != fields:
+        raise StrictContractError(f"{where} fields or insertion order mismatch")
+    return value
+
+
+def _i0_array(value: Any, where: str, *, count: int | None = None) -> list[Any]:
+    if type(value) is not list or len(value) > _I0_MAX_ARRAY:
+        raise StrictContractError(f"{where} must be an exact bounded array")
+    if count is not None and len(value) != count:
+        raise StrictContractError(f"{where} must contain exactly {count} rows")
+    return value
+
+
+def _i0_string(value: Any, where: str, *, identifier: bool = False) -> str:
+    if type(value) is not str or not value:
+        raise StrictContractError(f"{where} must be a nonempty exact string")
+    try:
+        encoded = value.encode("utf-8", errors="strict")
+    except UnicodeEncodeError as exc:
+        raise StrictContractError(f"{where} must be strict UTF-8") from exc
+    limit = _I0_MAX_ID_BYTES if identifier else _I0_MAX_STRING_BYTES
+    if len(encoded) > limit or (identifier and not value.isascii()):
+        raise StrictContractError(f"{where} exceeds its canonical string bound")
+    return value
+
+
+def _i0_bool(value: Any, where: str) -> bool:
+    if type(value) is not bool:
+        raise StrictContractError(f"{where} must be an exact boolean")
+    return value
+
+
+def _i0_int(value: Any, where: str) -> int:
+    if type(value) is not int or not (0 <= value <= _I0_SIGNED64_MAX):
+        raise StrictContractError(f"{where} must be a nonnegative signed-64 integer")
+    return value
+
+
+def _i0_sha1(value: Any, where: str) -> str:
+    if type(value) is not str or _I0_HEX40.fullmatch(value) is None:
+        raise StrictContractError(f"{where} must be canonical lowercase SHA-1")
+    return value
+
+
+def _i0_sha256(value: Any, where: str) -> str:
+    if type(value) is not str or _I0_HEX64.fullmatch(value) is None:
+        raise StrictContractError(f"{where} must be canonical uppercase SHA-256")
+    return value
+
+
+def _i0_tier(value: Any, where: str) -> PipelineEvidenceTier:
+    if type(value) is not PipelineEvidenceTier:
+        raise StrictContractError(f"{where} must be an exact PipelineEvidenceTier")
+    return value
+
+
+def _i0_tier_wire(value: Any, where: str) -> PipelineEvidenceTier:
+    if type(value) is not str:
+        raise StrictContractError(f"{where} must be a closed tier string")
+    try:
+        return PipelineEvidenceTier(value)
+    except ValueError as exc:
+        raise StrictContractError(f"{where} is outside the closed tier vocabulary") from exc
+
+
+def _i0_disposition(value: Any, where: str) -> PipelineDisposition:
+    if type(value) is not PipelineDisposition:
+        raise StrictContractError(f"{where} must be an exact PipelineDisposition")
+    return value
+
+
+def _i0_disposition_wire(value: Any, where: str) -> PipelineDisposition:
+    if type(value) is not str:
+        raise StrictContractError(f"{where} must be a closed disposition string")
+    try:
+        return PipelineDisposition(value)
+    except ValueError as exc:
+        raise StrictContractError(f"{where} is outside the closed disposition vocabulary") from exc
+
+
+def _i0_rational(value: Any, where: str, *, bits: int, nonnegative: bool = True) -> ExactRational:
+    _i0_instance(value, ExactRational, ("numerator", "denominator"), where)
+    if type(value.numerator) is not int or type(value.denominator) is not int:
+        raise StrictContractError(f"{where} rational scalars have wrong types")
+    if value.denominator <= 0 or gcd(abs(value.numerator), value.denominator) != 1:
+        raise StrictContractError(f"{where} must be reduced with positive denominator")
+    if value.numerator == 0 and value.denominator != 1:
+        raise StrictContractError(f"{where} zero must have denominator one")
+    if nonnegative and value.numerator < 0:
+        raise StrictContractError(f"{where} must be nonnegative")
+    if max(abs(value.numerator).bit_length(), value.denominator.bit_length()) > bits:
+        raise StrictContractError(f"{where} exceeds the {bits}-bit cap")
+    return value
+
+
+def _i0_rational_from_wire(value: Any, where: str, *, bits: int) -> ExactRational:
+    _i0_object(value, ("schema_version", "numerator", "denominator"), where)
+    try:
+        result = ExactRational.from_dict(value)
+    except Exception as exc:
+        if isinstance(exc, StrictContractError):
+            raise
+        raise StrictContractError(f"{where} is not an ExactRational wire") from exc
+    _i0_rational(result, where, bits=bits)
+    if ExactRational.to_dict(result) != value:
+        raise StrictContractError(f"{where} rational wire is not canonical")
+    return result
+
+
+def _i0_eq_rational(value: ExactRational, numerator: int, denominator: int = 1) -> bool:
+    return value.numerator == numerator and value.denominator == denominator
+
+
+def _i0_check_intermediate(value: int, where: str) -> None:
+    if abs(value).bit_length() > _I0_INTERMEDIATE_BITS:
+        raise StrictContractError(f"{where} exceeds the 4096-bit intermediate cap")
+
+
+def _i0_derived(numerator: int, denominator: int, where: str) -> ExactRational:
+    _i0_check_intermediate(numerator, f"{where} numerator")
+    _i0_check_intermediate(denominator, f"{where} denominator")
+    if denominator <= 0:
+        raise StrictContractError(f"{where} denominator must be positive")
+    divisor = gcd(abs(numerator), denominator)
+    numerator //= divisor
+    denominator //= divisor
+    if numerator == 0:
+        denominator = 1
+    _i0_check_intermediate(numerator, f"{where} normalized numerator")
+    _i0_check_intermediate(denominator, f"{where} normalized denominator")
+    return ExactRational(numerator, denominator)
+
+
+def _i0_mul(left: ExactRational, right: ExactRational, where: str) -> ExactRational:
+    _i0_rational(left, f"{where} left", bits=_I0_INTERMEDIATE_BITS)
+    _i0_rational(right, f"{where} right", bits=_I0_INTERMEDIATE_BITS)
+    numerator = left.numerator * right.numerator
+    denominator = left.denominator * right.denominator
+    _i0_check_intermediate(numerator, f"{where} raw numerator product")
+    _i0_check_intermediate(denominator, f"{where} raw denominator product")
+    return _i0_derived(numerator, denominator, where)
+
+
+def _i0_add(left: ExactRational, right: ExactRational, where: str) -> ExactRational:
+    _i0_rational(left, f"{where} left", bits=_I0_INTERMEDIATE_BITS)
+    _i0_rational(right, f"{where} right", bits=_I0_INTERMEDIATE_BITS)
+    left_scaled = left.numerator * right.denominator
+    right_scaled = right.numerator * left.denominator
+    denominator = left.denominator * right.denominator
+    for raw, label in (
+        (left_scaled, "left cross-product"),
+        (right_scaled, "right cross-product"),
+        (denominator, "denominator product"),
+    ):
+        _i0_check_intermediate(raw, f"{where} {label}")
+    numerator = left_scaled + right_scaled
+    _i0_check_intermediate(numerator, f"{where} numerator sum")
+    return _i0_derived(numerator, denominator, where)
+
+
+def _i0_le(left: ExactRational, right: ExactRational, where: str) -> bool:
+    left_cross = left.numerator * right.denominator
+    right_cross = right.numerator * left.denominator
+    _i0_check_intermediate(left_cross, f"{where} left comparison product")
+    _i0_check_intermediate(right_cross, f"{where} right comparison product")
+    return left_cross <= right_cross
+
+
+@dataclass(frozen=True)
+class _PipelineCoverage:
+    covered_count: int
+    universe_count: int
+    coverage_scope: str
+    complete: bool
+
+    def __post_init__(self) -> None:
+        _i0_instance(self, _PipelineCoverage, ("covered_count", "universe_count", "coverage_scope", "complete"), "pipeline coverage")
+        covered = _i0_int(self.covered_count, "pipeline covered_count")
+        universe = _i0_int(self.universe_count, "pipeline universe_count")
+        _i0_string(self.coverage_scope, "pipeline coverage_scope", identifier=True)
+        _i0_bool(self.complete, "pipeline complete")
+        if universe == 0 or covered > universe or self.complete is not (covered == universe):
+            raise StrictContractError("pipeline coverage count/completeness mismatch")
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _I0_COVERAGE_SCHEMA,
+            "covered_count": self.covered_count,
+            "universe_count": self.universe_count,
+            "coverage_scope": self.coverage_scope,
+            "complete": self.complete,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "_PipelineCoverage":
+        if cls is not _PipelineCoverage:
+            raise StrictContractError("polymorphic pipeline coverage parsing is forbidden")
+        _i0_wire_preflight(value, "pipeline coverage")
+        obj = _i0_object(value, ("schema_version", "covered_count", "universe_count", "coverage_scope", "complete"), "pipeline coverage")
+        if obj["schema_version"] != _I0_COVERAGE_SCHEMA:
+            raise StrictContractError("pipeline coverage schema mismatch")
+        result = cls(obj["covered_count"], obj["universe_count"], obj["coverage_scope"], obj["complete"])
+        if result.to_dict() != obj:
+            raise StrictContractError("pipeline coverage wire is not canonical")
+        return result
+
+
+_I0_BINDING_ROLES = {
+    "PIPELINE_OBJECT", "LINEAGE_ANCHOR", "HARD_AUTHORITY",
+    "NOMINAL_DIAGNOSTIC", "HARD_CORE", "PREDICTIVE_CORE", "FULL_CONTAINER",
+}
+_I0_DIGEST_DOMAINS = {
+    "CANONICAL_CONTRACT_BYTES_SHA256",
+    "WINDOWS_RUNTIME_CANONICAL_WIRE_SHA256",
+    "CANONICAL_PROJECTION_BYTES_SHA256",
+}
+
+
+@dataclass(frozen=True)
+class _CandidateAuthorityBinding:
+    binding_id: str
+    semantic_stage_id: str
+    producer_stage_id: str
+    binding_role: str
+    object_schema: str
+    digest_domain: str
+    object_sha256: str
+    source_commit: str
+    source_tree: str
+    evidence_tier: PipelineEvidenceTier
+    hard_eligible: bool
+
+    def __post_init__(self) -> None:
+        names = ("binding_id", "semantic_stage_id", "producer_stage_id", "binding_role", "object_schema", "digest_domain", "object_sha256", "source_commit", "source_tree", "evidence_tier", "hard_eligible")
+        _i0_instance(self, _CandidateAuthorityBinding, names, "candidate authority binding")
+        for name in ("binding_id", "semantic_stage_id", "producer_stage_id", "object_schema"):
+            _i0_string(getattr(self, name), f"binding {name}", identifier=True)
+        if self.binding_role not in _I0_BINDING_ROLES:
+            raise StrictContractError("candidate binding role is outside its closed vocabulary")
+        if self.digest_domain not in _I0_DIGEST_DOMAINS:
+            raise StrictContractError("candidate binding digest domain is outside its closed vocabulary")
+        _i0_sha256(self.object_sha256, "candidate binding object_sha256")
+        _i0_sha1(self.source_commit, "candidate binding source_commit")
+        _i0_sha1(self.source_tree, "candidate binding source_tree")
+        _i0_tier(self.evidence_tier, "candidate binding tier")
+        _i0_bool(self.hard_eligible, "candidate binding hard_eligible")
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _I0_BINDING_SCHEMA,
+            "binding_id": self.binding_id,
+            "semantic_stage_id": self.semantic_stage_id,
+            "producer_stage_id": self.producer_stage_id,
+            "binding_role": self.binding_role,
+            "object_schema": self.object_schema,
+            "digest_domain": self.digest_domain,
+            "object_sha256": self.object_sha256,
+            "source_commit": self.source_commit,
+            "source_tree": self.source_tree,
+            "evidence_tier": self.evidence_tier.value,
+            "hard_eligible": self.hard_eligible,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "_CandidateAuthorityBinding":
+        fields = ("schema_version", "binding_id", "semantic_stage_id", "producer_stage_id", "binding_role", "object_schema", "digest_domain", "object_sha256", "source_commit", "source_tree", "evidence_tier", "hard_eligible")
+        obj = _i0_object(value, fields, "candidate authority binding")
+        if obj["schema_version"] != _I0_BINDING_SCHEMA:
+            raise StrictContractError("candidate authority binding schema mismatch")
+        result = cls(
+            obj["binding_id"], obj["semantic_stage_id"], obj["producer_stage_id"],
+            obj["binding_role"], obj["object_schema"], obj["digest_domain"],
+            obj["object_sha256"], obj["source_commit"], obj["source_tree"],
+            _i0_tier_wire(obj["evidence_tier"], "candidate binding evidence_tier"),
+            obj["hard_eligible"],
+        )
+        if result.to_dict() != obj:
+            raise StrictContractError("candidate authority binding wire is not canonical")
+        return result
+
+
+@dataclass(frozen=True)
+class _AuthorityIdentity:
+    authority_commit_sha: str
+    authority_parent_sha: str
+    authority_document_path: str
+    authority_document_blob_sha: str
+    authority_ci_run_id: str
+    authority_ci_job_id: str
+
+    def __post_init__(self) -> None:
+        names = ("authority_commit_sha", "authority_parent_sha", "authority_document_path", "authority_document_blob_sha", "authority_ci_run_id", "authority_ci_job_id")
+        _i0_instance(self, _AuthorityIdentity, names, "authority identity")
+        _i0_sha1(self.authority_commit_sha, "authority commit")
+        _i0_sha1(self.authority_parent_sha, "authority parent")
+        _i0_string(self.authority_document_path, "authority document path")
+        _i0_sha1(self.authority_document_blob_sha, "authority document blob")
+        for name in ("authority_ci_run_id", "authority_ci_job_id"):
+            value = _i0_string(getattr(self, name), name, identifier=True)
+            if not value.isdecimal() or value.startswith("0"):
+                raise StrictContractError(f"{name} must be a canonical positive decimal string")
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _I0_IDENTITY_SCHEMA,
+            "authority_commit_sha": self.authority_commit_sha,
+            "authority_parent_sha": self.authority_parent_sha,
+            "authority_document_path": self.authority_document_path,
+            "authority_document_blob_sha": self.authority_document_blob_sha,
+            "authority_ci_run_id": self.authority_ci_run_id,
+            "authority_ci_job_id": self.authority_ci_job_id,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "_AuthorityIdentity":
+        fields = ("schema_version", "authority_commit_sha", "authority_parent_sha", "authority_document_path", "authority_document_blob_sha", "authority_ci_run_id", "authority_ci_job_id")
+        obj = _i0_object(value, fields, "authority identity")
+        if obj["schema_version"] != _I0_IDENTITY_SCHEMA:
+            raise StrictContractError("authority identity schema mismatch")
+        result = cls(obj["authority_commit_sha"], obj["authority_parent_sha"], obj["authority_document_path"], obj["authority_document_blob_sha"], obj["authority_ci_run_id"], obj["authority_ci_job_id"])
+        if result.to_dict() != obj:
+            raise StrictContractError("authority identity wire is not canonical")
+        return result
+
+
+def _i0_binding_wire(
+    binding_id: str,
+    semantic_stage_id: str,
+    producer_stage_id: str,
+    binding_role: str,
+    object_schema: str,
+    digest_domain: str,
+    object_sha256: str,
+    source_commit: str,
+    source_tree: str,
+    evidence_tier: PipelineEvidenceTier,
+    hard_eligible: bool,
+) -> dict[str, Any]:
+    return _CandidateAuthorityBinding(
+        binding_id, semantic_stage_id, producer_stage_id, binding_role,
+        object_schema, digest_domain, object_sha256, source_commit, source_tree,
+        evidence_tier, hard_eligible,
+    ).to_dict()
+
+
+def _i0_expected_binding_wires() -> list[dict[str, Any]]:
+    exact_declared = PipelineEvidenceTier.EXACT_DECLARED_SYNTHETIC
+    certified = PipelineEvidenceTier.CERTIFIED_SYNTHETIC
+    nominal = PipelineEvidenceTier.NOMINAL_DIAGNOSTIC_ONLY
+    canonical = "CANONICAL_CONTRACT_BYTES_SHA256"
+    projection = "CANONICAL_PROJECTION_BYTES_SHA256"
+    return [
+        _i0_binding_wire(
+            "E0.pipeline_source_generator", "E0", "E2", "PIPELINE_OBJECT",
+            "odlrq_exact_quotient_coordinate_generator_v1", canonical,
+            "5C920F94FA38B6F116526D0BC00340882DE5C1288A8BAE0857F54EB727A3D262",
+            _I0_ACCEPTED_E2_COMMIT, _I0_ACCEPTED_E2_TREE, exact_declared, True,
+        ),
+        _i0_binding_wire(
+            "E0.pipeline_target_generator", "E0", "E2", "PIPELINE_OBJECT",
+            "odlrq_exact_quotient_coordinate_generator_v1", canonical,
+            "7281601FA840B29AC3F97AB4E2D5953163706E9C2CEEC8EE3855A8FB9807161C",
+            _I0_ACCEPTED_E2_COMMIT, _I0_ACCEPTED_E2_TREE, exact_declared, True,
+        ),
+        _i0_binding_wire(
+            "E1.accepted_qualification_envelope", "E1", "E1", "LINEAGE_ANCHOR",
+            "odlrq_fiber_envelope_v1", canonical,
+            "D959B07CEF0A79A9478FAB99D3329D39DFF215A183FCD564B2547DBBE7EBD0C6",
+            _I0_ACCEPTED_E1_COMMIT, _I0_ACCEPTED_E1_TREE, exact_declared, True,
+        ),
+        _i0_binding_wire(
+            "E2.m0_parent_envelope", "E1", "E2", "HARD_AUTHORITY",
+            "odlrq_fiber_envelope_v1", canonical,
+            "9BA692E8A14C5C56BCDE6D565082300A9D0BB7A888DE5533F31DC1896E9B157C",
+            _I0_ACCEPTED_E2_COMMIT, _I0_ACCEPTED_E2_TREE, exact_declared, True,
+        ),
+        _i0_binding_wire(
+            "E2.p1_cocycle", "E2", "E2", "HARD_AUTHORITY",
+            "odlrq.e2.cocycle-certificate.v1", canonical,
+            "6C87E7EE21B8BC0D78D024AB14C2D5F247D541531A90D6291732D284C7FFEF11",
+            _I0_ACCEPTED_E2_COMMIT, _I0_ACCEPTED_E2_TREE, certified, True,
+        ),
+        _i0_binding_wire(
+            "E2.p2_cocycle", "E2", "E2", "HARD_AUTHORITY",
+            "odlrq.e2.cocycle-certificate.v1", canonical,
+            "BEE7B16BC7FF8AF926CDF8F5502F21B2708A9C4C280F57AC846889B2C50A065D",
+            _I0_ACCEPTED_E2_COMMIT, _I0_ACCEPTED_E2_TREE, certified, True,
+        ),
+        _i0_binding_wire(
+            "E2.return_memory", "E2", "E2", "HARD_AUTHORITY",
+            "odlrq.e2.finite-return-memory.v1", canonical,
+            "95C2BEDA13B1085E46183038F857B753AE0DC531685BC3996EB1E5F5AFAD4A46",
+            _I0_ACCEPTED_E2_COMMIT, _I0_ACCEPTED_E2_TREE, certified, True,
+        ),
+        _i0_binding_wire(
+            "E2.support_token", "E2", "E2", "HARD_AUTHORITY",
+            "odlrq.e2.certified-support-token.v1", canonical,
+            "D01170427E717D543D941740881C937EF5B535E357D67EEFDBF62773AFD6E660",
+            _I0_ACCEPTED_E2_COMMIT, _I0_ACCEPTED_E2_TREE, certified, True,
+        ),
+        _i0_binding_wire(
+            "ME0.nontrivial_orbit_windows_result", "ME0", "ME0", "NOMINAL_DIAGNOSTIC",
+            "odlrq.me0.maxent-result.v1", "WINDOWS_RUNTIME_CANONICAL_WIRE_SHA256",
+            "DCA363A6C8CC15ED13C4182DE7BFD2F68293E83C1766419B439C1AE8309C42E3",
+            _I0_ACCEPTED_ME0_COMMIT, _I0_ACCEPTED_ME0_TREE, nominal, False,
+        ),
+        _i0_binding_wire(
+            "S0.positive_core", "S0", "S0", "HARD_CORE",
+            "odlrq.s0.positive-core-projection.v1", projection,
+            "8670B7381468EC47EBF7DFCEEC6EF1B847A5B4DB40935B2A7521C22A645B96D7",
+            _I0_ACCEPTED_S0_COMMIT, _I0_ACCEPTED_S0_TREE, certified, True,
+        ),
+        _i0_binding_wire(
+            "S0.predictive_core", "S0", "S0", "PREDICTIVE_CORE",
+            "odlrq.s0.predictive-core-projection.v1", projection,
+            "2AEF5156AB4A3C6D329C2346DFAD731D9B0E7BA33CEDC65487B187CF0E383F7E",
+            _I0_ACCEPTED_S0_COMMIT, _I0_ACCEPTED_S0_TREE, nominal, False,
+        ),
+        _i0_binding_wire(
+            "S0.full_similarity_certificate", "S0", "S0", "FULL_CONTAINER",
+            "odlrq.s0.similarity-certificate.v1", canonical,
+            "86C3AF246466BB62A2297EEF40E437CC9152110DC1EF69F64ACCA2A8D0FA3D35",
+            _I0_ACCEPTED_S0_COMMIT, _I0_ACCEPTED_S0_TREE, nominal, False,
+        ),
+    ]
+
+
+def _i0_identity_wire(values: tuple[str, str, str, str, str, str]) -> dict[str, Any]:
+    return _AuthorityIdentity(*values).to_dict()
+
+
+def _i0_expected_manifest_wire() -> dict[str, Any]:
+    """Return a detached exact candidate-manifest wire for fixture builders."""
+    return {
+        "schema_version": _I0_MANIFEST_SCHEMA,
+        "ordered_bindings": _i0_expected_binding_wires(),
+        "full_runtime_manifest_sha256": _I0_FULL_RUNTIME_SHA256,
+        "s0_runtime_manifest_sha256": _I0_S0_RUNTIME_SHA256,
+        "s0_authority_identity": _i0_identity_wire(_I0_S0_AUTHORITY_IDENTITY),
+        "i0_activation_identity": _i0_identity_wire(_I0_ACTIVATION_IDENTITY),
+    }
+
+
+@dataclass(frozen=True)
+class _CandidateAuthorityManifest:
+    ordered_bindings: tuple[_CandidateAuthorityBinding, ...]
+    full_runtime_manifest_sha256: str
+    s0_runtime_manifest_sha256: str
+    s0_authority_identity: _AuthorityIdentity
+    i0_activation_identity: _AuthorityIdentity
+
+    def __post_init__(self) -> None:
+        names = ("ordered_bindings", "full_runtime_manifest_sha256", "s0_runtime_manifest_sha256", "s0_authority_identity", "i0_activation_identity")
+        _i0_instance(self, _CandidateAuthorityManifest, names, "candidate authority manifest")
+        if type(self.ordered_bindings) is not tuple or len(self.ordered_bindings) != 12:
+            raise StrictContractError("candidate manifest must have exactly twelve bindings")
+        for row in self.ordered_bindings:
+            _CandidateAuthorityBinding.to_dict(_i0_instance(row, _CandidateAuthorityBinding, ("binding_id", "semantic_stage_id", "producer_stage_id", "binding_role", "object_schema", "digest_domain", "object_sha256", "source_commit", "source_tree", "evidence_tier", "hard_eligible"), "candidate manifest binding"))
+        if len({row.binding_id for row in self.ordered_bindings}) != 12:
+            raise StrictContractError("candidate manifest binding ids must be unique")
+        _i0_sha256(self.full_runtime_manifest_sha256, "full runtime manifest digest")
+        _i0_sha256(self.s0_runtime_manifest_sha256, "S0 runtime manifest digest")
+        _AuthorityIdentity.to_dict(_i0_instance(self.s0_authority_identity, _AuthorityIdentity, ("authority_commit_sha", "authority_parent_sha", "authority_document_path", "authority_document_blob_sha", "authority_ci_run_id", "authority_ci_job_id"), "S0 authority identity"))
+        _AuthorityIdentity.to_dict(_i0_instance(self.i0_activation_identity, _AuthorityIdentity, ("authority_commit_sha", "authority_parent_sha", "authority_document_path", "authority_document_blob_sha", "authority_ci_run_id", "authority_ci_job_id"), "I0 activation identity"))
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _I0_MANIFEST_SCHEMA,
+            "ordered_bindings": [_CandidateAuthorityBinding.to_dict(row) for row in self.ordered_bindings],
+            "full_runtime_manifest_sha256": self.full_runtime_manifest_sha256,
+            "s0_runtime_manifest_sha256": self.s0_runtime_manifest_sha256,
+            "s0_authority_identity": _AuthorityIdentity.to_dict(self.s0_authority_identity),
+            "i0_activation_identity": _AuthorityIdentity.to_dict(self.i0_activation_identity),
+        }
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "_CandidateAuthorityManifest":
+        if cls is not _CandidateAuthorityManifest:
+            raise StrictContractError("polymorphic candidate manifest parsing is forbidden")
+        _i0_wire_preflight(value, "candidate authority manifest")
+        fields = ("schema_version", "ordered_bindings", "full_runtime_manifest_sha256", "s0_runtime_manifest_sha256", "s0_authority_identity", "i0_activation_identity")
+        obj = _i0_object(value, fields, "candidate authority manifest")
+        if obj["schema_version"] != _I0_MANIFEST_SCHEMA:
+            raise StrictContractError("candidate authority manifest schema mismatch")
+        rows = tuple(_CandidateAuthorityBinding.from_dict(row) for row in _i0_array(obj["ordered_bindings"], "candidate manifest bindings", count=12))
+        result = cls(
+            rows,
+            obj["full_runtime_manifest_sha256"],
+            obj["s0_runtime_manifest_sha256"],
+            _AuthorityIdentity.from_dict(obj["s0_authority_identity"]),
+            _AuthorityIdentity.from_dict(obj["i0_activation_identity"]),
+        )
+        result_wire = result.to_dict()
+        if result_wire != obj:
+            raise StrictContractError("candidate authority manifest wire is not canonical")
+        expected = _i0_expected_manifest_wire()
+        if canonical_contract_bytes(result_wire) != canonical_contract_bytes(expected):
+            raise StrictContractError("candidate authority manifest is stale, reordered, or spliced")
+        return result
+
+
+def _i0_manifest(value: Any, where: str) -> _CandidateAuthorityManifest:
+    if type(value) is dict:
+        return _CandidateAuthorityManifest.from_dict(value)
+    _i0_instance(value, _CandidateAuthorityManifest, ("ordered_bindings", "full_runtime_manifest_sha256", "s0_runtime_manifest_sha256", "s0_authority_identity", "i0_activation_identity"), where)
+    wire = _CandidateAuthorityManifest.to_dict(value)
+    if canonical_contract_bytes(wire) != canonical_contract_bytes(_i0_expected_manifest_wire()):
+        raise StrictContractError(f"{where} is stale, reordered, or spliced")
+    return _CandidateAuthorityManifest.from_dict(wire)
+
+
+def _i0_binding_ids(value: Any, where: str) -> tuple[str, ...]:
+    if type(value) is not tuple or not value or len(value) > 8:
+        raise StrictContractError(f"{where} must be a nonempty exact bounded tuple")
+    result: list[str] = []
+    for index, item in enumerate(value):
+        result.append(_i0_string(item, f"{where}[{index}]", identifier=True))
+    if len(set(result)) != len(result):
+        raise StrictContractError(f"{where} must not contain duplicate bindings")
+    return tuple(result)
+
+
+def _i0_factor_post_init(value: Any, expected_type: type[Any], where: str) -> None:
+    names = ("stage_id", "domain_id", "codomain_id", "norm_id", "L", "epsilon", "evidence_tier", "authority_bindings", "coverage", "hard_eligible")
+    _i0_instance(value, expected_type, names, where)
+    for name in ("stage_id", "domain_id", "codomain_id", "norm_id"):
+        _i0_string(getattr(value, name), f"{where} {name}", identifier=True)
+    L = _i0_rational(value.L, f"{where} L", bits=_I0_INPUT_BITS)
+    _i0_rational(value.epsilon, f"{where} epsilon", bits=_I0_INPUT_BITS)
+    if L.numerator <= 0:
+        raise StrictContractError(f"{where} L must be positive")
+    _i0_tier(value.evidence_tier, f"{where} evidence_tier")
+    _i0_binding_ids(value.authority_bindings, f"{where} authority_bindings")
+    _PipelineCoverage.to_dict(_i0_instance(value.coverage, _PipelineCoverage, ("covered_count", "universe_count", "coverage_scope", "complete"), f"{where} coverage"))
+    _i0_bool(value.hard_eligible, f"{where} hard_eligible")
+
+
+def _i0_factor_to_dict(value: Any, expected_type: type[Any], schema: str, where: str) -> dict[str, Any]:
+    _i0_factor_post_init(value, expected_type, where)
+    return {
+        "schema_version": schema,
+        "stage_id": value.stage_id,
+        "domain_id": value.domain_id,
+        "codomain_id": value.codomain_id,
+        "norm_id": value.norm_id,
+        "L": ExactRational.to_dict(value.L),
+        "epsilon": ExactRational.to_dict(value.epsilon),
+        "evidence_tier": value.evidence_tier.value,
+        "authority_bindings": list(value.authority_bindings),
+        "coverage": _PipelineCoverage.to_dict(value.coverage),
+        "hard_eligible": value.hard_eligible,
+    }
+
+
+def _i0_parse_factor_wire(value: Any, expected_type: type[Any], schema: str, where: str) -> Any:
+    _i0_wire_preflight(value, where)
+    fields = ("schema_version", "stage_id", "domain_id", "codomain_id", "norm_id", "L", "epsilon", "evidence_tier", "authority_bindings", "coverage", "hard_eligible")
+    obj = _i0_object(value, fields, where)
+    if obj["schema_version"] != schema:
+        raise StrictContractError(f"{where} schema mismatch")
+    binding_rows = _i0_array(obj["authority_bindings"], f"{where} authority_bindings")
+    result = expected_type(
+        obj["stage_id"], obj["domain_id"], obj["codomain_id"], obj["norm_id"],
+        _i0_rational_from_wire(obj["L"], f"{where} L", bits=_I0_INPUT_BITS),
+        _i0_rational_from_wire(obj["epsilon"], f"{where} epsilon", bits=_I0_INPUT_BITS),
+        _i0_tier_wire(obj["evidence_tier"], f"{where} evidence_tier"),
+        tuple(_i0_string(item, f"{where} authority binding", identifier=True) for item in binding_rows),
+        _PipelineCoverage.from_dict(obj["coverage"]),
+        obj["hard_eligible"],
+    )
+    if _i0_factor_to_dict(result, expected_type, schema, where) != obj:
+        raise StrictContractError(f"{where} wire is not canonical")
+    return result
+
+
+@dataclass(frozen=True)
+class TypedPipelineFactor:
+    stage_id: str
+    domain_id: str
+    codomain_id: str
+    norm_id: str
+    L: ExactRational
+    epsilon: ExactRational
+    evidence_tier: PipelineEvidenceTier
+    authority_bindings: tuple[str, ...]
+    coverage: _PipelineCoverage
+    hard_eligible: bool
+
+    def __post_init__(self) -> None:
+        _i0_factor_post_init(self, TypedPipelineFactor, "TypedPipelineFactor")
+
+    def to_dict(self) -> dict[str, Any]:
+        return _i0_factor_to_dict(self, TypedPipelineFactor, _I0_FACTOR_SCHEMA, "TypedPipelineFactor")
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "TypedPipelineFactor":
+        if cls is not TypedPipelineFactor:
+            raise StrictContractError("polymorphic TypedPipelineFactor parsing is forbidden")
+        return _i0_parse_factor_wire(value, TypedPipelineFactor, _I0_FACTOR_SCHEMA, "TypedPipelineFactor")
+
+
+@dataclass(frozen=True)
+class NominalPipelineAddendum:
+    stage_id: str
+    domain_id: str
+    codomain_id: str
+    norm_id: str
+    L: ExactRational
+    epsilon: ExactRational
+    evidence_tier: PipelineEvidenceTier
+    authority_bindings: tuple[str, ...]
+    coverage: _PipelineCoverage
+    hard_eligible: bool
+
+    def __post_init__(self) -> None:
+        _i0_factor_post_init(self, NominalPipelineAddendum, "NominalPipelineAddendum")
+
+    def to_dict(self) -> dict[str, Any]:
+        return _i0_factor_to_dict(self, NominalPipelineAddendum, _I0_NOMINAL_SCHEMA, "NominalPipelineAddendum")
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "NominalPipelineAddendum":
+        if cls is not NominalPipelineAddendum:
+            raise StrictContractError("polymorphic NominalPipelineAddendum parsing is forbidden")
+        return _i0_parse_factor_wire(value, NominalPipelineAddendum, _I0_NOMINAL_SCHEMA, "NominalPipelineAddendum")
+
+
+@dataclass(frozen=True)
+class _PropagatedEpsilonTerm:
+    stage_id: str
+    downstream_L: ExactRational
+    epsilon: ExactRational
+    contribution: ExactRational
+
+    def __post_init__(self) -> None:
+        names = ("stage_id", "downstream_L", "epsilon", "contribution")
+        _i0_instance(self, _PropagatedEpsilonTerm, names, "propagated epsilon term")
+        _i0_string(self.stage_id, "propagated epsilon stage", identifier=True)
+        for name in ("downstream_L", "epsilon", "contribution"):
+            _i0_rational(getattr(self, name), f"propagated epsilon {name}", bits=_I0_INTERMEDIATE_BITS)
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _I0_PROPAGATED_SCHEMA,
+            "stage_id": self.stage_id,
+            "downstream_L": ExactRational.to_dict(self.downstream_L),
+            "epsilon": ExactRational.to_dict(self.epsilon),
+            "contribution": ExactRational.to_dict(self.contribution),
+        }
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "_PropagatedEpsilonTerm":
+        fields = ("schema_version", "stage_id", "downstream_L", "epsilon", "contribution")
+        obj = _i0_object(value, fields, "propagated epsilon term")
+        if obj["schema_version"] != _I0_PROPAGATED_SCHEMA:
+            raise StrictContractError("propagated epsilon term schema mismatch")
+        result = cls(
+            obj["stage_id"],
+            _i0_rational_from_wire(obj["downstream_L"], "propagated downstream L", bits=_I0_INTERMEDIATE_BITS),
+            _i0_rational_from_wire(obj["epsilon"], "propagated epsilon", bits=_I0_INTERMEDIATE_BITS),
+            _i0_rational_from_wire(obj["contribution"], "propagated contribution", bits=_I0_INTERMEDIATE_BITS),
+        )
+        if result.to_dict() != obj:
+            raise StrictContractError("propagated epsilon term wire is not canonical")
+        return result
+
+
+@dataclass(frozen=True)
+class _TypedDiagnosticTotal:
+    value: ExactRational
+    evidence_tier: PipelineEvidenceTier
+    hard_eligible: bool
+
+    def __post_init__(self) -> None:
+        _i0_instance(self, _TypedDiagnosticTotal, ("value", "evidence_tier", "hard_eligible"), "typed diagnostic total")
+        _i0_rational(self.value, "typed diagnostic total value", bits=_I0_INTERMEDIATE_BITS)
+        _i0_tier(self.evidence_tier, "typed diagnostic total tier")
+        _i0_bool(self.hard_eligible, "typed diagnostic total hard_eligible")
+        if self.evidence_tier is not PipelineEvidenceTier.NOMINAL_DIAGNOSTIC_ONLY or self.hard_eligible is not False:
+            raise StrictContractError("typed diagnostic total crossed the nominal firewall")
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _I0_TOTAL_SCHEMA,
+            "value": ExactRational.to_dict(self.value),
+            "evidence_tier": self.evidence_tier.value,
+            "hard_eligible": self.hard_eligible,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "_TypedDiagnosticTotal":
+        fields = ("schema_version", "value", "evidence_tier", "hard_eligible")
+        obj = _i0_object(value, fields, "typed diagnostic total")
+        if obj["schema_version"] != _I0_TOTAL_SCHEMA:
+            raise StrictContractError("typed diagnostic total schema mismatch")
+        result = cls(
+            _i0_rational_from_wire(obj["value"], "typed diagnostic total value", bits=_I0_INTERMEDIATE_BITS),
+            _i0_tier_wire(obj["evidence_tier"], "typed diagnostic total evidence_tier"),
+            obj["hard_eligible"],
+        )
+        if result.to_dict() != obj:
+            raise StrictContractError("typed diagnostic total wire is not canonical")
+        return result
+
+
+@dataclass(frozen=True)
+class _PipelineVerificationReport:
+    hard_factor_count: int
+    hard_factor_order_sha256: str
+    initial_term: ExactRational | None
+    propagated_epsilon_terms: tuple[_PropagatedEpsilonTerm, ...]
+    recomputed_hard_bound: ExactRational | None
+    recomputed_nominal_addendum: ExactRational | None
+    recomputed_total_bound: _TypedDiagnosticTotal | None
+    coverage_complete: bool
+    tier_firewall_verified: bool
+    domain_chain_verified: bool
+    norm_chain_verified: bool
+    authority_manifest_verified: bool
+    disposition_verified: bool
+    verification_disposition: str
+
+    def __post_init__(self) -> None:
+        names = (
+            "hard_factor_count", "hard_factor_order_sha256", "initial_term",
+            "propagated_epsilon_terms", "recomputed_hard_bound",
+            "recomputed_nominal_addendum", "recomputed_total_bound",
+            "coverage_complete", "tier_firewall_verified", "domain_chain_verified",
+            "norm_chain_verified", "authority_manifest_verified",
+            "disposition_verified", "verification_disposition",
+        )
+        _i0_instance(self, _PipelineVerificationReport, names, "pipeline verification report")
+        _i0_int(self.hard_factor_count, "report hard_factor_count")
+        _i0_sha256(self.hard_factor_order_sha256, "report hard factor order digest")
+        if self.initial_term is not None:
+            _i0_rational(self.initial_term, "report initial term", bits=_I0_INTERMEDIATE_BITS)
+        if type(self.propagated_epsilon_terms) is not tuple or len(self.propagated_epsilon_terms) > 4:
+            raise StrictContractError("report propagated terms must be an exact bounded tuple")
+        for term in self.propagated_epsilon_terms:
+            _PropagatedEpsilonTerm.to_dict(_i0_instance(term, _PropagatedEpsilonTerm, ("stage_id", "downstream_L", "epsilon", "contribution"), "report propagated term"))
+        if self.recomputed_hard_bound is not None:
+            _i0_rational(self.recomputed_hard_bound, "report recomputed hard bound", bits=_I0_INTERMEDIATE_BITS)
+        if self.recomputed_nominal_addendum is not None:
+            _i0_rational(self.recomputed_nominal_addendum, "report recomputed nominal addendum", bits=_I0_INTERMEDIATE_BITS)
+        if self.recomputed_total_bound is not None:
+            _TypedDiagnosticTotal.to_dict(_i0_instance(self.recomputed_total_bound, _TypedDiagnosticTotal, ("value", "evidence_tier", "hard_eligible"), "report recomputed total bound"))
+        for name in (
+            "coverage_complete", "tier_firewall_verified", "domain_chain_verified",
+            "norm_chain_verified", "authority_manifest_verified", "disposition_verified",
+        ):
+            _i0_bool(getattr(self, name), f"report {name}")
+        if self.verification_disposition != _I0_VERIFICATION_DISPOSITION:
+            raise StrictContractError("pipeline verification disposition mismatch")
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _I0_REPORT_SCHEMA,
+            "hard_factor_count": self.hard_factor_count,
+            "hard_factor_order_sha256": self.hard_factor_order_sha256,
+            "initial_term": None if self.initial_term is None else ExactRational.to_dict(self.initial_term),
+            "propagated_epsilon_terms": [_PropagatedEpsilonTerm.to_dict(row) for row in self.propagated_epsilon_terms],
+            "recomputed_hard_bound": None if self.recomputed_hard_bound is None else ExactRational.to_dict(self.recomputed_hard_bound),
+            "recomputed_nominal_addendum": None if self.recomputed_nominal_addendum is None else ExactRational.to_dict(self.recomputed_nominal_addendum),
+            "recomputed_total_bound": None if self.recomputed_total_bound is None else _TypedDiagnosticTotal.to_dict(self.recomputed_total_bound),
+            "coverage_complete": self.coverage_complete,
+            "tier_firewall_verified": self.tier_firewall_verified,
+            "domain_chain_verified": self.domain_chain_verified,
+            "norm_chain_verified": self.norm_chain_verified,
+            "authority_manifest_verified": self.authority_manifest_verified,
+            "disposition_verified": self.disposition_verified,
+            "verification_disposition": self.verification_disposition,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "_PipelineVerificationReport":
+        fields = (
+            "schema_version", "hard_factor_count", "hard_factor_order_sha256",
+            "initial_term", "propagated_epsilon_terms", "recomputed_hard_bound",
+            "recomputed_nominal_addendum", "recomputed_total_bound",
+            "coverage_complete", "tier_firewall_verified", "domain_chain_verified",
+            "norm_chain_verified", "authority_manifest_verified",
+            "disposition_verified", "verification_disposition",
+        )
+        obj = _i0_object(value, fields, "pipeline verification report")
+        if obj["schema_version"] != _I0_REPORT_SCHEMA:
+            raise StrictContractError("pipeline verification report schema mismatch")
+        terms = tuple(_PropagatedEpsilonTerm.from_dict(row) for row in _i0_array(obj["propagated_epsilon_terms"], "report propagated terms"))
+
+        def optional_rational(raw: Any, where: str) -> ExactRational | None:
+            return None if raw is None else _i0_rational_from_wire(raw, where, bits=_I0_INTERMEDIATE_BITS)
+
+        total = None if obj["recomputed_total_bound"] is None else _TypedDiagnosticTotal.from_dict(obj["recomputed_total_bound"])
+        result = cls(
+            obj["hard_factor_count"], obj["hard_factor_order_sha256"],
+            optional_rational(obj["initial_term"], "report initial term"), terms,
+            optional_rational(obj["recomputed_hard_bound"], "report hard bound"),
+            optional_rational(obj["recomputed_nominal_addendum"], "report nominal addendum"),
+            total, obj["coverage_complete"], obj["tier_firewall_verified"],
+            obj["domain_chain_verified"], obj["norm_chain_verified"],
+            obj["authority_manifest_verified"], obj["disposition_verified"],
+            obj["verification_disposition"],
+        )
+        if result.to_dict() != obj:
+            raise StrictContractError("pipeline verification report wire is not canonical")
+        return result
+
+
+@dataclass(frozen=True)
+class TypedPipelineBound:
+    candidate_authority_manifest: _CandidateAuthorityManifest
+    ordered_hard_factors: tuple[TypedPipelineFactor, ...]
+    initial_residual: ExactRational
+    hard_bound: ExactRational | None
+    hard_threshold: ExactRational
+    nominal_addendum: NominalPipelineAddendum | None
+    total_bound: _TypedDiagnosticTotal | None
+    coverage: _PipelineCoverage
+    disposition: PipelineDisposition
+    verification_report: _PipelineVerificationReport
+
+    def __post_init__(self) -> None:
+        names = (
+            "candidate_authority_manifest", "ordered_hard_factors", "initial_residual",
+            "hard_bound", "hard_threshold", "nominal_addendum", "total_bound",
+            "coverage", "disposition", "verification_report",
+        )
+        _i0_instance(self, TypedPipelineBound, names, "TypedPipelineBound")
+        _CandidateAuthorityManifest.to_dict(_i0_instance(self.candidate_authority_manifest, _CandidateAuthorityManifest, ("ordered_bindings", "full_runtime_manifest_sha256", "s0_runtime_manifest_sha256", "s0_authority_identity", "i0_activation_identity"), "bound candidate manifest"))
+        if type(self.ordered_hard_factors) is not tuple or len(self.ordered_hard_factors) != 4:
+            raise StrictContractError("bound must contain exactly four hard factors")
+        for factor in self.ordered_hard_factors:
+            TypedPipelineFactor.to_dict(_i0_instance(factor, TypedPipelineFactor, ("stage_id", "domain_id", "codomain_id", "norm_id", "L", "epsilon", "evidence_tier", "authority_bindings", "coverage", "hard_eligible"), "bound hard factor"))
+        _i0_rational(self.initial_residual, "bound initial_residual", bits=_I0_INPUT_BITS)
+        if self.hard_bound is not None:
+            _i0_rational(self.hard_bound, "bound hard_bound", bits=_I0_INTERMEDIATE_BITS)
+        _i0_rational(self.hard_threshold, "bound hard_threshold", bits=_I0_INPUT_BITS)
+        if self.nominal_addendum is not None:
+            NominalPipelineAddendum.to_dict(_i0_instance(self.nominal_addendum, NominalPipelineAddendum, ("stage_id", "domain_id", "codomain_id", "norm_id", "L", "epsilon", "evidence_tier", "authority_bindings", "coverage", "hard_eligible"), "bound nominal addendum"))
+        if self.total_bound is not None:
+            _TypedDiagnosticTotal.to_dict(_i0_instance(self.total_bound, _TypedDiagnosticTotal, ("value", "evidence_tier", "hard_eligible"), "bound total bound"))
+        _PipelineCoverage.to_dict(_i0_instance(self.coverage, _PipelineCoverage, ("covered_count", "universe_count", "coverage_scope", "complete"), "bound coverage"))
+        _i0_disposition(self.disposition, "bound disposition")
+        _PipelineVerificationReport.to_dict(_i0_instance(self.verification_report, _PipelineVerificationReport, ("hard_factor_count", "hard_factor_order_sha256", "initial_term", "propagated_epsilon_terms", "recomputed_hard_bound", "recomputed_nominal_addendum", "recomputed_total_bound", "coverage_complete", "tier_firewall_verified", "domain_chain_verified", "norm_chain_verified", "authority_manifest_verified", "disposition_verified", "verification_disposition"), "bound verification report"))
+
+    def to_dict(self) -> dict[str, Any]:
+        self.__post_init__()
+        return {
+            "schema_version": _I0_BOUND_SCHEMA,
+            "candidate_authority_manifest": _CandidateAuthorityManifest.to_dict(self.candidate_authority_manifest),
+            "ordered_hard_factors": [TypedPipelineFactor.to_dict(row) for row in self.ordered_hard_factors],
+            "initial_residual": ExactRational.to_dict(self.initial_residual),
+            "hard_bound": None if self.hard_bound is None else ExactRational.to_dict(self.hard_bound),
+            "hard_threshold": ExactRational.to_dict(self.hard_threshold),
+            "nominal_addendum": None if self.nominal_addendum is None else NominalPipelineAddendum.to_dict(self.nominal_addendum),
+            "total_bound": None if self.total_bound is None else _TypedDiagnosticTotal.to_dict(self.total_bound),
+            "coverage": _PipelineCoverage.to_dict(self.coverage),
+            "disposition": self.disposition.value,
+            "verification_report": _PipelineVerificationReport.to_dict(self.verification_report),
+        }
+
+    @classmethod
+    def from_dict(cls, value: Any) -> "TypedPipelineBound":
+        if cls is not TypedPipelineBound:
+            raise StrictContractError("polymorphic TypedPipelineBound parsing is forbidden")
+        _i0_wire_preflight(value, "TypedPipelineBound")
+        fields = (
+            "schema_version", "candidate_authority_manifest", "ordered_hard_factors",
+            "initial_residual", "hard_bound", "hard_threshold", "nominal_addendum",
+            "total_bound", "coverage", "disposition", "verification_report",
+        )
+        obj = _i0_object(value, fields, "TypedPipelineBound")
+        if obj["schema_version"] != _I0_BOUND_SCHEMA:
+            raise StrictContractError("TypedPipelineBound schema mismatch")
+        manifest = _CandidateAuthorityManifest.from_dict(obj["candidate_authority_manifest"])
+        factors = tuple(TypedPipelineFactor.from_dict(row) for row in _i0_array(obj["ordered_hard_factors"], "bound hard factors", count=4))
+        hard_bound = None if obj["hard_bound"] is None else _i0_rational_from_wire(obj["hard_bound"], "bound hard_bound", bits=_I0_INTERMEDIATE_BITS)
+        nominal = None if obj["nominal_addendum"] is None else NominalPipelineAddendum.from_dict(obj["nominal_addendum"])
+        total = None if obj["total_bound"] is None else _TypedDiagnosticTotal.from_dict(obj["total_bound"])
+        result = cls(
+            manifest, factors,
+            _i0_rational_from_wire(obj["initial_residual"], "bound initial_residual", bits=_I0_INPUT_BITS),
+            hard_bound,
+            _i0_rational_from_wire(obj["hard_threshold"], "bound hard_threshold", bits=_I0_INPUT_BITS),
+            nominal, total, _PipelineCoverage.from_dict(obj["coverage"]),
+            _i0_disposition_wire(obj["disposition"], "bound disposition"),
+            _PipelineVerificationReport.from_dict(obj["verification_report"]),
+        )
+        if TypedPipelineBound.to_dict(result) != obj:
+            raise StrictContractError("TypedPipelineBound wire is not canonical")
+        return verify_typed_pipeline_bound(bound=result, expected_candidate_authority_manifest=manifest)
+
+
+def _i0_coverage_wire(covered: int, universe: int, scope: str, complete: bool) -> dict[str, Any]:
+    return _PipelineCoverage(covered, universe, scope, complete).to_dict()
+
+
+def _i0_complete_coverage() -> _PipelineCoverage:
+    return _PipelineCoverage.from_dict(_i0_coverage_wire(4, 4, _I0_HARD_COVERAGE_SCOPE, True))
+
+
+def _i0_incomplete_s0_coverage() -> _PipelineCoverage:
+    return _PipelineCoverage.from_dict(_i0_coverage_wire(3, 4, _I0_S0_COVERAGE_SCOPE, False))
+
+
+def _i0_nominal_coverage() -> _PipelineCoverage:
+    return _PipelineCoverage.from_dict(_i0_coverage_wire(2, 3, _I0_NOMINAL_COVERAGE_SCOPE, False))
+
+
+def _i0_fixed_nominal_addendum() -> NominalPipelineAddendum:
+    return NominalPipelineAddendum(
+        "ME0",
+        _I0_DOMAINS[3],
+        _I0_NOMINAL_CODOMAIN,
+        _I0_NORM_ID,
+        ExactRational(1),
+        ExactRational(1, 10),
+        PipelineEvidenceTier.NOMINAL_DIAGNOSTIC_ONLY,
+        ("ME0.nontrivial_orbit_windows_result",),
+        _i0_nominal_coverage(),
+        False,
+    )
+
+
+def _i0_expected_factor_wires(*, fail: bool = False, abstain: bool = False) -> list[dict[str, Any]]:
+    """Private deterministic fixture aid; it is deliberately not exported."""
+    coverages = [_i0_complete_coverage() for _ in range(4)]
+    if abstain:
+        coverages[3] = _i0_incomplete_s0_coverage()
+    epsilons = (
+        ExactRational(0),
+        ExactRational(1, 4) if fail else ExactRational(1, 8),
+        ExactRational(1, 4),
+        ExactRational(1, 8),
+    )
+    Ls = (ExactRational(1), ExactRational(2), ExactRational(3, 2), ExactRational(1))
+    tiers = (
+        PipelineEvidenceTier.EXACT,
+        PipelineEvidenceTier.EXACT_DECLARED_SYNTHETIC,
+        PipelineEvidenceTier.CERTIFIED_SYNTHETIC,
+        PipelineEvidenceTier.CERTIFIED_SYNTHETIC,
+    )
+    return [
+        TypedPipelineFactor(
+            _I0_STAGES[index], _I0_DOMAINS[index], _I0_DOMAINS[index + 1],
+            _I0_NORM_ID, Ls[index], epsilons[index], tiers[index],
+            _I0_FACTOR_BINDINGS[index], coverages[index], True,
+        ).to_dict()
+        for index in range(4)
+    ]
+
+
+def _i0_expected_nominal_wire() -> dict[str, Any]:
+    return _i0_fixed_nominal_addendum().to_dict()
+
+
+def _i0_detach_factor(value: TypedPipelineFactor) -> TypedPipelineFactor:
+    _i0_instance(value, TypedPipelineFactor, ("stage_id", "domain_id", "codomain_id", "norm_id", "L", "epsilon", "evidence_tier", "authority_bindings", "coverage", "hard_eligible"), "hard factor")
+    return TypedPipelineFactor.from_dict(TypedPipelineFactor.to_dict(value))
+
+
+def _i0_detach_nominal(value: NominalPipelineAddendum) -> NominalPipelineAddendum:
+    _i0_instance(value, NominalPipelineAddendum, ("stage_id", "domain_id", "codomain_id", "norm_id", "L", "epsilon", "evidence_tier", "authority_bindings", "coverage", "hard_eligible"), "nominal addendum")
+    return NominalPipelineAddendum.from_dict(NominalPipelineAddendum.to_dict(value))
+
+
+def _i0_validate_inputs(
+    manifest: _CandidateAuthorityManifest,
+    factors: tuple[TypedPipelineFactor, ...],
+    initial_residual: ExactRational,
+    hard_threshold: ExactRational,
+    nominal: NominalPipelineAddendum,
+) -> tuple[bool, bool]:
+    _i0_manifest(manifest, "candidate authority manifest")
+    if type(factors) is not tuple or len(factors) != 4:
+        raise StrictContractError("ordered_hard_factors must be an exact four-factor tuple")
+    for factor in factors:
+        TypedPipelineFactor.to_dict(_i0_instance(factor, TypedPipelineFactor, ("stage_id", "domain_id", "codomain_id", "norm_id", "L", "epsilon", "evidence_tier", "authority_bindings", "coverage", "hard_eligible"), "hard factor"))
+    _i0_rational(initial_residual, "initial_residual", bits=_I0_INPUT_BITS)
+    _i0_rational(hard_threshold, "hard_threshold", bits=_I0_INPUT_BITS)
+    if not _i0_eq_rational(initial_residual, 1, 16):
+        raise StrictContractError("initial_residual must equal the frozen 1/16")
+    if not _i0_eq_rational(hard_threshold, 3, 4):
+        raise StrictContractError("hard_threshold must equal the frozen 3/4")
+
+    expected_L = ((1, 1), (2, 1), (3, 2), (1, 1))
+    expected_tiers = (
+        PipelineEvidenceTier.EXACT,
+        PipelineEvidenceTier.EXACT_DECLARED_SYNTHETIC,
+        PipelineEvidenceTier.CERTIFIED_SYNTHETIC,
+        PipelineEvidenceTier.CERTIFIED_SYNTHETIC,
+    )
+    expected_eps = ((0, 1), None, (1, 4), (1, 8))
+    complete_wire = _i0_complete_coverage().to_dict()
+    incomplete_wire = _i0_incomplete_s0_coverage().to_dict()
+    abstain = False
+    fail_variant = False
+    for index, factor in enumerate(factors):
+        if (
+            factor.stage_id != _I0_STAGES[index]
+            or factor.domain_id != _I0_DOMAINS[index]
+            or factor.codomain_id != _I0_DOMAINS[index + 1]
+            or factor.norm_id != _I0_NORM_ID
+            or factor.evidence_tier is not expected_tiers[index]
+            or factor.authority_bindings != _I0_FACTOR_BINDINGS[index]
+            or factor.hard_eligible is not True
+        ):
+            raise StrictContractError(f"hard factor {_I0_STAGES[index]} contract mismatch")
+        if not _i0_eq_rational(factor.L, *expected_L[index]):
+            raise StrictContractError(f"hard factor {_I0_STAGES[index]} L mismatch")
+        if index == 1:
+            if _i0_eq_rational(factor.epsilon, 1, 8):
+                fail_variant = False
+            elif _i0_eq_rational(factor.epsilon, 1, 4):
+                fail_variant = True
+            else:
+                raise StrictContractError("E1 epsilon must be exactly 1/8 or 1/4")
+        elif not _i0_eq_rational(factor.epsilon, *expected_eps[index]):
+            raise StrictContractError(f"hard factor {_I0_STAGES[index]} epsilon mismatch")
+        coverage_wire = _PipelineCoverage.to_dict(factor.coverage)
+        if index < 3:
+            if coverage_wire != complete_wire:
+                raise StrictContractError(f"hard factor {_I0_STAGES[index]} coverage mismatch")
+        elif coverage_wire == incomplete_wire:
+            abstain = True
+        elif coverage_wire != complete_wire:
+            raise StrictContractError("S0 coverage is neither frozen complete nor frozen incomplete")
+
+    detached_nominal = _i0_detach_nominal(nominal)
+    if detached_nominal.to_dict() != _i0_expected_nominal_wire():
+        raise StrictContractError("nominal addendum contract mismatch or hard-channel promotion")
+
+    binding_map = {row.binding_id: row for row in manifest.ordered_bindings}
+    for ids in _I0_FACTOR_BINDINGS:
+        for binding_id in ids:
+            row = binding_map.get(binding_id)
+            if row is None or row.hard_eligible is not True:
+                raise StrictContractError("hard factor resolved to a missing or non-hard authority")
+    nominal_row = binding_map.get("ME0.nontrivial_orbit_windows_result")
+    if (
+        nominal_row is None
+        or nominal_row.evidence_tier is not PipelineEvidenceTier.NOMINAL_DIAGNOSTIC_ONLY
+        or nominal_row.hard_eligible is not False
+    ):
+        raise StrictContractError("nominal authority crossed the hard tier firewall")
+    return abstain, fail_variant
+
+
+def _i0_compute_arithmetic(
+    factors: tuple[TypedPipelineFactor, ...],
+    initial_residual: ExactRational,
+    nominal: NominalPipelineAddendum,
+) -> tuple[ExactRational, tuple[_PropagatedEpsilonTerm, ...], ExactRational, ExactRational, _TypedDiagnosticTotal]:
+    product_all = ExactRational(1)
+    for index, factor in enumerate(factors):
+        product_all = _i0_mul(product_all, factor.L, f"initial L product {index}")
+    initial_term = _i0_mul(product_all, initial_residual, "initial propagated term")
+    terms: list[_PropagatedEpsilonTerm] = []
+    hard_bound = initial_term
+    for index, factor in enumerate(factors):
+        downstream = ExactRational(1)
+        for later in range(index + 1, len(factors)):
+            downstream = _i0_mul(downstream, factors[later].L, f"{factor.stage_id} downstream L")
+        contribution = _i0_mul(downstream, factor.epsilon, f"{factor.stage_id} propagated epsilon")
+        terms.append(_PropagatedEpsilonTerm(factor.stage_id, downstream, factor.epsilon, contribution))
+        hard_bound = _i0_add(hard_bound, contribution, f"hard bound after {factor.stage_id}")
+    nominal_value = _i0_mul(nominal.L, nominal.epsilon, "nominal diagnostic addendum")
+    total_value = _i0_add(hard_bound, nominal_value, "typed diagnostic total")
+    total = _TypedDiagnosticTotal(total_value, PipelineEvidenceTier.NOMINAL_DIAGNOSTIC_ONLY, False)
+    return initial_term, tuple(terms), hard_bound, nominal_value, total
+
+
+def _i0_build_bound(
+    *,
+    manifest: _CandidateAuthorityManifest,
+    factors: tuple[TypedPipelineFactor, ...],
+    initial_residual: ExactRational,
+    hard_threshold: ExactRational,
+    nominal: NominalPipelineAddendum,
+) -> TypedPipelineBound:
+    abstain, _fail_variant = _i0_validate_inputs(manifest, factors, initial_residual, hard_threshold, nominal)
+    factor_digest = hashlib.sha256(
+        canonical_contract_bytes([TypedPipelineFactor.to_dict(row) for row in factors])
+    ).hexdigest().upper()
+    if abstain:
+        coverage = _PipelineCoverage.from_dict(_PipelineCoverage.to_dict(factors[3].coverage))
+        report = _PipelineVerificationReport(
+            4, factor_digest, None, (), None, None, None, False,
+            True, True, True, True, True, _I0_VERIFICATION_DISPOSITION,
+        )
+        return TypedPipelineBound(
+            manifest, factors, initial_residual, None, hard_threshold, None, None,
+            coverage, PipelineDisposition.ABSTAIN_INCOMPLETE_COVERAGE, report,
+        )
+
+    initial_term, terms, hard_bound, nominal_value, total = _i0_compute_arithmetic(
+        factors, initial_residual, nominal
+    )
+    disposition = (
+        PipelineDisposition.PASS
+        if _i0_le(hard_bound, hard_threshold, "hard threshold comparison")
+        else PipelineDisposition.FAIL_HARD_BOUND_EXCEEDED
+    )
+    report = _PipelineVerificationReport(
+        4, factor_digest, initial_term, terms, hard_bound, nominal_value, total,
+        True, True, True, True, True, True, _I0_VERIFICATION_DISPOSITION,
+    )
+    return TypedPipelineBound(
+        manifest, factors, initial_residual, hard_bound, hard_threshold, nominal,
+        total, _i0_complete_coverage(), disposition, report,
+    )
+
+
+def construct_typed_pipeline_bound(
+    *,
+    candidate_authority_manifest: Any,
+    ordered_hard_factors: Any,
+    initial_residual: ExactRational,
+    hard_threshold: ExactRational,
+    nominal_addendum: NominalPipelineAddendum,
+) -> TypedPipelineBound:
+    manifest = _i0_manifest(candidate_authority_manifest, "candidate_authority_manifest")
+    if type(ordered_hard_factors) is not tuple or len(ordered_hard_factors) != 4:
+        raise StrictContractError("ordered_hard_factors must be an exact four-factor tuple")
+    factors = tuple(_i0_detach_factor(row) for row in ordered_hard_factors)
+    initial = _i0_rational(initial_residual, "initial_residual", bits=_I0_INPUT_BITS)
+    threshold = _i0_rational(hard_threshold, "hard_threshold", bits=_I0_INPUT_BITS)
+    nominal = _i0_detach_nominal(nominal_addendum)
+    result = _i0_build_bound(
+        manifest=manifest,
+        factors=factors,
+        initial_residual=ExactRational(initial.numerator, initial.denominator),
+        hard_threshold=ExactRational(threshold.numerator, threshold.denominator),
+        nominal=nominal,
+    )
+    _i0_wire_preflight(TypedPipelineBound.to_dict(result), "constructed TypedPipelineBound")
+    return result
+
+
+def verify_typed_pipeline_bound(
+    *,
+    bound: TypedPipelineBound,
+    expected_candidate_authority_manifest: Any,
+) -> TypedPipelineBound:
+    _i0_instance(bound, TypedPipelineBound, ("candidate_authority_manifest", "ordered_hard_factors", "initial_residual", "hard_bound", "hard_threshold", "nominal_addendum", "total_bound", "coverage", "disposition", "verification_report"), "bound")
+    supplied_wire = TypedPipelineBound.to_dict(bound)
+    _i0_wire_preflight(supplied_wire, "TypedPipelineBound verification input")
+    expected_manifest = _i0_manifest(expected_candidate_authority_manifest, "expected candidate authority manifest")
+    if canonical_contract_bytes(_CandidateAuthorityManifest.to_dict(bound.candidate_authority_manifest)) != canonical_contract_bytes(_CandidateAuthorityManifest.to_dict(expected_manifest)):
+        raise StrictContractError("bound candidate manifest differs from the expected authority")
+    factors = tuple(_i0_detach_factor(row) for row in bound.ordered_hard_factors)
+    nominal_input = (
+        _i0_fixed_nominal_addendum()
+        if bound.nominal_addendum is None
+        else _i0_detach_nominal(bound.nominal_addendum)
+    )
+    expected = _i0_build_bound(
+        manifest=expected_manifest,
+        factors=factors,
+        initial_residual=_i0_rational(bound.initial_residual, "bound initial_residual", bits=_I0_INPUT_BITS),
+        hard_threshold=_i0_rational(bound.hard_threshold, "bound hard_threshold", bits=_I0_INPUT_BITS),
+        nominal=nominal_input,
+    )
+    expected_wire = TypedPipelineBound.to_dict(expected)
+    if canonical_contract_bytes(supplied_wire) != canonical_contract_bytes(expected_wire):
+        raise StrictContractError("TypedPipelineBound disagrees with independent recomputation")
+    return TypedPipelineBound(
+        _CandidateAuthorityManifest.from_dict(_CandidateAuthorityManifest.to_dict(expected.candidate_authority_manifest)),
+        tuple(TypedPipelineFactor.from_dict(TypedPipelineFactor.to_dict(row)) for row in expected.ordered_hard_factors),
+        ExactRational(expected.initial_residual.numerator, expected.initial_residual.denominator),
+        None if expected.hard_bound is None else ExactRational(expected.hard_bound.numerator, expected.hard_bound.denominator),
+        ExactRational(expected.hard_threshold.numerator, expected.hard_threshold.denominator),
+        None if expected.nominal_addendum is None else NominalPipelineAddendum.from_dict(expected.nominal_addendum.to_dict()),
+        None if expected.total_bound is None else _TypedDiagnosticTotal.from_dict(expected.total_bound.to_dict()),
+        _PipelineCoverage.from_dict(expected.coverage.to_dict()),
+        expected.disposition,
+        _PipelineVerificationReport.from_dict(expected.verification_report.to_dict()),
+    )
+
+
 __all__ = [
     "E2_AUTHORITY_COMMIT_SHA",
     "E2_AUTHORITY_TREE_SHA",
@@ -2763,4 +4121,11 @@ __all__ = [
     "resolve_e2_memory_split",
     "certify_e2_cocycle",
     "bound_e2_finite_return_memory",
+    "PipelineEvidenceTier",
+    "PipelineDisposition",
+    "TypedPipelineFactor",
+    "NominalPipelineAddendum",
+    "TypedPipelineBound",
+    "construct_typed_pipeline_bound",
+    "verify_typed_pipeline_bound",
 ]

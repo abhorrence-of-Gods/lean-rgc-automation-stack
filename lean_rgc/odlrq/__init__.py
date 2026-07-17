@@ -189,6 +189,15 @@ from .similarity import (
     verify_similarity_certificate,
     verify_similarity_certificate_live,
 )
+from .certificates import (
+    PipelineEvidenceTier,
+    PipelineDisposition,
+    TypedPipelineFactor,
+    NominalPipelineAddendum,
+    TypedPipelineBound,
+    construct_typed_pipeline_bound,
+    verify_typed_pipeline_bound,
+)
 from .hankel_predictive import (
     MAX_HANKEL_CELLS,
     MAX_HANKEL_COLUMNS,
@@ -462,6 +471,8 @@ __all__ = [
     "PositiveFiberWeights",
     "PositiveDistance",
     "PositiveTransportCertificate",
+    "PipelineDisposition",
+    "PipelineEvidenceTier",
     "PredictiveDistance",
     "PredictiveTransportCertificate",
     "PrimitiveTargetRow",
@@ -498,6 +509,8 @@ __all__ = [
     "TaskSeed",
     "TargetAtomDeclaration",
     "TotalizedStatus",
+    "TypedPipelineBound",
+    "TypedPipelineFactor",
     "TransitionSemanticsId",
     "TrainingFootprint",
     "TrainingHankelView",
@@ -561,6 +574,7 @@ __all__ = [
     "make_target_residual_bound",
     "make_training_hankel_view",
     "make_word_depth_morphism",
+    "construct_typed_pipeline_bound",
     "observation_frame_digest",
     "preflight_hankel_dimensions",
     "preflight_report_bound",
@@ -578,8 +592,10 @@ __all__ = [
     "verify_generation_time_equals_batch",
     "verify_raw_normalized_equality",
     "verify_upperness_domain",
+    "verify_typed_pipeline_bound",
     "solve_finite_fiber_maxent",
     "verify_maxent_result",
     "witness_domain_membership",
     "analyze_componentwise_window",
+    "NominalPipelineAddendum",
 ]

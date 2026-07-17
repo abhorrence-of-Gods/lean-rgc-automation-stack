@@ -2373,4 +2373,817 @@ def test_u24_four_tier_public_wires_do_not_trust_tier_booleans() -> None:
 
 # U24_I0_TEST_EXTENSION_BEGIN
 # I0 may add only undecorated ``test_u24_i0_*`` function definitions here.
+
+
+def test_u24_i0_authority_bindings_and_unique_terminal_paths_are_exact():
+    odlrq = __import__("lean_rgc.odlrq", fromlist=(
+        "PipelineEvidenceTier", "PipelineDisposition", "TypedPipelineFactor",
+        "NominalPipelineAddendum", "TypedPipelineBound",
+        "construct_typed_pipeline_bound", "verify_typed_pipeline_bound"))
+    development = __import__("lean_rgc.evals.uprime_u2_u4_development", fromlist=(
+        "build_u24_i0_fixture", "build_u24_artifact_wires",
+        "verify_u24_artifact_wires", "emit_u24_artifacts"))
+
+    fixture = development.build_u24_i0_fixture()
+    manifest = fixture.candidate_authority_manifest
+    assert type(manifest) is dict
+    assert tuple(manifest) == (
+        "schema_version",
+        "ordered_bindings",
+        "full_runtime_manifest_sha256",
+        "s0_runtime_manifest_sha256",
+        "s0_authority_identity",
+        "i0_activation_identity",
+    )
+    assert manifest["schema_version"] == "odlrq.i0.candidate-authority-manifest.v1"
+    bindings = manifest["ordered_bindings"]
+    assert type(bindings) is list and len(bindings) == 12
+    binding_ids = tuple(row["binding_id"] for row in bindings)
+    assert binding_ids == (
+        "E0.pipeline_source_generator",
+        "E0.pipeline_target_generator",
+        "E1.accepted_qualification_envelope",
+        "E2.m0_parent_envelope",
+        "E2.p1_cocycle",
+        "E2.p2_cocycle",
+        "E2.return_memory",
+        "E2.support_token",
+        "ME0.nontrivial_orbit_windows_result",
+        "S0.positive_core",
+        "S0.predictive_core",
+        "S0.full_similarity_certificate",
+    )
+    assert len(set(binding_ids)) == len(binding_ids)
+    assert all(tuple(row) == (
+        "schema_version", "binding_id", "semantic_stage_id",
+        "producer_stage_id", "binding_role", "object_schema",
+        "digest_domain", "object_sha256", "source_commit", "source_tree",
+        "evidence_tier", "hard_eligible",
+    ) for row in bindings)
+    assert manifest["full_runtime_manifest_sha256"] == (
+        "F20A2C1A6556EAAC5371C7438A5F588A3F7E5A76282E2F500614B2E43FF6C05A"
+    )
+    assert manifest["s0_runtime_manifest_sha256"] == (
+        "88FE6E69BB6B0E7BFE2C1C6EB220F420ECA0BE25826D48A90BD318641F3E89C9"
+    )
+    assert manifest["s0_authority_identity"] == {
+        "schema_version": "odlrq.i0.authority-identity.v1",
+        "authority_commit_sha": "48e8aa4b2a50d93367027d3c924944c160ef806a",
+        "authority_parent_sha": "28749bf2f0fc67bc55a24e9e07fc03ad6c66b98d",
+        "authority_document_path": (
+            "docs/experiments/uprime_odlrq_post_me0_s0_i0_authority_2026-07-17.md"
+        ),
+        "authority_document_blob_sha": "f137a5c4f8411e2b68d6c88d6a6d09683a766aa2",
+        "authority_ci_run_id": "29557149691",
+        "authority_ci_job_id": "87811636093",
+    }
+    assert manifest["i0_activation_identity"] == {
+        "schema_version": "odlrq.i0.authority-identity.v1",
+        "authority_commit_sha": "2e6d0b64a88877dd1f1bd87718186c3ac040c2a4",
+        "authority_parent_sha": "2376aca8209c38a3a94dfa872334073d86dc4909",
+        "authority_document_path": (
+            "docs/experiments/uprime_odlrq_post_s0_i0_activation_2026-07-17.md"
+        ),
+        "authority_document_blob_sha": "a2e7642e132226e50f7f238a7c6fa708f8492ec9",
+        "authority_ci_run_id": "29561412405",
+        "authority_ci_job_id": "87824486788",
+    }
+
+    source_commit = "1" * 40
+    source_tree = "2" * 40
+    wires = development.build_u24_artifact_wires(
+        fixture=fixture, source_commit=source_commit, source_tree=source_tree
+    )
+    names = tuple(name for name, raw in wires)
+    assert names == (
+        "envelope_core.json",
+        "maxent_fixture.json",
+        "local_tower.json",
+        "global_measure.json",
+        "level_transport.json",
+        "similarity_certificate.json",
+        "integrated_certificate.json",
+    )
+    assert len(set(names)) == 7
+    assert all(type(raw) is bytes and raw for name, raw in wires)
+    integrated = json.loads(dict(wires)["integrated_certificate.json"])
+    assert integrated["source_commit"] == source_commit
+    assert integrated["payload"]["candidate_manifest"] == manifest
+    assert integrated["payload"]["disposition"] == "PASS"
+
+
+def test_u24_i0_typed_pipeline_pass_recomputes_hard_and_nominal_channels():
+    odlrq = __import__("lean_rgc.odlrq", fromlist=(
+        "PipelineEvidenceTier", "PipelineDisposition", "TypedPipelineFactor",
+        "NominalPipelineAddendum", "TypedPipelineBound",
+        "construct_typed_pipeline_bound", "verify_typed_pipeline_bound"))
+    development = __import__("lean_rgc.evals.uprime_u2_u4_development", fromlist=(
+        "build_u24_i0_fixture", "build_u24_artifact_wires",
+        "verify_u24_artifact_wires", "emit_u24_artifacts"))
+
+    fixture = development.build_u24_i0_fixture()
+    bound = fixture.pass_bound
+    assert type(bound) is odlrq.TypedPipelineBound
+    assert odlrq.verify_typed_pipeline_bound(
+        bound=bound,
+        expected_candidate_authority_manifest=fixture.candidate_authority_manifest,
+    ) == bound
+    rebuilt = odlrq.construct_typed_pipeline_bound(
+        candidate_authority_manifest=fixture.candidate_authority_manifest,
+        ordered_hard_factors=bound.ordered_hard_factors,
+        initial_residual=bound.initial_residual,
+        hard_threshold=bound.hard_threshold,
+        nominal_addendum=bound.nominal_addendum,
+    )
+    assert rebuilt == bound
+    wire = bound.to_dict()
+    assert tuple(wire) == (
+        "schema_version", "candidate_authority_manifest",
+        "ordered_hard_factors", "initial_residual", "hard_bound",
+        "hard_threshold", "nominal_addendum", "total_bound", "coverage",
+        "disposition", "verification_report",
+    )
+    assert wire["schema_version"] == "odlrq.i0.typed-pipeline-bound.v1"
+    assert wire["disposition"] == "PASS"
+    assert wire["initial_residual"] == {
+        "schema_version": "lean-rgc-odlrq-exact-rational-v1",
+        "numerator": "1",
+        "denominator": "16",
+    }
+    assert wire["hard_bound"] == {
+        "schema_version": "lean-rgc-odlrq-exact-rational-v1",
+        "numerator": "3",
+        "denominator": "4",
+    }
+    assert wire["hard_threshold"] == wire["hard_bound"]
+    assert wire["nominal_addendum"]["L"]["numerator"] == "1"
+    assert wire["nominal_addendum"]["epsilon"] == {
+        "schema_version": "lean-rgc-odlrq-exact-rational-v1",
+        "numerator": "1",
+        "denominator": "10",
+    }
+    assert wire["total_bound"] == {
+        "schema_version": "odlrq.i0.typed-diagnostic-total.v1",
+        "value": {
+            "schema_version": "lean-rgc-odlrq-exact-rational-v1",
+            "numerator": "17",
+            "denominator": "20",
+        },
+        "evidence_tier": "NOMINAL_DIAGNOSTIC_ONLY",
+        "hard_eligible": False,
+    }
+    report = wire["verification_report"]
+    assert report["hard_factor_count"] == 4
+    assert report["initial_term"]["numerator"] == "3"
+    assert report["initial_term"]["denominator"] == "16"
+    assert tuple(row["stage_id"] for row in report["propagated_epsilon_terms"]) == (
+        "E0", "E1", "E2", "S0",
+    )
+    assert tuple(
+        (row["downstream_L"]["numerator"], row["downstream_L"]["denominator"])
+        for row in report["propagated_epsilon_terms"]
+    ) == (("3", "1"), ("3", "2"), ("1", "1"), ("1", "1"))
+    assert tuple(
+        (row["contribution"]["numerator"], row["contribution"]["denominator"])
+        for row in report["propagated_epsilon_terms"]
+    ) == (("0", "1"), ("3", "16"), ("1", "4"), ("1", "8"))
+    assert report["coverage_complete"] is True
+    assert all(report[key] is True for key in (
+        "tier_firewall_verified", "domain_chain_verified", "norm_chain_verified",
+        "authority_manifest_verified", "disposition_verified",
+    ))
+    assert report["verification_disposition"] == (
+        "CPU_SYNTHETIC_TYPED_PIPELINE_BOUND_VERIFIED"
+    )
+
+
+def test_u24_i0_fail_and_abstain_precedence_are_exact():
+    odlrq = __import__("lean_rgc.odlrq", fromlist=(
+        "PipelineEvidenceTier", "PipelineDisposition", "TypedPipelineFactor",
+        "NominalPipelineAddendum", "TypedPipelineBound",
+        "construct_typed_pipeline_bound", "verify_typed_pipeline_bound"))
+    development = __import__("lean_rgc.evals.uprime_u2_u4_development", fromlist=(
+        "build_u24_i0_fixture", "build_u24_artifact_wires",
+        "verify_u24_artifact_wires", "emit_u24_artifacts"))
+
+    fixture = development.build_u24_i0_fixture()
+    failed = fixture.fail_bound
+    abstained = fixture.abstain_bound
+    for bound in (failed, abstained):
+        assert odlrq.verify_typed_pipeline_bound(
+            bound=bound,
+            expected_candidate_authority_manifest=fixture.candidate_authority_manifest,
+        ) == bound
+
+    failed_wire = failed.to_dict()
+    assert failed_wire["disposition"] == "FAIL_HARD_BOUND_EXCEEDED"
+    assert failed_wire["hard_bound"]["numerator"] == "15"
+    assert failed_wire["hard_bound"]["denominator"] == "16"
+    assert failed_wire["total_bound"]["value"]["numerator"] == "83"
+    assert failed_wire["total_bound"]["value"]["denominator"] == "80"
+    failed_terms = failed_wire["verification_report"]["propagated_epsilon_terms"]
+    assert failed_terms[1]["contribution"]["numerator"] == "3"
+    assert failed_terms[1]["contribution"]["denominator"] == "8"
+
+    abstained_wire = abstained.to_dict()
+    assert abstained_wire["disposition"] == "ABSTAIN_INCOMPLETE_COVERAGE"
+    assert abstained_wire["coverage"] == {
+        "schema_version": "odlrq.i0.pipeline-coverage.v1",
+        "covered_count": 3,
+        "universe_count": 4,
+        "coverage_scope": "S0_DECLARED_SIMILARITY_DOMAIN",
+        "complete": False,
+    }
+    assert abstained_wire["hard_bound"] is None
+    assert abstained_wire["nominal_addendum"] is None
+    assert abstained_wire["total_bound"] is None
+    abstained_report = abstained_wire["verification_report"]
+    assert abstained_report["initial_term"] is None
+    assert abstained_report["propagated_epsilon_terms"] == []
+    assert abstained_report["recomputed_hard_bound"] is None
+    assert abstained_report["recomputed_nominal_addendum"] is None
+    assert abstained_report["recomputed_total_bound"] is None
+    assert abstained_report["coverage_complete"] is False
+    assert all(abstained_report[key] is True for key in (
+        "tier_firewall_verified", "domain_chain_verified", "norm_chain_verified",
+        "authority_manifest_verified", "disposition_verified",
+    ))
+
+    mixed_factors = list(failed.ordered_hard_factors)
+    mixed_factors[-1] = abstained.ordered_hard_factors[-1]
+    precedence = odlrq.construct_typed_pipeline_bound(
+        candidate_authority_manifest=fixture.candidate_authority_manifest,
+        ordered_hard_factors=tuple(mixed_factors),
+        initial_residual=failed.initial_residual,
+        hard_threshold=failed.hard_threshold,
+        nominal_addendum=fixture.pass_bound.nominal_addendum,
+    )
+    assert precedence.disposition is odlrq.PipelineDisposition.ABSTAIN_INCOMPLETE_COVERAGE
+    assert precedence.hard_bound is None
+    assert precedence.nominal_addendum is None
+    assert precedence.total_bound is None
+
+
+def test_u24_i0_nominal_maxent_cannot_enter_or_scale_the_hard_channel():
+    odlrq = __import__("lean_rgc.odlrq", fromlist=(
+        "PipelineEvidenceTier", "PipelineDisposition", "TypedPipelineFactor",
+        "NominalPipelineAddendum", "TypedPipelineBound",
+        "construct_typed_pipeline_bound", "verify_typed_pipeline_bound"))
+    development = __import__("lean_rgc.evals.uprime_u2_u4_development", fromlist=(
+        "build_u24_i0_fixture", "build_u24_artifact_wires",
+        "verify_u24_artifact_wires", "emit_u24_artifacts"))
+
+    fixture = development.build_u24_i0_fixture()
+    bound = fixture.pass_bound
+    nominal = bound.nominal_addendum
+    assert type(nominal) is odlrq.NominalPipelineAddendum
+    nominal_wire = nominal.to_dict()
+    assert nominal_wire["stage_id"] == "ME0"
+    assert nominal_wire["evidence_tier"] == "NOMINAL_DIAGNOSTIC_ONLY"
+    assert nominal_wire["hard_eligible"] is False
+    assert nominal_wire["coverage"]["covered_count"] == 2
+    assert nominal_wire["coverage"]["universe_count"] == 3
+    assert nominal_wire["coverage"]["complete"] is False
+    assert all(factor.stage_id != "ME0" for factor in bound.ordered_hard_factors)
+    assert tuple(factor.stage_id for factor in bound.ordered_hard_factors) == (
+        "E0", "E1", "E2", "S0",
+    )
+    assert bound.hard_bound.to_dict()["numerator"] == "3"
+    assert bound.hard_bound.to_dict()["denominator"] == "4"
+
+    scaled = copy.deepcopy(nominal_wire)
+    scaled["L"] = odlrq.ExactRational(2).to_dict()
+    with pytest.raises(odlrq.StrictContractError):
+        scaled_nominal = odlrq.NominalPipelineAddendum.from_dict(scaled)
+        odlrq.construct_typed_pipeline_bound(
+            candidate_authority_manifest=fixture.candidate_authority_manifest,
+            ordered_hard_factors=bound.ordered_hard_factors,
+            initial_residual=bound.initial_residual,
+            hard_threshold=bound.hard_threshold,
+            nominal_addendum=scaled_nominal,
+        )
+
+    promoted = copy.deepcopy(nominal_wire)
+    promoted["evidence_tier"] = "CERTIFIED_SYNTHETIC"
+    promoted["hard_eligible"] = True
+    with pytest.raises(odlrq.StrictContractError):
+        promoted_nominal = odlrq.NominalPipelineAddendum.from_dict(promoted)
+        odlrq.construct_typed_pipeline_bound(
+            candidate_authority_manifest=fixture.candidate_authority_manifest,
+            ordered_hard_factors=bound.ordered_hard_factors,
+            initial_residual=bound.initial_residual,
+            hard_threshold=bound.hard_threshold,
+            nominal_addendum=promoted_nominal,
+        )
+
+    with pytest.raises(odlrq.StrictContractError):
+        odlrq.construct_typed_pipeline_bound(
+            candidate_authority_manifest=fixture.candidate_authority_manifest,
+            ordered_hard_factors=(
+                bound.ordered_hard_factors[0], nominal,
+                *bound.ordered_hard_factors[2:],
+            ),
+            initial_residual=bound.initial_residual,
+            hard_threshold=bound.hard_threshold,
+            nominal_addendum=nominal,
+        )
+
+    contaminated = bound.ordered_hard_factors[-1].to_dict()
+    contaminated["authority_bindings"] = ["ME0.nontrivial_orbit_windows_result"]
+    with pytest.raises(odlrq.StrictContractError):
+        contaminated_factor = odlrq.TypedPipelineFactor.from_dict(contaminated)
+        odlrq.construct_typed_pipeline_bound(
+            candidate_authority_manifest=fixture.candidate_authority_manifest,
+            ordered_hard_factors=(*bound.ordered_hard_factors[:-1], contaminated_factor),
+            initial_residual=bound.initial_residual,
+            hard_threshold=bound.hard_threshold,
+            nominal_addendum=nominal,
+        )
+
+
+def test_u24_i0_domains_norms_tiers_coverage_and_order_fail_closed():
+    odlrq = __import__("lean_rgc.odlrq", fromlist=(
+        "PipelineEvidenceTier", "PipelineDisposition", "TypedPipelineFactor",
+        "NominalPipelineAddendum", "TypedPipelineBound",
+        "construct_typed_pipeline_bound", "verify_typed_pipeline_bound"))
+    development = __import__("lean_rgc.evals.uprime_u2_u4_development", fromlist=(
+        "build_u24_i0_fixture", "build_u24_artifact_wires",
+        "verify_u24_artifact_wires", "emit_u24_artifacts"))
+
+    fixture = development.build_u24_i0_fixture()
+    bound = fixture.pass_bound
+    factor_wires = [factor.to_dict() for factor in bound.ordered_hard_factors]
+    assert tuple(row["stage_id"] for row in factor_wires) == ("E0", "E1", "E2", "S0")
+    assert tuple(row["domain_id"] for row in factor_wires) == (
+        "u24.declared_finite_totalized_snapshot.v1",
+        "u24.exact_quotient_coordinates.v1",
+        "u24.positive_finite_fiber_envelope.v1",
+        "u24.certified_finite_horizon_support_profile.v1",
+    )
+    assert tuple(row["codomain_id"] for row in factor_wires) == (
+        "u24.exact_quotient_coordinates.v1",
+        "u24.positive_finite_fiber_envelope.v1",
+        "u24.certified_finite_horizon_support_profile.v1",
+        "u24.certified_finite_level_similarity_profile.v1",
+    )
+    assert all(row["norm_id"] == "weighted_l1_exact_rational_v1" for row in factor_wires)
+    assert tuple(row["evidence_tier"] for row in factor_wires) == (
+        "EXACT", "EXACT_DECLARED_SYNTHETIC", "CERTIFIED_SYNTHETIC",
+        "CERTIFIED_SYNTHETIC",
+    )
+    assert all(row["coverage"] == {
+        "schema_version": "odlrq.i0.pipeline-coverage.v1",
+        "covered_count": 4,
+        "universe_count": 4,
+        "coverage_scope": "I0_HARD_DOMAIN_CHAIN",
+        "complete": True,
+    } for row in factor_wires)
+
+    mutations = (
+        (1, "domain_id", "u24.declared_finite_totalized_snapshot.v1"),
+        (2, "codomain_id", "u24.certified_finite_level_similarity_profile.v1"),
+        (0, "norm_id", "binary64_l2"),
+        (0, "evidence_tier", "EXACT_DECLARED_SYNTHETIC"),
+        (3, "hard_eligible", False),
+        (2, "L", True),
+    )
+    for index, field, value in mutations:
+        mutated_wires = copy.deepcopy(factor_wires)
+        mutated_wires[index][field] = value
+        with pytest.raises(odlrq.StrictContractError):
+            mutated_factors = tuple(
+                odlrq.TypedPipelineFactor.from_dict(row) for row in mutated_wires
+            )
+            odlrq.construct_typed_pipeline_bound(
+                candidate_authority_manifest=fixture.candidate_authority_manifest,
+                ordered_hard_factors=mutated_factors,
+                initial_residual=bound.initial_residual,
+                hard_threshold=bound.hard_threshold,
+                nominal_addendum=bound.nominal_addendum,
+            )
+
+    reduced_coverage = copy.deepcopy(factor_wires)
+    reduced_coverage[3]["coverage"] = {
+        "schema_version": "odlrq.i0.pipeline-coverage.v1",
+        "covered_count": 1,
+        "universe_count": 1,
+        "coverage_scope": "I0_HARD_DOMAIN_CHAIN",
+        "complete": True,
+    }
+    with pytest.raises(odlrq.StrictContractError):
+        reduced_factors = tuple(
+            odlrq.TypedPipelineFactor.from_dict(row) for row in reduced_coverage
+        )
+        odlrq.construct_typed_pipeline_bound(
+            candidate_authority_manifest=fixture.candidate_authority_manifest,
+            ordered_hard_factors=reduced_factors,
+            initial_residual=bound.initial_residual,
+            hard_threshold=bound.hard_threshold,
+            nominal_addendum=bound.nominal_addendum,
+        )
+
+    with pytest.raises(odlrq.StrictContractError):
+        odlrq.construct_typed_pipeline_bound(
+            candidate_authority_manifest=fixture.candidate_authority_manifest,
+            ordered_hard_factors=tuple(reversed(bound.ordered_hard_factors)),
+            initial_residual=bound.initial_residual,
+            hard_threshold=bound.hard_threshold,
+            nominal_addendum=bound.nominal_addendum,
+        )
+
+    reordered_bindings = copy.deepcopy(factor_wires)
+    reordered_bindings[1]["authority_bindings"].reverse()
+    with pytest.raises(odlrq.StrictContractError):
+        reordered_factors = tuple(
+            odlrq.TypedPipelineFactor.from_dict(row) for row in reordered_bindings
+        )
+        odlrq.construct_typed_pipeline_bound(
+            candidate_authority_manifest=fixture.candidate_authority_manifest,
+            ordered_hard_factors=reordered_factors,
+            initial_residual=bound.initial_residual,
+            hard_threshold=bound.hard_threshold,
+            nominal_addendum=bound.nominal_addendum,
+        )
+
+    unknown = copy.deepcopy(factor_wires[0])
+    unknown["selector"] = "forbidden"
+    with pytest.raises(odlrq.StrictContractError):
+        odlrq.TypedPipelineFactor.from_dict(unknown)
+    reordered = dict(reversed(tuple(factor_wires[0].items())))
+    with pytest.raises(odlrq.StrictContractError):
+        odlrq.TypedPipelineFactor.from_dict(reordered)
+
+
+def test_u24_i0_live_e2_token_rebinds_and_candidate_manifest_rejects_splicing():
+    odlrq = __import__("lean_rgc.odlrq", fromlist=(
+        "PipelineEvidenceTier", "PipelineDisposition", "TypedPipelineFactor",
+        "NominalPipelineAddendum", "TypedPipelineBound",
+        "construct_typed_pipeline_bound", "verify_typed_pipeline_bound"))
+    development = __import__("lean_rgc.evals.uprime_u2_u4_development", fromlist=(
+        "build_u24_i0_fixture", "build_u24_artifact_wires",
+        "verify_u24_artifact_wires", "emit_u24_artifacts"))
+
+    fixture = development.build_u24_i0_fixture()
+    reference = odlrq.bind_e2_support(fixture.e2_support_token)
+    reference_wire = reference.to_dict()
+    assert reference_wire["certified_support_token_sha256"] == (
+        "D01170427E717D543D941740881C937EF5B535E357D67EEFDBF62773AFD6E660"
+    )
+    assert reference_wire["support_candidate_ids"] == ["c0", "c2"]
+    token_wire = fixture.e2_support_token.to_dict()
+    assert len(odlrq.canonical_contract_bytes(token_wire)) == 2185
+
+    detached = fixture.candidate_authority_manifest
+    detached["ordered_bindings"].reverse()
+    fresh = fixture.candidate_authority_manifest
+    assert fresh["ordered_bindings"][0]["binding_id"] == "E0.pipeline_source_generator"
+    assert fresh["ordered_bindings"][-1]["binding_id"] == (
+        "S0.full_similarity_certificate"
+    )
+    bound = fixture.pass_bound
+
+    splices = []
+    reordered = copy.deepcopy(fresh)
+    reordered["ordered_bindings"].reverse()
+    splices.append(reordered)
+    missing = copy.deepcopy(fresh)
+    del missing["ordered_bindings"][3]
+    splices.append(missing)
+    duplicated = copy.deepcopy(fresh)
+    duplicated["ordered_bindings"][4] = copy.deepcopy(duplicated["ordered_bindings"][3])
+    splices.append(duplicated)
+    stale = copy.deepcopy(fresh)
+    stale["ordered_bindings"][0]["source_commit"] = "0" * 40
+    splices.append(stale)
+    digest_splice = copy.deepcopy(fresh)
+    digest_splice["ordered_bindings"][9]["object_sha256"] = (
+        digest_splice["ordered_bindings"][10]["object_sha256"]
+    )
+    splices.append(digest_splice)
+    sidecar_splice = copy.deepcopy(fresh)
+    sidecar_splice["i0_activation_identity"] = copy.deepcopy(
+        sidecar_splice["s0_authority_identity"]
+    )
+    splices.append(sidecar_splice)
+
+    for spliced in splices:
+        with pytest.raises(odlrq.StrictContractError):
+            odlrq.construct_typed_pipeline_bound(
+                candidate_authority_manifest=spliced,
+                ordered_hard_factors=bound.ordered_hard_factors,
+                initial_residual=bound.initial_residual,
+                hard_threshold=bound.hard_threshold,
+                nominal_addendum=bound.nominal_addendum,
+            )
+        with pytest.raises(odlrq.StrictContractError):
+            odlrq.verify_typed_pipeline_bound(
+                bound=bound, expected_candidate_authority_manifest=spliced
+            )
+
+
+def test_u24_i0_seven_artifact_schemas_orders_roundtrip_and_mutations_fail_closed():
+    odlrq = __import__("lean_rgc.odlrq", fromlist=(
+        "PipelineEvidenceTier", "PipelineDisposition", "TypedPipelineFactor",
+        "NominalPipelineAddendum", "TypedPipelineBound",
+        "construct_typed_pipeline_bound", "verify_typed_pipeline_bound"))
+    development = __import__("lean_rgc.evals.uprime_u2_u4_development", fromlist=(
+        "build_u24_i0_fixture", "build_u24_artifact_wires",
+        "verify_u24_artifact_wires", "emit_u24_artifacts"))
+
+    fixture = development.build_u24_i0_fixture()
+    source_commit = "3" * 40
+    source_tree = "4" * 40
+    wires = development.build_u24_artifact_wires(
+        fixture=fixture, source_commit=source_commit, source_tree=source_tree
+    )
+    assert development.verify_u24_artifact_wires(
+        fixture=fixture,
+        source_commit=source_commit,
+        source_tree=source_tree,
+        ordered_wires=wires,
+    ) == wires
+    names = tuple(name for name, raw in wires)
+    schemas = (
+        "u24_envelope_core_v1",
+        "u24_maxent_fixture_v1",
+        "u24_local_tower_v1",
+        "u24_global_measure_v1",
+        "u24_level_transport_v1",
+        "u24_similarity_certificate_v1",
+        "u24_integrated_certificate_v1",
+    )
+    payload_orders = (
+        ("generator", "source_weights", "target_weights", "fiber_law",
+         "transfer_layer", "completeness_witness", "inclusion_witness",
+         "envelope", "verification_report"),
+        ("support_token", "reference_law", "orbit_law", "statistics", "target",
+         "kl_radius", "status", "probabilities", "residuals", "verification_report"),
+        ("levels", "restrictions", "cauchy_majorant", "verification_report"),
+        ("measures", "predictive_metric", "predictive_upper_bound",
+         "positive_representation_distance", "safety_majorant", "verification_report"),
+        ("radius_morphism", "word_depth_morphism", "granularity_morphism",
+         "composition", "verification_report"),
+        ("coverage", "target_residuals", "l_plus_token", "remainder_certificate",
+         "verification_report"),
+        ("candidate_manifest", "stages", "initial_residual", "hard_bound",
+         "nominal_addendum", "total_bound", "coverage", "disposition",
+         "verification_report"),
+    )
+    common_order = (
+        "schema_version", "evidence_scope", "source_commit",
+        "observation_frame_id", "reachable_domain_id", "response_vocabulary_id",
+        "transition_semantics_id", "domain_scope", "runtime_identity_sha256",
+        "operator_tier", "operator_sha256", "coverage", "censors",
+        "disposition", "payload",
+    )
+    operator_tiers = (
+        "EXACT_DECLARED_SYNTHETIC",
+        "NOMINAL_DIAGNOSTIC_ONLY",
+        "CERTIFIED_SYNTHETIC",
+        "TYPED_MIXED_CONTAINER_NOT_HARD_ELIGIBLE",
+        "CERTIFIED_SYNTHETIC",
+        "TYPED_HARD_WITH_PREDICTIVE_SIDECAR",
+        "TYPED_HARD_WITH_NOMINAL_DIAGNOSTIC",
+    )
+    total_bytes = 0
+    for index, (name, raw) in enumerate(wires):
+        assert name == names[index]
+        assert type(raw) is bytes and len(raw) <= 1_048_576
+        total_bytes += len(raw)
+        obj = json.loads(raw)
+        assert tuple(obj) == common_order
+        assert obj["schema_version"] == schemas[index]
+        assert obj["source_commit"] == source_commit
+        assert obj["operator_tier"] == operator_tiers[index]
+        assert obj["censors"] == []
+        assert tuple(obj["payload"]) == payload_orders[index]
+        assert json.dumps(
+            obj, ensure_ascii=False, allow_nan=False, separators=(",", ":"),
+            sort_keys=False,
+        ).encode("utf-8") == raw
+    assert total_bytes <= 7 * 1_048_576
+    assert json.loads(wires[1][1])["coverage"] == {
+        "schema_version": "u24_artifact_coverage_v1",
+        "covered_count": 2,
+        "universe_count": 3,
+        "coverage_scope": "E2_CANDIDATE_UNIVERSE_SUPPORT",
+        "complete": False,
+    }
+    assert json.loads(wires[-1][1])["payload"]["hard_bound"]["numerator"] == "3"
+
+    forged_obj = json.loads(wires[0][1])
+    forged_obj["operator_sha256"] = "0" * 64
+    forged_raw = json.dumps(
+        forged_obj, ensure_ascii=False, allow_nan=False, separators=(",", ":"),
+        sort_keys=False,
+    ).encode("utf-8")
+    forged_wires = ((wires[0][0], forged_raw), *wires[1:])
+    with pytest.raises(odlrq.StrictContractError):
+        development.verify_u24_artifact_wires(
+            fixture=fixture,
+            source_commit=source_commit,
+            source_tree=source_tree,
+            ordered_wires=forged_wires,
+        )
+
+    reordered_obj = dict(reversed(tuple(json.loads(wires[0][1]).items())))
+    reordered_raw = json.dumps(
+        reordered_obj, ensure_ascii=False, allow_nan=False, separators=(",", ":"),
+        sort_keys=False,
+    ).encode("utf-8")
+    reordered_wires = ((wires[0][0], reordered_raw), *wires[1:])
+    with pytest.raises(odlrq.StrictContractError):
+        development.verify_u24_artifact_wires(
+            fixture=fixture,
+            source_commit=source_commit,
+            source_tree=source_tree,
+            ordered_wires=reordered_wires,
+        )
+
+    with pytest.raises(odlrq.StrictContractError):
+        development.verify_u24_artifact_wires(
+            fixture=fixture,
+            source_commit=source_commit,
+            source_tree=source_tree,
+            ordered_wires=tuple(reversed(wires)),
+        )
+
+
+def test_u24_i0_temporary_emission_is_exclusive_capped_and_source_commit_bound():
+    odlrq = __import__("lean_rgc.odlrq", fromlist=(
+        "PipelineEvidenceTier", "PipelineDisposition", "TypedPipelineFactor",
+        "NominalPipelineAddendum", "TypedPipelineBound",
+        "construct_typed_pipeline_bound", "verify_typed_pipeline_bound"))
+    development = __import__("lean_rgc.evals.uprime_u2_u4_development", fromlist=(
+        "build_u24_i0_fixture", "build_u24_artifact_wires",
+        "verify_u24_artifact_wires", "emit_u24_artifacts"))
+
+    fixture = development.build_u24_i0_fixture()
+    source_commit = "5" * 40
+    source_tree = "6" * 40
+    wires = development.build_u24_artifact_wires(
+        fixture=fixture, source_commit=source_commit, source_tree=source_tree
+    )
+    with tempfile.TemporaryDirectory() as directory:
+        parent = Path(directory)
+        destination = parent / "published"
+        receipt_raw = development.emit_u24_artifacts(
+            fixture=fixture,
+            source_commit=source_commit,
+            source_tree=source_tree,
+            destination_root=destination,
+        )
+        assert type(receipt_raw) is bytes and len(receipt_raw) <= 4096
+        receipt = json.loads(receipt_raw)
+        assert tuple(receipt) == (
+            "schema_version", "source_commit", "source_tree",
+            "ordered_artifacts", "disposition",
+        )
+        assert receipt["schema_version"] == "u24_artifact_emission_receipt_v1"
+        assert receipt["source_commit"] == source_commit
+        assert receipt["source_tree"] == source_tree
+        assert receipt["disposition"] == "CPU_SYNTHETIC_U2_U4_ARTIFACTS_EMITTED"
+        assert {path.name for path in destination.iterdir()} == {
+            name for name, raw in wires
+        }
+        for index, (name, raw) in enumerate(wires):
+            assert (destination / name).read_bytes() == raw
+            assert receipt["ordered_artifacts"][index][0] == name
+            assert receipt["ordered_artifacts"][index][1] == len(raw)
+            assert type(receipt["ordered_artifacts"][index][2]) is str
+            assert len(receipt["ordered_artifacts"][index][2]) == 64
+            assert receipt["ordered_artifacts"][index][2] == (
+                receipt["ordered_artifacts"][index][2].upper()
+            )
+
+        with pytest.raises(odlrq.StrictContractError):
+            development.emit_u24_artifacts(
+                fixture=fixture,
+                source_commit=source_commit,
+                source_tree=source_tree,
+                destination_root=destination,
+            )
+        assert all(".staging." not in path.name for path in parent.iterdir())
+
+        invalid_destination = parent / "invalid"
+        with pytest.raises(odlrq.StrictContractError):
+            development.emit_u24_artifacts(
+                fixture=fixture,
+                source_commit="A" * 40,
+                source_tree=source_tree,
+                destination_root=invalid_destination,
+            )
+        assert not invalid_destination.exists()
+
+    with pytest.raises(odlrq.StrictContractError):
+        development.verify_u24_artifact_wires(
+            fixture=fixture,
+            source_commit="7" * 40,
+            source_tree=source_tree,
+            ordered_wires=wires,
+        )
+    oversized = ((wires[0][0], b"{" + b"x" * 1_048_576), *wires[1:])
+    with pytest.raises(odlrq.StrictContractError):
+        development.verify_u24_artifact_wires(
+            fixture=fixture,
+            source_commit=source_commit,
+            source_tree=source_tree,
+            ordered_wires=oversized,
+        )
+
+
+def test_u24_i0_public_surface_has_no_selector_protected_endpoint_or_safety_promotion():
+    odlrq = __import__("lean_rgc.odlrq", fromlist=(
+        "PipelineEvidenceTier", "PipelineDisposition", "TypedPipelineFactor",
+        "NominalPipelineAddendum", "TypedPipelineBound",
+        "construct_typed_pipeline_bound", "verify_typed_pipeline_bound"))
+    development = __import__("lean_rgc.evals.uprime_u2_u4_development", fromlist=(
+        "build_u24_i0_fixture", "build_u24_artifact_wires",
+        "verify_u24_artifact_wires", "emit_u24_artifacts"))
+
+    package_names = (
+        "PipelineEvidenceTier",
+        "PipelineDisposition",
+        "TypedPipelineFactor",
+        "NominalPipelineAddendum",
+        "TypedPipelineBound",
+        "construct_typed_pipeline_bound",
+        "verify_typed_pipeline_bound",
+    )
+    module_names = (
+        "build_u24_i0_fixture",
+        "build_u24_artifact_wires",
+        "verify_u24_artifact_wires",
+        "emit_u24_artifacts",
+    )
+    assert tuple(vars(development)["__all__"]) == module_names
+    assert all(vars(odlrq)[name] is not None for name in package_names)
+    assert all(vars(development)[name] is not None for name in module_names)
+    assert tuple(item.value for item in odlrq.PipelineEvidenceTier) == (
+        "EXACT", "EXACT_DECLARED_SYNTHETIC", "CERTIFIED_SYNTHETIC",
+        "NOMINAL_DIAGNOSTIC_ONLY",
+    )
+    assert tuple(item.value for item in odlrq.PipelineDisposition) == (
+        "PASS", "FAIL_HARD_BOUND_EXCEEDED", "ABSTAIN_INCOMPLETE_COVERAGE",
+    )
+
+    construct_signature = inspect.signature(odlrq.construct_typed_pipeline_bound)
+    verify_signature = inspect.signature(odlrq.verify_typed_pipeline_bound)
+    assert tuple(construct_signature.parameters) == (
+        "candidate_authority_manifest", "ordered_hard_factors", "initial_residual",
+        "hard_threshold", "nominal_addendum",
+    )
+    assert tuple(verify_signature.parameters) == (
+        "bound", "expected_candidate_authority_manifest",
+    )
+    assert all(
+        parameter.kind is inspect.Parameter.KEYWORD_ONLY
+        for parameter in construct_signature.parameters.values()
+    )
+    assert all(
+        parameter.kind is inspect.Parameter.KEYWORD_ONLY
+        for parameter in verify_signature.parameters.values()
+    )
+    assert tuple(inspect.signature(development.build_u24_i0_fixture).parameters) == ()
+    assert tuple(inspect.signature(development.build_u24_artifact_wires).parameters) == (
+        "fixture", "source_commit", "source_tree",
+    )
+    assert tuple(inspect.signature(development.verify_u24_artifact_wires).parameters) == (
+        "fixture", "source_commit", "source_tree", "ordered_wires",
+    )
+    assert tuple(inspect.signature(development.emit_u24_artifacts).parameters) == (
+        "fixture", "source_commit", "source_tree", "destination_root",
+    )
+    for name in (*package_names, *module_names):
+        lowered = name.lower()
+        assert "selector" not in lowered
+        assert "protected" not in lowered
+        assert "reserved" not in lowered
+        assert "promote" not in lowered
+        assert "safety" not in lowered
+
+    fixture = development.build_u24_i0_fixture()
+    verified = odlrq.verify_typed_pipeline_bound(
+        bound=fixture.pass_bound,
+        expected_candidate_authority_manifest=fixture.candidate_authority_manifest,
+    )
+    assert type(verified) is odlrq.TypedPipelineBound
+    assert verified == fixture.pass_bound
+    with pytest.raises(TypeError):
+        odlrq.construct_typed_pipeline_bound(fixture.candidate_authority_manifest)
+    with pytest.raises(TypeError):
+        odlrq.verify_typed_pipeline_bound(fixture.pass_bound)
+    with pytest.raises((AttributeError, TypeError)):
+        setattr(fixture.pass_bound, "hard_bound", odlrq.ExactRational(0))
+    with pytest.raises((AttributeError, TypeError)):
+        setattr(fixture.pass_bound.ordered_hard_factors[0], "epsilon", odlrq.ExactRational(9))
+    with pytest.raises(TypeError):
+        odlrq.construct_typed_pipeline_bound(
+            candidate_authority_manifest=fixture.candidate_authority_manifest,
+            ordered_hard_factors=fixture.pass_bound.ordered_hard_factors,
+            initial_residual=fixture.pass_bound.initial_residual,
+            hard_threshold=fixture.pass_bound.hard_threshold,
+            nominal_addendum=fixture.pass_bound.nominal_addendum,
+            endpoint_selector="forbidden",
+        )
 # U24_I0_TEST_EXTENSION_END
