@@ -165,6 +165,34 @@ FROZEN_REFS = {
 STAGE_ORDER = ("E1", "E2", "ME0", "S0", "I0")
 MAX_BUILD_COMMITS = 6
 MAX_CORRECTIONS = 1
+
+# The historical U24 epoch is immutable after accepted I0.  Later nominal
+# side-tracks must not consume its bounded repair/build budget or make its
+# validator reinterpret unrelated descendants as additional U24 stages.
+OLD_U24_ENDPOINT_COMMIT = "f1df8dd5d92706d907091e6add463fb6c9ca7130"
+OLD_U24_ENDPOINT_TREE = "c15e50c683263b50c8ddf371938785d03353b1fc"
+OLD_U24_ENDPOINT_PARENT = "2376aca8209c38a3a94dfa872334073d86dc4909"
+OLD_U24_ENDPOINT_BLOBS = {
+    "lean_rgc/evals/uprime_u2_u4_development.py":
+        "32f68a477bbb2432a91cd463d49db658ff012258",
+    "lean_rgc/odlrq/__init__.py":
+        "7e08787436b385e50f071a44b9e26f31dea0c597",
+    "lean_rgc/odlrq/certificates.py":
+        "99e88abadaffc8c108953bcac663ffb135143317",
+    IDENTITY_PATH: "ef4a56778c9734952257e56f91a0b93003bc577a",
+    MANIFEST_PATH: "1663889c4732481eb6e2176df7c48ee396868216",
+}
+OLD_U24_CONTROL_BLOBS = {
+    GUARD_PATH: "cd0a4fe0def1c5523e0c0b9fe023dde8fc0b09e7",
+    RUNNER_PATH: "b79f1fa354cdddde2b2ae7b6efce8d9ac005be8b",
+}
+DELEGATED_L0_MANIFEST_NODES = frozenset(
+    {
+        "test_uprime_u15_l0_identity.py",
+        "test_odlrq_locality_cegar.py",
+        "test_uprime_u15_l0_locality_cegar.py",
+    }
+)
 WALL_SECONDS = {
     "B0": 60,
     "E0": 90,
@@ -414,16 +442,54 @@ TRACKED_PATHS = tuple(
     )
 )
 
+
+def _project_old_u24_epoch(control: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the exact U24 attestation prefix ending at accepted I0."""
+
+    projected = copy.deepcopy(dict(control))
+    assert projected["is_shallow"] is False
+    revisions = projected["revisions"]
+    interval = projected["first_parent_after_a0"]
+    assert type(revisions) is list and type(interval) is list
+    endpoint_indices = [
+        index
+        for index, row in enumerate(revisions)
+        if type(row) is dict and row.get("commit") == OLD_U24_ENDPOINT_COMMIT
+    ]
+    assert len(endpoint_indices) == 1
+    endpoint_index = endpoint_indices[0]
+    assert endpoint_index > 0
+    assert interval[endpoint_index - 1] == OLD_U24_ENDPOINT_COMMIT
+    endpoint = revisions[endpoint_index]
+    assert endpoint["parents"] == [OLD_U24_ENDPOINT_PARENT]
+    endpoint_blobs = endpoint["tree_blobs"]
+    assert type(endpoint_blobs) is dict
+    for path, expected in {
+        **OLD_U24_ENDPOINT_BLOBS,
+        **OLD_U24_CONTROL_BLOBS,
+    }.items():
+        assert endpoint_blobs[path] == expected
+
+    projected["head"] = OLD_U24_ENDPOINT_COMMIT
+    projected["first_parent_after_a0"] = interval[:endpoint_index]
+    projected["revisions"] = revisions[: endpoint_index + 1]
+    projected["status_paths"] = []
+    projected["ci_setup_paths"] = []
+    projected["worktree_blobs"] = copy.deepcopy(endpoint_blobs)
+    return projected
+
+
 # This snapshot is collected before the autouse semantic guard is installed.
 # The registered runner supplies the same canonical object from its outer
 # read-only control plane; direct CI constructs it locally before test setup.
-CONTROL = u24_guard.load_control_plane_attestation(
+RAW_CONTROL = u24_guard.load_control_plane_attestation(
     REPO_ROOT,
     a0_commit=ANCHOR_COMMIT,
     identity_path=IDENTITY_PATH,
     tracked_paths=TRACKED_PATHS,
     absent_at_a0=ABSENT_AT_ANCHOR,
 )
+CONTROL = _project_old_u24_epoch(RAW_CONTROL)
 
 
 @pytest.fixture(autouse=True)
@@ -716,6 +782,8 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
 def _worktree_manifest() -> dict[str, list[str]]:
     value = json.loads((REPO_ROOT / MANIFEST_PATH).read_text(encoding="utf-8"))
     assert type(value) is dict
+    for delegated in DELEGATED_L0_MANIFEST_NODES:
+        value.pop(delegated, None)
     return value
 
 

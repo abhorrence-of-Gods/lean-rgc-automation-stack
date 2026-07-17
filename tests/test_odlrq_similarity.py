@@ -10,6 +10,10 @@ import json
 import pytest
 
 import lean_rgc.odlrq as odlrq
+from lean_rgc.evals.uprime_u2_u4_development import (
+    _ME0_RESULT_JSON as _FROZEN_WINDOWS_ME0_RESULT_JSON,
+)
+from lean_rgc.lean.kernel_state_identity import parse_canonical_json_bytes
 from lean_rgc.odlrq import (
     CanonicalPayload,
     ExactRational,
@@ -491,7 +495,15 @@ def _me0_objects():
         exact_rule_column_ids=("g0",),
         exact_rule_rows=(("c0", (_r(1),)), ("c2", (_r(2),))),
     )
-    result = me.solve_finite_fiber_maxent(problem)
+    result_raw = _FROZEN_WINDOWS_ME0_RESULT_JSON.encode("utf-8")
+    assert len(result_raw) == 4177
+    assert hashlib.sha256(result_raw).hexdigest().upper() == ME0_RESULT_SHA256
+    result_wire = parse_canonical_json_bytes(result_raw)
+    assert type(result_wire) is dict
+    assert canonical_contract_bytes(result_wire) == result_raw
+    result = me.MaxEntResult.from_dict(result_wire, problem=problem)
+    assert canonical_contract_bytes(result.to_dict()) == result_raw
+    assert me.verify_maxent_result(problem, result) is result
     assert _sha(problem) == ME0_PROBLEM_SHA256
     assert _sha(result) == ME0_RESULT_SHA256
     return problem, result

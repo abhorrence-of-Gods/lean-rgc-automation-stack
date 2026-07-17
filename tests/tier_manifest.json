@@ -379,6 +379,9 @@
   "test_uprime_official_transport_v2_smoke.py": [
     "unit"
   ],
+  "test_uprime_u15_l0_identity.py": [
+    "unit"
+  ],
   "test_uprime_u2_u4_development.py": [
     "unit"
   ],
