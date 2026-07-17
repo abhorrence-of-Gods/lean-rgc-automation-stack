@@ -306,17 +306,18 @@ def _less_equal(left: ExactRational, right: ExactRational) -> bool:
 def _certificate_wire(
     authority: Any,
     exact_type: type[Any],
-    digest_property: str,
     where: str,
 ) -> tuple[dict[str, Any], str]:
     if type(authority) is not exact_type:
         raise StrictContractError(f"{where} requires an exact {exact_type.__name__}")
-    wire = authority.to_dict()
+    if "to_dict" in vars(authority):
+        raise StrictContractError(f"{where} forbids an instance serializer override")
+    wire = exact_type.to_dict(authority)
     if type(wire) is not dict:
         raise StrictContractError(f"{where} did not rederive an exact wire")
     digest = _sha256(wire)
-    if getattr(authority, digest_property) != digest:
-        raise StrictContractError(f"{where} public digest disagrees with its wire")
+    # Exact authority types define their public digest as this fresh wire hash;
+    # reading the property here would redundantly rederive the full authority graph.
     return wire, digest
 
 
@@ -476,37 +477,31 @@ def _manifest_authority_context(
     m0_identification_wire, m0_identification_sha = _certificate_wire(
         m0_identification,
         SourceTargetCoordinateIdentification,
-        "coordinate_identification_sha256",
         "M0 coordinate identification",
     )
     m0_restriction_wire, m0_restriction_sha = _certificate_wire(
         m0_restriction,
         EnvelopeRestrictionWitness,
-        "envelope_restriction_sha256",
         "M0 envelope restriction",
     )
     m0_safety_wire, m0_safety_sha = _certificate_wire(
         m0_safety,
         LiftingUniformSafetyCertificate,
-        "lifting_uniform_safety_sha256",
         "M0 lifting-uniform safety certificate",
     )
     m1_identification_wire, m1_identification_sha = _certificate_wire(
         m1_identification,
         SourceTargetCoordinateIdentification,
-        "coordinate_identification_sha256",
         "M1 coordinate identification",
     )
     m1_restriction_wire, m1_restriction_sha = _certificate_wire(
         m1_restriction,
         EnvelopeRestrictionWitness,
-        "envelope_restriction_sha256",
         "M1 envelope restriction",
     )
     m1_safety_wire, m1_safety_sha = _certificate_wire(
         m1_safety,
         LiftingUniformSafetyCertificate,
-        "lifting_uniform_safety_sha256",
         "M1 lifting-uniform safety certificate",
     )
 
@@ -944,25 +939,21 @@ def _token_authority_context(
     manifest_wire, manifest_sha = _certificate_wire(
         manifest,
         CandidateUniverseManifest,
-        "candidate_universe_manifest_sha256",
         "candidate universe manifest",
     )
     p1_wire, p1_sha = _certificate_wire(
         p1_cocycle,
         CocycleCertificate,
-        "cocycle_certificate_sha256",
         "P1 cocycle certificate",
     )
     p2_wire, p2_sha = _certificate_wire(
         p2_cocycle,
         CocycleCertificate,
-        "cocycle_certificate_sha256",
         "P2 cocycle certificate",
     )
     return_wire, return_sha = _certificate_wire(
         return_memory,
         ReturnMemoryBound,
-        "return_memory_bound_sha256",
         "finite return-memory bound",
     )
     if (

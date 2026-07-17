@@ -42,6 +42,15 @@ E2_AUTHORITY_DOCUMENT_PATH = (
     "uprime_odlrq_e2_endpoint_semantics_authority_amendment_2026-07-16.md"
 )
 E2_AUTHORITY_DOCUMENT_BLOB_SHA = "139a5992a38269974068858ef00f47f43ef5fca4"
+E2_Q1_REPAIR_AUTHORITY_COMMIT_SHA = "fbedf81211b92cb27d4a5a1d8b3091aa08621f26"
+E2_Q1_REPAIR_AUTHORITY_TREE_SHA = "8490844d37b4d7815b8e0f3472bf273cd1a88bda"
+E2_Q1_REPAIR_AUTHORITY_DOCUMENT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_e2_q1_fixture_repair_authority_2026-07-17.md"
+)
+E2_Q1_REPAIR_AUTHORITY_DOCUMENT_BLOB_SHA = (
+    "263d6ea3e012806f0941008267336a3b3d2128ad"
+)
 
 _COORDINATE_IDS = ("OPEN_0", "OPEN_1", "CLOSED", "SINK")
 _PARENT_SELECTORS = ("M0", "M1", "MRET", "NONNORMAL", "NILPOTENT")
@@ -311,22 +320,22 @@ def _payload(kind: str, name: str) -> CanonicalPayload:
 def _make_literal_side(side: str):
     if side == "source":
         environment = "53" * 32
-        action_id = "u24_e2_source_a"
+        action_id = "unit_cpu_survivor_u24_e2_source_a"
         specifications = (
-            ("u24_e2_source_open0_a", TotalizedStatus.OPEN, 0),
-            ("u24_e2_source_open0_b", TotalizedStatus.OPEN, 0),
-            ("u24_e2_source_open1", TotalizedStatus.OPEN, 1),
-            ("u24_e2_source_closed", TotalizedStatus.CLOSED, 2),
-            ("u24_e2_source_sink", TotalizedStatus.SINK, 3),
+            ("unit_cpu_survivor_u24_e2_source_open0_a", TotalizedStatus.OPEN, 0),
+            ("unit_cpu_survivor_u24_e2_source_open0_b", TotalizedStatus.OPEN, 0),
+            ("unit_cpu_survivor_u24_e2_source_open1", TotalizedStatus.OPEN, 1),
+            ("unit_cpu_survivor_u24_e2_source_closed", TotalizedStatus.CLOSED, 2),
+            ("unit_cpu_survivor_u24_e2_source_sink", TotalizedStatus.SINK, 3),
         )
     elif side == "target":
         environment = "54" * 32
-        action_id = "u24_e2_target_a"
+        action_id = "unit_cpu_survivor_u24_e2_target_a"
         specifications = (
-            ("u24_e2_target_open0", TotalizedStatus.OPEN, 0),
-            ("u24_e2_target_open1", TotalizedStatus.OPEN, 1),
-            ("u24_e2_target_closed", TotalizedStatus.CLOSED, 2),
-            ("u24_e2_target_sink", TotalizedStatus.SINK, 3),
+            ("unit_cpu_survivor_u24_e2_target_open0", TotalizedStatus.OPEN, 0),
+            ("unit_cpu_survivor_u24_e2_target_open1", TotalizedStatus.OPEN, 1),
+            ("unit_cpu_survivor_u24_e2_target_closed", TotalizedStatus.CLOSED, 2),
+            ("unit_cpu_survivor_u24_e2_target_sink", TotalizedStatus.SINK, 3),
         )
     else:
         raise AssertionError("literal E2 side is not frozen")
@@ -388,10 +397,13 @@ def _literal_e1_fixture(selector: str) -> dict:
     source, source_states = _make_literal_side("source")
     target, target_states = _make_literal_side("target")
     matrix = _PARENT_MATRICES[selector]
-    source_open0_a = "u24_e2_source_open0_a"
-    source_open0_b = "u24_e2_source_open0_b"
-    source_open1 = "u24_e2_source_open1"
-    target_open_ids = ("u24_e2_target_open0", "u24_e2_target_open1")
+    source_open0_a = "unit_cpu_survivor_u24_e2_source_open0_a"
+    source_open0_b = "unit_cpu_survivor_u24_e2_source_open0_b"
+    source_open1 = "unit_cpu_survivor_u24_e2_source_open1"
+    target_open_ids = (
+        "unit_cpu_survivor_u24_e2_target_open0",
+        "unit_cpu_survivor_u24_e2_target_open1",
+    )
     coefficients = []
     for target_index, target_id in enumerate(target_open_ids):
         ordered_source_coefficients = (
@@ -756,15 +768,43 @@ def test_e2_square_parent_coordinate_identification_rederives_complete_typed_bas
         e2_certificates.E2_AUTHORITY_DOCUMENT_BLOB_SHA
         == E2_AUTHORITY_DOCUMENT_BLOB_SHA
     )
+    assert (
+        e2_certificates.E2_Q1_REPAIR_AUTHORITY_COMMIT_SHA
+        == E2_Q1_REPAIR_AUTHORITY_COMMIT_SHA
+    )
+    assert (
+        e2_certificates.E2_Q1_REPAIR_AUTHORITY_TREE_SHA
+        == E2_Q1_REPAIR_AUTHORITY_TREE_SHA
+    )
+    assert (
+        e2_certificates.E2_Q1_REPAIR_AUTHORITY_DOCUMENT_PATH
+        == E2_Q1_REPAIR_AUTHORITY_DOCUMENT_PATH
+    )
+    assert (
+        e2_certificates.E2_Q1_REPAIR_AUTHORITY_DOCUMENT_BLOB_SHA
+        == E2_Q1_REPAIR_AUTHORITY_DOCUMENT_BLOB_SHA
+    )
 
     expected_members = {
         "OPEN_0": (
-            ("u24_e2_source_open0_a", "u24_e2_source_open0_b"),
-            ("u24_e2_target_open0",),
+            (
+                "unit_cpu_survivor_u24_e2_source_open0_a",
+                "unit_cpu_survivor_u24_e2_source_open0_b",
+            ),
+            ("unit_cpu_survivor_u24_e2_target_open0",),
         ),
-        "OPEN_1": (("u24_e2_source_open1",), ("u24_e2_target_open1",)),
-        "CLOSED": (("u24_e2_source_closed",), ("u24_e2_target_closed",)),
-        "SINK": (("u24_e2_source_sink",), ("u24_e2_target_sink",)),
+        "OPEN_1": (
+            ("unit_cpu_survivor_u24_e2_source_open1",),
+            ("unit_cpu_survivor_u24_e2_target_open1",),
+        ),
+        "CLOSED": (
+            ("unit_cpu_survivor_u24_e2_source_closed",),
+            ("unit_cpu_survivor_u24_e2_target_closed",),
+        ),
+        "SINK": (
+            ("unit_cpu_survivor_u24_e2_source_sink",),
+            ("unit_cpu_survivor_u24_e2_target_sink",),
+        ),
     }
     for selector in _PARENT_SELECTORS:
         fixture = _fixture_authorities(selector)
@@ -1101,16 +1141,19 @@ def test_e2_lifting_uniform_safety_is_law_independent_and_cancellation_free():
     primary_fixture = _fixture_authorities("M0")
     alternate_fixture = _fixture_authorities("M0", "ALTERNATE_M0_DIAGNOSTIC")
     literal_source_members = {
-        "OPEN_0": ("u24_e2_source_open0_a", "u24_e2_source_open0_b"),
-        "OPEN_1": ("u24_e2_source_open1",),
-        "CLOSED": ("u24_e2_source_closed",),
-        "SINK": ("u24_e2_source_sink",),
+        "OPEN_0": (
+            "unit_cpu_survivor_u24_e2_source_open0_a",
+            "unit_cpu_survivor_u24_e2_source_open0_b",
+        ),
+        "OPEN_1": ("unit_cpu_survivor_u24_e2_source_open1",),
+        "CLOSED": ("unit_cpu_survivor_u24_e2_source_closed",),
+        "SINK": ("unit_cpu_survivor_u24_e2_source_sink",),
     }
     literal_target_members = {
-        "OPEN_0": ("u24_e2_target_open0",),
-        "OPEN_1": ("u24_e2_target_open1",),
-        "CLOSED": ("u24_e2_target_closed",),
-        "SINK": ("u24_e2_target_sink",),
+        "OPEN_0": ("unit_cpu_survivor_u24_e2_target_open0",),
+        "OPEN_1": ("unit_cpu_survivor_u24_e2_target_open1",),
+        "CLOSED": ("unit_cpu_survivor_u24_e2_target_closed",),
+        "SINK": ("unit_cpu_survivor_u24_e2_target_sink",),
     }
     source_frame = primary_fixture["source_completeness"].to_dict()["frame"]
     target_frame = primary_fixture["target_completeness"].to_dict()["frame"]
@@ -1587,6 +1630,28 @@ def test_e2_caps_horizon_work_and_preallocation_bombs_fail_before_authority():
         "return_memory": _exact_tripwire(_return_memory(), "token return memory"),
     }
 
+    for label, authority in (
+        ("identification", manifest_tripwires["m0_identification"]),
+        ("restriction", manifest_tripwires["m0_restriction"]),
+        ("safety", manifest_tripwires["m0_safety"]),
+        ("manifest", token_tripwires["manifest"]),
+        ("cocycle", token_tripwires["p1_cocycle"]),
+        ("return memory", token_tripwires["return_memory"]),
+    ):
+        with pytest.raises(
+            StrictContractError, match="forbids an instance serializer override"
+        ):
+            e2_selection._certificate_wire(authority, type(authority), label)
+
+    preflight_wires = {
+        "identification": _identification("M0").to_dict(),
+        "restriction": _restriction("M0").to_dict(),
+        "cocycle": _cocycle("P1_BRANCHING_ADJUSTED").to_dict(),
+        "return_memory": _return_memory().to_dict(),
+        "manifest": _candidate_manifest().to_dict(),
+        "token": _support_token().to_dict(),
+    }
+
     def _preflight_identification(value):
         return e2_certificates.SourceTargetCoordinateIdentification.from_dict(
             value,
@@ -1635,67 +1700,67 @@ def test_e2_caps_horizon_work_and_preallocation_bombs_fail_before_authority():
             **token_tripwires,
         )
 
-    bomb = copy.deepcopy(_identification("M0").to_dict())
+    bomb = copy.deepcopy(preflight_wires["identification"])
     bomb["coordinate_rows"] = _BombList()
     with pytest.raises(StrictContractError):
         _preflight_identification(bomb)
 
-    too_many_nodes = copy.deepcopy(_identification("M0").to_dict())
+    too_many_nodes = copy.deepcopy(preflight_wires["identification"])
     too_many_nodes["parent_id"] = list(range(4097))
     with pytest.raises(StrictContractError):
         _preflight_identification(too_many_nodes)
-    cardinality_bomb = copy.deepcopy(_identification("M0").to_dict())
+    cardinality_bomb = copy.deepcopy(preflight_wires["identification"])
     cardinality_bomb["coordinate_rows"].append(
         copy.deepcopy(cardinality_bomb["coordinate_rows"][0])
     )
     with pytest.raises(StrictContractError):
         _preflight_identification(cardinality_bomb)
-    scalar_bomb = copy.deepcopy(_identification("M0").to_dict())
+    scalar_bomb = copy.deepcopy(preflight_wires["identification"])
     scalar_bomb["parent_id"] = "X" * 262_145
     with pytest.raises(StrictContractError):
         _preflight_identification(scalar_bomb)
-    aggregate_scalar_bomb = copy.deepcopy(_identification("M0").to_dict())
+    aggregate_scalar_bomb = copy.deepcopy(preflight_wires["identification"])
     aggregate_scalar_bomb["parent_id"] = "P" * 90_000
     aggregate_scalar_bomb["source_law_variant"] = "L" * 90_000
     aggregate_scalar_bomb["basis_convention"] = "B" * 90_000
     with pytest.raises(StrictContractError):
         _preflight_identification(aggregate_scalar_bomb)
-    depth_bomb = copy.deepcopy(_identification("M0").to_dict())
+    depth_bomb = copy.deepcopy(preflight_wires["identification"])
     nested = "leaf"
     for _ in range(13):
         nested = [nested]
     depth_bomb["parent_id"] = nested
     with pytest.raises(StrictContractError):
         _preflight_identification(depth_bomb)
-    cycle_bomb = copy.deepcopy(_identification("M0").to_dict())
+    cycle_bomb = copy.deepcopy(preflight_wires["identification"])
     cycle = []
     cycle.append(cycle)
     cycle_bomb["parent_id"] = cycle
     with pytest.raises(StrictContractError):
         _preflight_identification(cycle_bomb)
-    matrix_cell_bomb = copy.deepcopy(_restriction("M0").to_dict())
+    matrix_cell_bomb = copy.deepcopy(preflight_wires["restriction"])
     matrix_cell_bomb["full_matrix"].append([_r(0), _r(0), _r(0), _r(0)])
     with pytest.raises(StrictContractError):
         _preflight_restriction(matrix_cell_bomb)
-    horizon_bomb = copy.deepcopy(_return_memory().to_dict())
+    horizon_bomb = copy.deepcopy(preflight_wires["return_memory"])
     horizon_bomb["horizon"] = 4
     with pytest.raises(StrictContractError):
         _preflight_return(horizon_bomb)
-    return_term_bomb = copy.deepcopy(_return_memory().to_dict())
+    return_term_bomb = copy.deepcopy(preflight_wires["return_memory"])
     return_term_bomb["return_terms"].append({"k": 3, "matrix": [[_r(1)]]})
     with pytest.raises(StrictContractError):
         _preflight_return(return_term_bomb)
-    work_substitution = copy.deepcopy(_cocycle("P1_BRANCHING_ADJUSTED").to_dict())
+    work_substitution = copy.deepcopy(preflight_wires["cocycle"])
     work_substitution["layer_matrices"].append(copy.deepcopy(work_substitution["layer_matrices"][0]))
     with pytest.raises(StrictContractError):
         _preflight_cocycle(work_substitution)
-    manifest_cardinality_bomb = copy.deepcopy(_candidate_manifest().to_dict())
+    manifest_cardinality_bomb = copy.deepcopy(preflight_wires["manifest"])
     manifest_cardinality_bomb["candidate_rows"].append(
         copy.deepcopy(manifest_cardinality_bomb["candidate_rows"][0])
     )
     with pytest.raises(StrictContractError):
         _preflight_manifest(manifest_cardinality_bomb)
-    token_cardinality_bomb = copy.deepcopy(_support_token().to_dict())
+    token_cardinality_bomb = copy.deepcopy(preflight_wires["token"])
     token_cardinality_bomb["decision_rows"].append(
         copy.deepcopy(token_cardinality_bomb["decision_rows"][0])
     )
@@ -1974,8 +2039,10 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
             "E2_BINDING_SUPPORT_CERTIFIED",
         ),
     )
+    baseline_wires = {}
     for value, digest_property, disposition in digest_and_disposition_checks:
         full_wire = value.to_dict()
+        baseline_wires[type(value)] = full_wire
         assert getattr(value, digest_property) == _sha256(full_wire)
         assert full_wire["verification_disposition"] == disposition
 
@@ -2078,7 +2145,7 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
         ),
     )
     for value, expected_literals in fixed_outer_literals:
-        full_wire = value.to_dict()
+        full_wire = baseline_wires[type(value)]
         for name, expected in expected_literals.items():
             assert full_wire[name] == expected
 
@@ -2149,8 +2216,8 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
         ),
     )
     for parser, value, arguments, exact_keys, schema, nested_path in roundtrips:
-        wire = value.to_dict()
-        baseline = copy.deepcopy(wire)
+        baseline = baseline_wires[type(value)]
+        wire = copy.deepcopy(baseline)
         assert type(wire) is dict and set(wire) == exact_keys
         assert wire["schema_version"] == schema
         parsed = parser(copy.deepcopy(wire), *arguments)
@@ -2160,16 +2227,15 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
         permissive["extra"] = "forbidden"
         with pytest.raises(StrictContractError):
             parser(permissive, *arguments)
-        wire["schema_version"] = "MUTATED_RETURNED_TOP_LEVEL"
-        assert value.to_dict() == baseline
-        nested_return = value.to_dict()
-        cursor = nested_return
+        returned_wire = value.to_dict()
+        returned_wire["schema_version"] = "MUTATED_RETURNED_TOP_LEVEL"
+        cursor = returned_wire
         for component in nested_path[:-1]:
             cursor = cursor[component]
         cursor[nested_path[-1]] = "MUTATED_RETURNED_NESTED_VALUE"
         assert value.to_dict() == baseline
 
-    unreduced_rational = restriction.to_dict()
+    unreduced_rational = copy.deepcopy(baseline_wires[type(restriction)])
     unreduced_rational["restricted_matrix"][0][0] = {
         "schema_version": "lean-rgc-odlrq-exact-rational-v1",
         "numerator": "2",
@@ -2177,19 +2243,19 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
     }
     with pytest.raises(StrictContractError):
         _restriction_from_wire(unreduced_rational, "M0")
-    permissive_rational = restriction.to_dict()
+    permissive_rational = copy.deepcopy(baseline_wires[type(restriction)])
     permissive_rational["restricted_matrix"][0][0]["extra"] = "forbidden"
     with pytest.raises(StrictContractError):
         _restriction_from_wire(permissive_rational, "M0")
-    noncanonical_rational = restriction.to_dict()
+    noncanonical_rational = copy.deepcopy(baseline_wires[type(restriction)])
     noncanonical_rational["restricted_matrix"][0][0]["numerator"] = "01"
     with pytest.raises(StrictContractError):
         _restriction_from_wire(noncanonical_rational, "M0")
-    manifest_rational_extra = manifest.to_dict()
+    manifest_rational_extra = copy.deepcopy(baseline_wires[type(manifest)])
     manifest_rational_extra["candidate_rows"][0]["bound"]["extra"] = "forbidden"
     with pytest.raises(StrictContractError):
         _candidate_manifest_from_wire(manifest_rational_extra)
-    token_unreduced_rational = token.to_dict()
+    token_unreduced_rational = copy.deepcopy(baseline_wires[type(token)])
     token_unreduced_rational["threshold"] = {
         "schema_version": "lean-rgc-odlrq-exact-rational-v1",
         "numerator": "4",
@@ -2198,31 +2264,31 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
     with pytest.raises(StrictContractError):
         _support_token_from_wire(token_unreduced_rational)
 
-    coordinate_row_extra = identification.to_dict()
+    coordinate_row_extra = copy.deepcopy(baseline_wires[type(identification)])
     coordinate_row_extra["coordinate_rows"][0]["extra"] = "forbidden"
     with pytest.raises(StrictContractError):
         _identification_from_wire(coordinate_row_extra, "M0")
-    omitted_row_extra = restriction.to_dict()
+    omitted_row_extra = copy.deepcopy(baseline_wires[type(restriction)])
     omitted_row_extra["omitted_cells"][0]["extra"] = "forbidden"
     with pytest.raises(StrictContractError):
         _restriction_from_wire(omitted_row_extra, "M0")
-    candidate_load_extra = safety.to_dict()
+    candidate_load_extra = copy.deepcopy(baseline_wires[type(safety)])
     candidate_load_extra["ordered_candidate_loads"][0]["extra"] = "forbidden"
     with pytest.raises(StrictContractError):
         _safety_from_wire(candidate_load_extra, "M0")
-    qq_power_extra = return_memory.to_dict()
+    qq_power_extra = copy.deepcopy(baseline_wires[type(return_memory)])
     qq_power_extra["qq_powers"][0]["extra"] = "forbidden"
     with pytest.raises(StrictContractError):
         _return_memory_from_wire(qq_power_extra)
-    return_term_extra = return_memory.to_dict()
+    return_term_extra = copy.deepcopy(baseline_wires[type(return_memory)])
     return_term_extra["return_terms"][0]["extra"] = "forbidden"
     with pytest.raises(StrictContractError):
         _return_memory_from_wire(return_term_extra)
-    candidate_row_extra = manifest.to_dict()
+    candidate_row_extra = copy.deepcopy(baseline_wires[type(manifest)])
     candidate_row_extra["candidate_rows"][0]["extra"] = "forbidden"
     with pytest.raises(StrictContractError):
         _candidate_manifest_from_wire(candidate_row_extra)
-    decision_row_extra = token.to_dict()
+    decision_row_extra = copy.deepcopy(baseline_wires[type(token)])
     decision_row_extra["decision_rows"][0]["extra"] = "forbidden"
     with pytest.raises(StrictContractError):
         _support_token_from_wire(decision_row_extra)
@@ -2245,7 +2311,7 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
     subclass_cases = (
         (
             e2_certificates.SourceTargetCoordinateIdentification,
-            identification.to_dict(),
+            baseline_wires[type(identification)],
             {
                 "envelope": m0_authorities["envelope"],
                 "layer": m0_authorities["layer"],
@@ -2260,7 +2326,7 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
         ),
         (
             e2_certificates.EnvelopeRestrictionWitness,
-            restriction.to_dict(),
+            baseline_wires[type(restriction)],
             {
                 "envelope": m0_authorities["envelope"],
                 "identification": identification,
@@ -2268,7 +2334,7 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
         ),
         (
             e2_certificates.LiftingUniformSafetyCertificate,
-            safety.to_dict(),
+            baseline_wires[type(safety)],
             {
                 "envelope": m0_authorities["envelope"],
                 "identification": identification,
@@ -2277,12 +2343,12 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
         ),
         (
             e2_certificates.ResolvedMemorySplit,
-            split.to_dict(),
+            baseline_wires[type(split)],
             {"restriction": _restriction("MRET")},
         ),
         (
             e2_certificates.CocycleCertificate,
-            cocycle.to_dict(),
+            baseline_wires[type(cocycle)],
             {
                 "channel": "P1_BRANCHING_ADJUSTED",
                 "first": _restriction("M0"),
@@ -2291,12 +2357,12 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
         ),
         (
             e2_certificates.ReturnMemoryBound,
-            return_memory.to_dict(),
+            baseline_wires[type(return_memory)],
             {"restriction": _restriction("MRET"), "split": split},
         ),
         (
             e2_selection.CandidateUniverseManifest,
-            manifest.to_dict(),
+            baseline_wires[type(manifest)],
             {
                 "m0_identification": _identification("M0"),
                 "m0_restriction": _restriction("M0"),
@@ -2308,7 +2374,7 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
         ),
         (
             e2_selection.CertifiedSupportToken,
-            token.to_dict(),
+            baseline_wires[type(token)],
             {
                 "manifest": manifest,
                 "p1_cocycle": _cocycle("P1_BRANCHING_ADJUSTED"),
@@ -2346,7 +2412,7 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
         with pytest.raises(StrictContractError):
             forged_subclass_value.to_dict()
 
-    stale_bundle = copy.deepcopy(token.to_dict())
+    stale_bundle = copy.deepcopy(baseline_wires[type(token)])
     stale_bundle["decision_rows"][0]["authority_bundle_sha256"] = "00" * 32
     with pytest.raises(StrictContractError):
         _support_token_from_wire(stale_bundle)
@@ -2365,7 +2431,7 @@ def test_e2_strict_roundtrip_invalidation_tier_firewall_and_nominal_fallback():
             m1_safety=_safety("M1"),
         )
 
-    support = token.to_dict()["support_candidate_ids"]
+    support = baseline_wires[type(token)]["support_candidate_ids"]
     nominal_failure_fallback = min(support)
     assert nominal_failure_fallback == "c0"
     assert nominal_failure_fallback in support

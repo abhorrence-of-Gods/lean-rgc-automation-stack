@@ -55,6 +55,15 @@ E2_AUTHORITY_DOCUMENT_PATH = (
     "uprime_odlrq_e2_endpoint_semantics_authority_amendment_2026-07-16.md"
 )
 E2_AUTHORITY_DOCUMENT_BLOB_SHA = "139a5992a38269974068858ef00f47f43ef5fca4"
+E2_Q1_REPAIR_AUTHORITY_COMMIT_SHA = "fbedf81211b92cb27d4a5a1d8b3091aa08621f26"
+E2_Q1_REPAIR_AUTHORITY_TREE_SHA = "8490844d37b4d7815b8e0f3472bf273cd1a88bda"
+E2_Q1_REPAIR_AUTHORITY_DOCUMENT_PATH = (
+    "docs/experiments/"
+    "uprime_odlrq_e2_q1_fixture_repair_authority_2026-07-17.md"
+)
+E2_Q1_REPAIR_AUTHORITY_DOCUMENT_BLOB_SHA = (
+    "263d6ea3e012806f0941008267336a3b3d2128ad"
+)
 
 _ENDPOINT_ID = "u24_e2_declared_square_endpoint_v1"
 _BASIS_CONVENTION = "target_row_source_column_v1"
@@ -131,16 +140,19 @@ _PARENT_MATRICES: dict[str, tuple[tuple[ExactRational, ...], ...]] = {
 }
 
 _SOURCE_MEMBER_GROUPS = {
-    "OPEN_0": ("u24_e2_source_open0_a", "u24_e2_source_open0_b"),
-    "OPEN_1": ("u24_e2_source_open1",),
-    "CLOSED": ("u24_e2_source_closed",),
-    "SINK": ("u24_e2_source_sink",),
+    "OPEN_0": (
+        "unit_cpu_survivor_u24_e2_source_open0_a",
+        "unit_cpu_survivor_u24_e2_source_open0_b",
+    ),
+    "OPEN_1": ("unit_cpu_survivor_u24_e2_source_open1",),
+    "CLOSED": ("unit_cpu_survivor_u24_e2_source_closed",),
+    "SINK": ("unit_cpu_survivor_u24_e2_source_sink",),
 }
 _TARGET_MEMBER_GROUPS = {
-    "OPEN_0": ("u24_e2_target_open0",),
-    "OPEN_1": ("u24_e2_target_open1",),
-    "CLOSED": ("u24_e2_target_closed",),
-    "SINK": ("u24_e2_target_sink",),
+    "OPEN_0": ("unit_cpu_survivor_u24_e2_target_open0",),
+    "OPEN_1": ("unit_cpu_survivor_u24_e2_target_open1",),
+    "CLOSED": ("unit_cpu_survivor_u24_e2_target_closed",),
+    "SINK": ("unit_cpu_survivor_u24_e2_target_sink",),
 }
 
 
@@ -450,22 +462,22 @@ def _payload(kind: str, name: str) -> CanonicalPayload:
 def _build_fixture_generator(role: str) -> ExactQuotientCoordinateGenerator:
     if role == "source":
         environment = "53" * 32
-        action_id = "u24_e2_source_a"
+        action_id = "unit_cpu_survivor_u24_e2_source_a"
         state_rows = (
-            ("u24_e2_source_open0_a", TotalizedStatus.OPEN, 0),
-            ("u24_e2_source_open0_b", TotalizedStatus.OPEN, 0),
-            ("u24_e2_source_open1", TotalizedStatus.OPEN, 1),
-            ("u24_e2_source_closed", TotalizedStatus.CLOSED, 2),
-            ("u24_e2_source_sink", TotalizedStatus.SINK, 3),
+            ("unit_cpu_survivor_u24_e2_source_open0_a", TotalizedStatus.OPEN, 0),
+            ("unit_cpu_survivor_u24_e2_source_open0_b", TotalizedStatus.OPEN, 0),
+            ("unit_cpu_survivor_u24_e2_source_open1", TotalizedStatus.OPEN, 1),
+            ("unit_cpu_survivor_u24_e2_source_closed", TotalizedStatus.CLOSED, 2),
+            ("unit_cpu_survivor_u24_e2_source_sink", TotalizedStatus.SINK, 3),
         )
     elif role == "target":
         environment = "54" * 32
-        action_id = "u24_e2_target_a"
+        action_id = "unit_cpu_survivor_u24_e2_target_a"
         state_rows = (
-            ("u24_e2_target_open0", TotalizedStatus.OPEN, 0),
-            ("u24_e2_target_open1", TotalizedStatus.OPEN, 1),
-            ("u24_e2_target_closed", TotalizedStatus.CLOSED, 2),
-            ("u24_e2_target_sink", TotalizedStatus.SINK, 3),
+            ("unit_cpu_survivor_u24_e2_target_open0", TotalizedStatus.OPEN, 0),
+            ("unit_cpu_survivor_u24_e2_target_open1", TotalizedStatus.OPEN, 1),
+            ("unit_cpu_survivor_u24_e2_target_closed", TotalizedStatus.CLOSED, 2),
+            ("unit_cpu_survivor_u24_e2_target_sink", TotalizedStatus.SINK, 3),
         )
     else:
         raise StrictContractError("E2 fixture role is invalid")
@@ -527,8 +539,8 @@ def _build_canonical_fixture(parent_id: str, law_variant: str) -> dict[str, Any]
     matrix = _PARENT_MATRICES[parent_id]
     coefficients: list[tuple[str, str, ExactRational]] = []
     target_members = (
-        "u24_e2_target_open0",
-        "u24_e2_target_open1",
+        "unit_cpu_survivor_u24_e2_target_open0",
+        "unit_cpu_survivor_u24_e2_target_open1",
     )
     for target_coordinate, target_member in enumerate(target_members):
         open0 = matrix[target_coordinate][0]
@@ -538,19 +550,19 @@ def _build_canonical_fixture(parent_id: str, law_variant: str) -> dict[str, Any]
                 (
                     (
                         target_member,
-                        "u24_e2_source_open0_a",
+                        "unit_cpu_survivor_u24_e2_source_open0_a",
                         open0,
                     ),
                     (
                         target_member,
-                        "u24_e2_source_open0_b",
+                        "unit_cpu_survivor_u24_e2_source_open0_b",
                         ExactRational(-open0.numerator, open0.denominator),
                     ),
                 )
             )
         if open1.numerator != 0:
             coefficients.append(
-                (target_member, "u24_e2_source_open1", open1)
+                (target_member, "unit_cpu_survivor_u24_e2_source_open1", open1)
             )
     layer = declare_synthetic_transfer_layer(source, target, tuple(coefficients))
     source_ids = tuple(
@@ -570,11 +582,11 @@ def _build_canonical_fixture(parent_id: str, law_variant: str) -> dict[str, Any]
     else:
         open0_probabilities = (ExactRational(2, 3), ExactRational(1, 3))
     law_values = {
-        "u24_e2_source_open0_a": open0_probabilities[0],
-        "u24_e2_source_open0_b": open0_probabilities[1],
-        "u24_e2_source_open1": ExactRational(1),
-        "u24_e2_source_closed": ExactRational(1),
-        "u24_e2_source_sink": ExactRational(1),
+        "unit_cpu_survivor_u24_e2_source_open0_a": open0_probabilities[0],
+        "unit_cpu_survivor_u24_e2_source_open0_b": open0_probabilities[1],
+        "unit_cpu_survivor_u24_e2_source_open1": ExactRational(1),
+        "unit_cpu_survivor_u24_e2_source_closed": ExactRational(1),
+        "unit_cpu_survivor_u24_e2_source_sink": ExactRational(1),
     }
     source_law = make_exact_finite_fiber_law(source, law_values)
     source_completeness = certify_fiber_completeness(layer, "source")
@@ -633,6 +645,36 @@ def _common_block_weight(
     if not values or any(value != values[0] for value in values[1:]):
         raise StrictContractError(f"{where} has unequal within-block weights")
     return _positive(values[0], where)
+
+
+def _majorants_from_validated_envelope_wire(
+    envelope_wire: dict[str, Any],
+    expected_pairs: tuple[tuple[int, int], ...],
+    where: str,
+) -> dict[tuple[int, int], ExactRational]:
+    """Index one already validated envelope without rederiving its authorities."""
+
+    cells = envelope_wire.get("cells")
+    if type(cells) is not list or len(cells) != len(expected_pairs):
+        raise StrictContractError(f"{where} cell coverage is incomplete")
+    expected_pair_set = set(expected_pairs)
+    if len(expected_pair_set) != len(expected_pairs):
+        raise StrictContractError(f"{where} expected block pairs are not unique")
+    by_pair: dict[tuple[int, int], ExactRational] = {}
+    for cell in cells:
+        if type(cell) is not dict:
+            raise StrictContractError(f"{where} cell is not an exact object")
+        target_block = cell.get("target_block_index")
+        source_block = cell.get("source_block_index")
+        if type(target_block) is not int or type(source_block) is not int:
+            raise StrictContractError(f"{where} block index is not an exact integer")
+        pair = (target_block, source_block)
+        if pair in by_pair:
+            raise StrictContractError(f"{where} contains a duplicate block pair")
+        by_pair[pair] = ExactRational.from_dict(cell.get("majorant"))
+    if set(by_pair) != expected_pair_set:
+        raise StrictContractError(f"{where} block-pair coverage changed")
+    return by_pair
 
 
 def _validate_e1_bundle(
@@ -735,11 +777,27 @@ def _validate_e1_bundle(
     if len(set(source_blocks.values())) != 4 or len(set(target_blocks.values())) != 4:
         raise StrictContractError("E2 coordinate maps are not bijections")
 
+    expected_block_pairs = tuple(
+        (
+            target_blocks[target_coordinate],
+            source_blocks[source_coordinate],
+        )
+        for target_coordinate in _COORDINATES
+        for source_coordinate in _COORDINATES
+    )
+    majorants = _majorants_from_validated_envelope_wire(
+        envelope_wire,
+        expected_block_pairs,
+        "E2 canonical envelope",
+    )
     full_matrix = tuple(
         tuple(
-            envelope.majorant_for(
-                target_blocks[target_coordinate], source_blocks[source_coordinate]
-            )
+            majorants[
+                (
+                    target_blocks[target_coordinate],
+                    source_blocks[source_coordinate],
+                )
+            ]
             for source_coordinate in _COORDINATES
         )
         for target_coordinate in _COORDINATES
@@ -758,15 +816,15 @@ def _validate_e1_bundle(
         for row in source_law_wire["rows"]
     }
     primary = {
-        "u24_e2_source_open0_a": ExactRational(1, 3),
-        "u24_e2_source_open0_b": ExactRational(2, 3),
-        "u24_e2_source_open1": ExactRational(1),
-        "u24_e2_source_closed": ExactRational(1),
-        "u24_e2_source_sink": ExactRational(1),
+        "unit_cpu_survivor_u24_e2_source_open0_a": ExactRational(1, 3),
+        "unit_cpu_survivor_u24_e2_source_open0_b": ExactRational(2, 3),
+        "unit_cpu_survivor_u24_e2_source_open1": ExactRational(1),
+        "unit_cpu_survivor_u24_e2_source_closed": ExactRational(1),
+        "unit_cpu_survivor_u24_e2_source_sink": ExactRational(1),
     }
     alternate = dict(primary)
-    alternate["u24_e2_source_open0_a"] = ExactRational(2, 3)
-    alternate["u24_e2_source_open0_b"] = ExactRational(1, 3)
+    alternate["unit_cpu_survivor_u24_e2_source_open0_a"] = ExactRational(2, 3)
+    alternate["unit_cpu_survivor_u24_e2_source_open0_b"] = ExactRational(1, 3)
     if probabilities == primary:
         law_variant = "PRIMARY"
     elif parent_id == "M0" and probabilities == alternate:
@@ -1339,12 +1397,27 @@ def _derive_restriction_wire(
     )
 
     coordinate_rows = identification_wire["coordinate_rows"]
+    expected_block_pairs = tuple(
+        (
+            target_row["target_block_index"],
+            source_row["source_block_index"],
+        )
+        for target_row in coordinate_rows
+        for source_row in coordinate_rows
+    )
+    majorants = _majorants_from_validated_envelope_wire(
+        envelope_wire,
+        expected_block_pairs,
+        "E2 restriction envelope",
+    )
     full_matrix = tuple(
         tuple(
-            envelope.majorant_for(
-                coordinate_rows[target_index]["target_block_index"],
-                coordinate_rows[source_index]["source_block_index"],
-            )
+            majorants[
+                (
+                    coordinate_rows[target_index]["target_block_index"],
+                    coordinate_rows[source_index]["source_block_index"],
+                )
+            ]
             for source_index in range(4)
         )
         for target_index in range(4)
@@ -1628,6 +1701,136 @@ def _derive_safety_wire(
         or not _same_wire(identification_wire, restriction._identification.to_dict())
     ):
         raise StrictContractError("E2 safety authority chain is inconsistent")
+
+    # The identification has just re-entered and verified the complete E1
+    # bundle.  Materialize each bound authority wire once for this independent
+    # replay instead of invoking its full public serializer for every cell.
+    layer_wire = identification._layer.to_dict()
+    source_weights_wire = identification._source_weights.to_dict()
+    target_weights_wire = identification._target_weights.to_dict()
+    if (
+        _sha256(layer_wire) != identification_wire["layer_sha256"]
+        or _sha256(source_weights_wire)
+        != identification_wire["source_weights_sha256"]
+        or _sha256(target_weights_wire)
+        != identification_wire["target_weights_sha256"]
+    ):
+        raise StrictContractError("E2 safety E1 lookup authorities are misbound")
+
+    coordinate_rows = identification_wire["coordinate_rows"]
+    source_member_blocks: dict[str, int] = {}
+    target_member_blocks: dict[str, int] = {}
+    for coordinate_row in coordinate_rows:
+        source_block = coordinate_row["source_block_index"]
+        target_block = coordinate_row["target_block_index"]
+        if type(source_block) is not int or type(target_block) is not int:
+            raise StrictContractError("E2 safety coordinate block index changed type")
+        for member in coordinate_row["source_member_ids"]:
+            if type(member) is not str or not member or member in source_member_blocks:
+                raise StrictContractError(
+                    "E2 safety source-member coverage is not exact and unique"
+                )
+            source_member_blocks[member] = source_block
+        for member in coordinate_row["target_member_ids"]:
+            if type(member) is not str or not member or member in target_member_blocks:
+                raise StrictContractError(
+                    "E2 safety target-member coverage is not exact and unique"
+                )
+            target_member_blocks[member] = target_block
+    if (
+        len(source_member_blocks) != _MAX_E2_RAW_SOURCE_MEMBERS
+        or len(target_member_blocks) != _MAX_E2_RAW_TARGET_MEMBERS
+    ):
+        raise StrictContractError("E2 safety member coverage changed")
+
+    def _weight_lookup(
+        wire: dict[str, Any], expected_blocks: dict[str, int], label: str
+    ) -> tuple[dict[str, ExactRational], tuple[str, ...]]:
+        rows = wire.get("rows")
+        if type(rows) is not list or len(rows) != len(expected_blocks):
+            raise StrictContractError(f"E2 safety {label} weight coverage changed")
+        values: dict[str, ExactRational] = {}
+        order: list[str] = []
+        for row in rows:
+            if type(row) is not dict or set(row) != {
+                "block_index",
+                "member_id",
+                "member_sha256",
+                "weight",
+            }:
+                raise StrictContractError(
+                    f"E2 safety {label} weight row is not exact"
+                )
+            member = row["member_id"]
+            if (
+                type(member) is not str
+                or member not in expected_blocks
+                or member in values
+                or row["block_index"] != expected_blocks[member]
+            ):
+                raise StrictContractError(
+                    f"E2 safety {label} weight membership/order binding changed"
+                )
+            values[member] = _positive(
+                ExactRational.from_dict(row["weight"]),
+                f"E2 safety {label} member weight",
+            )
+            order.append(member)
+        if set(values) != set(expected_blocks):
+            raise StrictContractError(
+                f"E2 safety {label} weight membership is incomplete"
+            )
+        return values, tuple(order)
+
+    source_weight_by_member, source_member_order = _weight_lookup(
+        source_weights_wire, source_member_blocks, "source"
+    )
+    target_weight_by_member, target_member_order = _weight_lookup(
+        target_weights_wire, target_member_blocks, "target"
+    )
+    source_position = {
+        member: index for index, member in enumerate(source_member_order)
+    }
+    target_position = {
+        member: index for index, member in enumerate(target_member_order)
+    }
+    coefficient_rows = layer_wire.get("coefficients")
+    if type(coefficient_rows) is not list:
+        raise StrictContractError("E2 safety coefficient table is not an exact array")
+    coefficient_by_pair: dict[tuple[str, str], ExactRational] = {}
+    coefficient_order: list[tuple[int, int]] = []
+    for row in coefficient_rows:
+        if type(row) is not dict or set(row) != {
+            "target_member_id",
+            "target_member_sha256",
+            "source_member_id",
+            "source_member_sha256",
+            "coefficient",
+        }:
+            raise StrictContractError("E2 safety coefficient row is not exact")
+        target_member = row["target_member_id"]
+        source_member = row["source_member_id"]
+        pair = (target_member, source_member)
+        if (
+            type(target_member) is not str
+            or type(source_member) is not str
+            or target_member not in target_position
+            or source_member not in source_position
+            or pair in coefficient_by_pair
+        ):
+            raise StrictContractError(
+                "E2 safety coefficient table is duplicated or outside the rectangle"
+            )
+        coefficient = ExactRational.from_dict(row["coefficient"])
+        if coefficient.numerator == 0:
+            raise StrictContractError("E2 safety coefficient table contains explicit zero")
+        coefficient_by_pair[pair] = coefficient
+        coefficient_order.append(
+            (target_position[target_member], source_position[source_member])
+        )
+    if coefficient_order != sorted(coefficient_order):
+        raise StrictContractError("E2 safety coefficient order is not canonical")
+
     _require_work(
         "safety",
         source_members=sum(
@@ -1649,7 +1852,6 @@ def _derive_safety_wire(
         raise StrictContractError("E2 safety parent cell table is incomplete")
 
     ordered_candidate_loads = []
-    coordinate_rows = identification_wire["coordinate_rows"]
     for target_row in coordinate_rows:
         target_coordinate = target_row["coordinate_id"]
         target_members = tuple(target_row["target_member_ids"])
@@ -1668,15 +1870,13 @@ def _derive_safety_wire(
             for candidate, source_member in zip(
                 candidate_rows, source_members, strict=True
             ):
-                source_weight = identification._source_weights.weight_for(source_member)
+                source_weight = source_weight_by_member[source_member]
                 load = ExactRational(0)
                 for target_member in target_members:
-                    coefficient = identification._layer.coefficient_for(
-                        target_member, source_member
+                    coefficient = coefficient_by_pair.get(
+                        (target_member, source_member), ExactRational(0)
                     )
-                    target_weight = identification._target_weights.weight_for(
-                        target_member
-                    )
+                    target_weight = target_weight_by_member[target_member]
                     load = _add(
                         load,
                         _divide(
@@ -2547,6 +2747,10 @@ __all__ = [
     "E2_AUTHORITY_TREE_SHA",
     "E2_AUTHORITY_DOCUMENT_PATH",
     "E2_AUTHORITY_DOCUMENT_BLOB_SHA",
+    "E2_Q1_REPAIR_AUTHORITY_COMMIT_SHA",
+    "E2_Q1_REPAIR_AUTHORITY_TREE_SHA",
+    "E2_Q1_REPAIR_AUTHORITY_DOCUMENT_PATH",
+    "E2_Q1_REPAIR_AUTHORITY_DOCUMENT_BLOB_SHA",
     "SourceTargetCoordinateIdentification",
     "EnvelopeRestrictionWitness",
     "LiftingUniformSafetyCertificate",
