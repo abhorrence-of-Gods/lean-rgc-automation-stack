@@ -38,6 +38,9 @@
   "test_odlrq_componentwise_window.py": [
     "unit"
   ],
+  "test_odlrq_locality_cegar.py": [
+    "unit"
+  ],
   "test_uprime_kp3_d4_canonical_history.py": [
     "unit"
   ],
@@ -380,6 +383,9 @@
     "unit"
   ],
   "test_uprime_u15_l0_identity.py": [
+    "unit"
+  ],
+  "test_uprime_u15_l0_locality_cegar.py": [
     "unit"
   ],
   "test_uprime_u2_u4_development.py": [
