@@ -1,0 +1,426 @@
+{
+  "schema_version": "lean-rgc-uprime-u24-upper-stack-portability-matrix-v1",
+  "matrix_id": "uprime-u24-upper-stack-portability-public-synthetic-20260718-v1",
+  "evidence_scope": "PUBLIC_SYNTHETIC_FINITE_ONLY",
+  "semantic_base": {
+    "commit": "f1df8dd5d92706d907091e6add463fb6c9ca7130",
+    "tree": "c15e50c683263b50c8ddf371938785d03353b1fc",
+    "accepted_ref": "codex/uprime-odlrq-plan"
+  },
+  "historical_noninputs": {
+    "upper_stack_sidecar": "ee7a1c01dba376881d20962de664f4908acc7b0d",
+    "upper_stack_sidecar_correction": "c1f1957a3372f80f71b85151a793a4fa0fb218fa",
+    "l0_final": "8ec852aa3a82be237841f81bf41f3cf8a6ef4cd4",
+    "forbidden_scientific_inputs": [
+      "docs/experiments/inputs/uprime_u15_l0_matrix.json",
+      "docs/experiments/artifacts/uprime_odlrq_u15_l0_20260717/locality_cegar_result.json"
+    ],
+    "forbidden_threshold": "observed_l0_t_equals_4"
+  },
+  "accepted_i0_compatibility_oracle": {
+    "source_commit": "f1df8dd5d92706d907091e6add463fb6c9ca7130",
+    "source_tree": "c15e50c683263b50c8ddf371938785d03353b1fc",
+    "ordered_artifacts": [
+      {"name": "envelope_core.json", "bytes": 40309, "sha256": "67E901DFB555967D1E956C1114F29559A6D4FAEC1E6F99A65F49D365AE004813"},
+      {"name": "maxent_fixture.json", "bytes": 6081, "sha256": "E1284764B1A19DD98E3E70AFB3D7BB9E918A2B28C5DBF0B5603E6BAADE7BCF49"},
+      {"name": "local_tower.json", "bytes": 12327, "sha256": "78D72578676C6619C05A55AE6F9E3AC594CEC78B76293E74A843215C25D4FDF6"},
+      {"name": "global_measure.json", "bytes": 67747, "sha256": "B879BCB6A486A4DC385381121C322364C3DD8475B013E0F2C4A0B8E324404D42"},
+      {"name": "level_transport.json", "bytes": 12290, "sha256": "F7C16A6B2021E3E31C446E9CE51957FD6A66B94E06949B09E421875C0F40079F"},
+      {"name": "similarity_certificate.json", "bytes": 33897, "sha256": "3422896A00FDD60EC0F5D5079BA6A8A8B5D8427A425AC2BC3B96C51BD6B9A460"},
+      {"name": "integrated_certificate.json", "bytes": 13934, "sha256": "0C0C00B39663008658E6B40E826DD08F22B2EFA2FAD68121135DB60436CA6D53"}
+    ],
+    "role": "regression_oracle_only_not_a_portability_family"
+  },
+  "caps": {
+    "family_count": 4,
+    "max_open_states_per_side": 8,
+    "max_actions": 2,
+    "max_coordinates": 4,
+    "max_raw_transfer_cells": 64,
+    "max_candidate_support": 4,
+    "max_levels": 4,
+    "max_horizon": 3,
+    "max_exact_rational_bits": 31,
+    "max_family_work_units": 20000,
+    "max_result_bytes": 1048576
+  },
+  "carrier_recipe": {
+    "source_and_target_are_separately_constructed": true,
+    "indexing": "block_index_and_member_index_are_zero_based_nonnegative_integers",
+    "side_values": ["source", "target"],
+    "canonical_wire_function": "lean_rgc.odlrq.contracts.canonical_contract_bytes",
+    "authority_digest_rule": "uppercase_SHA256_of_canonical_contract_bytes",
+    "environment_digest_material": {"schema_version": "odlrq.finite-portability-environment.v1", "fields_in_canonical_object": ["schema_version", "matrix_id", "family_id", "side"], "relabel_variant_is_deliberately_excluded": true},
+    "variant_ids": ["baseline", "orbit_member_relabel"],
+    "coordinate_names": ["block_index_plus_one", "square_of_block_index_plus_one"],
+    "response_signature_wire": {"schema_version": "odlrq.finite-e2.response-signature.v1", "ordered_fields": ["schema_version", "totalized_kind", "response_coordinates"], "totalized_kind_values": ["OPEN", "CLOSED", "SINK"], "response_coordinates_rule": "ordered_array_of_ExactRational_wires", "signature_bytes_rule": "canonical_contract_bytes_of_this_exact_object"},
+    "observation_frame_rule": "derive_only_with_make_synthetic_observation_frame_id_from_environment_digest_and_ResponseVocabularyId.from_coordinate_names",
+    "transition_semantics_rule": "derive_only_with_make_synthetic_transition_semantics_id_from_the_single_action_and_response_vocabulary",
+    "baseline_member_label_format": "m{zero_based_member_index}",
+    "orbit_relabel_member_label_format": "r{block_size_minus_one_minus_zero_based_member_index}",
+    "open_state_id_format": "unit_cpu_survivor_u24_portability__{family_id}__{side}__b{zero_based_block_index}__{member_label}",
+    "open_state_payload_template": {"kind": "u24_portability_state", "family_id": "{family_id}", "side": "{side}", "state_id": "{fully_expanded_state_id}"},
+    "open_state_response_template": {"status": "OPEN", "source_signature": ["source_block_index_plus_one", "square_of_source_block_index_plus_one"], "target_signature": "target_block_signature_rule"},
+    "open_state_transition_template": {"action_id": "unit_cpu_survivor_u24_portability_probe", "successor": "self", "response_coordinates": "the_expanded_side_specific_open_state_response_signature"},
+    "action_ids": ["unit_cpu_survivor_u24_portability_probe"],
+    "action_payload": {"kind": "u24_portability_action", "matrix_id": "{matrix_id}", "action_id": "unit_cpu_survivor_u24_portability_probe"},
+    "action_semantics": "every_open_state_self_loops_and_emits_its_block_signature",
+    "source_block_signature": ["source_block_index_plus_one", "square_of_source_block_index_plus_one"],
+    "target_block_signature_rule": "let_b_equal_target_construction_block_signature_source_indices[target_block_index]_then_emit_b_plus_one_and_square_of_b_plus_one",
+    "block_member_count_rule": "source_construction_block_b_has_block_sizes[b]_members; target_signature_source_indices_must_be_a_permutation_of_0_through_d_minus_1; target_construction_block_t_has_block_sizes[target_construction_block_signature_source_indices[t]]_members",
+    "terminal_state_id_format": "unit_cpu_survivor_u24_portability__{family_id}__{side}__{terminal_kind_lowercase}",
+    "closed_state": {"terminal_kind_lowercase": "closed", "payload": {"kind": "u24_portability_state", "family_id": "{family_id}", "side": "{side}", "state_id": "{fully_expanded_state_id}"}, "response_coordinates": [0, 0], "transition": {"action_id": "unit_cpu_survivor_u24_portability_probe", "successor": "self"}},
+    "sink_state": {"terminal_kind_lowercase": "sink", "payload": {"kind": "u24_portability_state", "family_id": "{family_id}", "side": "{side}", "state_id": "{fully_expanded_state_id}"}, "response_coordinates": [0, 0], "transition": {"action_id": "unit_cpu_survivor_u24_portability_probe", "successor": "self"}},
+    "state_and_action_payload_construction": "CanonicalPayload.from_value_on_the_exact_fully_expanded_payload_object",
+    "seed_state_rule": "all_and_only_OPEN_state_ids_in_deterministic_zero_based_block_then_member_order",
+    "transition_row_rule": "one_self_loop_row_for_every_totalized_state_and_the_single_action_using_the_derived_transition_semantics_digest_and_default_censor_NOT_APPLICABLE",
+    "ordinary_failures_totalize_to_sink": true,
+    "closed_and_sink_rows_are_explicit": true,
+    "partition_rule": "independently_refine_and_verify_the_complete_totalized_snapshot",
+    "raw_transfer_expansion": "signed_coordinate_matrix_is_in_canonical_open_response_signature_order; for_each_NONZERO_coordinate_cell_and_each_source_member_write_the_signed_cell_to_the_lexicographically_first_target_member_of_the_target_open_block",
+    "unlisted_raw_transfer_cells": "exact_zero_and_must_be_omitted_from_the_sparse_declared_transfer_including_all_terminal_cells",
+    "positive_weight_per_member": {"numerator": "1", "denominator": "1"},
+    "fiber_law": "uniform_inside_every_exact_source_block_including_singleton_terminal_blocks",
+    "retained_coordinate_rule": "all_and_only_OPEN_exact_blocks_ordered_by_canonical_response_signature_wire_bytes_terminal_blocks_excluded_by_verified_status",
+    "source_to_target_coordinate_bijection_rule": "match_identical_canonical_open_response_signature_wire_bytes_and_reject_missing_duplicate_or_nonbijective_matches",
+    "signed_open_matrix_rule": "in_canonical_target_row_source_column_order_take_each_verified_FiberEnvelope_cell_derived_compressed_coefficient_not_the_caller_coordinate_cell_and_hash_the_canonical_ExactRational_matrix_wire",
+    "lifting_uniform_boolean_rules": {"exact_cell_coverage": "open_cell_count_equals_d_squared_and_every_canonical_open_target_source_pair_occurs_exactly_once", "cancellation_free": "every_majorant_is_derived_from_absolute_member_loads_before_fiber_law_signed_compression", "lifting_uniform": "for_every_cell_majorant_is_at_least_every_candidate_load_and_therefore_every_convex_fiber_law_compression"},
+    "memory_endomorphism_rule": "powering_and_P_Q_memory_are_defined_only_after_the_verified_source_to_target_coordinate_bijection_reindexes_the_rectangle_as_a_square_endomorphism",
+    "generator_transfer_fiber_authority_rule": "admit_refine_verify_source_and_target_separately_then_use_only_existing_content_derived_exact_quotient_generator_declared_synthetic_transfer_positive_weight_exact_fiber_law_completeness_and_verified_envelope_factories; no_caller_authority_id_or_digest_is_accepted",
+    "maxent_support_id_format": "u24_{family_id}_candidate_b{block_index:02d}",
+    "maxent_reference_mass": "source_block_size",
+    "maxent_statistic": "positive_envelope_column_load",
+    "maxent_exponential_base": {"numerator": "2", "denominator": "1"},
+    "maxent_exact_witness": "probability_is_normalized_reference_mass_times_exponential_base_to_integer_statistic",
+    "maxent_statistic_precondition": "every_positive_envelope_column_load_is_an_exact_nonnegative_integer",
+    "maxent_exponent_and_intermediate_cap": "absolute_exponent_at_most_31_and_every_exact_integer_intermediate_bit_length_at_most_31_before_materialization",
+    "maxent_target": "exact_expectation_under_the_frozen_exponential_witness",
+    "maxent_kl_radius": {"numerator": "10", "denominator": "1"},
+    "maxent_kl_exact_certificate": "normalize_reference_block_masses_to_q_then_verify_KL_p_q_le_minus_log_q_min_le_one_over_q_min_minus_one_strictly_less_than_10; logarithmic_values_are_diagnostics_only",
+    "maxent_nominal_operator": "same_as_positive_envelope_column_load",
+    "maxent_exact_rule_column": "same_as_positive_envelope_column_load",
+    "direct_quotient_residual": {"numerator": "1", "denominator": "16"},
+    "memory_forcing_radius": {"value": {"numerator": "1", "denominator": "1"}, "norm_id": "weighted_l1_exact_rational_v1", "domain_rule": "all_and_only_Q_coordinates_of_the_verified_split", "coverage_rule": "every_Q_coordinate_exactly_once", "source_tier": "CERTIFIED_SYNTHETIC_HARD"},
+    "level_transport_residual_formula": "max_of_zero_and_l1_norm_of_T_times_x_minus_y_minus_l1_norm_of_x_minus_y; require_nonnegative_column_stochastic_T",
+    "true_target_residual_formula": "l1_norm_of_transported_vector_minus_independently_frozen_target_vector_for_both_positive_endpoints_then_take_the_declared_pair_maximum",
+    "finite_positive_metric": "exact_unweighted_l1_distance_on_nonnegative_vectors",
+    "finite_predictive_metric": "exact_unweighted_l1_distance_on_signed_vectors_diagnostic_only",
+    "rng_axis_rule": "an_adjacent_morphism_labelled_R_N_or_G_increments_exactly_that_named_integer_coordinate_by_one_and_leaves_the_other_two_unchanged",
+    "coverage_authority_rule": "L0_coverage_ids_are_the_ordered_base_universe; every_phase_morphism_matrix_entry_is_0_or_1_and_every_source_column_contains_exactly_one_1; coverage_map_for_each_target_id_is_the_ordered_source_coverage_ids_at_1_entries; recursively_union_base_atoms_and_require_every_level_to_be_a_disjoint_complete_cover_of_the_L0_universe",
+    "hard_bound_formula": "direct_quotient_residual_plus_maximum_positive_column_load_to_horizon_times_direct_quotient_residual_plus_maximum_return_memory_column_load_times_memory_forcing_radius_plus_all_transport_and_true_target_residuals",
+    "work_count_formula": "coordinate_matrix_cells_plus_horizon_times_pq_qq_qp_cells_plus_all_morphism_matrix_cells_plus_maxent_support_count",
+    "hard_threshold_provenance": "baseline_literals_were_set_pre_source_to_one_plus_maximum_positive_column_load_to_the_global_max_horizon_cap_3; threshold_remains_an_independent_exact_spec_input_so_the_frozen_valid_threshold_exceeded_override_is_well_typed; no_runtime_retuning"
+  },
+  "family_order": [
+    "orbit_symmetry",
+    "nilpotent_nonnormal",
+    "ghost_return_memory",
+    "separator_rank2_coupling"
+  ],
+  "core_conformance_cases": [
+    {
+      "case_id": "nonunit_weight_rectangle",
+      "purpose": "reject_a_generic_facade_that_ignores_positive_fiber_weights",
+      "carrier_rule": "use_the_global_carrier_recipe_with_family_id_nonunit_weight_rectangle_baseline_variant_and_identity_signature_bijection",
+      "source_block_sizes": [2],
+      "target_block_sizes": [1],
+      "signed_coordinate_matrix_target_row_source_column": [[2]],
+      "source_block_member_weights": [
+        {"numerator": "1", "denominator": "1"},
+        {"numerator": "2", "denominator": "1"}
+      ],
+      "target_block_member_weights": [
+        {"numerator": "3", "denominator": "1"}
+      ],
+      "source_fiber_probabilities": [
+        {"numerator": "1", "denominator": "2"},
+        {"numerator": "1", "denominator": "2"}
+      ],
+      "signed_transfer_coefficient_for_each_source_member": {"numerator": "2", "denominator": "1"},
+      "expected_candidate_loads_in_source_member_order": [
+        {"numerator": "6", "denominator": "1"},
+        {"numerator": "3", "denominator": "1"}
+      ],
+      "expected_majorant": {"numerator": "6", "denominator": "1"},
+      "expected_signed_compressed_coefficient": {"numerator": "9", "denominator": "2"},
+      "expected_positive_envelope": [[{"numerator": "6", "denominator": "1"}]],
+      "expected_lifting_uniform_weighted_l1_operator_norm": {"numerator": "6", "denominator": "1"},
+      "evidence_role": "G1_core_conformance_only_not_a_fifth_endpoint_family"
+    }
+  ],
+  "families": [
+    {
+      "family_id": "orbit_symmetry",
+      "purpose": "exact_fiber_orbit_and_projected_coordinate_majorant_relabel_invariance",
+      "block_sizes": [2, 2],
+      "target_construction_block_signature_source_indices": [1, 0],
+      "expected_source_construction_to_target_construction_indices": [1, 0],
+      "expected_canonical_source_to_target_coordinate_indices": [0, 1],
+      "endomorphism_identification_required_for_memory": true,
+      "relabel_attack": {"variant_id": "orbit_member_relabel", "operation": "use_member_label_r{block_size_minus_one_minus_member_index}_instead_of_baseline_m{member_index}_in_both_id_and_payload_while_environment_material_and_response_coordinates_remain_identical", "expected_full_snapshot_and_envelope_wires_equal": false, "canonical_projection_schema_version": "lean-rgc-uprime-u24-coordinate-majorant-projection-v1", "canonical_projection": "ordered_open_response_signature_bytes_then_exact_positive_coordinate_majorant_rows", "expected_canonical_projection_bytes_equal": true},
+      "signed_coordinate_matrix_target_row_source_column": [
+        [1, -2],
+        [1, 2]
+      ],
+      "expected_positive_envelope": [
+        [1, 2],
+        [1, 2]
+      ],
+      "p_coordinate_indices": [0],
+      "q_coordinate_indices": [1],
+      "finite_horizon": 2,
+      "expected_return_memory": [[6]],
+      "levels": [
+        {"level_id": "L0", "rng": {"radius": 0, "word_depth": 0, "granularity": 0}, "dimension": 2, "coverage_ids": ["orbit_c0", "orbit_c1"], "true_positive_left": [1, 0], "true_positive_right": [0, 1], "true_predictive_left": [1, -1], "true_predictive_right": [-1, 1], "expected_positive_l1_distance": 2, "expected_predictive_l1_distance": 4},
+        {"level_id": "L1", "rng": {"radius": 1, "word_depth": 0, "granularity": 0}, "dimension": 1, "coverage_ids": ["orbit_c01"], "true_positive_left": [1], "true_positive_right": [1], "true_predictive_left": [0], "true_predictive_right": [0], "expected_positive_l1_distance": 0, "expected_predictive_l1_distance": 0}
+      ],
+      "adjacent_positive_morphisms": [
+        {"axis": "R", "source": "L0", "target": "L1", "matrix": [[1, 1]], "expected_positive_left": [1], "expected_positive_right": [1], "expected_predictive_left": [0], "expected_predictive_right": [0]}
+      ],
+      "positive_pair_left": [1, 0],
+      "positive_pair_right": [0, 1],
+      "predictive_pair_left": [1, -1],
+      "predictive_pair_right": [-1, 1],
+      "true_target_residuals": [0],
+      "expected_level_transport_residuals": [0],
+      "expected_maxent_probabilities": [
+        {"numerator": "1", "denominator": "5"},
+        {"numerator": "4", "denominator": "5"}
+      ],
+      "expected_maxent_target": {"numerator": "18", "denominator": "5"},
+      "maxent_requested_target": {"numerator": "18", "denominator": "5"},
+      "expected_hard_factor_rows": [
+        {"factor_id": "direct_quotient_residual", "source_tier": "EXACT_SYNTHETIC_HARD", "value": {"numerator": "1", "denominator": "16"}},
+        {"factor_id": "positive_horizon_amplification", "source_tier": "EXACT_SYNTHETIC_HARD", "value": {"numerator": "1", "denominator": "1"}},
+        {"factor_id": "finite_return_memory_times_forcing_radius", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "6", "denominator": "1"}},
+        {"factor_id": "level_transport_residual", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "0", "denominator": "1"}},
+        {"factor_id": "true_target_residual", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "0", "denominator": "1"}}
+      ],
+      "expected_hard_bound": {"numerator": "113", "denominator": "16"},
+      "expected_work_count": 14,
+      "hard_threshold": {"numerator": "65", "denominator": "1"},
+      "expected_hard_disposition": "U24_HARD_PORTABILITY_PASS",
+      "expected_nominal_disposition": "U24_NOMINAL_MAXENT_VERIFIED"
+    },
+    {
+      "family_id": "nilpotent_nonnormal",
+      "purpose": "finite_horizon_transient_survives_zero_spectral_radius_shortcut",
+      "block_sizes": [1, 1, 1],
+      "target_construction_block_signature_source_indices": [0, 1, 2],
+      "expected_source_construction_to_target_construction_indices": [0, 1, 2],
+      "expected_canonical_source_to_target_coordinate_indices": [0, 1, 2],
+      "endomorphism_identification_required_for_memory": true,
+      "signed_coordinate_matrix_target_row_source_column": [
+        [0, 4, 0],
+        [0, 0, 4],
+        [0, 0, 0]
+      ],
+      "expected_positive_envelope": [
+        [0, 4, 0],
+        [0, 0, 4],
+        [0, 0, 0]
+      ],
+      "p_coordinate_indices": [0],
+      "q_coordinate_indices": [1, 2],
+      "finite_horizon": 3,
+      "expected_return_memory": [[0]],
+      "expected_full_positive_power_two": [
+        [0, 0, 16],
+        [0, 0, 0],
+        [0, 0, 0]
+      ],
+      "levels": [
+        {"level_id": "L0", "rng": {"radius": 0, "word_depth": 0, "granularity": 0}, "dimension": 3, "coverage_ids": ["nil_c0", "nil_c1", "nil_c2"], "true_positive_left": [1, 0, 0], "true_positive_right": [0, 0, 1], "true_predictive_left": [1, -1, 0], "true_predictive_right": [0, 1, -1], "expected_positive_l1_distance": 2, "expected_predictive_l1_distance": 4},
+        {"level_id": "L1", "rng": {"radius": 0, "word_depth": 1, "granularity": 0}, "dimension": 2, "coverage_ids": ["nil_c01", "nil_c2"], "true_positive_left": [1, 0], "true_positive_right": [0, 1], "true_predictive_left": [0, 0], "true_predictive_right": [1, -1], "expected_positive_l1_distance": 2, "expected_predictive_l1_distance": 2},
+        {"level_id": "L2", "rng": {"radius": 1, "word_depth": 1, "granularity": 0}, "dimension": 1, "coverage_ids": ["nil_c012"], "true_positive_left": [1], "true_positive_right": [1], "true_predictive_left": [0], "true_predictive_right": [0], "expected_positive_l1_distance": 0, "expected_predictive_l1_distance": 0}
+      ],
+      "adjacent_positive_morphisms": [
+        {"axis": "N", "source": "L0", "target": "L1", "matrix": [[1, 1, 0], [0, 0, 1]], "expected_positive_left": [1, 0], "expected_positive_right": [0, 1], "expected_predictive_left": [0, 0], "expected_predictive_right": [1, -1]},
+        {"axis": "R", "source": "L1", "target": "L2", "matrix": [[1, 1]], "expected_positive_left": [1], "expected_positive_right": [1], "expected_predictive_left": [0], "expected_predictive_right": [0]}
+      ],
+      "positive_pair_left": [1, 0, 0],
+      "positive_pair_right": [0, 0, 1],
+      "predictive_pair_left": [1, -1, 0],
+      "predictive_pair_right": [0, 1, -1],
+      "true_target_residuals": [0, 0],
+      "expected_level_transport_residuals": [0, 0],
+      "expected_maxent_probabilities": [
+        {"numerator": "1", "denominator": "33"},
+        {"numerator": "16", "denominator": "33"},
+        {"numerator": "16", "denominator": "33"}
+      ],
+      "expected_maxent_target": {"numerator": "128", "denominator": "33"},
+      "maxent_requested_target": {"numerator": "128", "denominator": "33"},
+      "expected_hard_factor_rows": [
+        {"factor_id": "direct_quotient_residual", "source_tier": "EXACT_SYNTHETIC_HARD", "value": {"numerator": "1", "denominator": "16"}},
+        {"factor_id": "positive_horizon_amplification", "source_tier": "EXACT_SYNTHETIC_HARD", "value": {"numerator": "4", "denominator": "1"}},
+        {"factor_id": "finite_return_memory_times_forcing_radius", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "0", "denominator": "1"}},
+        {"factor_id": "level_transport_residual", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "0", "denominator": "1"}},
+        {"factor_id": "true_target_residual", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "0", "denominator": "1"}}
+      ],
+      "expected_hard_bound": {"numerator": "65", "denominator": "16"},
+      "expected_work_count": 44,
+      "hard_threshold": {"numerator": "65", "denominator": "1"},
+      "expected_hard_disposition": "U24_HARD_PORTABILITY_PASS",
+      "expected_nominal_disposition": "U24_NOMINAL_MAXENT_VERIFIED"
+    },
+    {
+      "family_id": "ghost_return_memory",
+      "purpose": "direct_p_to_p_zero_but_p_q_p_return_positive",
+      "block_sizes": [1, 1],
+      "target_construction_block_signature_source_indices": [0, 1],
+      "expected_source_construction_to_target_construction_indices": [0, 1],
+      "expected_canonical_source_to_target_coordinate_indices": [0, 1],
+      "endomorphism_identification_required_for_memory": true,
+      "signed_coordinate_matrix_target_row_source_column": [
+        [0, 3],
+        [2, 1]
+      ],
+      "expected_positive_envelope": [
+        [0, 3],
+        [2, 1]
+      ],
+      "p_coordinate_indices": [0],
+      "q_coordinate_indices": [1],
+      "finite_horizon": 3,
+      "expected_return_memory": [[18]],
+      "direct_p_to_p_is_zero": true,
+      "levels": [
+        {"level_id": "L0", "rng": {"radius": 0, "word_depth": 0, "granularity": 0}, "dimension": 2, "coverage_ids": ["ghost_c0", "ghost_c1"], "true_positive_left": [1, 0], "true_positive_right": [0, 1], "true_predictive_left": [1, -1], "true_predictive_right": [-1, 1], "expected_positive_l1_distance": 2, "expected_predictive_l1_distance": 4},
+        {"level_id": "L1", "rng": {"radius": 0, "word_depth": 0, "granularity": 1}, "dimension": 1, "coverage_ids": ["ghost_c01"], "true_positive_left": [2], "true_positive_right": [1], "true_predictive_left": [0], "true_predictive_right": [0], "expected_positive_l1_distance": 1, "expected_predictive_l1_distance": 0}
+      ],
+      "adjacent_positive_morphisms": [
+        {"axis": "G", "source": "L0", "target": "L1", "matrix": [[1, 1]], "expected_positive_left": [1], "expected_positive_right": [1], "expected_predictive_left": [0], "expected_predictive_right": [0]}
+      ],
+      "positive_pair_left": [1, 0],
+      "positive_pair_right": [0, 1],
+      "predictive_pair_left": [1, -1],
+      "predictive_pair_right": [-1, 1],
+      "true_target_residuals": [1],
+      "expected_level_transport_residuals": [0],
+      "expected_maxent_probabilities": [
+        {"numerator": "1", "denominator": "5"},
+        {"numerator": "4", "denominator": "5"}
+      ],
+      "expected_maxent_target": {"numerator": "18", "denominator": "5"},
+      "maxent_requested_target": {"numerator": "18", "denominator": "5"},
+      "expected_hard_factor_rows": [
+        {"factor_id": "direct_quotient_residual", "source_tier": "EXACT_SYNTHETIC_HARD", "value": {"numerator": "1", "denominator": "16"}},
+        {"factor_id": "positive_horizon_amplification", "source_tier": "EXACT_SYNTHETIC_HARD", "value": {"numerator": "4", "denominator": "1"}},
+        {"factor_id": "finite_return_memory_times_forcing_radius", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "18", "denominator": "1"}},
+        {"factor_id": "level_transport_residual", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "0", "denominator": "1"}},
+        {"factor_id": "true_target_residual", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "1", "denominator": "1"}}
+      ],
+      "expected_hard_bound": {"numerator": "369", "denominator": "16"},
+      "expected_work_count": 17,
+      "hard_threshold": {"numerator": "65", "denominator": "1"},
+      "expected_hard_disposition": "U24_HARD_PORTABILITY_PASS",
+      "expected_nominal_disposition": "U24_NOMINAL_MAXENT_VERIFIED"
+    },
+    {
+      "family_id": "separator_rank2_coupling",
+      "purpose": "two_local_pieces_require_one_cross_separator_low_rank_innovation",
+      "block_sizes": [1, 1, 1, 1],
+      "target_construction_block_signature_source_indices": [0, 1, 2, 3],
+      "expected_source_construction_to_target_construction_indices": [0, 1, 2, 3],
+      "expected_canonical_source_to_target_coordinate_indices": [0, 1, 2, 3],
+      "endomorphism_identification_required_for_memory": true,
+      "local_additive_matrix": [
+        [1, 2, 0, 0],
+        [2, 1, 0, 0],
+        [0, 0, 1, 2],
+        [0, 0, 2, 1]
+      ],
+      "separator_interface_rank": 2,
+      "separator_interface_matrix": [[0, 1, 0, 0], [0, 0, 1, 0]],
+      "separator_interface_coordinate_indices": [1, 2],
+      "separator_correction_rank": 1,
+      "separator_correction_target_vector": [0, 1, 1, 0],
+      "separator_correction_source_vector": [1, 0, 0, 1],
+      "signed_coordinate_matrix_target_row_source_column": [
+        [1, 2, 0, 0],
+        [3, 1, 0, 1],
+        [1, 0, 1, 3],
+        [0, 0, 2, 1]
+      ],
+      "expected_positive_envelope": [
+        [1, 2, 0, 0],
+        [3, 1, 0, 1],
+        [1, 0, 1, 3],
+        [0, 0, 2, 1]
+      ],
+      "p_coordinate_indices": [0, 3],
+      "q_coordinate_indices": [1, 2],
+      "finite_horizon": 3,
+      "expected_return_memory": [[18, 6], [6, 18]],
+      "levels": [
+        {"level_id": "L0", "rng": {"radius": 0, "word_depth": 0, "granularity": 0}, "dimension": 4, "coverage_ids": ["sep_c0", "sep_c1", "sep_c2", "sep_c3"], "true_positive_left": [1, 0, 0, 0], "true_positive_right": [0, 0, 0, 1], "true_predictive_left": [1, -1, 0, 0], "true_predictive_right": [0, 0, -1, 1], "expected_positive_l1_distance": 2, "expected_predictive_l1_distance": 4},
+        {"level_id": "L1", "rng": {"radius": 1, "word_depth": 0, "granularity": 0}, "dimension": 2, "coverage_ids": ["sep_radius_left", "sep_radius_right"], "true_positive_left": [1, 0], "true_positive_right": [0, 1], "true_predictive_left": [0, 0], "true_predictive_right": [0, 0], "expected_positive_l1_distance": 2, "expected_predictive_l1_distance": 0},
+        {"level_id": "L2", "rng": {"radius": 1, "word_depth": 1, "granularity": 0}, "dimension": 2, "coverage_ids": ["sep_word_left", "sep_word_right"], "true_positive_left": [1, 0], "true_positive_right": [0, 1], "true_predictive_left": [0, 0], "true_predictive_right": [0, 0], "expected_positive_l1_distance": 2, "expected_predictive_l1_distance": 0},
+        {"level_id": "L3", "rng": {"radius": 1, "word_depth": 1, "granularity": 1}, "dimension": 1, "coverage_ids": ["sep_global"], "true_positive_left": [1], "true_positive_right": [1], "true_predictive_left": [0], "true_predictive_right": [0], "expected_positive_l1_distance": 0, "expected_predictive_l1_distance": 0}
+      ],
+      "adjacent_positive_morphisms": [
+        {"axis": "R", "source": "L0", "target": "L1", "matrix": [[1, 1, 0, 0], [0, 0, 1, 1]], "expected_positive_left": [1, 0], "expected_positive_right": [0, 1], "expected_predictive_left": [0, 0], "expected_predictive_right": [0, 0]},
+        {"axis": "N", "source": "L1", "target": "L2", "matrix": [[1, 0], [0, 1]], "expected_positive_left": [1, 0], "expected_positive_right": [0, 1], "expected_predictive_left": [0, 0], "expected_predictive_right": [0, 0]},
+        {"axis": "G", "source": "L2", "target": "L3", "matrix": [[1, 1]], "expected_positive_left": [1], "expected_positive_right": [1], "expected_predictive_left": [0], "expected_predictive_right": [0]}
+      ],
+      "positive_pair_left": [1, 0, 0, 0],
+      "positive_pair_right": [0, 0, 0, 1],
+      "predictive_pair_left": [1, -1, 0, 0],
+      "predictive_pair_right": [0, 0, -1, 1],
+      "true_target_residuals": [0, 0, 0],
+      "expected_level_transport_residuals": [0, 0, 0],
+      "expected_maxent_probabilities": [
+        {"numerator": "2", "denominator": "5"},
+        {"numerator": "1", "denominator": "10"},
+        {"numerator": "1", "denominator": "10"},
+        {"numerator": "2", "denominator": "5"}
+      ],
+      "expected_maxent_target": {"numerator": "23", "denominator": "5"},
+      "maxent_requested_target": {"numerator": "23", "denominator": "5"},
+      "expected_hard_factor_rows": [
+        {"factor_id": "direct_quotient_residual", "source_tier": "EXACT_SYNTHETIC_HARD", "value": {"numerator": "1", "denominator": "16"}},
+        {"factor_id": "positive_horizon_amplification", "source_tier": "EXACT_SYNTHETIC_HARD", "value": {"numerator": "125", "denominator": "16"}},
+        {"factor_id": "finite_return_memory_times_forcing_radius", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "24", "denominator": "1"}},
+        {"factor_id": "level_transport_residual", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "0", "denominator": "1"}},
+        {"factor_id": "true_target_residual", "source_tier": "CERTIFIED_SYNTHETIC_HARD", "value": {"numerator": "0", "denominator": "1"}}
+      ],
+      "expected_hard_bound": {"numerator": "255", "denominator": "8"},
+      "expected_work_count": 70,
+      "hard_threshold": {"numerator": "126", "denominator": "1"},
+      "expected_hard_disposition": "U24_HARD_PORTABILITY_PASS",
+      "expected_nominal_disposition": "U24_NOMINAL_MAXENT_VERIFIED"
+    }
+  ],
+  "fixed_endpoint": {
+    "denominator_family_count": 4,
+    "required_coverage_count": 4,
+    "required_censor_count": 0,
+    "required_abstention_count": 0,
+    "all_expected_hard_dispositions": "U24_HARD_PORTABILITY_PASS",
+    "all_expected_nominal_dispositions": "U24_NOMINAL_MAXENT_VERIFIED",
+    "compatibility_requirement": "seven_accepted_i0_artifact_wires_byte_identical",
+    "nominal_maxent_cannot_change_hard_disposition": true
+  },
+  "required_mutation_branches": [
+    {"mutation_id": "drop_open_state", "family_id": "orbit_symmetry", "target": "declared_family.block_sizes[-1]", "operation": "replace", "replacement": 0, "rebinding_rule": "rebuild_a_fresh_family_input_digest_and_run_preflight_before_snapshot_construction", "expected_reason_code": "CARRIER_INCOMPLETE", "expected_hard": "U24_HARD_PORTABILITY_PREREQUISITE_BLOCKED", "expected_nominal": "U24_NOMINAL_NOT_EVALUATED"},
+    {"mutation_id": "understate_envelope", "family_id": "orbit_symmetry", "target": "verified_family.envelope_restriction.matrix[0][0]", "operation": "replace", "replacement": {"numerator": "0", "denominator": "1"}, "rebinding_rule": "replace_the_typed_exact_value_recompute_attacked_object_and_every_ancestor_digest_then_strictly_reverify", "expected_reason_code": "EXPECTED_VALUE_MISMATCH", "expected_hard": "U24_HARD_PORTABILITY_EXECUTION_FAILED", "expected_nominal": "U24_NOMINAL_NOT_EVALUATED"},
+    {"mutation_id": "drop_ghost_return", "family_id": "ghost_return_memory", "target": "verified_family.return_memory.return_sum[0][0]", "operation": "replace", "replacement": {"numerator": "0", "denominator": "1"}, "rebinding_rule": "replace_the_typed_exact_value_recompute_attacked_object_and_every_ancestor_digest_then_strictly_reverify", "expected_reason_code": "EXPECTED_VALUE_MISMATCH", "expected_hard": "U24_HARD_PORTABILITY_EXECUTION_FAILED", "expected_nominal": "U24_NOMINAL_NOT_EVALUATED"},
+    {"mutation_id": "delete_separator_correction", "family_id": "separator_rank2_coupling", "target": "verified_family.separator_structure.correction_target_vector", "operation": "replace", "replacement": [0, 0, 0, 0], "rebinding_rule": "replace_the_typed_exact_structure_recompute_its_digest_and_every_ancestor_digest_then_strictly_reverify_local_plus_correction_equality", "expected_reason_code": "EXPECTED_VALUE_MISMATCH", "expected_hard": "U24_HARD_PORTABILITY_EXECUTION_FAILED", "expected_nominal": "U24_NOMINAL_NOT_EVALUATED"},
+    {"mutation_id": "nominal_into_hard", "family_id": "orbit_symmetry", "target": "verified_family.ordered_hard_factor_rows[1].source_tier", "operation": "replace", "replacement": "NOMINAL_MODEL_SELECTION_ONLY", "rebinding_rule": "replace_the_typed_tier_recompute_attacked_hard_factor_and_every_ancestor_digest_then_strictly_reverify", "expected_reason_code": "TIER_SUBSTITUTION", "expected_hard": "U24_HARD_PORTABILITY_EXECUTION_FAILED", "expected_nominal": "U24_NOMINAL_NOT_EVALUATED"},
+    {"mutation_id": "maxent_outside_hull", "family_id": "orbit_symmetry", "target": "nominal_problem_override.requested_target", "operation": "replace", "replacement": {"numerator": "5", "denominator": "1"}, "rebinding_rule": "build_a_fresh_bound_nominal_problem_and_recompute_its_digest_without_changing_any_hard_wire_or_hard_input_digest", "expected_reason_code": "NONE", "expected_hard": "U24_HARD_PORTABILITY_PASS", "expected_nominal": "U24_NOMINAL_MAXENT_DIAGNOSTIC_FAILURE"},
+    {"mutation_id": "predictive_as_positive", "family_id": "nilpotent_nonnormal", "target": "verified_family.positive_distance_rows[0].schema_version", "operation": "replace", "replacement": "odlrq.finite-similarity.predictive-distance.v1", "rebinding_rule": "replace_the_typed_schema_recompute_attacked_distance_and_every_ancestor_digest_then_strictly_reverify", "expected_reason_code": "TIER_SUBSTITUTION", "expected_hard": "U24_HARD_PORTABILITY_EXECUTION_FAILED", "expected_nominal": "U24_NOMINAL_NOT_EVALUATED"},
+    {"mutation_id": "drop_coverage", "family_id": "separator_rank2_coupling", "target": "declared_family.levels[0].coverage_ids[-1]", "operation": "delete", "replacement": null, "rebinding_rule": "rebuild_a_fresh_family_input_digest_and_run_disjoint_complete_coverage_preflight", "expected_reason_code": "COVERAGE_INCOMPLETE", "expected_hard": "U24_HARD_PORTABILITY_PREREQUISITE_BLOCKED", "expected_nominal": "U24_NOMINAL_NOT_EVALUATED"},
+    {"mutation_id": "valid_threshold_exceeded", "family_id": "orbit_symmetry", "target": "input_family.hard_threshold", "operation": "replace", "replacement": {"numerator": "7", "denominator": "1"}, "rebinding_rule": "rebuild_a_fresh_valid_family_input_digest_with_only_the_independent_exact_threshold_changed", "expected_reason_code": "NONE", "expected_hard": "U24_HARD_PORTABILITY_THRESHOLD_EXCEEDED", "expected_nominal": "U24_NOMINAL_MAXENT_VERIFIED"}
+  ],
+  "nonclaims": [
+    "production_lean_locality",
+    "complete_all_germ_quotient",
+    "infinite_horizon_stability",
+    "infinite_cutoff_uniformity",
+    "protected_task_performance",
+    "solve_rate_improvement",
+    "native_l1_license",
+    "gpu_or_llm_benefit"
+  ]
+}
