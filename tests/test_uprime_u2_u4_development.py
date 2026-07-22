@@ -165,6 +165,30 @@ FROZEN_REFS = {
 STAGE_ORDER = ("E1", "E2", "ME0", "S0", "I0")
 MAX_BUILD_COMMITS = 6
 MAX_CORRECTIONS = 1
+
+# The historical U24 construction epoch is immutable after accepted I0.  The
+# portability phase is a separately governed descendant and must neither spend
+# the old repair budget nor be reinterpreted as another old-epoch stage.
+OLD_U24_ENDPOINT_COMMIT = "f1df8dd5d92706d907091e6add463fb6c9ca7130"
+OLD_U24_ENDPOINT_TREE = "c15e50c683263b50c8ddf371938785d03353b1fc"
+OLD_U24_ENDPOINT_PARENT = "2376aca8209c38a3a94dfa872334073d86dc4909"
+OLD_U24_ENDPOINT_BLOBS = {
+    "lean_rgc/evals/uprime_u2_u4_development.py":
+        "32f68a477bbb2432a91cd463d49db658ff012258",
+    "lean_rgc/odlrq/__init__.py":
+        "7e08787436b385e50f071a44b9e26f31dea0c597",
+    "lean_rgc/odlrq/certificates.py":
+        "99e88abadaffc8c108953bcac663ffb135143317",
+    IDENTITY_PATH: "ef4a56778c9734952257e56f91a0b93003bc577a",
+    MANIFEST_PATH: "1663889c4732481eb6e2176df7c48ee396868216",
+}
+OLD_U24_CONTROL_BLOBS = {
+    GUARD_PATH: "cd0a4fe0def1c5523e0c0b9fe023dde8fc0b09e7",
+    RUNNER_PATH: "b79f1fa354cdddde2b2ae7b6efce8d9ac005be8b",
+}
+DELEGATED_PORTABILITY_MANIFEST_NODES = frozenset(
+    u24_guard.PORTABILITY_DELEGATED_MANIFEST_NODES
+)
 WALL_SECONDS = {
     "B0": 60,
     "E0": 90,
@@ -358,11 +382,22 @@ ABSENT_AT_ANCHOR = tuple(
             "lean_rgc/odlrq/similarity.py",
             "lean_rgc/odlrq/selection.py",
             "lean_rgc/odlrq/certificates.py",
+            "lean_rgc/odlrq/finite_e2.py",
+            "lean_rgc/odlrq/finite_maxent.py",
+            "lean_rgc/odlrq/finite_similarity.py",
+            "lean_rgc/odlrq/finite_upper_stack.py",
             "lean_rgc/evals/uprime_u2_u4_development.py",
+            "lean_rgc/evals/uprime_u24_upper_stack_portability.py",
             "tests/test_odlrq_envelope.py",
             "tests/test_odlrq_maxent.py",
             "tests/test_odlrq_similarity.py",
             "tests/test_odlrq_selection.py",
+            "tests/test_uprime_u24_upper_stack_portability_identity.py",
+            "tests/test_odlrq_finite_e2.py",
+            "tests/test_odlrq_finite_maxent.py",
+            "tests/test_odlrq_finite_similarity.py",
+            "tests/test_odlrq_finite_upper_stack.py",
+            "tests/test_uprime_u24_upper_stack_portability.py",
         }
     )
 )
@@ -378,12 +413,23 @@ EXPECTED_UNION_ALLOWLIST = frozenset(
         "lean_rgc/odlrq/selection.py",
         "lean_rgc/odlrq/certificates.py",
         "lean_rgc/odlrq/__init__.py",
+        "lean_rgc/odlrq/finite_e2.py",
+        "lean_rgc/odlrq/finite_maxent.py",
+        "lean_rgc/odlrq/finite_similarity.py",
+        "lean_rgc/odlrq/finite_upper_stack.py",
         "lean_rgc/evals/uprime_u2_u4_development.py",
+        "lean_rgc/evals/uprime_u24_upper_stack_portability.py",
         "tests/test_odlrq_quotient_generator.py",
         "tests/test_odlrq_envelope.py",
         "tests/test_odlrq_maxent.py",
         "tests/test_odlrq_similarity.py",
         "tests/test_odlrq_selection.py",
+        "tests/test_uprime_u24_upper_stack_portability_identity.py",
+        "tests/test_odlrq_finite_e2.py",
+        "tests/test_odlrq_finite_maxent.py",
+        "tests/test_odlrq_finite_similarity.py",
+        "tests/test_odlrq_finite_upper_stack.py",
+        "tests/test_uprime_u24_upper_stack_portability.py",
         IDENTITY_PATH,
         GUARD_PATH,
         RUNNER_PATH,
@@ -414,16 +460,54 @@ TRACKED_PATHS = tuple(
     )
 )
 
+
+def _project_old_u24_epoch(control: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the exact historical attestation prefix ending at accepted I0."""
+
+    projected = copy.deepcopy(dict(control))
+    assert projected["is_shallow"] is False
+    revisions = projected["revisions"]
+    interval = projected["first_parent_after_a0"]
+    assert type(revisions) is list and type(interval) is list
+    endpoint_indices = [
+        index
+        for index, row in enumerate(revisions)
+        if type(row) is dict and row.get("commit") == OLD_U24_ENDPOINT_COMMIT
+    ]
+    assert len(endpoint_indices) == 1
+    endpoint_index = endpoint_indices[0]
+    assert endpoint_index > 0
+    assert interval[endpoint_index - 1] == OLD_U24_ENDPOINT_COMMIT
+    endpoint = revisions[endpoint_index]
+    assert endpoint["parents"] == [OLD_U24_ENDPOINT_PARENT]
+    endpoint_blobs = endpoint["tree_blobs"]
+    assert type(endpoint_blobs) is dict
+    for path, expected in {
+        **OLD_U24_ENDPOINT_BLOBS,
+        **OLD_U24_CONTROL_BLOBS,
+    }.items():
+        assert endpoint_blobs[path] == expected
+
+    projected["head"] = OLD_U24_ENDPOINT_COMMIT
+    projected["first_parent_after_a0"] = interval[:endpoint_index]
+    projected["revisions"] = revisions[: endpoint_index + 1]
+    projected["status_paths"] = []
+    projected["ci_setup_paths"] = []
+    projected["worktree_blobs"] = copy.deepcopy(endpoint_blobs)
+    return projected
+
+
 # This snapshot is collected before the autouse semantic guard is installed.
 # The registered runner supplies the same canonical object from its outer
 # read-only control plane; direct CI constructs it locally before test setup.
-CONTROL = u24_guard.load_control_plane_attestation(
+RAW_CONTROL = u24_guard.load_control_plane_attestation(
     REPO_ROOT,
     a0_commit=ANCHOR_COMMIT,
     identity_path=IDENTITY_PATH,
     tracked_paths=TRACKED_PATHS,
     absent_at_a0=ABSENT_AT_ANCHOR,
 )
+CONTROL = _project_old_u24_epoch(RAW_CONTROL)
 
 
 @pytest.fixture(autouse=True)
@@ -716,6 +800,8 @@ def _validate_epoch_topology(control: Mapping[str, Any]) -> dict[str, Any]:
 def _worktree_manifest() -> dict[str, list[str]]:
     value = json.loads((REPO_ROOT / MANIFEST_PATH).read_text(encoding="utf-8"))
     assert type(value) is dict
+    for delegated in DELEGATED_PORTABILITY_MANIFEST_NODES:
+        value.pop(delegated, None)
     return value
 
 
@@ -735,6 +821,29 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
     }
     assert CONTROL["schema_version"] == u24_guard.CONTROL_ATTESTATION_SCHEMA
     assert u24_guard.CONTROL_ATTESTATION_SCHEMA == "u24-control-plane-attestation-v2"
+    assert u24_guard.PORTABILITY_AUTHORITY_PARENT == OLD_U24_ENDPOINT_COMMIT
+    raw_authority_rows = [
+        row
+        for row in _revision_rows(RAW_CONTROL)
+        if row.get("commit") == u24_guard.PORTABILITY_AUTHORITY_COMMIT
+    ]
+    assert len(raw_authority_rows) == 1
+    assert raw_authority_rows[0]["parents"] == [OLD_U24_ENDPOINT_COMMIT]
+    assert set(raw_authority_rows[0]["changed_paths"]) == {
+        u24_guard.PORTABILITY_AUTHORITY_DOCUMENT_PATH,
+        u24_guard.PORTABILITY_MATRIX_PATH,
+    }
+    portability_matrix = u24_guard._portability_matrix(  # type: ignore[attr-defined]
+        REPO_ROOT
+    )
+    historical_noninputs = portability_matrix["historical_noninputs"]
+    assert {
+        name: historical_noninputs[name]
+        for name, _value in u24_guard.PORTABILITY_HISTORICAL_NONINPUT_COMMITS
+    } == dict(u24_guard.PORTABILITY_HISTORICAL_NONINPUT_COMMITS)
+    assert historical_noninputs["forbidden_scientific_inputs"] == list(
+        u24_guard.PORTABILITY_FORBIDDEN_SCIENTIFIC_INPUT_PATHS
+    )
     active_table = u24_guard._ACTIVE_CANONICAL_DENYLIST  # type: ignore[attr-defined]
     table_type = u24_guard._CanonicalDenylistTable  # type: ignore[attr-defined]
     assert type(active_table) is table_type
@@ -750,6 +859,8 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
         active_table.rows,
         active_table.emit_root,
         active_table.closeout_artifacts,
+        active_table.portability_matrix,
+        active_table.portability_matrix_sha256,
         active_table.scope_sha256,
     )
     assert active_table.repo_root_key == REPO_ROOT
@@ -794,6 +905,12 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
         independently_canonicalize_constant(path)[0]
         for path in u24_guard.CLOSEOUT_ARTIFACTS
     )
+    assert active_table.portability_matrix == independently_canonicalize_constant(
+        u24_guard.PORTABILITY_MATRIX_PATH
+    )[0]
+    assert active_table.portability_matrix_sha256 == (
+        u24_guard.PORTABILITY_MATRIX_RAW_SHA256
+    )
 
     valid_table_fields = {
         "repo_root_key": active_table.repo_root_key,
@@ -802,6 +919,8 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
         "rows": active_table.rows,
         "emit_root": active_table.emit_root,
         "closeout_artifacts": active_table.closeout_artifacts,
+        "portability_matrix": active_table.portability_matrix,
+        "portability_matrix_sha256": active_table.portability_matrix_sha256,
     }
     malformed_table_fields = (
         {**valid_table_fields, "repo_root_key": Path("relative")},
@@ -817,6 +936,8 @@ def test_u24_a0_anchor_authorities_and_nonexistence_are_frozen() -> None:
             **valid_table_fields,
             "closeout_artifacts": list(active_table.closeout_artifacts),
         },
+        {**valid_table_fields, "portability_matrix": ""},
+        {**valid_table_fields, "portability_matrix_sha256": "0" * 63},
     )
     for malformed_fields in malformed_table_fields:
         with pytest.raises(TypeError):
@@ -2105,6 +2226,8 @@ def test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import() -> 
             rows=table.rows,
             emit_root=table.emit_root,
             closeout_artifacts=table.closeout_artifacts,
+            portability_matrix=table.portability_matrix,
+            portability_matrix_sha256=table.portability_matrix_sha256,
         ),
         table_type(
             repo_root_key=table.repo_root_key,
@@ -2113,6 +2236,8 @@ def test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import() -> 
             rows=tuple(reversed(table.rows)),
             emit_root=table.emit_root,
             closeout_artifacts=table.closeout_artifacts,
+            portability_matrix=table.portability_matrix,
+            portability_matrix_sha256=table.portability_matrix_sha256,
         ),
         table_type(
             repo_root_key=table.repo_root_key,
@@ -2121,6 +2246,8 @@ def test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import() -> 
             rows=((first_path, not first_prefix), *table.rows[1:]),
             emit_root=table.emit_root,
             closeout_artifacts=table.closeout_artifacts,
+            portability_matrix=table.portability_matrix,
+            portability_matrix_sha256=table.portability_matrix_sha256,
         ),
         table_type(
             repo_root_key=table.repo_root_key,
@@ -2129,6 +2256,8 @@ def test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import() -> 
             rows=table.rows,
             emit_root=table.emit_root,
             closeout_artifacts=table.closeout_artifacts,
+            portability_matrix=table.portability_matrix,
+            portability_matrix_sha256=table.portability_matrix_sha256,
         ),
         table_type(
             repo_root_key=table.repo_root_key,
@@ -2137,6 +2266,8 @@ def test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import() -> 
             rows=table.rows,
             emit_root=table.emit_root + "/wrong-root",
             closeout_artifacts=table.closeout_artifacts,
+            portability_matrix=table.portability_matrix,
+            portability_matrix_sha256=table.portability_matrix_sha256,
         ),
         table_type(
             repo_root_key=table.repo_root_key,
@@ -2145,6 +2276,28 @@ def test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import() -> 
             rows=table.rows,
             emit_root=table.emit_root,
             closeout_artifacts=tuple(reversed(table.closeout_artifacts)),
+            portability_matrix=table.portability_matrix,
+            portability_matrix_sha256=table.portability_matrix_sha256,
+        ),
+        table_type(
+            repo_root_key=table.repo_root_key,
+            canonical_repo_root=table.canonical_repo_root,
+            denylist_sha256=table.denylist_sha256,
+            rows=table.rows,
+            emit_root=table.emit_root,
+            closeout_artifacts=table.closeout_artifacts,
+            portability_matrix=table.portability_matrix + "/wrong",
+            portability_matrix_sha256=table.portability_matrix_sha256,
+        ),
+        table_type(
+            repo_root_key=table.repo_root_key,
+            canonical_repo_root=table.canonical_repo_root,
+            denylist_sha256=table.denylist_sha256,
+            rows=table.rows,
+            emit_root=table.emit_root,
+            closeout_artifacts=table.closeout_artifacts,
+            portability_matrix=table.portability_matrix,
+            portability_matrix_sha256="0" * 64,
         ),
     )
     for corrupted_table in corrupted_tables:
@@ -2166,6 +2319,8 @@ def test_u24_autouse_guard_blocks_paths_process_network_and_dynamic_import() -> 
             rows=table.rows,
             emit_root=table.emit_root,
             closeout_artifacts=table.closeout_artifacts,
+            portability_matrix=table.portability_matrix,
+            portability_matrix_sha256=table.portability_matrix_sha256,
         )
 
     rollback = pytest.MonkeyPatch()

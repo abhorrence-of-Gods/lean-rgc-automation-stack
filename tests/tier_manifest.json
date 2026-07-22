@@ -382,6 +382,9 @@
   "test_uprime_u2_u4_development.py": [
     "unit"
   ],
+  "test_uprime_u24_upper_stack_portability_identity.py": [
+    "unit"
+  ],
   "test_uprime_u05_identity.py": [
     "unit"
   ],
